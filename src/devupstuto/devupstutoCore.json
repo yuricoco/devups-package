@@ -1,0 +1,26 @@
+{
+  "name": "devupstuto",
+  "template": "adminv3",
+  "listmodule": [
+    {
+      "name": "ModuleStock",
+      "project": "devupstuto",
+      "listentity": [
+        {
+          "name": "storage",
+          "attribut": {
+            "1": {
+              "name": "name",
+              "visibility": "",
+              "datatype": "string",
+              "size": "25",
+              "nullable": "not",
+              "formtype": "text"
+            }
+          },
+          "relation": []
+        }
+      ]
+    }
+  ]
+}
