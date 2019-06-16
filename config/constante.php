@@ -1,24 +1,22 @@
 <?php
                 
-define('PROJECT_NAME', 'devupstuto');
+define('PROJECT_NAME', 'Devups');
 
 define ('dbname', 'devupstuto_bd');
 define ('dbuser', 'root');
-define ('dbpassword',  '');//BD20Devupstuto18
+define ('dbpassword',  '');
 define ('dbhost',  'localhost');
-        
-// base url
+
 /**
  * config environment
  */
-// in production, replace by "/"
 define('__v', '4.3');
 
 define('__server', 'http://127.0.0.1');
-define('__env', __server.'/devupstuto/');
+define('__env', __server.'/devups/');
 define('__prod', false);
 define('__default_lang', "fr");
-define('__project_id', 'devupstuto');
+define('__project_id', 'devups');
 define('__lang', 'en');
 
 

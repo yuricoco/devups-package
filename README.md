@@ -10,8 +10,8 @@ Minimum config : php 5.6, 7.^
 Edit the config/constant.php file. Change
 - define('PROJECT_NAME', "devupstuto");   
 
-- define('__env', '/devupstuto/');: config environment as you’re in localhost I gest each project are stored in a folder   who as the project name right. Then to access the project from the browser you enter localhost/projectname/ . It’s the /projectname/ we call environment. then in general it’s just the root to the project directory.
- - define('dbname', 'devupstuto_bd');
+- define('__env', '/devups/'); // config environment as you’re in localhost I gest each project are stored in a folder   who as the project name right. Then to access the project from the browser you enter localhost/projectname/ . It’s the /projectname/ we call environment. then in general it’s just the root to the project directory.
+- define('dbname', 'devups_bd');
 
 save and we are done for the config.
 
