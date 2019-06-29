@@ -817,6 +817,7 @@ class " . ucfirst($name) . "Controller extends Controller{
         $field = '';
         $traitement = new Traitement();
         $name = strtolower($entity->name);
+        $listview = [];
 
         if ($mother) {
             $field .= "<?php $".$name." = $".$mother."->get".ucfirst($entity->name)."(); ?>";
