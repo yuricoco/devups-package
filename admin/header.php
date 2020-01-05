@@ -6,9 +6,23 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-require __DIR__ . '/../header.php';
-define('VENDOR', __env. 'admin/vendor/');
+
+global $_start;
+$_start = microtime(true);
+
+session_start();
+
+//require __DIR__ . '/../config/constante.php';
+require __DIR__.'/../config/dependanceInjection.php';
+require __DIR__.'/../lang.php';
+require __DIR__.'/../src/requires.php';
+
+define('VENDOR', __env. 'admin/vendors/');
 define('assets', __env. 'admin/assets/');
+
+define('_cssversion', '1');
+define('_jsversion', '1');
+
 
 // move comment scope to enable authentication 
 if (!isset($_SESSION[ADMIN]) and $_GET['path'] != 'connexion') {
@@ -21,7 +35,7 @@ if (!isset($_SESSION[ADMIN]) and $_GET['path'] != 'connexion') {
 global $global_navigation, $viewdir;
 
 $viewdir = [admin_dir . "views"];
-$dvups_navigation = unserialize($_SESSION['navigation']);
+$dvups_navigation = unserialize($_SESSION[__project_id."_navigation"]);
 
 //$global_navigation = Core::buildOriginCore();
 

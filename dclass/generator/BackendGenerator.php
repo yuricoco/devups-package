@@ -214,6 +214,24 @@ class BackendGenerator {
                 if (in_array($attribut->formtype, ['document', 'image', 'music', 'video'])) {
                     $construt .= "
                         
+        public function upload" . ucfirst($attribut->name) . "($"."file = '" . $attribut->name . "') {
+            $"."dfile = self::Dfile($"."file);
+            if(!$"."dfile->errornofile){
+            
+                $"."filedir = '" . $attribut->name . "/';
+                $"."url = $"."dfile
+                    ->hashname()
+                    ->moveto($"."filedir);
+    
+                if (!$"."url['success']) {
+                    return 	array(	'success' => false,
+                        'error' => $"."url);
+                }
+    
+                $"."this->" . $attribut->name . " = $"."url['file']['hashname'];            
+            }
+        }     
+             
         public function show" . ucfirst($attribut->name) . "() {
             $"."url = Dfile::show($" . "this->" . $attribut->name . ", '" . $name . "');
             return Dfile::fileadapter($"."url, $"."this->" . $attribut->name . ");
@@ -307,37 +325,25 @@ class BackendGenerator {
     }
 
     /* 	CREATION DU CONTROLLER 	 */
+    private function defaultCtrlContent($name, $entity){
 
-    public function controllerGenerator($entity, $listmodule) {
-        $datatablemodel = DvAdmin::buildindexdatatable($listmodule, $entity);
-        $name = strtolower($entity->name);
+        $contenu = "public function listView($" . "next = 1, $" . "per_page = 10){
 
-        $classController = fopen('Controller/' . ucfirst($name) . 'Controller.php', 'w');
-
-        $contenu = "<?php \n
-
-use DClass\devups\Datatable as Datatable;
-
-class " . ucfirst($name) . "Controller extends Controller{
-
-    public function listView($" . "next = 1, $" . "per_page = 10){
-
-        $" . "lazyloading = $" . "this->lazyloading(new " . ucfirst($name) . "(), $" . "next, $" . "per_page);
+            $" . "lazyloading = $" . "this->lazyloading(new " . ucfirst($name) . "(), $" . "next, $" . "per_page);
 
         self::$" . "jsfiles[] = " . ucfirst($name) . "::classpath('Ressource/js/" . $name . "Ctrl.js');
 
         $" . "this->entitytarget = '" . ucfirst($name) . "';
         $" . "this->title = \"Manage " . ucfirst($name) . "\";
-        $" . "datatablemodel = $datatablemodel;
         
-        $" . "this->renderListView($" . "lazyloading, $" . "datatablemodel);
+        $" . "this->renderListView(" . ucfirst($name) . "Table::init($" . "lazyloading)->buildindextable()->render());
 
     }
 
     public function datatable($" . "next, $" . "per_page) {
         $" . "lazyloading = $" . "this->lazyloading(new " . ucfirst($name) . "(), $" . "next, $" . "per_page);
         return ['success' => true,
-            'datatable' => Datatable::getTableRest($" . "lazyloading),
+            'datatable' => " . ucfirst($name) . "Table::init($" . "lazyloading)->buildindextable()->getTableRest(),
         ];
     }
 
@@ -350,7 +356,7 @@ class " . ucfirst($name) . "Controller extends Controller{
         $mtmedit = [];
         $iter = 0;
         if (!empty($entity->relation)) {
-            //relation sera l'entité 
+            //relation sera l'entité
             foreach ($entity->relation as $relation) {
 
                 if ($relation->cardinality == "oneToOne") {
@@ -372,7 +378,7 @@ class " . ucfirst($name) . "Controller extends Controller{
             if (in_array($attribut->formtype, ['document', 'music', 'video', 'image'])){
                 $otherattrib = true;
                 $contenu .= "
-        $".$name ."->uploadfile('" . $attribut->name . "');\n";
+        $".$name ."->upload" . ucfirst($attribut->name) . "();\n";
             }
 
             if (in_array($attribut->datatype, ['date', 'datetime', 'time']) && isset($attribut->defaultvalue)){
@@ -387,14 +393,14 @@ class " . ucfirst($name) . "Controller extends Controller{
         if ( $" . "this->error ) {
             return 	array(	'success' => false,
                             '" . $name . "' => $" . $name . ",
-                            'action_form' => 'create', 
+                            'action' => 'create', 
                             'error' => $" . "this->error);
         }
         
         $" . "id = $" . $name . "->__insert();
         return 	array(	'success' => true,
                         '" . $name . "' => $" . $name . ",
-                        'tablerow' => Datatable::getSingleRowRest($" . $name . "),
+                        'tablerow' => " . ucfirst($name) . "Table::init()->buildindextable()->getSingleRowRest($" . $name . "),
                         'detail' => '');
 
     }
@@ -409,8 +415,8 @@ class " . ucfirst($name) . "Controller extends Controller{
             foreach ($entity->attribut as $attribut) {
 //                            for($i = 1; $i < count($entity->attribut); $i++){
                 if (in_array($attribut->formtype, ['document', 'music', 'video', 'image']))
-                    $contenu .= " 
-                        $".$name ."->uploadfile('" . $attribut->name . "');\n";
+                    $contenu .= "
+                        $".$name ."->upload" . ucfirst($attribut->name) . "();\n";
             }
         endif;
         $contenu .= "        
@@ -424,9 +430,26 @@ class " . ucfirst($name) . "Controller extends Controller{
         $" . $name . "->__update();
         return 	array(	'success' => true,
                         '" . $name . "' => $" . $name . ",
-                        'tablerow' => Datatable::getSingleRowRest($" . $name . "),
+                        'tablerow' => " . ucfirst($name) . "Table::init()->buildindextable()->getSingleRowRest($" . $name . "),
                         'detail' => '');
                         
+    }
+    
+
+    public function detailView($" . "id)
+    {
+
+        $" . "this->entitytarget = '" . ucfirst($name) . "';
+        $" . "this->title = \"Detail " . ucfirst($name) . "\";
+
+        $" . $name . " = " . ucfirst($name) . "::find($" . "id);
+
+        $" . "this->renderDetailView(
+            " . ucfirst($name) . "Table::init()
+                ->builddetailtable()
+                ->renderentitydata($" . $name . ")
+        );
+
     }
     
     public function deleteAction($" . "id){
@@ -446,9 +469,8 @@ class " . ucfirst($name) . "Controller extends Controller{
             " . ucfirst($name) . "::delete($" . "id);";
         endif;
         $contenu .= "
-        return 	array(	'success' => true, // pour le restservice
-                        'redirect' => 'index', // pour le web service
-                        'detail' => ''); //Detail de l'action ou message d'erreur ou de succes
+        return 	array(	'success' => true, 
+                        'detail' => ''); 
     }
     
 
@@ -457,10 +479,200 @@ class " . ucfirst($name) . "Controller extends Controller{
 
         " . ucfirst($name) . "::delete()->where(\"id\")->in($" . "ids)->exec();
 
-        return array('success' => true, // pour le restservice
-                'redirect' => 'index', // pour le web service
-                'detail' => ''); //Detail de l'action ou message d'erreur ou de succes
+        return array('success' => true,
+                'detail' => ''); 
 
+    }";
+
+        return $contenu;
+
+    }
+
+    private function frontCtrlContent($name, $entity){
+        $contenu = "public function ll($" . "next = 1, $" . "per_page = 10){
+
+            return $" . "this->lazyloading(new " . ucfirst($name) . "(), $" . "next, $" . "per_page);
+
+    }
+
+    public function createAction($" . $name . "_form = null){
+        $" . "rawdata = \Request::raw();
+        $" . $name . " = $" . "this->hydrateWithJson(new " . ucfirst($name) . "(), $" . "rawdata[\"$name\"]);\n ";
+        // gestion des relations many to many dans le controller
+        $mtm = [];
+        $mtmedit = [];
+        $iter = 0;
+        if (!empty($entity->relation)) {
+            //relation sera l'entité
+            foreach ($entity->relation as $relation) {
+
+                if ($relation->cardinality == "oneToOne") {
+                    $contenu .= "
+                    
+        $" . $relation->entity . " = $" . "this->hydrateWithJson(new " . ucfirst($relation->entity) . "(), $" . "rawdata[\"" . $relation->entity . "\"]);
+        $" . $relation->entity . "->__insert();
+        $" . $name . "->set" . ucfirst($relation->entity) . "($" . $relation->entity . "); ";
+                }
+            }
+        }
+        $contenu .= "\n" . implode($mtm, "\n");
+        $otherattrib = false;
+//        if (isset($entity->attribut[1])) {
+//            $otherattrib = true;
+        foreach ($entity->attribut as $attribut) {
+//			for($i = 1; $i < count($entity->attribut); $i++){
+            if (in_array($attribut->formtype, ['document', 'music', 'video', 'image'])){
+                $otherattrib = true;
+                $contenu .= "
+        $".$name ."->upload" . ucfirst($attribut->name) . "();\n";
+            }
+
+            if (in_array($attribut->datatype, ['date', 'datetime', 'time']) && isset($attribut->defaultvalue)){
+                $contenu .= "
+        $".$name ."->set" . ucfirst($attribut->name) . "(new DateTime());\n";
+            }
+
+        }
+//        }
+
+        $contenu .= "
+        
+        $" . "id = $" . $name . "->__insert();
+        return 	array(	'success' => true,
+                        '" . $name . "' => $" . $name . ",
+                        'detail' => '');
+
+    }
+
+    public function updateAction($" . "id, $" . $name . "_form = null){
+        $" . "rawdata = \Request::raw();
+            
+        $" . $name . " = $" . "this->hydrateWithJson(new " . ucfirst($name) . "($" . "id), $" . "rawdata[\"$name\"]);
+
+            "; //.implode($mtmedit, "\n")
+        if ($otherattrib):
+            foreach ($entity->attribut as $attribut) {
+//                            for($i = 1; $i < count($entity->attribut); $i++){
+                if (in_array($attribut->formtype, ['document', 'music', 'video', 'image']))
+                    $contenu .= "
+                        $".$name ."->upload" . ucfirst($attribut->name) . "();\n";
+            }
+        endif;
+        $contenu .= "      
+        
+        $" . $name . "->__update();
+        return 	array(	'success' => true,
+                        '" . $name . "' => $" . $name . ",
+                        'detail' => '');
+                        
+    }
+    
+
+    public function detailAction($" . "id)
+    {
+
+        $" . $name . " = " . ucfirst($name) . "::find($" . "id);
+
+        return 	array(	'success' => true,
+                        '" . $name . "' => $" . $name . ",
+                        'detail' => '');
+          
+}       
+";
+
+        return $contenu;
+
+    }
+
+    public function controllerGenerator($entity, $listmodule) {
+        //$datatablemodel = DvAdmin::buildindexdatatable($listmodule, $entity);
+        $name = strtolower($entity->name);
+
+        //if(__Generator::$ctrltype == 'front' || __Generator::$ctrltype == 'both'){
+            $ctrlname = '' . ucfirst($name) . 'FrontController';
+            $classController = fopen('Controller/' . $ctrlname . '.php', 'w');
+            $extend = ucfirst($name) . 'Controller';
+            $content = $this->frontCtrlContent($name, $entity);
+
+            $contenu = "<?php \n
+
+class " . $ctrlname . " extends $extend{
+
+    $content
+
+}\n";
+            fputs($classController, $contenu);
+            //fputs($classController, "\n}\n");
+            fclose($classController);
+
+        //}
+
+        //if(__Generator::$ctrltype == 'both'){
+            $ctrlname = '' . ucfirst($name) . 'Controller';
+            $classController = fopen('Controller/' . $ctrlname . '.php', 'w');
+            $extend = 'Controller';
+            $content = $this->defaultCtrlContent($name, $entity);
+
+            $contenu = "<?php \n
+
+use DClass\devups\Datatable as Datatable;
+
+class " . $ctrlname . " extends $extend{
+
+    $content
+
+}\n";
+            fputs($classController, $contenu);
+            //fputs($classController, "\n}\n");
+            fclose($classController);
+
+       // }
+
+    }
+
+    /* 	CREATION DU CONTROLLER 	 */
+
+    public function tableGenerator($entity, $listmodule)
+    {
+        $datatablemodel = DvAdmin::buildindexdatatable($listmodule, $entity);
+        $detailview = DvAdmin::builddetaildatatable($entity, $listmodule);
+
+        $name = strtolower($entity->name);
+
+        $classController = fopen('Datatable/' . ucfirst($name) . 'Table.php', 'w');
+
+        $contenu = "<?php \n
+
+use DClass\devups\Datatable as Datatable;
+
+class " . ucfirst($name) . "Table extends Datatable{
+    
+    public $"."entity = \"" . $name . "\";
+
+    public $"."datatablemodel = $datatablemodel;
+
+    public function __construct($"."lazyloading = null, $"."datatablemodel = [])
+    {
+        parent::__construct($"."lazyloading, $"."datatablemodel);
+    }
+
+    public static function init($"."lazyloading = null){
+        $"."dt = new " . ucfirst($name) . "Table($"."lazyloading);
+        return $"."dt;
+    }
+
+    public function buildindextable(){
+
+        // TODO: overwrite datatable attribute for this view
+
+        return $"."this;
+    }
+    
+    public function builddetailtable()
+    {
+        $"."this->datatablemodel = $detailview;
+        // TODO: overwrite datatable attribute for this view
+        return $"."this;
     }
 
 }\n";
@@ -468,7 +680,9 @@ class " . ucfirst($name) . "Controller extends Controller{
         //fputs($classController, "\n}\n");
 
         fclose($classController);
+
     }
+
 
     /* CREATION OF CORE */
 
@@ -537,6 +751,9 @@ class " . ucfirst($name) . "Controller extends Controller{
         unset($entity->attribut[0]);
 
         foreach ($entity->attribut as $attribut) {
+
+            if($attribut->formtype == "none")
+                continue;
 
             $field .= "
             $" . "entitycore->field['" . $attribut->name . "'] = [
@@ -633,7 +850,7 @@ class " . ucfirst($name) . "Controller extends Controller{
                     \"type\" => FORMTYPE_INJECTION, 
                     FH_REQUIRE => true,
                     \"label\" => '" . ucfirst($relation->entity) . "',
-                    \"imbricate\" => " . ucfirst($relation->entity) . "Form::__renderForm($" . $name . "->get" . ucfirst($relation->entity) . "()),
+                    \"imbricate\" => " . ucfirst($relation->entity) . "Form::__renderForm(" . ucfirst($relation->entity) . "::getFormData($" . $name . "->" . $relation->entity . "->getId(), false)),
                 ];\n";
                 } elseif ($relation->cardinality == 'manyToMany') {
                     $field .= "
@@ -648,9 +865,14 @@ class " . ucfirst($name) . "Controller extends Controller{
         }
 
         $contenu = "<?php \n
+        
+use Genesis as g;
+
     class " . ucfirst($name) . "Form extends FormManager{
 
-        public static function formBuilder(\\" . ucfirst($name) . " $" . $name . ", $" . "action = null, $" . "button = false) {
+        public static function formBuilder($" . "dataform, $" . "button = false) {
+            $" . $name . " = new \\" . ucfirst($name) . "();
+            extract($" . "dataform);
             $" . "entitycore = new Core($" . $name . ");
             
             $" . "entitycore->formaction = $" . "action;
@@ -660,37 +882,49 @@ class " . ucfirst($name) . "Controller extends Controller{
                 
             " . $field . "
             
-            $" . "entitycore->addDformjs($" . "action);
+            $" . "entitycore->addDformjs($" . "button);
             $" . "entitycore->addjs(" . ucfirst($name) . "::classpath('Ressource/js/".$name."Form'));
             
             return $" . "entitycore;
         }
         
-        public static function __renderForm(\\" . ucfirst($name) . " $" . $name . ", $" . "action = null, $" . "button = false) {
-            return FormFactory::__renderForm(" . ucfirst($name) . "Form::formBuilder($" . $name . ", $" . "action, $" . "button));
+        public static function __renderForm($" . "dataform, $" . "button = false) {
+            return FormFactory::__renderForm(" . ucfirst($name) . "Form::formBuilder($" . "dataform,  $" . "button));
         }
         
-        public static function render($" . "id = null, $" . "action = \"create\") {
-            $" . $name . " = new " . ucfirst($name) . "();
-            if($" . "id){
-                $" . "action = \"update&id=\".$" . "id;
-                $" . $name . " = " . ucfirst($name) . "::find($" . "id);
-                //$" . $name . "->collectStorage();
-            }
-    
-            return ['success' => true,
-                'form' => " . ucfirst($name) . "Form::__renderForm($" . $name . ", $" . "action, true),
+        public static function getFormData($" . "id = null, $" . "action = \"create\")
+        {
+            if (!$" . "id):
+                $" . $name . " = new " . ucfirst($name) . "();
+                
+                return [
+                    'success' => true,
+                    '" . $name . "' => $" . $name . ",
+                    'action' => \"create\",
+                ];
+            endif;
+            
+            $" . $name . " = " . ucfirst($name) . "::find($" . "id);
+            return [
+                'success' => true,
+                '" . $name . "' => $" . $name . ",
+                'action' => \"update&id=\" . $"."id,
             ];
+
         }
         
-        public static function __renderFormWidget(\\" . ucfirst($name) . " $" . $name . ", $" . "action_form = null) {
-            include " . ucfirst($name) . "::classroot(\"Form/" . ucfirst($name) . "FormWidget.php\");
+        public static function render($" . "id = null, $" . "action = \"create\")
+        {
+            g::json_encode(['success' => true,
+                'form' => self::__renderForm(self::getFormData($" . "id, $" . "action),true),
+            ]);
         }
 
-        public static function __renderDetailWidget($" . "id){
-            $" . $name . " = " . ucfirst($name) . "::find($" . "id);
-            include " . ucfirst($name) . "::classroot(\"Form/" . ucfirst($name) . "DetailWidget.php\");
+        public static function renderWidget($" . "id = null, $" . "action = \"create\")
+        {
+            Genesis::renderView(\"" . $name . ".formWidget\", self::getFormData($" . "id, $" . "action));
         }
+        
     }
     ";
         $entityform = fopen('Form/' . ucfirst($name) . 'Form.php', 'w');
@@ -707,6 +941,9 @@ class " . ucfirst($name) . "Controller extends Controller{
         $name = strtolower($entity->name);
 
         foreach ($entity->attribut as $attribut) {
+
+            if($attribut->formtype == "none")
+                continue;
 
             $field .= "<div class='form-group'>\n<label for='" . $attribut->name . "'>" . ucfirst($attribut->name) . "</label>\n";
 
@@ -814,61 +1051,17 @@ class " . ucfirst($name) . "Controller extends Controller{
     /* CREATION DU FORM FIELD */
 
     private function detailwidget($entity, $listmodule, $onetoone = true, $mother = false){
-        $field = '';
-        $traitement = new Traitement();
+
         $name = strtolower($entity->name);
-        $listview = [];
-
-        if ($mother) {
-            $field .= "<?php $".$name." = $".$mother."->get".ucfirst($entity->name)."(); ?>";
-        }
-
-        foreach ($entity->attribut as $attribut) {
-            if ($attribut->formtype == 'image') {
-//                $listview[] = "'src:" . $attribut->name . "'";
-                $listview[] = "\n['label' => '" . ucfirst($attribut->name) . "', 'value' => 'src:" . $attribut->name . "']";
-//                        }elseif($entity->attribut[$i]->formtype == 'document'){
-//                        }elseif($entity->attribut[$i]->formtype == 'document'){
-//                        }elseif($entity->attribut[$i]->formtype == 'document'){
-                $listview[] = "\n['label' => '" . ucfirst($attribut->name) . "', 'value' => '" . $attribut->name . "']";
-            } else {
-                $listview[] = "\n['label' => '" . ucfirst($attribut->name) . "', 'value' => '" . $attribut->name . "']";
-//                $listview[] = "'" . $attribut->name . "'";
-            }
-        }
-
-        if (!empty($entity->relation)) {
-            foreach ($entity->relation as $relation) {
-
-                if ($relation->cardinality == 'manyToMany')
-                    break;
-
-                $entitylink = $traitement->relation($listmodule, $relation->entity);
-                if(is_null($entitylink))
-                    continue;
-
-                $entrel = ucfirst(strtolower($relation->entity));
-                $key = 0;
-                $entitylinkattrname = "id";
-                $entitylink->attribut = (array) $entitylink->attribut;
-                if (isset($entitylink->attribut[1])) {
-                    $key = 1;
-                    $entitylinkattrname = $entitylink->attribut[$key]->name;
-                }
-
-                $listview[] = "\n['label' => '" . $entrel . "', 'value' => '" . $entrel . "." . $entitylinkattrname . "']";
-            }
-        }
-
+        //$detailview = DvAdmin::builddetaildatatable($entity, $listmodule, $onetoone, $mother);
         //return $field;
         return "
         <div class=\"col-lg-12 col-md-12\">
-                
-                    <?= \DClass\devups\Datatable::renderentitydata($" . $name.", [" . implode(', ', $listview) . "\n]); ?>
-
+                <?= " . ucfirst($name) . "Table::init()
+                ->builddetailtable()
+                ->renderentitydata($" . $name . "); ?>
         </div>
 			";
-        ;
 
     }
 
@@ -881,7 +1074,8 @@ class " . ucfirst($name) . "Controller extends Controller{
         unset($entity->attribut[0]);
         $contenu = $this->detailwidget($entity, $listmodule);
 
-        $entityform = fopen('Form/' . ucfirst($name) . 'DetailWidget.php', 'w');
+        $entityform = fopen('Ressource/views/' . $name . '/detail.blade.php', 'w');
+        //$entityform = fopen('Form/' . ucfirst($name) . 'DetailWidget.php', 'w');
         fputs($entityform, $contenu);
 
         fclose($entityform);
@@ -897,9 +1091,9 @@ class " . ucfirst($name) . "Controller extends Controller{
         $field = $this->formwidget($entity, $listmodule);
 
         $contenu = "
-    <?php //Form::addcss(' . ucfirst($name) . '::classpath('Ressource/js/".$name."')) ?>
+    <?php //Form::addcss(" . ucfirst($name) . " ::classpath('Ressource/js/".$name."')) ?>
     
-    <?= Form::open($" . $name . ", [\"action\"=> \"$" . "action_form\", \"method\"=> \"post\"]) ?>
+    <?= Form::open($" . $name . ", [\"action\"=> \"$" . "action\", \"method\"=> \"post\"]) ?>
 
      " . $field . "
        
@@ -908,10 +1102,10 @@ class " . ucfirst($name) . "Controller extends Controller{
     <?= Form::close() ?>
     
     <?= Form::addDformjs() ?>    
-    <?= Form::addjs(' . ucfirst($name) . '::classpath('Ressource/js/".$name."Form')) ?>
+    <?= Form::addjs(" . ucfirst($name) . "::classpath('Ressource/js/".$name."Form')) ?>
     ";
 
-        $entityform = fopen('Form/' . ucfirst($name) . 'FormWidget.php', 'w');
+        $entityform = fopen('Ressource/views/' . $name . '/formWidget.blade.php', 'w');
         fputs($entityform, $contenu);
 
         fclose($entityform);

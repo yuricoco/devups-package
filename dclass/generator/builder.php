@@ -1,16 +1,16 @@
 <?php
 
+//require __DIR__ . '/../../config/constante.php';
+
 require __DIR__ . '/../../config/dependanceInjection.php';
 
 require __DIR__ . '/BackendGenerator.php';
 require __DIR__ . '/android/BackendGeneratorJava.php';
 require __DIR__ . '/RequestGenerator.php';
 require __DIR__ . '/Traitement.php';
-require __DIR__ . '/template/Templatedependences.php';
 require __DIR__ . '/__Generator.php';
 require __DIR__ . '/android/__Generatorjava.php';
 
-require ROOT . '/admin/generator/AdminTemplateGenerator.php';
 
 $module_entities = [];
 
@@ -59,9 +59,19 @@ if (isset($argv[2])) {
             echo $argv[2] . ": Controller generated with success";
             break;
 
+        case 'core:g:frontcontroller':
+            __Generator::frontcontroller($argv[2], $project); //,
+            echo $argv[2] . ": Front Controller generated with success";
+            break;
+
         case 'core:g:form':
             __Generator::form($argv[2], $project); //, 
             echo $argv[2] . ": Form generated with success";
+            break;
+
+        case 'core:g:table':
+            __Generator::table($argv[2], $project); //,
+            echo $argv[2] . ": Table generated with success";
             break;
 
         case 'core:g:formwidget':
@@ -159,6 +169,12 @@ if (isset($argv[2])) {
     switch ($argv[1]) {
 
         case 'install':
+
+            if (!file_exists("admin/cache")) {
+                echo " > admin/cache folder created with success ...\n";
+                mkdir('admin/cache', 0777);
+            }
+
             RequestGenerator::databasecreate(dbname); //, 
              echo " > Creating Database.\n\n". dbname . ": created with success ...\n";
             $result = [];

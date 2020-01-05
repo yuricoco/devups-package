@@ -251,7 +251,7 @@ Usage:
 
         $ns = explode("\\", $namespace);
         $entity = __Generator::findentity($project, $ns[1], $ns[2]);
-        __Generator::__entity($entity, $project, false, ['entity' => false, 'dao' => false, 'ctrl' => false, 'form' => false, 'genes' => false, 'views' => true]);
+        __Generator::__entity($entity, $project, false, ['entity' => false, 'table' => false, 'ctrl' => false, 'form' => false, 'genes' => false, 'views' => true]);
     }
 
     /**
@@ -273,18 +273,43 @@ Usage:
 
         $ns = explode("\\", $namespace);
         $entity = __Generator::findentity($project, $ns[1], $ns[2]);
-        __Generator::__entity($entity, $project, false, ['entity' => false, 'dao' => false, 'ctrl' => false, 'form' => false, 'genes' => true, 'views' => false]);
+        __Generator::__entity($entity, $project, false, ['entity' => false, 'table' => false, 'ctrl' => false, 'form' => false, 'genes' => true, 'views' => false]);
     }
 
     /**
      * 
      * @param type $namespace
      */
-    public static function controller($namespace, $project) {
+    public static function table($namespace, $project) {
 
         $ns = explode("\\", $namespace);
         $entity = __Generator::findentity($project, $ns[1], $ns[2]);
-        __Generator::__entity($entity, $project, false, ['entity' => false, 'dao' => false, 'ctrl' => true, 'form' => false, 'genes' => false, 'views' => false]);
+        __Generator::__entity($entity, $project, false, ['entity' => false, 'table' => true, 'ctrl' => false, 'form' => false, 'genes' => false, 'views' => false]);
+    }
+
+    public static $ctrltype = '';
+    /**
+     *
+     * @param type $namespace
+     */
+    public static function controller($namespace, $project) {
+        self::$ctrltype = "both";
+        //self::$ctrltype = "default";
+
+        $ns = explode("\\", $namespace);
+        $entity = __Generator::findentity($project, $ns[1], $ns[2]);
+        __Generator::__entity($entity, $project, false, ['entity' => false, 'table' => false, 'ctrl' => true, 'form' => false, 'genes' => false, 'views' => false]);
+    }
+    /**
+     *
+     * @param type $namespace
+     */
+    public static function frontcontroller($namespace, $project) {
+        self::$ctrltype = "front";
+
+        $ns = explode("\\", $namespace);
+        $entity = __Generator::findentity($project, $ns[1], $ns[2]);
+        __Generator::__entity($entity, $project, false, ['entity' => false, 'table' => false, 'ctrl' => true, 'form' => false, 'genes' => false, 'views' => false]);
     }
 
     /**
@@ -295,7 +320,7 @@ Usage:
 
         $ns = explode("\\", $namespace);
         $entity = __Generator::findentity($project, $ns[1], $ns[2]);
-        __Generator::__entity($entity, $project, false, ['entity' => false, 'dao' => false, 'ctrl' => false, 'form' => true, 'genes' => false, 'views' => false]);
+        __Generator::__entity($entity, $project, false, ['entity' => false, 'table' => false, 'ctrl' => false, 'form' => true, 'genes' => false, 'views' => false]);
     }
 
     /**
@@ -306,7 +331,7 @@ Usage:
 
         $ns = explode("\\", $namespace);
         $entity = __Generator::findentity($project, $ns[1], $ns[2]);
-        __Generator::__entity($entity, $project, false, ['entity' => false, 'dao' => false, 'ctrl' => false, 'form' => false, 'formwidget' => true, 'genes' => false, 'views' => false]);
+        __Generator::__entity($entity, $project, false, ['entity' => false, 'table' => false, 'ctrl' => false, 'form' => false, 'formwidget' => true, 'genes' => false, 'views' => false]);
     }
 
     /**
@@ -317,7 +342,7 @@ Usage:
 
         $ns = explode("\\", $namespace);
         $entity = __Generator::findentity($project, $ns[1], $ns[2]);
-        __Generator::__entity($entity, $project, false, ['entity' => false, 'dao' => false, 'ctrl' => false, 'form' => false, 'formwidget' => false, 'genes' => false, 'views' => false, 'detailwidget' => true]);
+        __Generator::__entity($entity, $project, false, ['entity' => false, 'table' => false, 'ctrl' => false, 'form' => false, 'formwidget' => false, 'genes' => false, 'views' => false, 'detailwidget' => true]);
     }
 
     /**
@@ -328,7 +353,7 @@ Usage:
 
         $ns = explode("\\", $namespace);
         $entity = __Generator::findentity($project, $ns[1], $ns[2]);
-        __Generator::__entity($entity, $project, false, ['entity' => true, 'dao' => false, 'ctrl' => false, 'form' => false, 'genes' => false, 'views' => false]);
+        __Generator::__entity($entity, $project, false, ['entity' => true, 'table' => false, 'ctrl' => false, 'form' => false, 'genes' => false, 'views' => false]);
     }
 
     /**
@@ -369,7 +394,7 @@ Usage:
      * 
      * @param type $namespace
      */
-    private static function __entity($entity, $project, $setdependance = false, $crud = ['entity' => true, 'ctrl' => true, 'form' => true, 'views' => false, 'detailwidget' => true]) {
+    private static function __entity($entity, $project, $setdependance = false, $crud = ['entity' => true, 'table' => true, 'ctrl' => true, 'form' => true, 'views' => false, 'detailwidget' => false]) {
 
         $backend = new BackendGenerator();
         $frontend = new AdminTemplateGenerator();
@@ -388,6 +413,9 @@ Usage:
 
         if ($crud['ctrl'])
             $backend->controllerGenerator($entity, $project->listmodule);
+
+        if ($crud['table'])
+            $backend->tableGenerator($entity, $project->listmodule);
 
         if ($crud['form'])
             $backend->formGenerator($entity, $project->listmodule);
@@ -462,6 +490,12 @@ Usage:
             mkdir('Entity', 0777);
         }
 
+        /* TABLE */
+
+        if (!file_exists("Datatable")) {
+            mkdir('Datatable', 0777);
+        }
+
         /* ENTITYCORE */
 
         if (!file_exists("Core")) {
@@ -524,7 +558,9 @@ Usage:
             $package .= "
     require 'Entity/" . $name . ".php';$requiremanytomany
     require 'Form/" . $name . "Form.php';
-    require 'Controller/" . $name . "Controller.php';\n";
+    require 'Datatable/" . $name . "Table.php';
+    require 'Controller/" . $name . "Controller.php';
+    require 'Controller/" . $name . "FrontController.php';\n";
 
         }
 
@@ -580,7 +616,8 @@ Usage:
 RewriteEngine On
 
 RewriteRule    ^/?$    index.php    [NC,L]
-RewriteRule    ^([A-Za-z0-9-]+)/?$    index.php?path=$1    [NC,L]    # Process all products
+#RewriteRule    ^([A-Za-z0-9-]+)/?$    index.php?path=$1    [NC,L]    # Process all products
+RewriteRule    ^([A-Za-z0-9-]+)/?$    index.php?path=$1/index    [NC,L]    # Process all products
 RewriteRule    ^([A-Za-z0-9-]+)/([A-Za-z0-9-]+)/?$    index.php?path=$1/$2   [NC,L]    # Process all products
 
 <IfModule mod_headers.c>
@@ -598,8 +635,16 @@ RewriteRule    ^([A-Za-z0-9-]+)/([A-Za-z0-9-]+)/?$    index.php?path=$1/$2   [NC
             //" . $module->name . "
         
         require '../../../admin/header.php';
-        global $" . "viewdir;
+        
+// move comment scope to enable authentication
+if (!isset($" . "_SESSION[ADMIN]) and $"."_GET['path']"." != 'connexion') {
+    header(\"location: \" . __env . 'admin/login.php');
+}
+
+        global $" . "viewdir, $" . "moduledata;
         $" . "viewdir[] = __DIR__ . '/Ressource/views';
+        
+$" . "moduledata = Dvups_module::init('" . $module->name . "');
                 \n\n";
 
         $contenu .= "
@@ -619,7 +664,7 @@ RewriteRule    ^([A-Za-z0-9-]+)/([A-Za-z0-9-]+)/?$    index.php?path=$1/$2   [NC
 switch (Request::get('path')) {
 
     case 'layout':
-        Genesis::renderView(\"layout\");
+        Genesis::renderView(\"overview\");
         break;
         ";
 
@@ -672,6 +717,7 @@ switch (Request::get('path')) {
         $package .= "
     require 'Entity/" . $name . ".php';$requiremanytomany
     require 'Form/" . $name . "Form.php';
+    require 'Datatable/" . $name . "Table.php';
     require 'Controller/" . $name . "Controller.php';\n";
         //}
 
@@ -699,6 +745,9 @@ switch (Request::get('path')) {
 		
         require '../../../admin/header.php';
         
+// verification token
+//
+
         use Genesis as g;
         use Request as R;
         
@@ -719,19 +768,19 @@ switch (Request::get('path')) {
             $name = strtolower($entity->name);
             $contenu .= "
         case '" . $name . "._new':
-                g::json_encode(" . ucfirst($name) . "Form::render());
+                " . ucfirst($name) . "Form::render();
                 break;
         case '" . $name . ".create':
                 g::json_encode($" . $name . "Ctrl->createAction());
                 break;
         case '" . $name . "._edit':
-                g::json_encode(" . ucfirst($name) . "Form::render(R::get(\"id\")));
+                " . ucfirst($name) . "Form::render(R::get(\"id\"));
                 break;
         case '" . $name . ".update':
                 g::json_encode($" . $name . "Ctrl->updateAction(R::get(\"id\")));
                 break;
         case '" . $name . "._show':
-                " . ucfirst($name) . "Form::__renderDetailWidget(R::get(\"id\"));
+                $" . $name . "Ctrl->detailView(R::get(\"id\"));
                 break;
         case '" . $name . "._delete':
                 g::json_encode($" . $name . "Ctrl->deleteAction(R::get(\"id\")));
@@ -746,7 +795,7 @@ switch (Request::get('path')) {
 
         $contenu .= "\n\t
         default:
-            echo json_encode(['success' => false, 'error' => ['message' => \"404 : action note found\", 'route' => R::get('path')]]);
+            g::json_encode(['success' => false, 'error' => ['message' => \"404 : action note found\", 'route' => R::get('path')]]);
             break;
      }
 
