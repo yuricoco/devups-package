@@ -29,6 +29,7 @@ require __DIR__ . '/../dclass/devups/EntityCollection.php';
 require __DIR__ . '/../dclass/devups/Controller.php';
 require __DIR__ . '/../dclass/devups/Genesis.php';
 require __DIR__ . '/../dclass/devups/Datatable.php';
+require __DIR__ . '/../dclass/devups/DatatableOverwrite.php';
 require __DIR__ . '/../dclass/devups/System_prod.php';
 require __DIR__ . '/../dclass/devups/UploadFile.php';
 require __DIR__ . '/../dclass/devups/EntityCore.php';
@@ -36,6 +37,10 @@ require __DIR__ . '/../dclass/devups/FormFactory.php';
 require __DIR__ . '/../dclass/devups/FormManager.php';
 require __DIR__ . '/../dclass/devups/Form.php';
 require __DIR__ . '/../dclass/devups/Request.php';
+require __DIR__ . '/../dclass/devups/Response.php';
+require __DIR__ . '/../dclass/devups/model/Dbutton.php';
+
+require __DIR__ . '/../dclass/generator/template/Templatedependences.php';
 
 global $enittycollection;
 global $em;

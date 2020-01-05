@@ -32,7 +32,10 @@ define('CLASSJS', __env. 'dclass/devupsjs/');
 
 define('ENTITY', 0);
 define('VIEW', 1);
+
 define('ADMIN', __project_id.'_devups');
+define('dv_role_navigation', __project_id.'_navigation');
+define('dv_role_permission', __project_id.'_permission');
 
 /**
  * NOTIFIACTION DEFINE
