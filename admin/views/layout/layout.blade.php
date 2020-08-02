@@ -30,15 +30,7 @@
     <script>
         var __env = '<?= __env ?>';
         var __lang = '<?= __lang ?>';
-        var _t = <?= json_encode(translatecollection()) ?>;
-
-        var __name = "";
-        var __phone = "";
-        var __location = "";
-        var __bp = "";
-        var __rc = "";
-        var __contrib = "";
-        var __description = "";
+        var _local_content = <?= Local_contentController::getdatajs() ?>;
     </script>
 </head>
 
@@ -49,8 +41,12 @@
     @include("layout.navbartop")
 
     <div class="app-main">
-        @include("layout.navbar")
-        <div class="app-main__outer">
+
+        @if(\dclass\devups\Controller\Controller::$sidebar)
+            @include("layout.navbar")
+        @endif
+
+        <div class="{{\dclass\devups\Controller\Controller::$sidebar ? 'app-main__outer' : ""}}">
             <div id="dv_main_container" class="app-main__inner">
                 @yield('content')
             </div>

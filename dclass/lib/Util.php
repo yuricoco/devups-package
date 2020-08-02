@@ -8,8 +8,12 @@
 
 namespace DClass\lib;
 
+use Request;
+
 class Util
 {
+
+    const dateformat = 'Y-m-d H:i:s';
 
     public static function handleSessionLost($redirect = "admin/"){
 
@@ -57,6 +61,57 @@ class Util
     public static function quantity($quantity)
     {
         return number_format($quantity, 2, ',', ' ');
+    }
+
+    public static function local() {
+        if (Request::get('lang')) {
+            return Request::get('lang');
+        }elseif (isset($_SESSION[LANG]))
+            return $_SESSION[LANG];
+
+        return __lang;
+    }
+
+    public static function log($root, $file, $content) {
+        $moddepend = fopen($root.'/'.$file, "a+");
+        fputs($moddepend, "  ". $content."\n");
+        fclose($moddepend);
+    }
+
+    public static function nfacture($nbcaract, $emptycarat, $value)
+    {
+        $acte = "";
+        $remaincarat = $nbcaract - strlen($value);
+        for ($i = 0; $i < $remaincarat; $i++)
+            $acte .= $emptycarat;
+        //$acte = "0000";
+        return $acte . $value;
+    }
+
+    /**
+     * @param mixed
+     */
+    public static function randomcode()
+    {
+        $list = "0123456789abcdefghijklmnopqrstvwxyz+-@%";
+        mt_srand((double)microtime() * 1000000);
+        $password = "";
+        while (strlen($password) < 8) {
+            $password .= $list[mt_rand(0, strlen($list) - 1)];
+        }
+        return $password;
+
+    }
+
+    public static function validation($value, $type = "telephone")
+    {
+        if($type == "telephone"){
+            if(!is_numeric($value))
+                return t("Entrer une valeur numérique");
+            if (strlen($value."") != 9)
+                return t("le numéro doit etre constitué de 9 caractères");
+        }
+        return null;
     }
 
 }

@@ -1,23 +1,23 @@
 <?php
 
-use DClass\devups\Datatable as Datatable;
 
-class Dvups_adminController extends Controller {
+use dclass\devups\Controller\Controller;
 
+class Dvups_adminController extends Controller
+{
+
+    /**
+     * @var bool
+     */
     private $err;
 
-    function __construct() {
+    function __construct()
+    {
         $this->err = array();
     }
 
-    public static function renderFormWidget($id = null) {
-        if($id)
-            Dvups_adminForm::__renderFormWidget(Dvups_admin::find($id), "update&id=".$id);
-        else
-            Dvups_adminForm::__renderFormWidget(new Dvups_admin(), 'create');
-    }
-
-    public function resetcredential($id) {
+    public function resetcredential($id)
+    {
 
         $dvups_admin = Dvups_admin::find($id);
         $password = $dvups_admin->generatePassword();
@@ -30,19 +30,20 @@ class Dvups_adminController extends Controller {
         return array('success' => true, // pour le restservice
             'dvups_admin' => $dvups_admin,
             //'redirect' => 'added&login=' . $dvups_admin->getLogin() . "&password=" . $password, // pour le web service
-            'redirect' => Dvups_admin::classpath().'dvups-admin/added?login=' . $dvups_admin->getLogin() . "&password=" . $password, // pour le web service
+            'redirect' => Dvups_admin::classpath() . 'dvups-admin/added?login=' . $dvups_admin->getLogin() . "&password=" . $password, // pour le web service
             'detail' => ''); //Detail de l'action ou message d'erreur ou de succes
         //
     }
 
-    public function changepwAction() {
+    public function changepwAction()
+    {
 //        $adminDao = new AdminDAO();
         $dvups_admin = Dvups_admin::find(getadmin()->getId());
         extract($_POST);
         if (sha1($oldpwd) == $dvups_admin->getPassword()) {
             $dvups_admin->__update("password", sha1($newpwd))->exec();
             return array('success' => true, // pour le restservice
-                'redirect' => 'profile&detail=password updated successfully', // pour le web service
+                'redirect' => Dvups_admin::classpath() . 'dvups-admin/profile?detail=password updated successfully', // pour le web service
                 'detail' => '');
         } else {
             return array('success' => false, // pour le restservice
@@ -50,15 +51,20 @@ class Dvups_adminController extends Controller {
         }
     }
 
-    public function deconnexionAction() {
+    public function deconnexionAction()
+    {
 
         $_SESSION[ADMIN] = array();
+        unset($_SESSION[LANG]);
         unset($_SESSION[ADMIN]);
+        unset($_SESSION[dv_role_permission]);
+        unset($_SESSION[dv_role_navigation]);
         //session_destroy();
         header("location: " . path('admin/login.php'));
     }
 
-    public function connexionAction($login = "", $password = "") {
+    public function connexionAction($login = "", $password = "")
+    {
         if (!isset($_POST['login']) and $_POST['login'] != '' and !isset($_POST['password'])) {
             header("Location: " . __env . "admin/login.php?error=Entré le login et le mot de passe.");
         }
@@ -68,16 +74,26 @@ class Dvups_adminController extends Controller {
         //dv_dump($login, $password, $admin);
         if (!$admin->getId())
             header("Location: " . __env . "admin/login.php?err=" . 'Login ou mot de passe incorrect.');
+
+        Dvups_roleController::getNavigationAction($admin);
+        $_SESSION[ADMIN] = serialize($admin);
+        //Local_contentController::buildlocalcachesinglelang($_POST['lang']);
+
+        $admin->setLastloginAt(date("Y-m-d H:i:s"));
+        $admin->__update(["lastlogin_at"=> date("Y-m-d H:i:s")])->exec();
+
+        if ($admin->getFirstconnexion()) {
+
+            header("location: " . Dvups_admin::classpath() . "dvups-admin/complete-registration?id=" . $admin->getId());
+
+            return;
+        }
         //return array('success' => false, "err" => 'Login ou mot de passe incorrect.');
 
         //$admin->collectDvups_role();
 
-        Dvups_roleController::getNavigationAction($admin);
-
-        $_SESSION[ADMIN] = serialize($admin);
-
-        $admin->setLastloginAt(date("Y-m-d H:i:s"));
-        $admin->__update("lastlogin_at", date("Y-m-d H:i:s"))->exec();
+        $_SESSION[CSRFTOKEN] = serialize($admin);
+        //$_SESSION[LANG] = $_POST['lang'];
 
         header("location: " . __env . "admin/");
 
@@ -92,7 +108,8 @@ class Dvups_adminController extends Controller {
      * @param type $id
      * @return \Array
      */
-    public function showAction($id) {
+    public function showAction($id)
+    {
         //$dvups_adminDao = new Dvups_adminDAO();
         $dvups_admin = Dvups_admin::find($id);
 
@@ -107,7 +124,8 @@ class Dvups_adminController extends Controller {
      * @Sequences: controller - genesis - ressource/view/form
      * @return \Array
      */
-    public function __newAction() {
+    public function __newAction()
+    {
 
         return array('success' => true, // pour le restservice
             'dvups_admin' => new Dvups_admin(),
@@ -115,15 +133,16 @@ class Dvups_adminController extends Controller {
             'detail' => ''); //Detail de l'action ou message d'erreur ou de succes
     }
 
-    public function createAction() {
+    public function createAction()
+    {
         extract($_POST);
         $this->err = array();
 
         $dvups_admin = $this->form_generat(new Dvups_admin(), $dvups_admin_form);
 
-        if ( $this->error ) {
-            return 	array(	'success' => false,
-                'testentity' => $dvups_admin,
+        if ($this->error) {
+            return array('success' => false,
+                'dvups_admin' => $dvups_admin,
                 'action_form' => 'create',
                 'error' => $this->error);
         }
@@ -134,10 +153,13 @@ class Dvups_adminController extends Controller {
 
         $id = $dvups_admin->__insert();
 
+        // create curl resource
+        // $this->sendmail($password, $dvups_admin);
+
         return array('success' => true, // pour le restservice
             'dvups_admin' => $dvups_admin,
             'tablerow' => Dvups_adminTable::init()->buildindextable()->getSingleRowRest($dvups_admin),
-            'redirect' => Dvups_admin::classpath().'dvups-admin/added?login=' . $dvups_admin->getLogin() . "&password=" . $password, // pour le web service
+            'redirect' => Dvups_admin::classpath() . 'dvups-admin/added?login=' . $dvups_admin->getLogin() . "&password=" . $password, // pour le web service
             'detail' => ''); //Detail de l'action ou message d'erreur ou de succes
 
     }
@@ -148,7 +170,8 @@ class Dvups_adminController extends Controller {
      * @param type $id
      * @return \Array
      */
-    public function __editAction($id) {
+    public function __editAction($id)
+    {
         //$dvups_adminDao = new Dvups_adminDAO();
         $dvups_admin = (new DBAL())->findByIdDbal(new Dvups_admin($id));
         //$dvups_admin->collectDvups_role();
@@ -159,14 +182,15 @@ class Dvups_adminController extends Controller {
             'detail' => ''); //Detail de l'action ou message d'erreur ou de succes
     }
 
-    public function updateAction($id) {
+    public function updateAction($id)
+    {
         extract($_POST);
         $this->err = array();
 
         $dvups_admin = $this->form_generat(new Dvups_admin($id), $dvups_admin_form);
 
-        if ( $this->error ) {
-            return 	array(	'success' => false,
+        if ($this->error) {
+            return array('success' => false,
                 'testentity' => $dvups_admin,
                 'action_form' => 'create',
                 'error' => $this->error);
@@ -179,11 +203,6 @@ class Dvups_adminController extends Controller {
             'tablerow' => Dvups_adminTable::init()->buildindextable()->getSingleRowRest($dvups_admin),
             'detail' => ''); //Detail de l'action ou message d'erreur ou de succes
 
-    }
-
-    public static function renderDetail($id)
-    {
-        Dvups_adminForm::__renderDetailWidget(Dvups_admin::find($id));
     }
 
     public static function renderForm($id = null, $action = "create")
@@ -202,52 +221,66 @@ class Dvups_adminController extends Controller {
 
     public function datatable($next, $per_page)
     {
-        $qb = Dvups_admin::select()
-            ->where("login", "!=", "dv_admin");
-        //->andwhere("password", "!=", sha1("admin"));
 
-        $lazyloading = $this->lazyloading(new Dvups_admin(), $next, $per_page, $qb,"dvups_admin.id desc");
         return ['success' => true,
-            'datatable' => Dvups_adminTable::init($lazyloading)->buildindextable()->getTableRest(),
+            'datatable' => Dvups_adminTable::init(new Dvups_admin())->buildindextable()->getTableRest(),
         ];
-    }
-
-    public function listAction($next = 1, $per_page = 10)
-    {
-
-        $qb = Dvups_admin::select()
-            ->where("login", "!=", "dv_admin");
-        //->andwhere("password", "!=", sha1("admin"));
-
-        $lazyloading = $this->lazyloading(new Dvups_admin(), $next, $per_page, $qb, "dvups_admin.id desc");
-
-        return array('success' => true, // pour le restservice
-            'lazyloading' => $lazyloading, // pour le web service
-            'detail' => '');
-
     }
 
     public function listView($next = 1, $per_page = 10)
     {
 
-        $qb = Dvups_admin::select()
-            ->where("login", "!=", "dv_admin");
-        //->andwhere("password", "!=", sha1("admin"));
-
-        $lazyloading = $this->lazyloading(new Dvups_admin(), $next, $per_page, $qb, "dvups_admin.id desc");
-
         //self::$jsfiles[] = Client::classpath('Ressource/js/dvups_roleCtrl.js');
+
+        $this->datatable = Dvups_adminTable::init(new Dvups_admin())->buildindextable();
 
         $this->entitytarget = 'dvups_admin';
         $this->title = "Manage Admin";
 
-        $this->renderListView(
-            Dvups_adminTable::init($lazyloading)
-                ->buildindextable()
-                ->addcustomaction("callbackbtn")
-                ->render()
-        );
+        $this->renderListView();
 
+    }
+
+    public function deleteAction($id)
+    {
+        $admin = Dvups_admin::find($id);
+        $admin->__delete();
+        return ["success" => true];
+    }
+
+    public function completeRegistrationView($id)
+    {
+        self::$sidebar = false;
+        $admin = Dvups_admin::find($id);
+        $action = Dvups_admin::classpath("dvups-admin/complete?id=" . $id);
+        return compact("admin", "action");
+    }
+
+    public function completeRegistrationAction($id)
+    {
+        $admin = Dvups_admin::find($id);
+        $error = "";
+        extract($_POST);
+        if ($newpwd == $confimnewpwd) {
+
+            if (sha1($currentpwd) == $admin->getPassword()) {
+                $admin->__update([
+                    "password" => sha1($newpwd),
+                    "firstconnexion" => 0,
+                ])->exec();
+
+                unset($_SESSION[ADMIN]);
+                redirect("admin/");
+
+            } else {
+                $error = 'Incorrect Current password!';
+            }
+        } else
+            $error = 'Incorrect confirmation password! It must be the same as the new password';
+
+        self::$sidebar = false;
+        $action = Dvups_admin::classpath("dvups-admin/complete?id=" . $id);
+        Genesis::renderView('dvups_admin.complete_registration', compact("admin", "action", "error"));
     }
 
 }

@@ -20,8 +20,8 @@ require __DIR__.'/../src/requires.php';
 define('VENDOR', __env. 'admin/vendors/');
 define('assets', __env. 'admin/assets/');
 
-define('_cssversion', '1');
-define('_jsversion', '1');
+define('__cssversion', '1');
+define('__jsversion', '1');
 
 
 // move comment scope to enable authentication 
@@ -35,7 +35,9 @@ if (!isset($_SESSION[ADMIN]) and $_GET['path'] != 'connexion') {
 global $global_navigation, $viewdir;
 
 $viewdir = [admin_dir . "views"];
-$dvups_navigation = unserialize($_SESSION[__project_id."_navigation"]);
+$dvups_navigation = [];
+if(isset($_SESSION[__project_id."_navigation"]))
+    $dvups_navigation = unserialize($_SESSION[__project_id."_navigation"]);
 
 //$global_navigation = Core::buildOriginCore();
 

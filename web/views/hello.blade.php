@@ -69,7 +69,7 @@
         <div class="flex-center position-ref full-height">
 
                 <div class="top-right links">
-                     <a href="{{ __env }}admin">Go to the backend</a>
+                     <a href="{{ route('admin') }}">Go to the backend</a>
                 </div>
 
             <div class="content">

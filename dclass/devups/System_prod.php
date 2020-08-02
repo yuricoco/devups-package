@@ -6,6 +6,8 @@
  * and open the template in the editor.
  */
 
+use dclass\devups\Controller\Controller;
+
 /**
  * Description of System_prod
  *
@@ -140,4 +142,8 @@ class System_prod  extends Controller{
         
     }
 
+    public function listView($next = 1, $per_page = 10)
+    {
+        // TODO: Implement listView() method.
+    }
 }

@@ -13,10 +13,11 @@ class BackendGenerator {
         $fichier = fopen('Entity/' . ucfirst($name) . '.php', 'w');
 
         fputs($fichier, "<?php 
+        // user \dclass\devups\model\Model;
     /**
      * @Entity @Table(name=\"" . $name . "\")
      * */
-    class " . ucfirst($name) . " extends \Model implements JsonSerializable{\n");
+    class " . ucfirst($name) . " extends Model implements JsonSerializable{\n");
         $method = "";
         $construteur = "
         public function __construct($" . "id = null){
@@ -86,14 +87,14 @@ class BackendGenerator {
         }
         
                         ";
-                } elseif ($relation->cardinality == 'oneToOne' or $relation->nullable == 'DEFAULT') {
+                } elseif ($relation->cardinality == 'oneToOne' ) { // or $relation->nullable == 'DEFAULT'
 
                     $construteur .= "\n\t$" . "this->" . $relation->entity . " = new " . ucfirst($relation->entity) . "();";
 
                     $attrib .= "
         /**
-         * @" . ucfirst($relation->cardinality) . "(targetEntity=\"" . $antislash . ucfirst($relation->entity) . "\")
-         * , inversedBy=\"reporter\"
+         * " . ucfirst($relation->cardinality) . "
+         * @ManyToOne(targetEntity=\"" . $antislash . ucfirst($relation->entity) . "\")
          * @var " . $antislash . ucfirst($relation->entity) . "
          */
         public $" . $relation->entity . ";\n";
@@ -119,7 +120,6 @@ class BackendGenerator {
                     $attrib .= "
         /**
          * @" . ucfirst($relation->cardinality) . "(targetEntity=\"" . $antislash . ucfirst($relation->entity) . "\")
-         * , inversedBy=\"reporter\"
          * @var " . $antislash . ucfirst($relation->entity) . "
          */
         public $" . $relation->entity . ";\n";
@@ -164,16 +164,21 @@ class BackendGenerator {
             $length = "";
             $nullable = "";
 
-            if (in_array($attribut->formtype, ["radio", "checkbox", "select"]) && isset($attribut->enum)) {
+            if (in_array($attribut->formtype, ["radio", "checkbox", "select"])) {
                 $staticenum = [];
-                foreach ($attribut->enum as $key => $enum){
-                    $staticenum[] = " '$key' => '$enum'";
+                if(isset($attribut->enum)){
+                    foreach ($attribut->enum as $key => $enum){
+                        if(is_string($enum))
+                            $staticenum[] = "'$enum'";
+                        else
+                            $staticenum[] = $enum;
+                        //$staticenum[] = " '$key' => '$enum'";
+                    }
                 }
 
                 $construt .= "
-        /**
-         **/
-        public static $" . strtoupper($attribut->name) . "S = [".implode(",", $staticenum)."];";
+        /* enum */
+        public static $" . $attribut->name. "s = [".implode(",", $staticenum)."];";
 
             }
 
@@ -218,7 +223,7 @@ class BackendGenerator {
             $"."dfile = self::Dfile($"."file);
             if(!$"."dfile->errornofile){
             
-                $"."filedir = '" . $attribut->name . "/';
+                $"."filedir = '" . $name . "/';
                 $"."url = $"."dfile
                     ->hashname()
                     ->moveto($"."filedir);
@@ -232,6 +237,9 @@ class BackendGenerator {
             }
         }     
              
+        public function src" . ucfirst($attribut->name) . "() {
+            return Dfile::show($" . "this->" . $attribut->name . ", '" . $name . "');
+        }
         public function show" . ucfirst($attribut->name) . "() {
             $"."url = Dfile::show($" . "this->" . $attribut->name . ", '" . $name . "');
             return Dfile::fileadapter($"."url, $"."this->" . $attribut->name . ");
@@ -245,14 +253,14 @@ class BackendGenerator {
             $" . "this->" . $attribut->name . " = $" . $attribut->name . ";
         }
         ";
-                } elseif (in_array($attribut->formtype, ['date', 'datepicker'])) {
+                } elseif (false && in_array($attribut->formtype, ['date', 'datepicker'])) {
                     $construt .= "
 
         public function get" . ucfirst($attribut->name) . "() {
-                if(is_object($" . "this->" . $attribut->name . "))
-                        return $" . "this->" . $attribut->name . ";
-                else
-                        return new DateTime($" . "this->" . $attribut->name . ");
+            if(is_object($" . "this->" . $attribut->name . "))
+                return $" . "this->" . $attribut->name . ";
+            else
+                return new DateTime($" . "this->" . $attribut->name . ");
         }
 
         public function set" . ucfirst($attribut->name) . "($" . $attribut->name . ") {
@@ -327,76 +335,77 @@ class BackendGenerator {
     /* 	CREATION DU CONTROLLER 	 */
     private function defaultCtrlContent($name, $entity){
 
+        $contentono = "";
+        $contentform = "";
+        $mtm = [];
+        $onoinsert = [];
+        $iter = 0;
+
+        if (!empty($entity->relation)) {
+            //relation sera l'entité
+            foreach ($entity->relation as $relation) {
+
+                if ($relation->cardinality == "oneToOne") {
+                    $contentform .= ", $".$relation->entity."_form = null";
+                    $contentono .= "
+                    
+        $" . $relation->entity . " = $" . "this->form_fillingentity(new " . ucfirst($relation->entity) . "(), $" . $relation->entity . "_form);
+        if ( $" . "this->error ) {
+            return 	array(	'success' => false,
+                            '" . $relation->entity . "' => $" . $relation->entity . ",
+                            'error' => $" . "this->error);
+        }";
+        $onoinsert[] = "
+        $" . $relation->entity . "->__insert();
+        $" . $name . "->set" . ucfirst($relation->entity) . "($" . $relation->entity . ");";
+                }
+            }
+        }
+
+        $onoinsert = "\n" . implode($onoinsert, "");
+        $otherattrib = false;
+
         $contenu = "public function listView($" . "next = 1, $" . "per_page = 10){
 
-            $" . "lazyloading = $" . "this->lazyloading(new " . ucfirst($name) . "(), $" . "next, $" . "per_page);
+        \$this->datatable = " . ucfirst($name) . "Table::init(new " . ucfirst($name) . "())->buildindextable();
 
         self::$" . "jsfiles[] = " . ucfirst($name) . "::classpath('Ressource/js/" . $name . "Ctrl.js');
 
         $" . "this->entitytarget = '" . ucfirst($name) . "';
         $" . "this->title = \"Manage " . ucfirst($name) . "\";
         
-        $" . "this->renderListView(" . ucfirst($name) . "Table::init($" . "lazyloading)->buildindextable()->render());
+        $" . "this->renderListView();
 
     }
 
     public function datatable($" . "next, $" . "per_page) {
-        $" . "lazyloading = $" . "this->lazyloading(new " . ucfirst($name) . "(), $" . "next, $" . "per_page);
+    
         return ['success' => true,
-            'datatable' => " . ucfirst($name) . "Table::init($" . "lazyloading)->buildindextable()->getTableRest(),
+            'datatable' => " . ucfirst($name) . "Table::init(new " . ucfirst($name) . "())->buildindextable()->getTableRest(),
         ];
+        
     }
 
-    public function createAction($" . $name . "_form = null){
+    public function createAction($" . $name . "_form = null $contentform){
         extract($" . "_POST);
 
-        $" . $name . " = $" . "this->form_fillingentity(new " . ucfirst($name) . "(), $" . $name . "_form);\n ";
-        // gestion des relations many to many dans le controller
-        $mtm = [];
-        $mtmedit = [];
-        $iter = 0;
-        if (!empty($entity->relation)) {
-            //relation sera l'entité
-            foreach ($entity->relation as $relation) {
-
-                if ($relation->cardinality == "oneToOne") {
-                    $contenu .= "
-        //$" . $relation->entity . "Ctrl = new " . ucfirst($relation->entity) . "Controller();
-        //extract(" . ucfirst($relation->entity) . "Controller::i()->createAction());
-        $" . $relation->entity . " = $" . "this->form_fillingentity(new " . ucfirst($relation->entity) . "(), $" . $relation->entity . "_form);
-        $" . $relation->entity . "->__insert();
-        $" . $name . "->set" . ucfirst($relation->entity) . "($" . $relation->entity . "); ";
-                }
-            }
-        }
-        $contenu .= "\n" . implode($mtm, "\n");
-        $otherattrib = false;
-//        if (isset($entity->attribut[1])) {
-//            $otherattrib = true;
-        foreach ($entity->attribut as $attribut) {
-//			for($i = 1; $i < count($entity->attribut); $i++){
-            if (in_array($attribut->formtype, ['document', 'music', 'video', 'image'])){
-                $otherattrib = true;
-                $contenu .= "
-        $".$name ."->upload" . ucfirst($attribut->name) . "();\n";
-            }
-
-            if (in_array($attribut->datatype, ['date', 'datetime', 'time']) && isset($attribut->defaultvalue)){
-                $contenu .= "
-        $".$name ."->set" . ucfirst($attribut->name) . "(new DateTime());\n";
-            }
-
-        }
-//        }
-
-        $contenu .= "
+        $" . $name . " = $" . "this->form_fillingentity(new " . ucfirst($name) . "(), $" . $name . "_form);
         if ( $" . "this->error ) {
             return 	array(	'success' => false,
                             '" . $name . "' => $" . $name . ",
                             'action' => 'create', 
                             'error' => $" . "this->error);
-        }
-        
+        } ";
+        // gestion des relations many to many dans le controller
+        // $contenu .= "\n" . implode($mtm, "\n");
+
+//        foreach ($entity->attribut as $attribut) {
+//
+//        }
+
+        $contenu .= $contentono;
+        $contenu .= "
+        $onoinsert
         $" . "id = $" . $name . "->__insert();
         return 	array(	'success' => true,
                         '" . $name . "' => $" . $name . ",
@@ -409,17 +418,7 @@ class BackendGenerator {
         extract($" . "_POST);
             
         $" . $name . " = $" . "this->form_fillingentity(new " . ucfirst($name) . "($" . "id), $" . $name . "_form);
-
-            "; //.implode($mtmedit, "\n")
-        if ($otherattrib):
-            foreach ($entity->attribut as $attribut) {
-//                            for($i = 1; $i < count($entity->attribut); $i++){
-                if (in_array($attribut->formtype, ['document', 'music', 'video', 'image']))
-                    $contenu .= "
-                        $".$name ."->upload" . ucfirst($attribut->name) . "();\n";
-            }
-        endif;
-        $contenu .= "        
+     
         if ( $" . "this->error ) {
             return 	array(	'success' => false,
                             '" . $name . "' => $" . $name . ",
@@ -489,13 +488,29 @@ class BackendGenerator {
     }
 
     private function frontCtrlContent($name, $entity){
-        $contenu = "public function ll($" . "next = 1, $" . "per_page = 10){
 
-            return $" . "this->lazyloading(new " . ucfirst($name) . "(), $" . "next, $" . "per_page);
+        $contentono = "";
+        $contentform = "";
+
+        if (!empty($entity->relation)) {
+            //relation sera l'entité
+            foreach ($entity->relation as $relation) {
+
+                if ($relation->cardinality == "oneToOne") {
+                    $contentform .= ", $" . $relation->entity . "_form = null";
+                }
+            }
+        }
+
+        $contenu = "public function ll($" . "next = 1, $" . "per_page = 10){
+        
+            \$ll = new Lazyloading();
+            \$ll->lazyloading(new " . ucfirst($name) . "());
+            return \$ll;
 
     }
 
-    public function createAction($" . $name . "_form = null){
+    public function createAction($" . $name . "_form = null $contentform){
         $" . "rawdata = \Request::raw();
         $" . $name . " = $" . "this->hydrateWithJson(new " . ucfirst($name) . "(), $" . "rawdata[\"$name\"]);\n ";
         // gestion des relations many to many dans le controller
@@ -614,8 +629,8 @@ class " . $ctrlname . " extends $extend{
             $content = $this->defaultCtrlContent($name, $entity);
 
             $contenu = "<?php \n
-
-use DClass\devups\Datatable as Datatable;
+            
+use dclass\devups\Controller\Controller;
 
 class " . $ctrlname . " extends $extend{
 
@@ -643,27 +658,27 @@ class " . $ctrlname . " extends $extend{
 
         $contenu = "<?php \n
 
-use DClass\devups\Datatable as Datatable;
+use dclass\devups\Datatable\Datatable as Datatable;
 
 class " . ucfirst($name) . "Table extends Datatable{
     
-    public $"."entity = \"" . $name . "\";
-
-    public $"."datatablemodel = $datatablemodel;
 
     public function __construct($"."lazyloading = null, $"."datatablemodel = [])
     {
         parent::__construct($"."lazyloading, $"."datatablemodel);
     }
 
-    public static function init($"."lazyloading = null){
-        $"."dt = new " . ucfirst($name) . "Table($"."lazyloading);
+    public static function init(\\" . ucfirst($name) . " \$$name = null){
+    
+        $"."dt = new " . ucfirst($name) . "Table();
+        \$dt->entity = \$$name;
+        
         return $"."dt;
     }
 
     public function buildindextable(){
 
-        // TODO: overwrite datatable attribute for this view
+        $"."this->datatablemodel = $datatablemodel;
 
         return $"."this;
     }
@@ -757,7 +772,7 @@ class " . ucfirst($name) . "Table extends Datatable{
 
             $field .= "
             $" . "entitycore->field['" . $attribut->name . "'] = [
-                \"label\" => '" . ucfirst($attribut->name) . "', \n";
+                \"label\" => t('" . $entity->name . "." . $attribut->name . "'), \n";
 
             if ($attribut->nullable == 'default') {
                 $field .= "\t\t\tFH_REQUIRE => false,\n ";
@@ -786,7 +801,14 @@ class " . ucfirst($name) . "Table extends Datatable{
                 \"value\" => $" . $name . "->get" . ucfirst($attribut->name) . "(), ";
             } elseif ($attribut->formtype == 'radio') {
                 $field .= "\t\t\t\"type\" => FORMTYPE_" . strtoupper($attribut->formtype) . ", 
-                \"value\" => $" . $name . "->get" . ucfirst($attribut->name) . "(), ";
+                \"value\" => $" . $name . "->get" . ucfirst($attribut->name) . "(), 
+                \"options\" => " . ucfirst($name) . "::$" . $attribut->name . "s, 
+                ";
+            } elseif ($attribut->formtype == 'select') {
+                $field .= "\t\t\t\"type\" => FORMTYPE_" . strtoupper($attribut->formtype) . ", 
+                \"value\" => $" . $name . "->get" . ucfirst($attribut->name) . "(), 
+                \"options\" => " . ucfirst($name) . "::$" . $attribut->name . "s, 
+                ";
             } elseif ($attribut->formtype == 'email') {
                 $field .= "\t\t\t\"type\" => FORMTYPE_" . strtoupper($attribut->formtype) . ", 
                 \"value\" => $" . $name . "->get" . ucfirst($attribut->name) . "(), ";
@@ -841,7 +863,7 @@ class " . ucfirst($name) . "Table extends Datatable{
                 $" . "entitycore->field['" . $relation->entity . "'] = [
                     \"type\" => FORMTYPE_SELECT, 
                     \"value\" => $" . $name . "->get" . ucfirst($relation->entity) . "()->getId(),
-                    \"label\" => '" . ucfirst($relation->entity) . "',
+                    \"label\" => t('entity." . $relation->entity . "'),
                     \"options\" => FormManager::Options_Helper('" . $enititylinkattrname . "', " . ucfirst($relation->entity) . "::allrows()),
                 ];\n";
                 } elseif ($relation->cardinality == 'oneToOne') {
@@ -849,16 +871,16 @@ class " . ucfirst($name) . "Table extends Datatable{
                 $" . "entitycore->field['" . $relation->entity . "'] = [
                     \"type\" => FORMTYPE_INJECTION, 
                     FH_REQUIRE => true,
-                    \"label\" => '" . ucfirst($relation->entity) . "',
-                    \"imbricate\" => " . ucfirst($relation->entity) . "Form::__renderForm(" . ucfirst($relation->entity) . "::getFormData($" . $name . "->" . $relation->entity . "->getId(), false)),
+                    \"label\" => t('entity." . $relation->entity . "'),
+                    \"imbricate\" => " . ucfirst($relation->entity) . "Form::__renderForm(" . ucfirst($relation->entity) . "Form::getFormData($" . $name . "->" . $relation->entity . "->getId(), false)),
                 ];\n";
                 } elseif ($relation->cardinality == 'manyToMany') {
                     $field .= "
                 $" . "entitycore->field['" . $relation->entity . "'] = [
                     \"type\" => FORMTYPE_CHECKBOX, 
-                    \"values\" => FormManager::Options_Helper('" . $enititylinkattrname . "', $" . $name . "->get" . ucfirst($relation->entity) . "()),
-                    \"label\" => '" . ucfirst($relation->entity) . "',
-                    \"options\" => FormManager::Options_ToCollect_Helper('" . $enititylinkattrname . "', new " . ucfirst($relation->entity) . "(), $" . $name . "->get" . ucfirst($relation->entity) . "()),
+                    \"values\" => $" . $name . "->inCollectionOf('" . ucfirst($relation->entity) . "'),
+                    \"label\" => t('entity." . $relation->entity . "'),
+                    \"options\" => FormManager::Options_Helper('" . $enititylinkattrname . "', " . ucfirst($relation->entity) . "::allrows()),
                 ];\n";
                 }
             }
@@ -945,7 +967,9 @@ use Genesis as g;
             if($attribut->formtype == "none")
                 continue;
 
-            $field .= "<div class='form-group'>\n<label for='" . $attribut->name . "'>" . ucfirst($attribut->name) . "</label>\n";
+            $field .= "<div class='form-group'>
+                <label for='" . $attribut->name . "'>{{t('" . $entity->name . "." . $attribut->name . "')}}</label>
+            ";
 
 //            if ($attribut->nullable == 'default') {
 //                $field .= "\tFH_REQUIRE => false,\n ";
@@ -966,7 +990,9 @@ use Genesis as g;
             } elseif ($attribut->formtype == 'datepicker') {
                 $field .= "\t<?= Form::input('" . $attribut->name . "', $" . $name . "->get" . ucfirst($attribut->name) . "(), ['class' => 'form-control']); ?>\n";
             } elseif ($attribut->formtype == 'radio') {
-                $field .= "\t<?= Form::input('" . $attribut->name . "', $" . $name . "->get" . ucfirst($attribut->name) . "(), ['class' => 'form-control']); ?>\n";
+                $field .= "\t<?= Form::radio('" . $attribut->name . "', " . ucfirst($name) . "::$" . $attribut->name . "s, $" . $name . "->get" . ucfirst($attribut->name) . "(), ['class' => 'form-control']); ?>\n";
+            } elseif ($attribut->formtype == 'select') {
+                $field .= "\t<?= Form::select('" . $attribut->name . "', " . ucfirst($name) . "::$" . $attribut->name . "s, $" . $name . "->get" . ucfirst($attribut->name) . "(), ['class' => 'form-control']); ?>\n";
             } elseif ($attribut->formtype == 'email') {
                 $field .= "\t<?= Form::email('" . $attribut->name . "', $" . $name . "->get" . ucfirst($attribut->name) . "(), ['class' => 'form-control']) ?>\n";
             } elseif (in_array($attribut->formtype, ['document', 'image', 'musique', 'video'])){
@@ -1015,7 +1041,7 @@ use Genesis as g;
                     $enititylinkattrname = $entitylink->attribut[$key]->name;
                 }
 
-                $field .= "<div class='form-group'>\n<label for='" . $relation->entity . "'>" . ucfirst($relation->entity) . "</label>\n";
+                $field .= "<div class='form-group'><label for='" . $relation->entity . "'>" . ucfirst($relation->entity) . "</label>";
 
                 if ($relation->cardinality == 'manyToOne') {
                     $field .= "
@@ -1034,12 +1060,13 @@ use Genesis as g;
                     //FormManager::Options_ToCollect_Helper('name', new Dvups_right(), $dvups_role->getDvups_right()
                     $field .= "
                     <?= Form::checkbox('" . $relation->entity . "', 
-                    FormManager::Options_ToCollect_Helper('" . $enititylinkattrname . "', new " . ucfirst($relation->entity) . "(), $" . $name . "->get" . ucfirst($relation->entity) . "()),
-                    FormManager::Options_Helper('" . $enititylinkattrname . "', $" . $name . "->get" . ucfirst($relation->entity) . "()),
+                    FormManager::Options_Helper('" . $enititylinkattrname . "', " . ucfirst($relation->entity) . "::allrows()),
+                    $" . $name . "->inCollectionOf('" . ucfirst($relation->entity) . "'),
                     ['class' => 'form-control']); ?>\n";
                 }
 
-                $field .= " </div>\n";
+                $field .= " </div>
+            ";
             }
         }
 
@@ -1091,13 +1118,14 @@ use Genesis as g;
         $field = $this->formwidget($entity, $listmodule);
 
         $contenu = "
+    <?php //use dclass\devups\Form\Form; ?>
     <?php //Form::addcss(" . ucfirst($name) . " ::classpath('Ressource/js/".$name."')) ?>
     
     <?= Form::open($" . $name . ", [\"action\"=> \"$" . "action\", \"method\"=> \"post\"]) ?>
 
      " . $field . "
        
-    <?= Form::submit(\"save\", ['class' => 'btn btn-success']) ?>
+    <?= Form::submitbtn(\"save\", ['class' => 'btn btn-success btn-block']) ?>
     
     <?= Form::close() ?>
     

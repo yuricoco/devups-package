@@ -1,35 +1,48 @@
 <?php
 
 
-use DClass\devups\Datatable as Datatable;
+use dclass\devups\Datatable\Datatable;
 
 class Dvups_roleTable extends Datatable
 {
 
-    public $entity = "dvups_role";
-
-    public $datatablemodel = [
-        ['header' => 'Name', 'value' => 'name'],
-        ['header' => 'Alias', 'value' => 'alias']
-    ];
-
     public function __construct($lazyloading = null, $datatablemodel = [])
     {
         parent::__construct($lazyloading, $datatablemodel);
+        $this->entity = new  Dvups_role();
     }
 
-    public static function init($lazyloading = null)
+    public static function init(\Dvups_role $entity = null)
     {
-        $dt = new Dvups_roleTable($lazyloading);
+        $dt = new Dvups_roleTable();
+        // $dt->entity = $entity;
+
         return $dt;
     }
 
     public function buildindextable()
     {
 
-        // TODO: overwrite datatable attribute for this view
+        $this->datatablemodel = [
+            ['header' => "#", 'value' => 'id', "order"=>true],
+            ['header' => t( "dv_name", 'Name'), 'value' => 'name'],
+            ['header' => t("dv_alias", 'Alias'), 'value' => 'alias']
+        ];
+        $this->topactions[] = "updateprivilege";
 
         return $this;
+    }
+
+    public function render()
+    {
+        $this->lazyloading($this->entity);
+        return parent::render();
+    }
+
+    public function getTableRest($datatablemodel = [])
+    {
+        $this->lazyloading($this->entity);
+        return parent::getTableRest();
     }
 
 }

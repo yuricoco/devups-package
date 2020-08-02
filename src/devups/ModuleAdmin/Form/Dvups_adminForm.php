@@ -13,18 +13,24 @@ class Dvups_adminForm extends FormManager
 
 
         $entitycore->field['name'] = [
-            "label" => 'Name',
+            "label" => 'Nom',
             "type" => FORMTYPE_TEXT,
+            "directive" => ["require"=>true],
             "value" => $dvups_admin->getName(),
         ];
+
+        // administrator, admin_central, agent_central, admin_center,  agent_center
+
+        $dvups_roles = Dvups_role::allrows();
 
         $entitycore->field['dvups_role'] = [
             "type" => FORMTYPE_RADIO,
             "value" => $dvups_admin->dvups_role->getId(),
             //"values" => FormManager::Options_Helper('name', $dvups_admin->getDvups_role()),
             "label" => 'Dvups_role',
-            "options" => FormManager::Options_Helper('name', Dvups_role::allrows()),
+            "options" => FormManager::Options_Helper('alias', $dvups_roles),
         ];
+
 
         //if($dvups_admin->getId())
         $entitycore->addDformjs();
@@ -35,6 +41,50 @@ class Dvups_adminForm extends FormManager
     public static function __renderForm(\Dvups_admin $dvups_admin, $action = null, $button = false)
     {
         return FormFactory::__renderForm(Dvups_adminForm::formBuilder($dvups_admin, $action, $button));
+    }
+
+    public static function formBuilderImbricate(\Dvups_admin $dvups_admin, $action = null, $button = false)
+    {
+        //$entitycore = $dvups_admin->scan_entity_core();
+        $entitycore = new Core($dvups_admin);
+
+        $entitycore->formaction = $action;
+        $entitycore->formbutton = $button;
+
+
+        $entitycore->field['name'] = [
+            "label" => t('Responsable centre'),
+            "type" => FORMTYPE_TEXT,
+            "directive" => ["require"=>true],
+            "value" => $dvups_admin->getName(),
+        ];
+
+        //if($dvups_admin->getId())
+        $entitycore->addDformjs($action);
+
+        return $entitycore;
+    }
+
+    public static function __renderFormImbricate(\Dvups_admin $dvups_admin, $action = null, $button = false)
+    {
+        $entitycore = new Core($dvups_admin);
+
+        $entitycore->formaction = $action;
+        $entitycore->formbutton = $button;
+
+
+        $entitycore->field['name'] = [
+            "label" => t('Responsable centre'),
+            "type" => FORMTYPE_TEXT,
+            "directive" => ["require"=>true],
+            "value" => $dvups_admin->getName(),
+        ];
+
+        //if($dvups_admin->getId())
+        $entitycore->addDformjs($action);
+
+        return FormFactory::__renderForm($entitycore);
+
     }
 
 }

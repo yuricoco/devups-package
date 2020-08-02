@@ -23,6 +23,12 @@ switch (Request::get('path')) {
         Genesis::renderView("overview");
         break;
 
+    case 'dvups-admin/complete-registration':
+        Genesis::renderView('dvups_admin.complete_registration', $dvups_adminCtrl->completeRegistrationView(Request::get("id")));
+        break;
+    case 'dvups-admin/complete':
+        $dvups_adminCtrl->completeRegistrationAction(Request::get("id"));
+        break;
     case 'dvups-admin/profile':
         Genesis::renderView('dvups_admin.profile', ["admin" => Dvups_admin::find(getadmin()->getId())], "profile");
         break;
@@ -44,13 +50,13 @@ switch (Request::get('path')) {
         break;
 
     case 'dvups-entity/index':
-        //$dvups_entityCtrl->listView();
-        Genesis::renderView('dvups_entity.index',  $dvups_entityCtrl->listAction());
+        $dvups_entityCtrl->listView();
+        // Genesis::renderView('dvups_entity.index',  $dvups_entityCtrl->listAction());
         break;
 
     case 'dvups-module/index':
-        //$dvups_moduleCtrl->listView();
-        Genesis::renderView('dvups_module.index',  $dvups_moduleCtrl->listAction());
+        $dvups_moduleCtrl->listView();
+        //Genesis::renderView('dvups_module.index',  $dvups_moduleCtrl->listAction());
         break;
 
     case 'dvups-right/index':

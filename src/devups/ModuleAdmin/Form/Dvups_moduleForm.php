@@ -18,16 +18,34 @@ class Dvups_moduleForm extends FormManager
             "value" => $dvups_module->getProject(),
         ];
 
-        $entitycore->field['name'] = [
-            "label" => 'Name',
-            "type" => FORMTYPE_TEXT,
-            "value" => $dvups_module->getName(),
-        ];
+        if($dvups_module->getId()){
+
+            $entitycore->field['name'] = [
+                "label" => 'Name',
+                "type" => FORMTYPE_TEXT,
+                "directive" => ["readonly"=>true],
+                "value" => $dvups_module->getName(),
+            ];
+
+        }else{
+
+            $entitycore->field['name'] = [
+                "label" => 'Name',
+                "type" => FORMTYPE_TEXT,
+                "value" => $dvups_module->getName(),
+            ];
+
+        }
 
         $entitycore->field['label'] = [
             "label" => 'Label',
             "type" => FORMTYPE_TEXT,
             "value" => $dvups_module->getLabel(),
+        ];
+        $entitycore->field['favicon'] = [
+            "label" => 'Favicon',
+            "type" => FORMTYPE_TEXT,
+            "value" => $dvups_module->getFavicon(),
         ];
 
 

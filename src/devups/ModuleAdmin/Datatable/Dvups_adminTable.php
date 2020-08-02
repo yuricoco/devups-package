@@ -1,37 +1,39 @@
 <?php
 
 
-use DClass\devups\Datatable as Datatable;
+use dclass\devups\Datatable\Datatable;
 
 class Dvups_adminTable extends Datatable
 {
-
-    public $entity = "dvups_admin";
-
-    public $datatablemodel = [
-        ['header' => 'nom', 'value' => 'name'],
-        ['header' => 'login', 'value' => 'login'],
-    ];
 
     public function __construct($lazyloading = null, $datatablemodel = [])
     {
         parent::__construct($lazyloading, $datatablemodel);
     }
 
-    public static function init($lazyloading = null)
+    public static function init(\Dvups_admin $admin = null)
     {
-        $dt = new Dvups_adminTable($lazyloading);
+        $dt = new Dvups_adminTable();
+        $dt->entity = $admin;
+
         return $dt;
     }
 
     public function buildindextable()
     {
-//        $this->datatablemodel = [
-//            ['header' => 'nom', 'value' => 'name'],
-//            ['header' => 'login', 'value' => 'login'],
-//            ['header' => 'password', 'value' => 'password'],
-//        ];
+        $this->datatablemodel = [
+            ['header' => 'nom', 'value' => 'name', 'search' => true],
+            ['header' => 'login', 'value' => 'login', 'search' => true],
+            ['header' => 'Role', 'value' => 'dvups_role.name'],
+        ];
 
+        $this->addcustomaction("callbackbtn");
+
+        $this->qbcustom = Dvups_admin::select()
+            ->where("login", "!=", "dv_admin");
+        //->andwhere("password", "!=", sha1("admin"));
+        $this->order_by = "dvups_admin.id desc";
+        // $this->lazyloading(new Dvups_admin(), $qb,"dvups_admin.id desc");
         return $this;
     }
 

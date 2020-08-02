@@ -1,7 +1,8 @@
 <?php
 
 
-use DClass\devups\Datatable as Datatable;
+use dclass\devups\Controller\Controller;
+use dclass\devups\Datatable\Datatable;
 
 class Dvups_roleController extends Controller
 {
@@ -74,30 +75,22 @@ class Dvups_roleController extends Controller
 
     public function datatable($next, $per_page)
     {
-        $lazyloading = $this->lazyloading(new Dvups_role(), $next, $per_page);
         return ['success' => true,
-            'datatable' => Datatable::getTableRest($lazyloading),
+            'datatable' => Dvups_roleTable::init()->buildindextable()->getTableRest(),
         ];
     }
 
     public function listView($next = 1, $per_page = 10)
     {
 
-        $lazyloading = $this->lazyloading(new Dvups_role(), $next, $per_page);
-
-        //self::$jsfiles[] = Client::classpath('Ressource/js/dvups_roleCtrl.js');
+        self::$jsfiles[] = Dvups_role::classpath('Ressource/js/dvups_roleCtrl.js');
 
         $this->entitytarget = 'dvups_role';
         $this->title = "Manage Role";
-        $datatablemodel = [
-            ['header' => 'Name', 'value' => 'name'],
-            ['header' => 'Alias', 'value' => 'alias']
-        ];
 
-        $this->renderListView(
-            \DClass\devups\Datatable::buildtable($lazyloading, $datatablemodel)
-                ->render()
-        );
+        $this->datatable = Dvups_roleTable::init()->buildindextable();
+
+        $this->renderListView();
 
     }
 
@@ -119,18 +112,20 @@ class Dvups_roleController extends Controller
 
         $dvups_role = $this->form_generat(new Dvups_role(), $dvups_role_form);
 
-        if ($id = $dvups_role->__insert()) {
-            return array('success' => true, // pour le restservice
+        if ($this->error) {
+            return array('success' => false,
                 'dvups_role' => $dvups_role,
-                'tablerow' => Dvups_roleTable::init()
-                    ->buildindextable()
-                    ->getSingleRowRest($dvups_role),
-                'detail' => ''); //Detail de l'action ou message d'erreur ou de succes
-        } else {
-            return array('success' => false, // pour le restservice
-                'dvups_role' => $dvups_role,
-                'detail' => 'error data not persisted'); //Detail de l'action ou message d'erreur ou de succes
+                'action' => 'create',
+                'error' => $this->error);
         }
+
+        $id = $dvups_role->__insert();
+        return array('success' => true, // pour le restservice
+            'dvups_role' => $dvups_role,
+            'tablerow' => Dvups_roleTable::init()
+                ->buildindextable()
+                ->getSingleRowRest($dvups_role),
+            'detail' => '');
 
     }
 
@@ -140,19 +135,22 @@ class Dvups_roleController extends Controller
 
         $dvups_role = $this->form_generat(new Dvups_role($id), $dvups_role_form);
 
-        if ($dvups_role->__update()) {
-            return array('success' => true, // pour le restservice
+        if ($this->error) {
+            return array('success' => false,
+                'dvups_role' => $dvups_role,
+                'action' => 'create',
+                'error' => $this->error);
+        }
+
+        $dvups_role->__update();
+
+        return array('success' => true, // pour le restservice
                 'dvups_role' => $dvups_role,
                 'tablerow' => Dvups_roleTable::init()
                     ->buildindextable()
                     ->getSingleRowRest($dvups_role),
-                'detail' => ''); //Detail de l'action ou message d'erreur ou de succes
-        } else {
-            return array('success' => false, // pour le restservice
-                'dvups_role' => $dvups_role,
-                'action_form' => 'update&id=' . $id, // pour le web service
-                'detail' => 'error data not updated'); //Detail de l'action ou message d'erreur ou de succes
-        }
+                'detail' => '');
+
     }
 
     public function deleteAction($id)
@@ -176,25 +174,17 @@ class Dvups_roleController extends Controller
 
     }
 
-    public function __newAction()
+    public function privilegeUpdate()
     {
+        $result = Core::updateDvupsTable();
+        if ($result)
+            $message = "Data admin updated with success";
+        else
+            $message = "Data admin already uptodate";
 
-        return array('success' => true, // pour le restservice
-            'dvups_role' => new Dvups_role(),
-            'action_form' => 'create', // pour le web service
-            'detail' => ''); //Detail de l'action ou message d'erreur ou de succes
-
-    }
-
-    public function __editAction($id)
-    {
-
-        $dvups_role = Dvups_role::find($id);
-
-        return array('success' => true, // pour le restservice
-            'dvups_role' => $dvups_role,
-            'action_form' => 'update&id=' . $id, // pour le web service
-            'detail' => ''); //Detail de l'action ou message d'erreur ou de succes
+        return array('success' => true,
+            'message' => $message,
+            'detail' => '');
 
     }
 

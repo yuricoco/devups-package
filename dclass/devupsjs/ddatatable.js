@@ -200,12 +200,14 @@ var ddatatable = {
         console.log(this.geturl());
         $.get(this.geturl(), (response) => {
             console.log(response);
+            removeloader();
             this.dtinstance.find("#dv_table").find("tbody").html(response.datatable.tablebody);
             this.dtinstance.find("#dv_pagination").replaceWith(response.datatable.tablepagination);
-            removeloader();
+
         }, 'json').fail (function(resultat, statut, erreur){
             console.log(resultat);
             model._showmodal();
+            removeloader();
             //$("#"+model.entity+"modal").show();
             databinding.bindmodal(resultat.responseText);
         });//, 'json'
@@ -262,6 +264,11 @@ var ddatatable = {
         this.dtinstance.find(".dcheckbox").click(function () {
             ddatatable.uncheckall();
         });
+        this.dtinstance.find(".search-field").keyup(function (event) {
+            var key = event.keyCode;
+            if(key === 13)
+                ddatatable.search(this)
+        });
 
         ddatatable.per_page = this.dtinstance.find("#dv_table").data('perpage');
 
@@ -289,7 +296,7 @@ setTimeout(function () {
         model.entity = $(this).find("#dv_table").eq(0).data('entity');
 
         //model.init($(this).find("#dv_table"));
-        ddatatable.init(model.entity);
+        // ddatatable.init(model.entity);
 
     })
 

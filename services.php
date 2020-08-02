@@ -1,8 +1,12 @@
 <?php
 
+global $_start;
+$_start = microtime(true);
+
 require __DIR__ . '/header.php';
 
 use Genesis as g;
+use Request as R;
 
 header("Access-Control-Allow-Origin: *");
 
@@ -10,15 +14,11 @@ header("Access-Control-Allow-Origin: *");
 
 switch (Request::get('path')) {
 
-    case 'hello':
-        g::json_encode(["success" => true, "message" => "Hello Devups. Services are available :)"]);
+    case 'test.webservice': // test.webservice
+        g::json_encode((new Local_contentFrontController())->ll());
         break;
 
-//    case 'service':
-//        g::json_encode([]);
-//        break;
-
     default :
-        echo json_encode(["success" => false, "message" => "404 :".Request::get('path')." page note found"]);
+        g::json_encode(["success" => false, "message" => "404 :".Request::get('path')." page note found"]);
         break;
 }
