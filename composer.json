@@ -1,5 +1,18 @@
 {
+	"name": "spacekola/devups",
+    "description": "a php framework",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Aurelien Atemkeng",
+            "email": "aurelienatemkeng@spacekola.com",
+            "role": "developer"
+        }
+    ],
+    "minimum-stability": "stable",
     "require": {
+        "php": ">=5.5.0",
         "doctrine/orm": "^2.1.3",
         "philo/laravel-blade": "3.*",
         "ifsnop/mysqldump-php": "^2.9"
