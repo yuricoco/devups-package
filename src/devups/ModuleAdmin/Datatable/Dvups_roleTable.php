@@ -8,7 +8,7 @@ class Dvups_roleTable extends Datatable
 
     public function __construct($lazyloading = null, $datatablemodel = [])
     {
-        parent::__construct($lazyloading, $datatablemodel);
+        parent::__construct(new  Dvups_role(), $datatablemodel);
         $this->entity = new  Dvups_role();
     }
 

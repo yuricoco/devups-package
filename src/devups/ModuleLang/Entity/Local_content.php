@@ -16,21 +16,21 @@ class Local_content extends Model implements JsonSerializable
      * @Column(name="lang", type="string" , length=25 )
      * @var string
      **/
-    private $lang;
+    protected $lang;
     /**
      * @Column(name="reference", type="string" , length=255 )
      * @var string
      **/
-    private $reference;
+    protected $reference;
     /**
      * @Column(name="content", type="text"  )
      * @var text
      **/
-    private $content;
+    protected $content;
 
     /**
      * @ManyToOne(targetEntity="\Local_content_key")
-     * , inversedBy="reporter"
+     * @JoinColumn(onDelete="cascade")
      * @var \Local_content_key
      */
     public $local_content_key;
@@ -105,10 +105,15 @@ class Local_content extends Model implements JsonSerializable
 
     public function jsonSerialize()
     {
+
+        if($dataset = parent::apimapper())
+            return $dataset;
+
         return [
             'id' => $this->id,
             'reference' => $this->reference,
             'content' => $this->content,
+            'lang' => $this->lang,
             'local_content_key' => $this->local_content_key,
         ];
     }
@@ -116,6 +121,23 @@ class Local_content extends Model implements JsonSerializable
     public static function generatecacheAction()
     {
         return '<button onclick="model.regeneratecache()" class="btn btn-info">'.t("Regenerate Cache").'</button>';
+    }
+
+    public static function getDataLang($id_local_content){
+
+//        $sql = "select lcl.*, l.iso_code from ps_dv_local_content_lang lcl
+//                 left join ps_lang l on lcl.id_lang = l.id_lang  where lcl.id_local_content = ".$id_local_content;
+        $lcs = self::where("local_content_key_id", $id_local_content)->__getAllRow();
+
+        return ["success"=>true, "data"=>$lcs];
+    }
+
+    public static function updateLang()
+    {
+        $content = Request::post("local_content");
+        $id = Request::get("id");
+        return Local_content::where("this.id", $id)->update(["content"=>$content]);
+
     }
 
 }

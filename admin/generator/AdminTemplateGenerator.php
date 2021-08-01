@@ -10,6 +10,30 @@ class AdminTemplateGenerator extends DvAdmin
         $this->traitement = new Traitement();
     }
 
+    static function dt_btn_action_builder($rowaction, $customrowactions)
+    {
+        $act = '';
+        foreach ($customrowactions as $el) {
+            $act .= '' . $el . '';
+        }
+        foreach ($rowaction as $el) {
+            if (is_array($el)) {
+
+                if (isset($actionclass[$el["class"]]))
+                    $el["class"] = $actionclass[$el["class"]];
+
+                $act .= '<button type="button" class="' . $el["class"] . '" ' . $el["action"] . ' >' . $el["content"] . '</button>';
+
+            } else {
+                $act .= $el;
+            }
+        }
+
+        return <<<EOF
+$act
+EOF;
+    }
+
     static function dt_btn_action($rowaction, $customrowactions, $actionDropdown, $mainaction)
     {
 
@@ -103,36 +127,7 @@ EOF;
 
 @section('content')
  
-            <div class=\"app-page-title\">
-        <div class=\"page-title-wrapper\">
-            <div class=\"page-title-heading\">
-                <div class=\"page-title-icon\">
-                    <i class=\"pe-7s-car icon-gradient bg-mean-fruit\">
-                    </i>
-                </div>
-                <div>{{ $" . "moduledata->getName() }}
-                    <div class=\"page-title-subheading\">Some text</div>
-                </div>
-            </div>
-            <div class=\"page-title-actions\">
-
-            </div>
-        </div>
-    </div>
-    <ul class=\"nav nav-justified\">
-        <li class=\"nav-item\">
-            <a class=\"nav-link active\" href=\"<?= path('src/' . strtolower($" . "moduledata->getProject()) . '/' . $" . "moduledata->getName() . '') ?>\">
-                <i class=\"metismenu-icon\"></i> <span>Dashboard</span>
-            </a>
-        </li>
-        @foreach ($" . "moduledata->dvups_entity as $" . "entity)
-            <li class=\"nav-item\">
-                <a class=\"nav-link active\" href=\"<?= path('src/' . strtolower($" . "moduledata->getProject()) . '/' . $" . "moduledata->getName() . '/' . $" . "entity->getUrl() . '/index') ?>\">
-                    <i class=\"metismenu-icon\"></i> <span><?= $" . "entity->getLabel() ?></span>
-                </a>
-            </li>
-        @endforeach
-    </ul>
+    @include(\"default.moduleheaderwidget\")
     <hr>
 
     @yield('layout_content')
@@ -159,48 +154,15 @@ EOF;
 
         fclose($layoutMod);
 
-        $overview = " @extends('layout')
-@section('title', 'List')
-
-@section('layout_content')
-
-	<div class=\"row\">
-                  ";
-        foreach ($module->listentity as $entity) {
-            $name = strtolower($entity->name);
-            $overview .= "
-                            <?php //if($" . "moi->is_anable('" . $name . "')){ ?> 
-            <div class=\"col-lg-3 col-md-6\">
-                            <div class=\"panel panel-primary\">
-                                    <div class=\"panel-heading\">
-                                            <div class=\"row\">
-                                                    <div class=\"col-xs-3\">
-                                                        <i class=\"fa fa-tasks fa-5x\"></i>
-                                                    </div>
-                                                    <div class=\"col-xs-9 \">
-                                                            <h4>Gestion " . ucfirst($name) . "</h4>
-                                                    </div>
-                                            </div>
-                                    </div>
-                                    <a href=\"index.php?path=" . $name . "/index\">
-                                            <div class=\"panel-footer\">
-                                                    <?php 
-                                                            //$" . "action = '" . $name . "';
-                                                            //include RESSOURCE.'navigation.php'; 
-                                                    ?>
-                                                    <span class=\"pull-left\">View Details</span>
-                                                    <span class=\"pull-right\"><i class=\"fa fa-arrow-circle-right\"></i></span>
-                                                    <div class=\"clearfix\"></div>
-                                            </div>
-                                    </a>
-                            </div>
-                    </div>  
-                <?php //} ?> 			
-				";
-        }
-
-        $overview .= " 
-            </div>
+        $overview = " @extends('admin.layout')
+            @section('title', 'List')
+            
+            @section('layout_content')
+                <div class=\"row\">
+                    @foreach(\$moduledata->dvups_entity as \$entity)
+                        @include(\"default.entitywidget\")
+                    @endforeach
+                </div>
             @endsection 
             ";
 
@@ -209,6 +171,7 @@ EOF;
         fputs($overviewMod, $overview);
 
         fclose($overviewMod);
+
     }
 
     static function viewsGenerator($listemodule, $entity, $_dir)
@@ -218,9 +181,12 @@ EOF;
 
         $index = self::buildindexdatatable($listemodule, $entity);
 
+        if (!file_exists($_dir))
+            mkdir($_dir, 0777, true);
+
         //---------------------------------- $head.
         $layout = "
-@extends('layout')
+@extends('admin.layout')
 @section('title', 'List')
 
 @section('layout_content')
@@ -240,23 +206,9 @@ EOF;
                     </div>
                 </div>
                 <div class=\"card-body\">
-                    <?= $" . "datatablehtml; ?>
+                    {!! $" . "datatablehtml; !!}
                 </div>
             </div>
-        </div>
-    </div>
-
-    <div id=\"{{ strtolower($" . "entity) }}box\" class=\"swal2-container swal2-fade swal2-shown\" style=\"display:none; overflow-y: auto;\">
-        <div role=\"dialog\" aria-labelledby=\"swal2-title\" aria-describedby=\"swal2-content\" class=\"swal2-modal swal2-show dv_modal\" tabindex=\"1\"
-             style=\"\">
-            <div class=\"main-card mb-3 card  box-container\">
-                <div class=\"card-header\">Header
-
-                    <button onclick=\"model._dismissmodal()\" type=\"button\" class=\"swal2-close\" aria-label=\"Close this dialog\" style=\"display: block;\">×</button>
-                </div>
-                <div class=\"card-body\"></div>
-            </div>
-
         </div>
     </div>
         
@@ -268,8 +220,51 @@ EOF;
         fputs($view, $layout);
         fclose($view);
 
+        //---------------------------------- $head.
+        $layout = "
+@extends('admin.layout')
+@section('title', 'List')
+
+@section('layout_content')
+
+<div class=\"row\">
+        <div class=\"col-lg-12 col-md-12  stretch-card\">
+            <div class=\"card\">
+                <div class=\"card-header-tab card-header\">
+                    <div class=\"card-header-title\">
+                        <i class=\"header-icon lnr-rocket icon-gradient bg-tempting-azure\"> </i>
+                        {{ $" . "title }}
+                    </div>
+                    <div class=\"btn-actions-pane-right\">
+                        <div class=\"nav\">
+
+                        </div>
+                    </div>
+                </div>
+                <div class=\"card-body\">
+                    {!! $" . "datatablehtml; !!}
+                </div>
+            </div>
+        </div>
+    </div>
+        
+@endsection
+
+";
+
+        $view = fopen($_dir . 'detail.blade.php', 'w');
+        fputs($view, $layout);
+        fclose($view);
+
         //----------------------------------
 
+    }
+
+    static function dashboardView(){
+        $admin = getadmin();
+        $modules = $admin->dvups_role->collectDvups_module();
+
+        return compact("admin", "modules");
     }
 
 }

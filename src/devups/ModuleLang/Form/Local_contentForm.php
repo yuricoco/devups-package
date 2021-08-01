@@ -22,14 +22,14 @@ class Local_contentForm extends FormManager
         $entitycore->field['lang'] = [
             "label" => 'Lang',
             "type" => FORMTYPE_TEXT,
-            "directive" => ["readonly"=>true],
+            "directive" => ["readonly" => true],
             "value" => $local_content->getLang(),
         ];
 
         $entitycore->field['reference'] = [
             "label" => 'Reference',
             "type" => FORMTYPE_TEXT,
-            "directive" => ["readonly"=>true],
+            "directive" => ["readonly" => true],
             "value" => $local_content->getReference(),
         ];
 
@@ -59,7 +59,7 @@ class Local_contentForm extends FormManager
             return [
                 'success' => true,
                 'local_content' => $local_content,
-                'action' => "create",
+                'action' => Local_content::classpath("services.php?path=local_content.create"),
             ];
         endif;
 
@@ -67,7 +67,7 @@ class Local_contentForm extends FormManager
         return [
             'success' => true,
             'local_content' => $local_content,
-            'action' => "update&id=" . $id,
+            'action' => Local_content::classpath("services.php?path=local_content.update&id=" . $id),
         ];
 
     }
@@ -82,6 +82,17 @@ class Local_contentForm extends FormManager
     public static function renderWidget($id = null, $action = "create")
     {
         Genesis::renderView("local_content.formWidget", self::getFormData($id, $action));
+    }
+
+    public static function renderWidgetFront($id = null, $action = "create")
+    {
+        ob_start();
+        Genesis::renderView("local_content.formWidget", self::getFormData($id, $action));
+        $form = ob_get_contents();
+        ob_end_clean();
+
+        return ["success" => true, "form" => $form];
+
     }
 
 }

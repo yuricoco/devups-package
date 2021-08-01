@@ -18,9 +18,7 @@
 
     <link rel="stylesheet" href="<?= assets; ?>css/dv_style.css">
 
-    @section('cssimport')
-
-    @show
+    @yield('cssimport')
 
     <?php
     if (function_exists("style"))
@@ -30,7 +28,9 @@
     <script>
         var __env = '<?= __env ?>';
         var __lang = '<?= __lang ?>';
+        /*
         var _local_content = <?= Local_contentController::getdatajs() ?>;
+         */
     </script>
 </head>
 
@@ -91,25 +91,20 @@
     </div>
 </div>
 
+<div id="dialog-container"></div>
+
 <script src="<?= assets; ?>scripts/main.js"></script>
 <!-- End custom js for this page-->
 <script src="<?= assets; ?>plugins/jquery/jquery.min.js"></script>
 <script src="<?= assets; ?>plugins/notify.min.js"></script>
+<script src="<?= CLASSJS; ?>Request.js"></script>
+<script src="<?= CLASSJS; ?>dialogbox.js"></script>
 
-<!-- <script src="<?= node_modules ?>bootstrap/js/bootstrap.min.js"></script> -->
-{{----}}
-
-<?php
-if (function_exists("modalview"))
-    modalview($entity);
-?>
 <?php
 if (function_exists("script"))
     script();
 ?>
-@section('jsimport')
-
-@show
+@yield('jsimport')
 
 </body>
 

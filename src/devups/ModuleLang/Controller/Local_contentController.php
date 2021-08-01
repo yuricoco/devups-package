@@ -13,7 +13,7 @@ class Local_contentController extends Controller
 
         $this->datatable = Local_contentTable::init(new Local_content())->buildindextable();
 
-        self::$jsfiles[] = Local_content::classpath('Ressource/js/local_contentCtrl.js');
+        self::$jsfiles[] = Local_content::classpath('Resource/js/local_contentCtrl.js');
 
         $this->entitytarget = 'Local_content';
         $this->title = "Manage Local_content";
@@ -25,6 +25,7 @@ class Local_contentController extends Controller
     public function datatable($next, $per_page) {
         return ['success' => true,
             'datatable' => Local_contentTable::init(new Local_content())->buildindextable()->getTableRest(),
+           // 'datatable' => Local_contentTable::init(new Local_content())->router()->getTableRest(),
         ];
     }
 
@@ -143,20 +144,23 @@ class Local_contentController extends Controller
     public static function buildlocalcache()
     {
 
-        foreach (["en", "fr"] as $lang) {
+        $lans = Dvups_lang::all();
+        foreach ($lans as $lang) {
+            $lang = $lang->getIso_code();
 
             $lcs = Local_content::where("lang", $lang)->__getAllRow();
 
             $info = [];
-
-            if(file_exists(self::$path . $lang . ".json"))
-                unlink(self::$path . $lang . ".json");
 
             foreach ($lcs as $lc) {
                 $info[$lc->getReference()] = $lc->getContent();
             }
 
             if ($info) {
+                // todo - fix issue on php warning during the first call of the function translate t().
+                if(file_exists(self::$path . $lang . ".json"))
+                    unlink(self::$path . $lang . ".json");
+
                 $contenu = json_encode($info, 1024);
 
                 $entityrooting = fopen(self::$path . $lang . ".json", 'w');
@@ -175,7 +179,9 @@ class Local_contentController extends Controller
         $lck->setReference($ref);
         $lck->__insert();
 
-        foreach (["en", "fr"] as $lang) {
+        $lans = Dvups_lang::all();
+        foreach ($lans as $lang) {
+            $lang = $lang->getIso_code();
 
             $lc = new Local_content();
             $lc->setLang($lang);
@@ -198,7 +204,7 @@ class Local_contentController extends Controller
         $lang = DClass\lib\Util::local();
 
         if (!file_exists(self::$path . $lang . ".json")) {
-            writein(self::$path . $lang . ".json", "");
+            \DClass\lib\Util::writein(self::$path . $lang . ".json", "");
             self::buildlocalcache();
         }
 

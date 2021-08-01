@@ -1,6 +1,6 @@
 <?php
                 
-define('PROJECT_NAME', 'devupstuto');
+define('PROJECT_NAME', 'Devups Tuto');
 
 define ('dbname', 'devupstuto_bd');
 define ('dbuser', 'root');
@@ -18,6 +18,8 @@ define('__v', '4.3');
 
 define('__server', 'http://127.0.0.1');
 define('__env', __server.'/devupstuto/');
+define('__front', __env.'web/assets/');
+define('__admin', __env.'admin/assets/');
 define('__prod', false);
 define('__default_lang', "fr");
 define('__lang', 'fr');

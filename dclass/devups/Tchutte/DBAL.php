@@ -13,6 +13,7 @@ use Doctrine\ORM\EntityManager;
 class DBAL extends Database
 {
 
+    protected $defaultjoin = "";
     protected $collect = [];
     /**
      *
@@ -141,6 +142,7 @@ class DBAL extends Database
 
         // obtaining the entity manager
         return EntityManager::create($conn, $config);
+
     }
 
 
@@ -286,6 +288,7 @@ class DBAL extends Database
                         }
 
                         $sql .= "delete from " . $entityTable . "  where " . $entityName . "_id = " . $entity->getId() . " and " . $this->objectName . "_id = $id; ";
+
                     }
 
                 }
@@ -554,19 +557,12 @@ class DBAL extends Database
             $this->instanciateVariable($object);
 
         $values = [];
-        $parameterQuery = '?';
+        $parameterQuery = ':' . implode(", :", $this->objectVar);
 
-        for ($i = 1; $i < $this->nbVar; $i++) {
-            $parameterQuery .= ',?';
-        }
+        $sql = "insert into `" . $this->table . "` (`" . strtolower(implode('` ,`', $this->objectVar)) . "`) 
+        values (" . strtolower($parameterQuery) . ")";
 
-        $sql = "insert into `" . $this->table . "` (`" . strtolower(implode('` ,`', $this->objectVar)) . "`) values (" . strtolower($parameterQuery) . ")";
-
-        foreach ($this->objectValue as $value) {
-            $values[] = $value;
-        }
-
-        $id = $this->executeDbal($sql, $values, 1);
+        $id = $this->executeDbal($sql, $this->objectKeyValue, 1);
         $this->object->setId($id);
 
         // implement translation if anabled in class
@@ -578,7 +574,39 @@ class DBAL extends Database
             $this->manyToManyAdd($id, false, null);
         }
 
+        $eventListners = \dclass\devups\Controller\Controller::$eventListners["after"]["create"];
+
+        if(isset($eventListners[$this->objectName])){
+            $methods = $eventListners[$this->objectName];
+            foreach ($methods as $method) {
+                if(is_array($method))
+                    $this->object->{$method[0]}();
+                else
+                    $this->object->{$method}();
+            }
+        }
+
         return $this->object->getId();
+    }
+    /**
+     * createDbal
+     * persiste les entités en base de données.
+     *
+     * @param \stdClass $object
+     * @return int l'id de l'entité persisté
+     */
+    public static function _createDbal($object, $keyvalue)
+    {
+
+        $values = [];
+        $objectvar = array_keys($keyvalue);
+        $parameterQuery = ':' . implode(", :", $objectvar);
+
+        $sql = "insert into `" . strtolower($object) . "` (`" . strtolower(implode('` ,`', $objectvar)) . "`) values (" . strtolower($parameterQuery) . ")";
+
+        $db = new DBAL();
+        return $db->executeDbal($sql, $keyvalue, 1);
+
     }
 
     /**
@@ -599,19 +627,21 @@ class DBAL extends Database
         endif;
 
         $this->update = true;
-        $parameterQuery = '`' . $this->objectVar[1] . '`=?';
+        //$parameterQuery = '`' . implode("`= :".$this->objectVar.", `", $this->objectVar);
+
+        $parameterQuery = '`' . $this->objectVar[1] . '`= :'. $this->objectVar[1];
         for ($i = 2; $i < $this->nbVar; $i++) {
-            $parameterQuery .= ', `' . $this->objectVar[$i] . '`=?';
+            $parameterQuery .= ', `' . $this->objectVar[$i] . '`= :'.$this->objectVar[$i];
         }
         $values = $this->objectValue;
         array_splice($values, 0, 1);
         $values[] = $this->objectValue[0];
 
-        $sql = "update `" . $this->table . "` set " . strtolower($parameterQuery) . " where id = ? ";
+        $sql = "update `" . $this->table . "` set " . strtolower($parameterQuery) . " where id = :id ";
 
         $query = $this->link->prepare($sql);
 
-        $result = $query->execute($values) or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values));
+        $result = $query->execute($this->objectKeyValue) or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values));
 
         if (dbtransaction) {
             $bd_dump = new \dclass\devups\DB_dumper();
@@ -649,21 +679,38 @@ class DBAL extends Database
         return $flowBD;
     }
 
-    public function findByIdDbal($object = null, $recursif = true, $collection = false)
+    protected function initdefaultjoin()
     {
 
+        if (!empty($this->entity_link_list)) {
+            $entity_links = array_keys($this->entity_link_list);
+            foreach ($entity_links as $entity_link) {
+                $class_attrib = explode(":", $entity_link);
+                if ($class_attrib[0] != $class_attrib[1])
+                    $this->defaultjoin .= " left join `" . $class_attrib[0] . "` " . $class_attrib[1] . " on " . $class_attrib[1] . ".id = " . $this->table . "." . $class_attrib[1] . "_id";
+                else
+                    $this->defaultjoin .= " left join `" . $class_attrib[0] . "` on " . $class_attrib[0] . ".id = " . $this->table . "." . $class_attrib[0] . "_id";
+            }
+        }
+    }
+
+    public function findByIdDbal($object = null, $recursif = true, $collection = false)
+    {
+        $this->defaultjoin = "";
         if ($object):
             $this->instanciateVariable($object);
         endif;
 
         $sql = 'select * from `' . $this->table . '`';
-        if (!empty($this->entity_link_list)) {
-            foreach ($this->entity_link_list as $entity_link) {
-                $sql .= " left join `" . strtolower(get_class($entity_link)) . "` on " . strtolower(get_class($entity_link)) . ".id = " . $this->table . "." . strtolower(get_class($entity_link)) . "_id";
-            }
-        }
+        $this->initdefaultjoin();
+
+//        if (!empty($this->entity_link_list)) {
+//            foreach ($this->entity_link_list as $entity_link) {
+//                $sql .= " left join `" . strtolower(get_class($entity_link)) . "` on " . strtolower(get_class($entity_link)) . ".id = " . $this->table . "." . strtolower(get_class($entity_link)) . "_id";
+//            }
+//        }
 //        var_dump( $this->objectVar);
-        $sql .= ' where ' . $this->table . '.' . $this->objectVar[0] . ' = ? ';
+        $sql .= $this->defaultjoin . ' where ' . $this->table . '.' . $this->objectVar[0] . ' = ? ';
         if ($this->softdelete)
             $sql .= ' and ' . $this->table . '.deleted_at is null ';
 
@@ -678,12 +725,12 @@ class DBAL extends Database
         endif;
 
         if ($this->softdelete)
-            $sql = "update " . $this->table . " set deleted_at = NOW() where " . $this->objectVar[0] . " = ?";
+            $sql = "update `" . $this->table . "` set deleted_at = NOW() where " . $this->objectVar[0] . " = ?";
         else
-            $sql = "delete from " . $this->table . " where " . $this->objectVar[0] . " = ?";
+            $sql = "delete from `" . $this->table . "` where " . $this->objectVar[0] . " = ?";
 
         $query = $this->link->prepare($sql);
-        $retour = $query->execute(array($this->objectValue[0])) or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo()));
+        $retour = $query->execute(array($this->objectValue[0])) or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, array($this->objectValue[0])));
 
         if (dbtransaction) {
             $bd_dump = new \dclass\devups\DB_dumper();
@@ -697,7 +744,7 @@ class DBAL extends Database
     {
 
         $query = $this->link->prepare($sql);
-        $query->execute($values) or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $sql, $query->errorInfo()));
+        $query->execute($values) or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__,  $query->errorInfo(), $sql, $values));
 
         return $query->fetchColumn();
     }
@@ -819,13 +866,22 @@ class DBAL extends Database
      * @param type $values
      * @return type
      */
-    protected function __findAllRow($sql, $values = [])
+    protected function __findAllRow($sql, $values = [], $callbackexport = null)
     {
         $result = [];
         $query = $this->link->prepare($sql);
         $query->execute($values) or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql));
 
 //        $flowBD = $query->fetchAll(PDO::FETCH_CLASS);
+        if (is_callable($callbackexport)) {
+
+            $rows = $query->fetchAll(PDO::FETCH_NAMED);
+            foreach ($rows as $row) {
+                $callbackexport($row, $this->objectName);
+            }
+            return true;
+        }
+
         if (empty($this->entity_link_list) and empty($this->objectCollection))
             return $query->fetchAll(PDO::FETCH_CLASS, $this->objectName);
 
@@ -864,6 +920,34 @@ class DBAL extends Database
 //            $this->ResetObject();
         return $retour;
     }
+
+    protected function __cursor($sql, $values, $callback = null)
+    {
+
+        $query = $this->link->prepare($sql);
+        $query->execute($values) or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql));
+
+        if (is_callable($callback)) {
+            while ($row = $query->fetch(PDO::FETCH_NAMED)) {
+                $row = $this->djoin($row, $this->object, false, false);
+                $callback($row);
+            }
+//            while ($row = $query->fetch(PDO::FETCH_OBJ)) {
+//                $callback($row);
+//            }
+            return;
+        }
+        if (empty($this->entity_link_list))
+            $retour = $query->fetchAll(PDO::FETCH_CLASS, $this->objectName);
+        elseif ($arraybd = $query->fetchAll(PDO::FETCH_NAMED)) {
+            return $arraybd;
+        } else
+            $retour = array();
+
+//            $this->ResetObject();
+        return $retour;
+    }
+
 
     private function inarray4($flowvalue)
     {
@@ -904,6 +988,9 @@ class DBAL extends Database
 
         $object_array = (array)$object;
 
+        /*if(get_class($object) == "Enterprise")
+            die(var_dump($object_array));*/
+
         if ($this->limit_iteration != 0 && $this->iteration >= $this->limit_iteration) {
 
             $object_array["dvinrelation"] = true;
@@ -924,9 +1011,17 @@ class DBAL extends Database
                     // object imbricate
                     $innerrecursif = $recursif;
 
-                    if (strtolower(get_class($value)) . '_id' == $key2) {
+                    $attclassname = strtolower(get_class($value));
 
-                        if (!Empty($this->collect)) {
+                    if (isset($this->entity_link_list[$attclassname . ":" . $key])
+                        && $key == substr($key2, 0, -3)
+                        //&& $this->entity_link_list[$attclassname.":".$key] == $attclassname.":".substr($key2, 0, -3)
+                    ) {
+                        //if (strtolower(get_class($value)) . '_id' == $key2) {
+                        /*if($attclassname.":".$key == "tree_item:enterprise_type"){ //  && $key2 == "enterprise_type_id"
+                            die(var_dump($key, $flowBD, $flowBD[$key."_id"], $attclassname, $attclassname.":".substr($key, 0, -3)));
+                        }*/
+                        if (!empty($this->collect)) {
                             $el = strtolower(get_class($object)) . "." . strtolower(get_class($value));
                             if (!in_array($el, $this->collect)) {
                                 //break;
@@ -946,7 +1041,7 @@ class DBAL extends Database
                         } else {
 
                             $this->iteration++;
-                            $value->setId($flowBD[$key2]);
+                            $value->setId($flowBD[$key . "_id"]);
                             if ($innerrecursif)
                                 $object_array[$key] = $this->findByIdDbal($value);
                             else
@@ -995,16 +1090,17 @@ class DBAL extends Database
     {
 
         if (!is_array($flowBD)) {
-
             return null;
         }
 
         $object_array = $this->orm($flowBD, $object, 0, $recursif, $collection);
 
         return Bugmanager::cast((object)$object_array, get_class($object));
+
     }
 
     public $hasrelation = false;
+    public $objectKeyValue = [];
 
     /**
      * methode qui initialise les variables d'instance. elle est notament utilisé pour permetre de persister
@@ -1020,93 +1116,32 @@ class DBAL extends Database
         $this->entity_link_list = [];
         $this->listeEntity = [];
         $this->objectCollection = [];
+        $this->objectKeyValue = [];
         $this->select = false;
 
         if (is_object($object)) {
 
-            $this->classmetadata = $em->getClassMetadata("\\" . get_class($object));
-            $this->instanceid = $object->getId();
-            $objecarray = (array)$object;
-            if (isset($objecarray["dvfetched"])) {
-                unset($objecarray["dvfetched"]);
-            }
-            if (isset($objecarray["dvsoftdelete"])) {
-                $this->softdelete = $objecarray["dvsoftdelete"];
-                unset($objecarray["dvsoftdelete"]);
-            }
-            if (isset($objecarray["dvinrelation"])) {
-                unset($objecarray["dvinrelation"]);
-            }
-
             $this->object = $object;
             $this->objectName = strtolower(get_class($object));
-
-            $this->objectValue = array_values($objecarray);
-            $heritage = false;
-            $i = 0;
-            $j = 0;
-            $k = 0;
             $this->table = strtolower($this->objectName);
 
-            $fieldname = array_keys($this->classmetadata->fieldNames);
-            $association = array_keys($this->classmetadata->associationMappings);
             if (!$this->tableExists($this->table)) {
                 if ($metadata = $em->getClassMetadata("\\" . $this->objectName)) {
                     $this->table = strtolower($metadata->table['name']);
                 }
-
             }
 
-            foreach ($objecarray as $obkey => $value) {
-                // gere les attributs hérités en visibilité protected
+            $this->instanceid = $object->getId();
+            $keys = $object->entityKey($this->entity_link_list, $this->objectCollection, $this->softdelete);
+            $this->objectVar = array_keys($keys);
+            $this->objectValue = array_values($keys);
+            $this->objectKeyValue = $keys;
+            $this->hasrelation = !empty($this->entity_link_list);
+            $this->nbVar = count($this->objectVar);
+            $this->en = $this->nbVar - 1;
 
-//                $key = str_replace(get_class($object), '', $obkey);
-//                $key = str_replace('*', '', $key);
-                if (is_object($value)) {
-                    $classname = get_class($value);
-                    if (isset($association[$k]) && $classname != 'DateTime' && $association[$k] != $classname) {
+            //var_dump($this);
 
-                        $this->hasrelation = true;
-                        $this->objectVar[] = get_class($value) . '_id';
-                        $heritage = true;
-//                        $class = get_class($value);
-                        $this->entity_link_list[] = $value;
-                        $this->objectValue[$i] = $value->getId();
-                        $k++;
-                    } elseif ($classname == 'DateTime' && isset($fieldname[$j])) {
-                        //$date = new DateTime();
-                        $this->objectVar[] = $fieldname[$j];
-//                        $this->objectVar[] = substr($key, 2);
-                        $date = array_values((array)$value);
-                        $this->objectValue[$i] = $date[0];
-                        $j++;
-                    }
-                } else if (is_array($value)) {
-
-                    $this->objectCollection[] = $this->objectValue[$i];
-//                    $this->objectCollection[] = array_pull($this->objectValue, $i);
-                    unset($this->objectValue[$i]);
-                } else {
-//                    $this->objectVar[] = substr($key, 2);
-                    if (isset($fieldname[$j])) {
-                        $this->objectVar[] = $fieldname[$j];
-                        $j++;
-                    }
-                }
-
-                $i++;
-            }
-
-            if ($heritage && substr($this->objectVar[count($this->objectVar) - 1], strlen($classname)) == 'id') {
-
-                unset($this->objectVar[count($this->objectVar) - 1]);
-                unset($this->objectValue[count($this->objectValue) - 1]);
-            }
-
-            $this->nbVar = count((array)$this->objectVar);
-            $this->en = $this->nbVar;
-//                $this->inbricate();
-            $this->en = $this->en - 1;
         }
     }
 

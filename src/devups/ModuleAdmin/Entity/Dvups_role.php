@@ -17,12 +17,12 @@ class Dvups_role extends Model implements JsonSerializable
      * @Column(name="name", type="string" , length=255 )
      * @var string
      * */
-    private $name;
+    protected $name;
     /**
      * @Column(name="alias", type="string" , length=255 )
      * @var string
      * */
-    private $alias;
+    protected $alias;
 
     /**
      * @var \Dvups_right
@@ -84,6 +84,7 @@ class Dvups_role extends Model implements JsonSerializable
             $this->id = $id;
 
         $this->dvups_right = [];
+        $this->dvups_component = [];
         $this->dvups_module = [];
         $this->dvups_entity = [];
     }
@@ -94,12 +95,36 @@ class Dvups_role extends Model implements JsonSerializable
         return $this->dvups_right;
     }
 
-    function collectDvups_module()
+    function collectDvups_component()
     {
-        $this->dvups_module = $this->__hasmany('dvups_module');
+        $this->dvups_component = $this->__hasmany('dvups_component');
+        return $this->dvups_component;
+    }
+
+    function collectDvups_moduleOfComponent(\Dvups_component $component)
+    {
+        $this->dvups_module = $this->__hasmany('dvups_module', false)
+            ->andwhere("dvups_module.dvups_component_id", $component->getId())
+            ->__getAll();
+
         return $this->dvups_module;
     }
 
+    function collectDvups_module()
+    {
+        $this->dvups_module = $this->__hasmany('dvups_module');
+
+        return $this->dvups_module;
+    }
+
+    function collectDvups_entityOfModule(\Dvups_module $module)
+    {
+        $this->dvups_entity = $this->__hasmany('dvups_entity', false)
+            ->andwhere("dvups_entity.dvups_module_id", $module->getId())
+            ->__getAll();
+
+        return $this->dvups_entity;
+    }
     function collectDvups_entity()
     {
         $this->dvups_entity = $this->__hasmany('dvups_entity');
@@ -148,6 +173,11 @@ class Dvups_role extends Model implements JsonSerializable
     function setDvups_module($dvups_module)
     {
         $this->dvups_module = $dvups_module;
+    }
+
+    function setDvups_component($dvups_module)
+    {
+        $this->dvups_component = $dvups_module;
     }
 
     function setDvups_entity($dvups_entity)
@@ -245,7 +275,7 @@ class Dvups_role extends Model implements JsonSerializable
 
         $admin = getadmin();
         if ($admin->dvups_role->is("admin"))
-            return '<button onclick="model.updateprivilege()"  class=\'btn btn-info\'> ' . t("Update Privilege") . ' </button>';
+            return '<button onclick="model.updateprivilege(this)"  class=\'btn btn-info\'> ' . t("Update Privilege") . ' </button>';
 
     }
 

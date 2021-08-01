@@ -23,7 +23,7 @@ class Dvups_adminForm extends FormManager
 
         $dvups_roles = Dvups_role::allrows();
 
-        $entitycore->field['dvups_role'] = [
+        $entitycore->field['dvups_role.id'] = [
             "type" => FORMTYPE_RADIO,
             "value" => $dvups_admin->dvups_role->getId(),
             //"values" => FormManager::Options_Helper('name', $dvups_admin->getDvups_role()),

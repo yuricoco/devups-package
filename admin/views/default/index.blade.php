@@ -1,4 +1,4 @@
-@extends('layout')
+@extends('admin.layout')
 @section('title', 'List')
 
 @section('layout_content')
@@ -20,42 +20,12 @@
                 <div class="card-body">
                     <?= $datatable->render(); ?>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="{{ strtolower($entitytarget) }}box" class="swal2-container swal2-fade swal2-shown" style="display:none; overflow-y: auto;">
-        <div role="dialog" aria-labelledby="swal2-title" aria-describedby="swal2-content" class="swal2-modal swal2-show dv_modal" tabindex="1"
-             style="">
-            <div class="main-card mb-3 card  box-container">
-                <div class="card-header">.
-
-                    <button onclick="model._dismissmodal()" type="button" class="swal2-close" aria-label="Close this dialog" style="display: block;">×</button>
+                <div class="card-footer">
                 </div>
-                <div class="card-body"></div>
             </div>
-
         </div>
     </div>
 
 @endsection
 
-<?php function modalview($entitytarget){ ?>
-
-<div class="modal fade" id="{{ strtolower($entitytarget) }}modal" tabindex="-1" role="dialog" aria-labelledby="modallabel">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal"
-                        aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                <h3 class="title" id="modallabel">Modal Label</h3>
-            </div>
-            <div class="modal-body panel generalinformation"></div>
-            <div class="modal-footer">
-                <button onclick="model._dismissmodal()" data-dismiss="modal" aria-label="Close" type="button" class="btn btn-danger">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
-<?php } ?>
 

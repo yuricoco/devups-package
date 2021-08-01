@@ -8,8 +8,19 @@
 
 global $lang;
 
-function t($ref, $default = "", $local = null ){
+function tt($ref, $default = "", $local = null){
+    $content = t($ref, $default, $local);
+    $ref = Local_content_key::key_sanitise($ref);
 
+    if(isset($_SESSION['debuglang']) && $_SESSION['debuglang'])
+        $content .= '<button title="'.$ref.'" style="background:#fff" type="button" data-toggle="modal" data-target="#dvContentModalCenter" onclick="model.editcontent(this, \''.$ref.'\')" class="btn btn-link" ><i class="fa fa-edit"></i></button>';
+
+    return $content;
+    // return editlang($translate, $ref);
+}
+
+function t($ref, $default = "", $local = null ){
+    $params = [$ref,$default, $local];
     $lang = Local_contentController::getdata();
     $matcher = [];
     if(is_array($default)){
@@ -26,35 +37,25 @@ function t($ref, $default = "", $local = null ){
 
     if(!isset($lang[$ref])){
         Local_contentController::newdatacollection($ref, $default);
+        // t($params[0], $params[1], $params[2]);
         return $default;
     }
 
-    if(empty($matcher))
-        return $lang[$ref];
+//    if(empty($matcher))
+//        return editlang($lang[$ref], $ref);
 
     $translate = $lang[$ref];
 
     foreach ($matcher as $search => $value){
         $translate = str_replace(":".$search, $value, $translate);
-
     }
-    //dd($translate);
+
     return $translate;
 
 }
 
-function gettranslation($ref, $local = null, $default = "no translation found"){
-    global $lang;
+function p($ref, $default = "no_image"){
 
-    if($local != "fr" && $local != "en")
-        $local = \DClass\lib\Util::local();
-
-    if(!isset($lang[$ref]))
-        return "reference: <b>".$ref."</b> not found!";
-
-    if(!isset($lang[$ref][$local]))
-        return $default;
-
-    return $lang[$ref][$local];
+    return Dv_image::templatePosition($ref);
 
 }

@@ -5,16 +5,9 @@ require 'header.php';
 //instanciation des controllers
 $adminCtrl = new Dvups_adminController();
 
-
-if (isset($_GET['path'])) {
-    $path = explode('/', $_GET['path']);
-} else
-    $path = ['dashboard']; // Default entry
-
-
-switch ($path[ENTITY]) {
+switch (Request::get("path")) {
     case 'dashboard':
-        Genesis::render("dashboard");
+        Genesis::render("dashboard", AdminTemplateGenerator::dashboardView());
         break;
 
     case 'connexion':

@@ -1,23 +1,28 @@
 {
   "name": "devupstuto",
-  "template": "adminv3",
+  "template": "adminv2",
   "listmodule": [
     {
       "name": "ModuleStock",
-      "project": "devupstuto",
+      "project": " devupstuto",
       "listentity": [
         {
           "name": "storage",
-          "attribut": {
-            "1": {
+          "attribut": [
+            {
+              "name": "id",
+              "datatype": "integer",
+              "nullable": "not",
+              "formtype": "text"
+            },
+            {
               "name": "name",
-              "visibility": "",
               "datatype": "string",
-              "size": "25",
+              "size": "255",
               "nullable": "not",
               "formtype": "text"
             }
-          },
+          ],
           "relation": []
         }
       ]

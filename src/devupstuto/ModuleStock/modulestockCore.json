@@ -1,0 +1,1 @@
+{"name":"ModuleStock","project":" devupstuto","listentity":[{"name":"storage","attribut":[{"name":"id","datatype":"integer","nullable":"not","formtype":"text"},{"name":"name","datatype":"string","size":"255","nullable":"not","formtype":"text"}],"relation":[]}]}

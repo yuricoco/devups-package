@@ -1,0 +1,44 @@
+{
+  "id": 3,
+  "name": "dvups_entity",
+  "module": {
+    "id": 1
+  },
+  "ref": null,
+  "lang": true,
+  "attribut": {
+    "1": {
+      "name": "name",
+      "visibility": "",
+      "datatype": "string",
+      "size": "100",
+      "nullable": "not",
+      "formtype": "text"
+    },
+    "2": {
+      "name": "label",
+      "visibility": "",
+      "datatype": "string",
+      "size": "100",
+      "nullable": "not",
+      "formtype": "text",
+      "lang": true
+    }
+  },
+  "relation": [
+    {
+      "entity": "dvups_module",
+      "cardinality": "manyToOne",
+      "nullable": "not",
+      "ondelete": "cascade",
+      "onupdate": "cascade"
+    },
+    {
+      "entity": "dvups_right",
+      "cardinality": "manyToMany",
+      "nullable": "not",
+      "ondelete": "cascade",
+      "onupdate": "cascade"
+    }
+  ]
+}

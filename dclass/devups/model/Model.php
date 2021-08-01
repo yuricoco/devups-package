@@ -12,7 +12,7 @@
 
 //namespace dclass\devups;
 
-abstract class Model extends \stdClass
+class Model extends \stdClass
 {
 
     public static $jsonmodel;
@@ -73,7 +73,7 @@ abstract class Model extends \stdClass
         $fn = $reflector->getFileName();
         $dirname = explode("src", dirname($fn));
         $dirname = str_replace("Entity", "", $dirname[1]);
-        return $route . "src" . $dirname . $src;
+        return str_replace("\\", "/", $route . "src" . $dirname . $src);
     }
 
     public static function classroot($src)
@@ -151,6 +151,30 @@ abstract class Model extends \stdClass
 
     }
 
+    public function __persistlang($fields){
+        $data = [];
+        $lang = \Dvups_lang::defaultLang();
+        foreach ($fields as $key => $field){
+            if(is_string($key))
+                $data[$key] = $field;
+            else
+                $data[$field] = (get_class($this))::post($field, $this->{$field});
+        }
+        $this->__inittranslate($data, $lang);
+
+        $langs = \Dvups_lang::otherLangs();
+        foreach ($langs as $lang) {
+            $data = [];
+            foreach ($fields as $key => $field){
+                if(is_string($key))
+                    $data[$key] = $field;
+                else
+                    $data[$field] = (get_class($this))::post($field."_".$lang->getIso_code(), $this->{$field});
+            }
+            $this->__inittranslate($data, $lang);
+        }
+    }
+
     /**
      *
      * @param type $lable
@@ -158,41 +182,23 @@ abstract class Model extends \stdClass
      * @param type $lang
      * @return \Dvups_lang
      */
-    public function __inittranslate($column, $content, $lang = __lang)
+    public function __inittranslate($data, $lang)
     {
-        if (!$this->id || !$content)
-            return;
+        if (!$this->id || !$data)
+            return null;
 
-        $table = strtolower(get_class($this));
-        $ref = $table . "_" . $this->id . "_" . $column;
+        $table = get_class($this);
+        $ltable = strtolower($table);
 
-        $dvlang = Dvups_lang::select()->where("ref", $ref)->__getOne();
-        $dvcontentlang = new Dvups_contentlang();
+        $data["lang_id"] = $lang->getId();
+        $data[$ltable."_id"] = $this->getId();
 
-        if ($dvlang->getId()) {
-            $dvcontentlang = Dvups_contentlang::select()
-                ->where("dvups_lang.ref", $dvlang->getRef())
-                ->andwhere("lang", $lang)
-                ->__getOne();
-            if (!$dvcontentlang->getId()) {
-                $dvcontentlang = new Dvups_contentlang();
-
-                $dvcontentlang->setDvups_lang($dvlang);
-                $dvcontentlang->setLang($lang);
-            }
+        $translation = (get_class($this) . "_lang")::where([$ltable."_id" => $this->id, "lang_id" => $lang->getId()])->__getOne();
+        if ($translation->getId()) {
+            (get_class($this) . "_lang")::where("id", $translation->getId())->update($data);
         } else {
-            $dvlang = new Dvups_lang();
-            $dvlang->setRef($ref);
-            $dvlang->set_table($table);
-            $dvlang->set_row($this->id);
-            $dvlang->set_column($column);
-            $dvlang->__save();
-
-            $dvcontentlang->setDvups_lang($dvlang);
-            $dvcontentlang->setLang($lang);
+            (get_class($this) . "_lang")::create($data);
         }
-        $dvcontentlang->setContent($content);
-        $dvcontentlang->__save();
 
     }
 
@@ -203,43 +209,38 @@ abstract class Model extends \stdClass
         if (!$id)
             return "";
 
-        $lang = local();
-        //$lang = __lang;
-        $table = strtolower(get_class($entity));
-        $ref = $table . "_" . $id . "_" . $column;
+        $lang = Dvups_lang::getbyattribut("iso_code", local());
+        $table = get_class($entity);
+        $ltable = strtolower($table);
+        $translation = ($table . "_lang")::where([$ltable."_id" => $id, "lang_id" => $lang->getId()])->__firstOrNull();
+        if(!$translation)
+            return  $default;
 
-        $dvcontentlang = Dvups_contentlang::select()
-            ->where("dvups_lang.ref", $ref)
-            ->andwhere("lang", $lang)->__getOne();
+        // dynamic call of method in entity lang
+        return $translation->{"get".ucfirst($column)}();
 
-        //dv_dump( $dvcontentlang->getId());
-        if ($dvcontentlang->getId())
-            return $dvcontentlang->getContent();
-
-        return $default;
     }
 
-    public function __gettranslate($column, $default = null)
+    public function __gettranslate($column, $lang = null, $default = null)
     {
         $id = $this->id;
 
         if (!$id)
             return "";
 
-        $lang = local();
-        //$lang = __lang;
-        $table = strtolower(get_class($this));
-        $ref = $table . "_" . $id . "_" . $column;
+        if (!$lang)
+            $lang = local();
 
-        $dvcontentlang = Dvups_contentlang::select()
-            ->where("dvups_lang.ref", $ref)
-            ->andwhere("lang", $lang)->__getOne();
+        $lang = Dvups_lang::getbyattribut("iso_code", $lang);
+        $table = get_class($this);
+        $ltable = strtolower($table);
+        $translation = (get_class($this) . "_lang")::where([$ltable."_id" => $this->id, "lang_id" => $lang->getId()])->__firstOrNull();
+        if(!$translation)
+            return  $default;
 
-        //dv_dump( $dvcontentlang->getId());
-        if ($dvcontentlang->getId())
-            return $dvcontentlang->getContent();
+        // dynamic call of method in entity lang
+        return $translation->{"get".ucfirst($column)}();
 
-        return $default;
     }
 
     /**
@@ -321,7 +322,7 @@ abstract class Model extends \stdClass
         if (is_null($parameter))
             return $qb->select()->__countEl();
 
-        if (is_object($parameter))
+        if (is_object($parameter) || is_array($parameter))
             return $qb->select()->where($parameter)->__countEl(false);
 
         return $qb->select()->where($parameter, "=", $value)->__countEl(false);
@@ -383,15 +384,16 @@ abstract class Model extends \stdClass
      * @param type $id
      * @return $this
      */
-    public static function index($index = 1, $recursif = true, $collect = []) {
-        $i = (int) $index;
+    public static function index($index = 1, $recursif = true, $collect = [])
+    {
+        $i = (int)$index;
         $reflection = new ReflectionClass(get_called_class());
         $entity = $reflection->newInstance();
 
         $qb = new QueryBuilder($entity);
-        if($i < 0){
+        if ($i < 0) {
             $nbel = $qb->__countEl();
-            if($nbel == 1)
+            if ($nbel == 1)
                 return $entity;
 
             $i += $nbel;
@@ -425,14 +427,14 @@ abstract class Model extends \stdClass
      * @param string $value
      * @return $this
      */
-    public static function getbyattribut($attribut, $value)
+    public static function getbyattribut($attribut, $value, $recusif = true)
     {
 
         $reflection = new ReflectionClass(get_called_class());
         $entity = $reflection->newInstance();
 
         $qb = new QueryBuilder($entity);
-        return $qb->select()->where($attribut, $value)->__getOne();
+        return $qb->select()->where($attribut, $value)->__getOne($recusif);
     }
 
     /**
@@ -456,9 +458,9 @@ abstract class Model extends \stdClass
      * return the entity
      * when recursif set to false, attribut as relation manyToOne has just their id hydrated
      * when recursif set to true, the DBAL does recursif request to hydrate the association entity and those of it.
-     * @param integer $id the id of the entity
+     * @param integer | array $id the id of the entity
      * @param boolean $recursif [true] tell the DBAL to find all the data of the relation
-     * @return $this
+     * @return $this | array
      */
     public static function find($id, $recursif = true, $collect = [])
     {
@@ -467,6 +469,10 @@ abstract class Model extends \stdClass
         $entity = $reflection->newInstance();
         $entity->setId($id);
 
+        if (is_array($id)) {
+            $qb = new QueryBuilder($entity);
+            return $qb->where("this.id")->in($id)->get();
+        }
         $dbal = new DBAL();
         $dbal->setCollect($collect);
         return $dbal->findByIdDbal($entity, $recursif);
@@ -486,9 +492,11 @@ abstract class Model extends \stdClass
         $reflection = new ReflectionClass(get_called_class());
         $entity = $reflection->newInstance();
 
-        if ($id) {
+        if (is_array($id)) {
+            $qb = new QueryBuilder($entity);
+            return $qb->where("this.id")->in($id)->delete();
+        } elseif (is_numeric($id)) {
             $entity->setId($id);
-
             $dbal = new DBAL();
             return $dbal->deleteDbal($entity);
         } else {
@@ -535,6 +543,7 @@ abstract class Model extends \stdClass
 
         return $qb->select()->handlesoftdelete()->orderby($sort . " " . $order)->__getAllRow();
     }
+
 
     /**
      * return instance of \QueryBuilder white the select request sequence.
@@ -600,6 +609,57 @@ abstract class Model extends \stdClass
     }
 
     /**
+     * return instance of \QueryBuilder white the select request sequence.
+     * @param string $columns
+     * @return \QueryBuilder
+     * @example name, description, category if none has been set, all will be take.
+     */
+    public static function sum($columns, $as = "")
+    {
+        $reflection = new ReflectionClass(get_called_class());
+        $entity = $reflection->newInstance();
+
+        $qb = new QueryBuilder($entity);
+        if ($as)
+            $as = "AS " . $as;
+
+        return $qb->select(" SUM($columns) $as ");
+    }
+
+    public static function avg($columns, $as = "")
+    {
+        $reflection = new ReflectionClass(get_called_class());
+        $entity = $reflection->newInstance();
+
+        $qb = new QueryBuilder($entity);
+        if ($as)
+            $as = "AS " . $as;
+
+        return $qb->select(" AVG($columns) $as ");
+    }
+
+    public static function max($columns, $as = "")
+    {
+        $reflection = new ReflectionClass(get_called_class());
+        $entity = $reflection->newInstance();
+
+        $qb = new QueryBuilder($entity);
+        if ($as)
+            $as = "AS " . $as;
+
+        return $qb->select(" MAX($columns) $as ");
+    }
+
+    public static function distinct($columns)
+    {
+        $reflection = new ReflectionClass(get_called_class());
+        $entity = $reflection->newInstance();
+
+        $qb = new QueryBuilder($entity);
+        return $qb->select(" DISTINCT($columns) ");
+    }
+
+    /**
      * create a new entry
      * @return integer
      */
@@ -607,7 +667,8 @@ abstract class Model extends \stdClass
     {
         $this->created_at = date(\DClass\lib\Util::dateformat);
         $dbal = new DBAL();
-        return $dbal->createDbal($this);
+        $id = $dbal->createDbal($this);
+        return $id;
     }
 
     /**
@@ -644,10 +705,15 @@ abstract class Model extends \stdClass
     {
 
         $dbal = new DBAL();
-        if ($this->getId())
-            return $dbal->updateDbal($this);
-        else
-            return $dbal->createDbal($this);
+        if ($this->getId()) {
+            $this->updated_at = date("Y-m-d");
+            return $this->__update();
+            //return $dbal->updateDbal($this);
+        }else {
+            $this->created_at = date("Y-m-d");
+            return $this->__insert();
+            //return $dbal->createDbal($this);
+        }
     }
 
     public function __show($recursif = false)
@@ -784,7 +850,7 @@ abstract class Model extends \stdClass
     public function __construct($id = null)
     {
 
-            $this->id = $id;
+        $this->id = $id;
 
     }
 
@@ -793,10 +859,10 @@ abstract class Model extends \stdClass
      */
     public function getCreatedAt($format = "")
     {
-        if(!$format)
+        if (!$format)
             return $this->created_at;
 
-        return  date($format, strtotime($this->created_at));
+        return date($format, strtotime($this->created_at));
     }
 
     /**
@@ -804,15 +870,19 @@ abstract class Model extends \stdClass
      */
     public function setCreatedAt($created_at)
     {
-        $this->created_at = $created_at;
+        if ($created_at)
+            $this->created_at = $created_at;
     }
 
     /**
      * @return string
      */
-    public function getUpdatedAt()
+    public function getUpdatedAt($format = "")
     {
-        return $this->updated_at;
+        if (!$format)
+            return $this->updated_at;
+
+        return date($format, strtotime($this->updated_at));
     }
 
     /**
@@ -820,15 +890,19 @@ abstract class Model extends \stdClass
      */
     public function setUpdatedAt($updated_at)
     {
-        $this->updated_at = $updated_at;
+        if ($updated_at)
+            $this->updated_at = $updated_at;
     }
 
     /**
      * @return string
      */
-    public function getDeletedAt()
+    public function getDeletedAt($format = "")
     {
-        return $this->deleted_at;
+        if (!$format)
+            return $this->deleted_at;
+
+        return date($format, strtotime($this->deleted_at));
     }
 
     /**
@@ -864,9 +938,10 @@ abstract class Model extends \stdClass
         ];
     }
 
-    public function inCollectionOf($collection, $key_map = ""){
+    public function inCollectionOf($collection, $key_map = "")
+    {
 
-        if(!$this->getId())
+        if (!$this->getId())
             return [];
 
         $thisclass = get_class($this);
@@ -877,12 +952,12 @@ abstract class Model extends \stdClass
         if ($key_map) {
             // do nothing
             $entityTable = $key_map;
-        }elseif ($dbal->tableExists($collection . '_' . $thisclass)) {
+        } elseif ($dbal->tableExists($collection . '_' . $thisclass)) {
             $entityTable = $collection . '_' . $thisclass;
-            $entity_id = $collection."_id";
+            $entity_id = $collection . "_id";
         } elseif ($dbal->tableExists($thisclass . "_" . $collection)) {
             $entityTable = $thisclass . "_" . $collection;
-            $entity_id = $collection."_id";
+            $entity_id = $collection . "_id";
         }
 //        else {
 //            $association = false;
@@ -893,13 +968,294 @@ abstract class Model extends \stdClass
         $collection_ids = [];
 
         $dbal = new DBAL();
-        $results = $dbal->executeDbal(strtolower(" select $entity_id from `$entityTable` where ".$thisclass."_id = ".$this->getId()), [], DBAL::$FETCHALL);
+        $results = $dbal->executeDbal(strtolower(" select $entity_id from `$entityTable` where " . $thisclass . "_id = " . $this->getId()), [], DBAL::$FETCHALL);
         foreach ($results as $index => $values)
             $collection_ids[] = $values[0];
-            //$result = $result[$index][0];
+        //$result = $result[$index][0];
 
         return $collection_ids;
         //return implode(",", $collection_ids);
+    }
+
+    public function entityKey(&$entity_link_list, &$collection, &$softdelete)
+    {
+        $keys = [];
+        $softdelete = $this->dvsoftdelete;
+
+        /*if(get_class($this) == "User") {
+            var_dump($this);
+            //die;
+        }*/
+        foreach ($this as $key => $val) {
+            if (in_array($key, ["dvfetched", "dvinrelation", "dvsoftdelete",]))
+                continue;
+            if (is_object($val)) {
+                //var_dump(get_class($val));
+                $entity_link_list[strtolower(get_class($val) . ":" . $key)] = $val;
+                $keys[$key . '_id'] = $val->getId();
+            } elseif (is_array($val))
+                $collection[] = $val;
+            else
+                $keys[$key] = $val;
+        }
+        return $keys;
+    }
+    public function entityKeyForm()
+    {
+        $keys = [];
+
+        foreach ($this as $key => $val) {
+            if (in_array($key, ["dvfetched", "dvinrelation", "dvsoftdelete",]))
+                continue;
+            if (is_object($val)) {
+                $keys[$key . '.id'] = $val->getId();
+            }else
+                $keys[$key] = $val;
+        }
+        return $keys;
+    }
+
+    const split = ";";
+
+    public function importCsv($classname)
+    {
+        if (!isset($_FILES["fixture"]) || $_FILES["fixture"]['error'] != 0)
+            return [
+                "success" => false,
+                "message" => "no file founded",
+            ];
+
+        $handle = file($_FILES["fixture"]["tmp_name"], FILE_IGNORE_NEW_LINES);
+
+        if ($handle) {
+
+            $values = [];
+            $i = 0;
+            //while (($line = fgets($handle)) !== false) {
+            foreach ($handle as $line) {
+                // process the line read.
+                $references = [];
+                if ($line) {
+                    $line = (trim($line));
+                    if ($i >= 1) {
+                        // we verify if the current line is not empty. due to sometime EOF are just \n code
+                        $reference = str_replace(self::split, "", $line);
+                        if (!trim($reference))
+                            continue;
+
+                        // there are some file that has ;;; at the end of a line, programmatically it represent column
+                        // therefore we have to remove those by user array_filter fonction
+                        // we finaly combine value with column key
+                        //try {
+                        $valuetobind = explode(self::split, $line);
+                        if (count($columns) != count($valuetobind))
+                            return [
+                                "content" => $line,
+                                "index" => $i,
+                                "columns" => $columns,
+                                "nbc" => count($columns),
+                                "valuetobind" => $valuetobind,
+                                "nbv" => count($valuetobind),
+                            ];
+
+                        $keyvalue = array_combine($columns, explode(self::split, $line));
+
+//                        }catch (Exception $exception){
+//                            die(var_dump($exception));
+//                        }
+
+                        if (!$keyvalue) {
+                            // and if event so we get a false
+                            // we catch error to optimize the exception
+                            $allerrors[] = [
+                                "content" => $line,
+                                "index" => $i,
+                                "combinaison_column" => $columns,
+                                "keyvalue" => $keyvalue,
+                            ];
+                            return $allerrors;
+                        } else
+                            DBAL::_createDbal(strtolower($classname), $keyvalue);
+
+                    } else {
+                        // we collect all headers and with the array_filter fonction we sanitize the array to avoid double value
+                        $columns = array_filter(explode(self::split,
+                            str_replace("\"", "", ($line))
+                        ));
+                    }
+                    $i++;
+                }
+            }
+
+        }
+
+        return ["success" => true, "message" => "all went well"];
+
+    }
+
+    private function exportrows($callable, $column = "*", $sort = 'id', $order = "")
+    {
+
+        $qb = new QueryBuilder($this);
+        if ($sort == 'id')
+            $sort = $qb->getTable() . "." . $sort;
+
+        return $qb->select($column)->handlesoftdelete()->orderby($sort . " " . $order)->__exportAllRow($callable);
+    }
+
+    public function exportCsv($classname)
+    {
+        $keys = [];
+        foreach ($this as $key => $val) {
+            if (in_array($key, ["id", "dvfetched", "dvinrelation", "dvsoftdelete",]) || is_array($val))
+                continue;
+            if (is_object($val)) {
+                $keys[] = $key . '_id';
+            } else
+                $keys[] = $key;
+        }
+
+        $exportat = date("YmdHis");
+        //$classname = get_class($this);
+        $filename = $classname . "-" . $exportat . ".csv";
+        \DClass\lib\Util::writein(implode(";", $keys), $filename, self::classpath("", "") . "fixtures");
+        $this->exportrows(function ($row, $classname) use ($filename, $exportat) {
+            \DClass\lib\Util::writein(implode(";", $row), $filename, self::classpath("", "") . "fixtures");
+        }, implode(",", $keys));
+
+        return $keys;
+    }
+
+    /**
+     * map data to the specify model from the webservice call's
+     * @param array $cutom_data an array (key -> value) of callback
+     * @return array
+     * @example $custom = [
+     * "show"=>function(){ return $this->srcImage();}
+     * ];
+     */
+    public function apimapper($cutom_data = [])
+    {
+        $datareturn = [];
+        $rawdata = \Request::raw();
+        $class = strtolower(get_class($this));
+        if (isset(Request::$uri_raw_param["dataset"])) {
+            if (isset(Request::$uri_raw_param["dataset"][$class])) {
+
+                foreach ($this as $key => $value) {
+                    if (in_array($key, Request::$uri_raw_param["dataset"][$class])) {
+                        $datareturn[$key] = $value;
+                    }
+                }
+
+                foreach ($cutom_data as $key => $value) {
+                    if (!is_numeric($key)) {
+                        if (is_callable($value)) {
+                            $datareturn[$key] = $value();
+                            continue;
+                        }
+                    } else
+                        $key = $value;
+
+                    if (in_array($key, Request::$uri_raw_param["dataset"][$class])) {
+                        $method = 'get' . ucfirst($key);
+                        if (method_exists($this, $method) && $result = call_user_func(array($this, $method))) {
+                            $datareturn[$key] = $result;
+                        } else {
+                            $datareturn[$key] = null;
+                        }
+                    }
+                }
+
+                return $datareturn;
+            }
+        }
+
+        return $datareturn;
+    }
+
+    private static $keyvalues = [];
+
+    public static function create(...$keyvalues)
+    {
+        $ids = [];
+        foreach ($keyvalues as $keyvalue) {
+            $keyvalue["created_at"] = date("Y-m-d H:i:s");
+            self::$keyvalues = $keyvalue;
+            $classname = get_called_class();
+            $ids[] = DBAL::_createDbal($classname, $keyvalue);
+        }
+        if (count($ids) == 1)
+            return $ids[0];
+
+        return $ids;
+    }
+
+    public static function createInstance(...$keyvalues)
+    {
+        $ids = self::create($keyvalues);
+        if (count($ids)) {
+            $instances = [];
+            foreach ($ids as $id) {
+
+            }
+        }
+    }
+
+    public function hasRelation($name)
+    {
+        $keys = [];
+        foreach ($this as $key => $val) {
+            if (in_array($key, ["dvfetched", "dvinrelation", "dvsoftdelete",]))
+                continue;
+            if (is_object($val) && $name == $key)
+                return $val;
+        }
+        return false;
+    }
+
+    public static function link($path = "/index")
+    {
+        $entity = strtolower(get_called_class());
+        $admin = getadmin();
+        $de = Dvups_role_dvups_entity::where($admin->dvups_role)->andwhere("dvups_entity.name", $entity)->__getOne();
+
+        if ($de->getId()) {
+            return $de->dvups_entity->route($path);
+        }
+        return "#";
+
+    }
+
+    /**
+     * @return Dvups_entity
+     */
+    public static function getDvupsEntity()
+    {
+        $entity = strtolower(get_called_class());
+        return Dvups_entity::getbyattribut("this.name", $entity, false);
+
+    }
+
+
+    /**
+     *
+     * @param string $order
+     * @return \dclass\devups\Datatable\Lazyloading
+     */
+    public static function lazyloading($order = "", $debug = false)
+    {//
+        $classname = get_called_class();
+        $reflection = new ReflectionClass($classname);
+        $entity = $reflection->newInstance();
+
+        $ll = new \dclass\devups\Datatable\Lazyloading($entity);
+        $ll->start($entity);
+        if ($debug)
+            return $ll->renderQuery()->lazyloading($entity, null, $order);
+
+        return $ll->lazyloading($entity, null, $order);
+
     }
 
 }

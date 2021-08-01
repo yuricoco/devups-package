@@ -43,11 +43,83 @@ function getcomponent($namespace) {
     return __Generator::findproject($components, $ns[0]);
 
 }
+function recurse_copy_dir(string $src, string $dest) : int {
+    $count = 0;
+
+    // ensure that $src and $dest end with a slash so that we can concatenate it with the filenames directly
+    $src = rtrim($src, "/\\") . "/";
+    $dest = rtrim($dest, "/\\") . "/";
+
+    // use dir() to list files
+    $list = dir($src);
+
+    // create $dest if it does not already exist
+    @mkdir($dest);
+
+    // store the next file name to $file. if $file is false, that's all -- end the loop.
+    while(($file = $list->read()) !== false) {
+        if($file === "." || $file === "..") continue;
+        if(is_file($src . $file)) {
+            copy($src . $file, $dest . $file);
+            $count++;
+        } elseif(is_dir($src . $file)) {
+            $count += recurse_copy_dir($src . $file, $dest . $file);
+        }
+    }
+
+    return $count;
+}
 
 if ($argv[1] === 'schema:update') {
 
     $result = [];
     exec("bin\doctrine orm:schema:update --dump-sql", $result);
+
+    //
+    /*$em = DBAL::getEntityManager();
+
+    $listentities = ["Cmstext"];
+    foreach ($listentities as $entity){
+        $lc_entity = strtolower($entity);
+        $migrationlang = ROOT."database/langs/migration_$lc_entity.json";
+        if(!file_exists($migrationlang)) {
+            \DClass\lib\Util::writein("{}", $migrationlang);
+        }
+        $dbal = new DBAL();
+        $sql = "";
+        $tableexist = $dbal->tableExists($lc_entity."_lang");
+        if(!$tableexist){
+            // todo: create table
+            $sql = "
+CREATE TABLE `$lc_entity\_lang` (
+  `$lc_entity\_id` int(10) UNSIGNED NOT NULL,
+  `lang_id` int(10) UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+";
+            $dbal->executeDbal($sql);
+        }
+        $migrationlang = json_decode(file_get_contents($migrationlang), true);
+        $attrs = $migrationlang["attrs"];
+        if($attrs != $entity::langs)
+            continue;
+
+        $sql .= "ALTER TABLE $lc_entity\_lang ";
+        $ec = $em->getClassMetadata("\\" . $entity);
+        $attribtodelete = array_diff($attrs, $entity::langs);
+        $attribtoadd = array_diff($entity::langs, $attrs);
+        foreach($attribtodelete as $attr){
+            // todo: alter table drop
+            $sql .= " DROP COLUMN $attr varchar(255)";
+        }
+        foreach($attribtoadd as $attr){
+            // todo: alter table
+            $sql .= " ADD $attr varchar(255)";
+        }
+        $sql .= ";";
+
+        $dbal->executeDbal($sql);
+
+    }*/
 
     $action = "--dump-sql";
     if(isset($argv[2]))
@@ -131,6 +203,9 @@ if (isset($argv[2])) {
 
     switch ($argv[1]) {
 
+        case 'entity:e:data':
+            break;
+
         case 'entity:g:core':
             __Generator::core($argv[2], $project); //,
             echo $argv[2] . ": Core generated with success";
@@ -177,12 +252,17 @@ if (isset($argv[2])) {
             break;
 
         case 'core:g:entity':
+
             if(isset($argv[3])){
-                if(isset($argv[4])){
-                    __Generatorjava::entity($argv[2], $project, $argv[4]); //,$argv[4] for package
-                    echo $argv[2] . ": Entity java generated with success";
+                if($argv[3] == "--lang"){
+                    __Generator::entityLang($argv[2], $project); //,
+                    echo $argv[2] . ": Entity lang generated with success";
+//                }
+//                elseif(isset($argv[4])){
+//                    __Generatorjava::entity($argv[2], $project, $argv[4]); //,$argv[4] for package
+//                    echo $argv[2] . ": Entity java generated with success";
                 }else
-                    echo "warning: package missing!";
+                    echo "warning: did you mean --lang?";
             }else{
                 __Generator::entity($argv[2], $project); //,
                 echo $argv[2] . ": Entity generated with success";
@@ -234,7 +314,7 @@ if (isset($argv[2])) {
 
         case 'core:g:moduleressources':
             __Generator::__ressources($project, $argv[2]); //,
-            echo $argv[2] . ": Ressources generated with success";
+            echo $argv[2] . ": Resources generated with success";
             break;
 
         case 'core:g:component':
@@ -248,18 +328,61 @@ if (isset($argv[2])) {
     }
 
     chdir('../../');
-} else {
+}
+else {
 
-    require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_module.php';
+    require __DIR__ . '/../../src/devups/ModuleLang/Entity/Dvups_lang.php';
+    require __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_component.php';
+    require __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_component_lang.php';
+    require __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_module.php';
+    require __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_module_lang.php';
     require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_role.php';
     require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_right.php';
-    require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_entity.php';
+    require __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_entity.php';
+    require __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_entity_lang.php';
+    require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_role_dvups_component.php';
     require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_role_dvups_entity.php';
     require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_role_dvups_module.php';
     require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_right_dvups_entity.php';
 
     switch ($argv[1]) {
 
+        case 'build':
+
+            $dir = __DIR__ . '/../../build';
+
+// we delete the previews version
+            if(!file_exists($dir. ''))
+                mkdir ($dir. '', 777, true);
+
+            if(file_exists($dir. '/'.__project_id.'.zip'))
+                unlink ($dir. '/'.__project_id.'.zip');
+
+            recurse_copy_dir(ROOT."src", ROOT."build/src");
+            recurse_copy_dir(ROOT."dclass", ROOT."build/dclass");
+            //$files = scanDir::scan(ROOT, [], true);
+
+            HZip::zipDir($dir, $dir . '/'.__project_id.'.zip');
+
+            echo 'succes de la compression';
+            break;
+        case 'deploy':
+
+            $dir = __DIR__ . '/../../build';
+            $file = $dir . '/'.__project_id.'.zip';
+
+            $zip = new ZipArchive;
+            if ($zip->open($file) === TRUE) {
+
+                echo 'unzip start';
+                $zip->extractTo('./');
+                $zip->close();
+
+                echo 'succes de la décompression';
+            } else {
+                echo 'échec de la décompression de ' . $file . '.zip';
+            }
+            break;
         case 'install':
 
             if (!file_exists("cache")) {
@@ -279,15 +402,50 @@ if (isset($argv[2])) {
             }
 
             RequestGenerator::databasecreate(dbname); //, 
-             echo " > Creating Database.\n\n". dbname . ": created with success ...\n";
+            echo " > Creating Database.\n\n". dbname . ": created with success ...\n";
             $result = [];
             exec("bin\doctrine orm:schema:create", $result);
 
             echo "\n > Update database schema (DOCTRINE ORM).\n\n" . implode("\n", $result);
 
             $rqg = new Database();
-            $path = __DIR__ . '/dvupsadmin.sql';
+            $path = __DIR__ . '/config_data.sql';
             $dvupsadminsql = file_get_contents($path);
+            $dvupsadminsql .= "
+            TRUNCATE `configuration`;
+            INSERT INTO `configuration` ( `_key`, `_value`, `_type`) VALUES
+                    (\"PROJECT_NAME\", \"".PROJECT_NAME."\", 'string'),
+                    (\"dbname\", \"".dbname."\", 'string'),
+                    (\"dbuser\", \"root\", 'string'),
+                    (\"dbpassword\", \"\", 'string'),
+                    (\"dbhost\", \"localhost\", 'string'),
+                    (\"dbdumper\", \"false\", 'bool'),
+                    (\"dbtransaction\", \"false\", 'bool'),
+                    (\"__v\", 1, 'integer'),
+                    (\"__server\", \"http://127.0.0.1\", 'string'),
+                    (\"__env\", \"{__server}/".PROJECT_NAME."/\", 'string'),
+                    (\"__prod\", 0, 'integer'),
+                    (\"__project_id\", \"".PROJECT_NAME."\", 'string'),
+                    (\"UPLOAD_DIR\", \"{ROOT}uploads/\", 'string'),
+                    (\"RESSOURCE\", \"{ROOT}admin/Resource/\", 'string'),
+                    (\"admin_dir\", \"{ROOT}admin/\", 'string'),
+                    (\"web_dir\", \"{ROOT}web/\", 'string'),
+                    (\"SRC_FILE\", \"{__env}uploads/\", 'string'),
+                    (\"CLASSJS\", \"{__env}dclass/devupsjs/\", 'string'),
+                    (\"RESSOURCE2\", \"{__env}admin/Resource/\", 'string'),
+                    (\"node_modules\", \"{__env}node_modules/\", 'string'),
+                    (\"ENTITY\", 0, 'integer'),
+                    (\"VIEW\", 1, 'integer'),
+                    (\"ADMIN\", \"{__project_id}_devups\", 'string'),
+                    (\"CSRFTOKEN\", \"{__project_id}_csrf_token\", 'string'),
+                    (\"dv_role_navigation\", \"{__project_id}_navigation\", 'string'),
+                    (\"dv_role_permission\", \"{__project_id}_permission\", 'string'),
+                    (\"LANG\", \"en\", 'string'),
+                    (\"__lang\", \"en\", 'string'),
+                    (\"PREVIOUSPAGE\", \"previous_page\", 'string'),
+                    (\"JSON_ENCODE_DEPTH\", 512, 'integer');
+            ";
+
             $rqg->link()->prepare($dvupsadminsql)->execute();
 
             echo "\n\n > Set the master admin.\n\nData master admin initialized with success.\ncredential\nlogin: dv_admin\npassword: admin\n\nYour project is ready to use. Do your best :)";
@@ -303,7 +461,7 @@ if (isset($argv[2])) {
 
         case 'dvups_:admin':
             $rqg = new DBAL();
-            $path = __DIR__ . '/dvupsadmin.sql';
+            $path = __DIR__ . '/config_data.sql';
             $dvupsadminsql = file_get_contents($path);
             $rqg->executeDbal($dvupsadminsql);
             echo "Data admin initialized with success";
