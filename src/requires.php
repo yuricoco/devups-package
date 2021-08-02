@@ -11,8 +11,8 @@ require 'devups/ModuleAdmin/devups.moduleadmin.php';
 require 'devups/ModuleLang/devups.modulelang.php';
 //require 'devups/ModuleWebservice/devups.modulewebservice.php';
 
-require 'devupstuto/ModuleStock/devupstuto.modulestock.php';
-require 'devupstuto/ModuleProduct/devupstuto.moduleproduct.php';
+// require 'devupstuto/ModuleStock/devupstuto.modulestock.php';
+// require 'devupstuto/ModuleProduct/devupstuto.moduleproduct.php';
 
 
 
