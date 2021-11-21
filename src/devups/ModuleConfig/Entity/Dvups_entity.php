@@ -31,7 +31,7 @@ class Dvups_entity extends Dvups_config_item implements JsonSerializable, DvupsT
 
     public static function getRigthOf($action)
     {
-        $entity = Dvups_entity::select()->where('this.name', $action)->__getOne();
+        $entity = Dvups_entity::select()->where('this.name', $action)->getInstance();
         $drigths = $entity->__hasmany(Dvups_right::class);
         $rights = [];
 
@@ -46,7 +46,7 @@ class Dvups_entity extends Dvups_config_item implements JsonSerializable, DvupsT
         if(class_exists($this->name))
             return true;
 
-        parent::__delete();
+        //parent::__delete();
         return  false;
     }
 
@@ -142,8 +142,8 @@ class Dvups_entity extends Dvups_config_item implements JsonSerializable, DvupsT
 
     public function getLinkname()
     {
-        return "<a href='". route('src/' . strtolower($this->dvups_module->getProject()) . '/'
-                . $this->dvups_module->getName() . '/' . $this->getUrl()) . '/index'."' >
+        return "<a href='". route('src/' . strtolower($this->dvups_module->project) . '/'
+                . $this->dvups_module->name . '/' . $this->getUrl()) . '/index'."' >
 <i class=\"metismenu-icon\"></i> ".$this->getLabel()."| manage</a>";
     }
 
@@ -154,7 +154,7 @@ class Dvups_entity extends Dvups_config_item implements JsonSerializable, DvupsT
 
 
     public function route($path = "/index"){
-        return route('src/' . strtolower($this->dvups_module->getProject()) . '/' . $this->dvups_module->getName() . '/' . $this->url . $path);
+        return route('src/' . strtolower($this->dvups_module->project) . '/' . $this->dvups_module->name . '/' . $this->url . $path);
     }
 
     public function dvupsTranslate()

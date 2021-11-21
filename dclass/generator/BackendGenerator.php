@@ -5,6 +5,7 @@ class BackendGenerator
 
     public function entityGenerator($entity)
     {
+        $attrib = "";
 
         $name = strtolower($entity->name);
 
@@ -21,17 +22,91 @@ class BackendGenerator
      * */
     class " . ucfirst($name) . " extends Model implements JsonSerializable{\n");
         $method = "";
+
+        $construt = "
+        /**
+         * @Id @GeneratedValue @Column(type=\"integer\")
+         * @var int
+         * */
+        protected $" . "id;";
+        $otherattrib = false;
+
+//        if(isset($entity->attribut[1])){
+//        var_dump($entity->attribut);
+//        die;
+
+        $attributlang = [];
+        foreach ($entity->attribut as $attribut) {
+
+            if ($attribut->name == "id")
+                continue;
+
+            if (isset($attribut->lang) && $attribut->lang) {
+                $attributlang[] = $attribut->name;
+                $construt .= "
+                // $" . $attribut->name." available in {$name}_lang class \n";
+                continue;
+            }
+
+            $length = "";
+            $nullable = "";
+
+            if (in_array($attribut->formtype, ["radio", "checkbox", "select"])) {
+                $staticenum = [];
+                if (isset($attribut->enum)) {
+                    foreach ($attribut->enum as $key => $enum) {
+                        if (is_string($enum))
+                            $staticenum[] = "'$enum'";
+                        else
+                            $staticenum[] = $enum;
+                        //$staticenum[] = " '$key' => '$enum'";
+                    }
+                }
+
+                $construt .= "
+        /* enum */
+        public static $" . $attribut->name . "s = [" . implode(",", $staticenum) . "];";
+
+            }
+
+            if ($attribut->datatype == "string") {
+                $length = ', length=' . $attribut->size . '';
+            }
+
+            if ($attribut->nullable == 'default') {
+                $nullable = ", nullable=true";
+            }
+            $defaultvalue = "";
+            if (isset($attribut->defaultvalue) && !in_array($attribut->datatype, ['date', 'datetime', 'time'])) {
+                $defaultvalue = " = " . $attribut->defaultvalue . ' ';
+            }
+            $construt .= "
+        /**
+         * @Column(name=\"" . $attribut->name . "\", type=\"" . $attribut->datatype . "\" $length $nullable)
+         * @var " . $attribut->datatype . "
+         **/
+        protected $" . $attribut->name . "$defaultvalue;";
+        }
+        $otherattrib = true;
+        $langconfig = "";
+//        }
+        if($attributlang){
+            $langconfig = "\$this->dvtranslate = true;
+            \$this->dvtranslated_columns = [\"".implode(',', $attributlang)."\"];";
+        }
         $construteur = "
         public function __construct($" . "id = null){
-            
-                if( $" . "id ) { $" . "this->id = $" . "id; }   
-                          ";
-        $attrib = "";
+            $langconfig
+            if( $" . "id ) { $" . "this->id = $" . "id; }   
+            ";
 
         if (!empty($entity->relation)) {
 
             $construteur .= "";
             foreach ($entity->relation as $relation) {
+                $entitytype = ucfirst($relation->entity);
+                if(isset($relation->entitytype))
+                    $entitytype = ucfirst($relation->entitytype);
 
                 if ($relation->cardinality == 'manyToMany') {
 
@@ -89,122 +164,66 @@ class BackendGenerator
         }
         
                         ";
-                } elseif ($relation->cardinality == 'oneToOne') { // or $relation->nullable == 'DEFAULT'
+                }
+                elseif ($relation->cardinality == 'oneToOne') { // or $relation->nullable == 'DEFAULT'
 
-                    $construteur .= "\n\t$" . "this->" . $relation->entity . " = new " . ucfirst($relation->entity) . "();";
+                    $construteur .= "\n\t$" . "this->" . $relation->entity . " = new $entitytype();";
 
                     $attrib .= "
         /**
          * " . ucfirst($relation->cardinality) . "
-         * @ManyToOne(targetEntity=\"" . $antislash . ucfirst($relation->entity) . "\")
+         * @ManyToOne(targetEntity=\"" . $antislash . $entitytype . "\")
          * @JoinColumn(onDelete=\"" . $relation->ondelete . "\")
-         * @var " . $antislash . ucfirst($relation->entity) . "
+         * @var " . $antislash . $entitytype . "
          */
         public $" . $relation->entity . ";\n";
 
                     $method .= "
         /**
          *  " . $relation->cardinality . "
-         *	@return " . $antislash . ucfirst($relation->entity) . "
+         *	@return " . $antislash . $entitytype . "
          */
         function get" . ucfirst($relation->entity) . "() {
             $" . "this->" . $relation->entity . " = $" . "this->" . $relation->entity . "->__show();
             return $" . "this->" . $relation->entity . ";
         }";
                     $method .= "
-        function set" . ucfirst($relation->entity) . "(" . $antislash . ucfirst($relation->entity) . " $" . $relation->entity . " = null) {
+        function set" . ucfirst($relation->entity) . "(" . $antislash . $entitytype . " $" . $relation->entity . " = null) {
             $" . "this->" . $relation->entity . " = $" . $relation->entity . ";
         }
                         ";
                 } else {
 
-                    $construteur .= "\n\t$" . "this->" . $relation->entity . " = new " . ucfirst($relation->entity) . "();";
+                    $construteur .= "\n\t$" . "this->" . $relation->entity . " = new " . $entitytype . "();";
 
                     $attrib .= "
         /**
-         * @" . ucfirst($relation->cardinality) . "(targetEntity=\"" . $antislash . ucfirst($relation->entity) . "\")
-         * @var " . $antislash . ucfirst($relation->entity) . "
+         * @" . ucfirst($relation->cardinality) . "(targetEntity=\"" . $antislash . $entitytype . "\")
+         * @JoinColumn(onDelete=\"" . $relation->ondelete . "\")
+         * @var " . $antislash . $entitytype . "
          */
         public $" . $relation->entity . ";\n";
 
                     $method .= "
         /**
          *  " . $relation->cardinality . "
-         *	@return " . $antislash . ucfirst($relation->entity) . "
+         *	@return " . $antislash . $entitytype . "
          */
         function get" . ucfirst($relation->entity) . "() {
             $" . "this->" . $relation->entity . " = $" . "this->" . $relation->entity . "->__show();
             return $" . "this->" . $relation->entity . ";
         }";
                     $method .= "
-        function set" . ucfirst($relation->entity) . "(" . $antislash . ucfirst($relation->entity) . " $" . $relation->entity . ") {
+        function set" . ucfirst($relation->entity) . "(" . $antislash . $entitytype . " $" . $relation->entity . ") {
             $" . "this->" . $relation->entity . " = $" . $relation->entity . ";
         }
                         ";
                 }
             }
+
         }
 
         $construteur .= "\n}\n";
-
-        $construt = "
-        /**
-         * @Id @GeneratedValue @Column(type=\"integer\")
-         * @var int
-         * */
-        protected $" . "id;";
-        $otherattrib = false;
-
-//        if(isset($entity->attribut[1])){
-//        var_dump($entity->attribut);
-//        die;
-
-        foreach ($entity->attribut as $attribut) {
-
-            if ($attribut->name == "id")
-                continue;
-
-            $length = "";
-            $nullable = "";
-
-            if (in_array($attribut->formtype, ["radio", "checkbox", "select"])) {
-                $staticenum = [];
-                if (isset($attribut->enum)) {
-                    foreach ($attribut->enum as $key => $enum) {
-                        if (is_string($enum))
-                            $staticenum[] = "'$enum'";
-                        else
-                            $staticenum[] = $enum;
-                        //$staticenum[] = " '$key' => '$enum'";
-                    }
-                }
-
-                $construt .= "
-        /* enum */
-        public static $" . $attribut->name . "s = [" . implode(",", $staticenum) . "];";
-
-            }
-
-            if ($attribut->datatype == "string") {
-                $length = ', length=' . $attribut->size . '';
-            }
-
-            if ($attribut->nullable == 'default') {
-                $nullable = ", nullable=true";
-            }
-            $defaultvalue = "";
-            if (isset($attribut->defaultvalue) && !in_array($attribut->datatype, ['date', 'datetime', 'time'])) {
-                $defaultvalue = " = " . $attribut->defaultvalue . ' ';
-            }
-            $construt .= "
-        /**
-         * @Column(name=\"" . $attribut->name . "\", type=\"" . $attribut->datatype . "\" $length $nullable)
-         * @var " . $attribut->datatype . "
-         **/
-        protected $" . $attribut->name . "$defaultvalue;";
-        }
-        $otherattrib = true;
-//        }
 
         $construt .= " 
         " . $attrib . "
@@ -256,7 +275,8 @@ class BackendGenerator
             $" . "this->" . $attribut->name . " = $" . $attribut->name . ";
         }
         ";
-                } elseif (false && in_array($attribut->formtype, ['date', 'datepicker'])) {
+                }
+                elseif (false && in_array($attribut->formtype, ['date', 'datepicker'])) {
                     $construt .= "
 
         public function get" . ucfirst($attribut->name) . "() {
@@ -272,7 +292,8 @@ class BackendGenerator
                     else
                             $" . "this->" . $attribut->name . " = new DateTime($" . $attribut->name . ");
         }";
-                } elseif ($attribut->formtype == 'liste') {
+                }
+                elseif ($attribut->formtype == 'liste') {
                     $construt .= "
         public function get" . ucfirst($attribut->name) . "List() {
             return $" . "this->" . $attribut->name . ";
@@ -286,7 +307,8 @@ class BackendGenerator
             $" . "this->" . $attribut->name . " = $" . $attribut->name . ";
         }
         ";
-                } else {
+                }
+                else {
                     $construt .= "
         public function get" . ucfirst($attribut->name) . "() {
             return $" . "this->" . $attribut->name . ";
@@ -348,27 +370,15 @@ class BackendGenerator
         $fichier = fopen('Entity/' . ucfirst($name) . '_lang.php', 'w');
 
         fputs($fichier, "<?php 
-        // user \dclass\devups\model\Model;
-    /**
-     * @Entity @Table(name=\"" . $name . "_lang\")
-     * */
-    class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
+/**
+ * @Entity @Table(name=\"" . $name . "_lang\")
+ * */
+class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
         $method = "";
-        $construteur = "
-        public function __construct($" . "id = null){
-            
-                if( $" . "id ) { $" . "this->id = $" . "id; }   
-        }
-      ";
+        $construteur = " ";
         $attrib = "";
 
-        $construt = "
-        /**
-         * @Id @GeneratedValue @Column(type=\"integer\")
-         * @var int
-         * */
-        protected $" . "id;";
-        $otherattrib = false;
+        $construt = "";
 
         foreach ($entity->attribut as $attribut) {
             if (!isset($attribut->lang) || !$attribut->lang) {
@@ -387,19 +397,23 @@ class BackendGenerator
             $defaultvalue = "";
 
             $construt .= "
-            /**
-             * @Column(name=\"" . $attribut->name . "\", type=\"" . $attribut->datatype . "\" $length $nullable)
-             * @var " . $attribut->datatype . "
-             **/
-            protected $" . $attribut->name . "$defaultvalue;";
+    /**
+     * @Column(name=\"" . $attribut->name . "\", type=\"" . $attribut->datatype . "\" $length $nullable)
+     * @var " . $attribut->datatype . "
+     **/
+    protected $" . $attribut->name . "$defaultvalue;";
+
         }
 
         $construt .= "
-            /**
-             * @Column(name=\"" . $name . "_id\", type=\"integer\" )
-             * @var integer
-             **/
-            protected $" . $name . "_id;";
+        
+    /**
+     * @Id @ManyToOne(targetEntity=\"\\" . ucfirst($name) . "\")
+     * @JoinColumn(onDelete=\"cascade\")
+     * @var \\" . ucfirst($name) . "
+     */
+    public \$$name;
+    ";
 
 //        }
 
@@ -407,26 +421,8 @@ class BackendGenerator
         " . $attrib . "
 
         " . $construteur . "
-        public function getId() {
-            return $" . "this->id;
-        }";
-
-        foreach ($entity->attribut as $attribut) {
-            if (!isset($attribut->lang) || !$attribut->lang) {
-                continue;
-            }
-            $construt .= "
-        public function get" . ucfirst($attribut->name) . "() {
-            return $" . "this->" . $attribut->name . ";
-        }
-
-        public function set" . ucfirst($attribut->name) . "($" . $attribut->name . ") {
-            $" . "this->" . $attribut->name . " = $" . $attribut->name . ";
-        }
         ";
 
-
-        }
         $construt .= $method . "  ";
 
         fputs($fichier, $construt);
@@ -968,6 +964,10 @@ class " . ucfirst($name) . "Table extends Datatable{
             } else {
                 $field .= "\"type\" => FORMTYPE_TEXT,
             \"value\" => \$this->" . $name . "->get" . ucfirst($attribut->name) . "(), ";
+            }
+
+            if (isset($attribut->lang) && $attribut->lang) {
+                $field .= "\n\"lang\" => true,\n";
             }
 
             $field .= "

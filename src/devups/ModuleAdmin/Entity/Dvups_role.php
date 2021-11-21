@@ -39,6 +39,8 @@ class Dvups_role extends Model implements JsonSerializable
      */
     public $dvups_entity;
 
+    public $dv_collection = ["dvups_component","dvups_right", "dvups_module", "dvups_entity"];
+
     public function array_rigth()
     {
         $array_rigth = [];
@@ -274,7 +276,7 @@ class Dvups_role extends Model implements JsonSerializable
     {
 
         $admin = getadmin();
-        if ($admin->dvups_role->is("admin"))
+        if ($admin->dvups_role->hydrate()->is("admin"))
             return '<button onclick="model.updateprivilege(this)"  class=\'btn btn-info\'> ' . t("Update Privilege") . ' </button>';
 
     }

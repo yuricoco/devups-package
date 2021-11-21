@@ -119,21 +119,21 @@ class UserCore extends \Model implements JsonSerializable
             return null;
 
         $nb = User::where("email", $email);
-        if ($nb->__countEl()) {
-            if ($nb->__getOne()->getId() != $this->id)
+        if ($nb->count()) {
+            if ($nb->first()->getId() != $this->id)
                 return t("a user with this :attribute already exist", ["attribute" => "email"]);
         }
         $this->email = $email;
     }
 
-    public function setTelephone($phonenumber)
+    public function setPhonenumber($phonenumber)
     {
         if (!$phonenumber)
             return null;
 
         $nb = User::where("phonenumber", $phonenumber);
-        if ($nb->__countEl()) {
-            if ($nb->__getOne()->getId() != $this->id)
+        if ($nb->count()) {
+            if ($nb->first()->getId() != $this->id)
                 return t("a user with this :attribute already exist", ["attribute" => "phonenumber"]);
         }
         $this->phonenumber = $phonenumber;
@@ -167,7 +167,7 @@ class UserCore extends \Model implements JsonSerializable
         global $user;
         if(__prod)
             $user = User::select("*")->where_str(" '$token' = CONCAT(api_key, '.', session_token) ")
-                ->__firstOrNull();
+                ->firstOrNull();
         else
             $user = User::find($token);
 
@@ -232,7 +232,7 @@ class UserCore extends \Model implements JsonSerializable
     /**
      * @return int
      */
-    public function getResettingpassword(): int
+    public function getResettingpassword()
     {
         return $this->resettingpassword;
     }
@@ -336,7 +336,7 @@ class UserCore extends \Model implements JsonSerializable
     /**
      * @param string $session_token
      */
-    public function setSessionToken(string $session_token)
+    public function setSessionToken(  $session_token)
     {
         $this->session_token = $session_token;
     }

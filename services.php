@@ -11,6 +11,8 @@ use Request as R;
 header("Access-Control-Allow-Origin: *");
 header('Content-Type: application/json');
 
+(new \devupscms\ModuleTree\ModuleTree())->webservices();
+
 (new Request('hello'));
 
 switch (Request::get('path')) {
@@ -35,6 +37,9 @@ switch (Request::get('path')) {
         break;
     case 'lazyloading':
         g::json_encode((new dclass\devups\Controller\Controller())->ll());
+        break;
+    case 'dcollection':
+        g::json_encode((new dclass\devups\Controller\Controller())->dcollection());
         break;
 
     default :
