@@ -8,21 +8,16 @@ class Dvups_module_lang extends Dv_langCore
 {
 
     /**
-     * @Id @GeneratedValue @Column(type="integer")
-     * @var int
-     * */
-    protected $id;
-
-    /**
      * @Column(name="label", type="string" , length=25 )
      * @var string
      * */
     protected $label;
     /**
-     * @Column(name="dvups_module_id", type="integer" )
-     * @var string
-     * */
-    protected $dvups_module_id;
+     * @Id @ManyToOne(targetEntity="\Dvups_module")
+     * @JoinColumn(onDelete="cascade")
+     * @var \Dvups_module
+     */
+    public $dvups_module;
 
     public function __construct($id = null)
     {

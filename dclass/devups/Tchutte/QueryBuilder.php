@@ -61,7 +61,7 @@ class QueryBuilder extends \DBAL
         if (is_object($entity))
             parent::__construct($entity);
 
-        $this->_from = $this->table;
+        $this->_from = "`".$this->table."`";
         if ($defaultjoinsetted) {
             $this->defaultjoinsetted = $defaultjoinsetted;
             $this->initdefaultjoin();
@@ -342,9 +342,9 @@ class QueryBuilder extends \DBAL
             foreach ($entity_links as $entity_link) {
                 $class_attrib = explode(":", $entity_link);
                 if ($class_attrib[0] != $class_attrib[1])
-                    $this->defaultjoin .= " LEFT JOIN `" . $class_attrib[0] . "` " . $class_attrib[1] . " ON " . $class_attrib[1] . ".id = " . $this->table . "." . $class_attrib[1] . "_id";
+                    $this->defaultjoin .= " LEFT JOIN `" . $class_attrib[0] . "` " . $class_attrib[1] . " ON `" . $class_attrib[1] . "`.id = " . $this->table . "." . $class_attrib[1] . "_id";
                 else
-                    $this->defaultjoin .= " LEFT JOIN `" . $class_attrib[0] . "` ON " . $class_attrib[0] . ".id = " . $this->table . "." . $class_attrib[0] . "_id";
+                    $this->defaultjoin .= " LEFT JOIN `" . $class_attrib[0] . "` ON `" . $class_attrib[0] . "`.id = `" . $this->table . "`." . $class_attrib[0] . "_id";
             }
         }
         $this->_join .= $this->defaultjoin;
@@ -366,7 +366,7 @@ class QueryBuilder extends \DBAL
         if (!$classnameon)
             $classnameon = $this->objectName;
 
-        $this->_join = " INNER JOIN `" . $this->join . "` ON " . $this->join . ".id = " . strtolower($classnameon) . "." . $this->join . "_id";
+        $this->_join = " INNER JOIN `" . $this->join . "` ON `" . $this->join . "`.id = `" . strtolower($classnameon) . "`." . $this->join . "_id";
 
         $this->query .= $this->_join;
 
@@ -387,7 +387,7 @@ class QueryBuilder extends \DBAL
         if (!$classnameon)
             $classnameon = $this->table;
 
-        $this->_join .= " LEFT JOIN `" . $join . "` ON " . $join . ".id = " . strtolower($classnameon) . "." . $join . "_id";
+        $this->_join .= " LEFT JOIN `" . $join . "` ON `" . $join . "`.id = `" . strtolower($classnameon) . "`." . $join . "_id";
 
         return $this;
     }
@@ -411,7 +411,7 @@ class QueryBuilder extends \DBAL
         if (!$classnameon)
             $classnameon = $this->objectName;
 
-        $this->_join .= " INNER JOIN `" . $this->join . "` ON " . $this->join . "." . strtolower($classnameon) . "_id = " . strtolower($classnameon) . ".id";
+        $this->_join .= " INNER JOIN `" . $this->join . "` ON `" . $this->join . "`." . strtolower($classnameon) . "_id = `" . strtolower($classnameon) . "`.id";
 
         return $this;
     }
@@ -419,7 +419,7 @@ class QueryBuilder extends \DBAL
     public function on($entity)
     {
         //" left join `".strtolower(get_class($entity)).
-        $this->query .= " ON " . $this->join . ".id = " . strtolower(get_class($entity)) . "." . $this->join . "_id";
+        $this->query .= " ON `" . $this->join . "`.id = `" . strtolower(get_class($entity)) . "`." . $this->join . "_id";
 
         return $this;
     }
@@ -734,7 +734,7 @@ class QueryBuilder extends \DBAL
 
     protected function querysanitize($sql)
     {
-        return str_replace("this.", $this->table . ".", $sql);
+        return str_replace("this.", "`".$this->table . "`.", $sql);
     }
 
     public function getSqlQuery()

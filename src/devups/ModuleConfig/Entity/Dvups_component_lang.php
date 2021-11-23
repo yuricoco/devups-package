@@ -1,42 +1,24 @@
-<?php 
-        // user \dclass\devups\model\Model;
+<?php
+// user \dclass\devups\model\Model;
+
+/**
+ * @Entity @Table(name="dvups_component_lang")
+ * */
+class Dvups_component_lang extends Dv_langCore
+{
+
     /**
-     * @Entity @Table(name="dvups_component_lang")
-     * */
-    class Dvups_component_lang extends Dv_langCore {
+     * @Column(name="label", type="string" , length=150 )
+     * @var string
+     **/
+    protected $label;
 
-        /**
-         * @Id @GeneratedValue @Column(type="integer")
-         * @var int
-         * */
-        protected $id;
-            /**
-             * @Column(name="label", type="string" , length=50 )
-             * @var string
-             **/
-            protected $label;
-            /**
-             * @Column(name="dvups_component_id", type="integer" )
-             * @var integer
-             **/
-            protected $dvups_component_id; 
-        
+    /**
+     * @Id @ManyToOne(targetEntity="\Dvups_component")
+     * @JoinColumn(onDelete="cascade")
+     * @var \Dvups_component
+     */
+    public $dvups_component;
 
-        
-        public function __construct($id = null){
-            
-                if( $id ) { $this->id = $id; }   
-        }
-      
-        public function getId() {
-            return $this->id;
-        }
-        public function getLabel() {
-            return $this->label;
-        }
 
-        public function setLabel($label) {
-            $this->label = $label;
-        }
-          
 }

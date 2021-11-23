@@ -325,7 +325,6 @@ class User extends UserCore implements JsonSerializable
             'birthdate' => $this->birthdate,
             'lang' => $this->lang,
             'username' => $this->username,
-            'country' => $this->country,
             'api_key' => $this->api_key,
             'session_token' => $this->session_token,
         ];

@@ -155,7 +155,7 @@ class DBAL extends Database
     public function setCollect(array $collect)
     {
         foreach ($collect as $el) {
-            $this->collect[] = str_replace("this.", $this->table . ".", $el);
+            $this->collect[] = str_replace("this.", "`".$this->table . "`.", $el);
         }
         //$this->collect = $collect;
     }
@@ -444,7 +444,7 @@ class DBAL extends Database
             $parameterQuery .= ',' . $this->objectVar[$i];
         }
 
-        $sql = "insert into " . $this->table . " (" . $parameterQuery . ")  values ";
+        $sql = "insert into `" . $this->table . "` (" . $parameterQuery . ")  values ";
         //$sql = "insert into ".$this->objectName." value ";
         $sql .= implode(",", $finalvalue) . ';';
         //die(var_dump($sql));
@@ -491,7 +491,7 @@ class DBAL extends Database
         if ($object)
             $this->instanciateVariable($object);
 
-        $sql = "DELETE from " . $this->table . " WHERE id IN (" . implode(",", $listid) . ")";
+        $sql = "DELETE from `" . $this->table . "` WHERE id IN (" . implode(",", $listid) . ")";
 
         return $sql;
     }
@@ -785,7 +785,7 @@ class DBAL extends Database
         endif;
         $join = "";
         $columns = "{$this->table}.`" . implode("`, {$this->table}.`", $this->objectVar) . "`";
-        $where = ' where ' . $this->table . '.' . $this->objectVar[0] . ' = ? ';
+        $where = ' where `' . $this->table . '`.' . $this->objectVar[0] . ' = ? ';
         if ($id_lang)
             $this->id_lang = $id_lang;
         if ($object->dvtranslate && $this->id_lang) {
@@ -795,8 +795,8 @@ class DBAL extends Database
                 $this->id_lang = Dvups_lang::defaultLang()->getId();
             */
             $thislang = $this->table . "_lang";
-            $columns .= ", " . $thislang . ".`" . implode("`, $thislang.`", $object->dvtranslated_columns) . "`";
-            $join .= " left join $thislang on $thislang.{$this->table}_id = {$this->table}.id ";
+            $columns .= ", `" . $thislang . "`.`" . implode("`, $thislang.`", $object->dvtranslated_columns) . "`";
+            $join .= " left join $thislang on $thislang.{$this->table}_id = `{$this->table}`.id ";
             $where .= " and $thislang.lang_id = {$this->id_lang} ";
 
         }
@@ -804,7 +804,7 @@ class DBAL extends Database
         $select = "select $columns from `" . $this->table . '`';
 
         if ($this->softdelete)
-            $where .= ' and ' . $this->table . '.deleted_at is null ';
+            $where .= ' and `' . $this->table . '`.deleted_at is null ';
 
         return $this->__findOne($select . $join . $where, array($this->objectValue[0]), $collection, $recursif);
 
@@ -1293,7 +1293,7 @@ class DBAL extends Database
             $fieldNames += array_combine($assiactions, $assiactions);
 
             if (!$this->tableExists($this->table)) {
-                echo "table not exist";
+                echo $this->table." table not exist";
                 die;
 //                if ($metadata = $em->getClassMetadata("\\" . $this->objectName)) {
 //                    $this->table = strtolower($metadata->table['name']);
@@ -1357,7 +1357,7 @@ class DBAL extends Database
         // Try a select statement against the table
         // Run it in try/catch in case PDO is in ERRMODE_EXCEPTION.
         try {
-            $query = $this->link->query("SELECT 1 FROM " . strtolower($table) . " LIMIT 1");
+            $query = $this->link->query("SELECT 1 FROM `" . strtolower($table) . "` LIMIT 1");
         } catch (Exception $e) {
             // We got an exception == table not found
             return FALSE;
