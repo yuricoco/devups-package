@@ -1,4 +1,11 @@
 /nbproject/
 /uploads/
+/build/
+/admin/cache/
+/cache/
+/database/
+/node_modules/
 /vendor/
 /.idea/
+/*.zip/
+/src/*.zip/
