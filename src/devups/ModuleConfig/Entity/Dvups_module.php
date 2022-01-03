@@ -18,6 +18,11 @@ class Dvups_module extends Dvups_config_item implements JsonSerializable, DvupsT
      * @var string
      * */
     protected $favicon = "fas fa-fw fa-cog";
+    /**
+     * @Column(name="label", type="string" , length=255, nullable=true )
+     * @var string
+     * */
+    protected $label;
 
     /**
      * @Column(name="project", type="string" , length=25 )
@@ -34,6 +39,9 @@ class Dvups_module extends Dvups_config_item implements JsonSerializable, DvupsT
 
     public function __construct($id = null)
     {
+
+//        $this->dvtranslate = true;
+//        $this->dvtranslated_columns = ["label"];
 
         if ($id) {
             $this->id = $id;
@@ -121,7 +129,10 @@ class Dvups_module extends Dvups_config_item implements JsonSerializable, DvupsT
      */
     public function getFavicon()
     {
-        return $this->favicon;
+        if($this->favicon)
+            return $this->favicon;
+
+        return 'mdi mdi-alpha';
     }
 
     /**
@@ -179,6 +190,13 @@ class Dvups_module extends Dvups_config_item implements JsonSerializable, DvupsT
 
     public function route($path = ""){
         return route('src/' . strtolower($this->project) . '/' . $this->name . '/'.$path);
+    }
+
+    public function moduleRoot(){
+
+            return ROOT . "src/" . $this->project."/".$this->name."/";
+            //return ROOT . "src" . $this->dvups_component->name."/".$this->name."/";
+
     }
 
 }

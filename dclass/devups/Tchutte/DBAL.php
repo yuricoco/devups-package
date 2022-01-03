@@ -14,6 +14,7 @@ class DBAL extends Database
 {
 
     protected $defaultjoin = "";
+    public $custom_columns = "";
     protected $collect = [];
     /**
      *
@@ -92,6 +93,7 @@ class DBAL extends Database
      * @var type
      */
     protected $entity_link_list;
+    protected $entity_link_map_list;
     private $iterat;
     private $update = false;
 
@@ -155,7 +157,7 @@ class DBAL extends Database
     public function setCollect(array $collect)
     {
         foreach ($collect as $el) {
-            $this->collect[] = str_replace("this.", "`".$this->table . "`.", $el);
+            $this->collect[] = str_replace("this.", "`" . $this->table . "`.", $el);
         }
         //$this->collect = $collect;
     }
@@ -579,10 +581,10 @@ class DBAL extends Database
                 foreach ($this->object->dvtranslated_columns as $key) {
                     if (!isset($objarray[$key]))
                         continue;
-                    if(isset($objarray[$key][$lang->getIso_code()]))
+                    if (isset($objarray[$key][$lang->getIso_code()]))
                         $keyvalue[$key] = $objarray[$key][$lang->getIso_code()];
                     else
-                        $keyvalue[$key] = $id."_".$lang->getIso_code();
+                        $keyvalue[$key] = $id . "_" . $lang->getIso_code();
                     // $this->object->{$key} = $objarray[$key][$lang->getIso_code()];
                 }
                 $keyvalue["lang_id"] = $lang->getId();
@@ -858,7 +860,7 @@ class DBAL extends Database
 
         //$object_array = $this->objectKeyValue;
         $callables = [];
-
+        //$this->objectKeyValue
         foreach ($object_array as $key => $value) {
 
             $k = str_replace(get_class($this->object), '', $key);
@@ -871,7 +873,9 @@ class DBAL extends Database
                 if (is_object($value)) {
                     $cn = get_class($value);
                     $classname = strtolower($cn);
-                    if ($classname . '_id' == $key2) {
+                    //$cnk = $this->entity_link_map_list[$classname];
+                    //if ($cnk . '_id' == $key2) {
+                    if ($key . '_id' == $key2) {
 
                         if (is_array($flowBD[$key2])) {
                             $object_array[$key] = null;//$classname;
@@ -897,6 +901,11 @@ class DBAL extends Database
                             $object_array[$key] = $flowBD[$key2];
                         }
                         break;
+
+                    } else if (!isset($object_array[$key2]) && $this->custom_columns != "") { // for custom
+                        //var_dump( $k2);
+                        $object_array[$key2] = $flowBD[$key2];
+
                     }
                 }
             }
@@ -960,14 +969,18 @@ class DBAL extends Database
             WHERE {$this->table }_id = {$flowBD->id} ";
 
         $values = (new DBAL())->executeDbal($sql, [], DBAL::$FETCHALL);
-
+        $langs = Dvups_lang::all();
         foreach ($columns as $item) {
             $flowBD->{$item} = [];
 
-            foreach ($values as $value) {
-                $flowBD->{$item}[$value['iso_code']] = $value[$item];
-
-            }
+            if ($values)
+                foreach ($values as $value) {
+                    $flowBD->{$item}[$value['iso_code']] = $value[$item];
+                }
+            else
+                foreach ($langs as $value) {
+                    $flowBD->{$item}[$value->iso_code] = "";
+                }
         }
     }
 
@@ -1031,6 +1044,7 @@ class DBAL extends Database
             return $query->fetchAll(PDO::FETCH_CLASS, $this->objectName);
 
         $rows = $query->fetchAll(PDO::FETCH_NAMED);
+
         foreach ($rows as $row) {
             $result[] = $this->dbrow($row);
         }
@@ -1293,7 +1307,7 @@ class DBAL extends Database
             $fieldNames += array_combine($assiactions, $assiactions);
 
             if (!$this->tableExists($this->table)) {
-                echo $this->table." table not exist";
+                echo $this->table . " table not exist";
                 die;
 //                if ($metadata = $em->getClassMetadata("\\" . $this->objectName)) {
 //                    $this->table = strtolower($metadata->table['name']);
@@ -1313,6 +1327,7 @@ class DBAL extends Database
                 if (is_object($val)) {
                     //var_dump(get_class($val));
                     $this->entity_link_list[strtolower(get_class($val) . ":" . $key)] = $val;
+                    $this->entity_link_map_list[strtolower(get_class($val))] = $key;
                     $keys[$key . '_id'] = $val->getId();
                 }
 //                elseif (is_array($val))

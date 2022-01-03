@@ -903,12 +903,12 @@ class Model extends \stdClass
             return $this;
 
         global $em;
-        $classlang = get_class($this);
+        $classlang = strtolower(get_class($this));
         $metadata = $em->getClassMetadata("\\" . $classlang);
         $fieldNames = $metadata->fieldNames;
         $assiactions = array_keys($metadata->associationMappings);
 
-        $sql = " SELECT * FROM $classlang WHERE id = ".$this->id;
+        $sql = " SELECT * FROM `$classlang` WHERE id = ".$this->id;
         $data = (new DBAL())->executeDbal($sql, [], DBAL::$FETCH);
         //var_dump($classlang." - ".$attribut, $data, $fieldNames);
         foreach ($fieldNames as $k => $val) {
@@ -932,6 +932,7 @@ class Model extends \stdClass
                 return null;
 
             $classlang = get_class($this) . "_lang";
+            $cnl = strtolower($classlang);
             if (property_exists($classlang, $attribut)) {
                 $idlang = DBAL::$id_lang_static;
                 if(!$idlang) {
@@ -939,7 +940,7 @@ class Model extends \stdClass
                     (new DBAL())->setClassname(get_class($this))->getLangValues($this, [$attribut]);
                     return $this->{$attribut};
                 }
-                $sql = " SELECT $attribut FROM $classlang WHERE lang_id = $idlang AND ".strtolower(get_class($this))."_id = ".$this->id;
+                $sql = " SELECT $attribut FROM $cnl WHERE lang_id = $idlang AND ".strtolower(get_class($this))."_id = ".$this->id;
                 $data = (new DBAL())->executeDbal($sql, [], DBAL::$FETCH);
                 $this->{$attribut} = $data[0];
                 return $data[0];
@@ -972,8 +973,8 @@ class Model extends \stdClass
                 $metadata = $em->getClassMetadata("\\" . $classlang);
                 $fieldNames = $metadata->fieldNames;
                 $assiactions = array_keys($metadata->associationMappings);
-
-                $sql = " SELECT * FROM $classlang WHERE id = ".$this->id;
+                $cn = strtolower($classlang);
+                $sql = " SELECT * FROM $cn WHERE id = ".$this->id;
                 $data = (new DBAL())->executeDbal($sql, [], DBAL::$FETCH);
                 //var_dump($classlang." - ".$attribut, $data, $fieldNames);
                 foreach ($fieldNames as $k => $val) {
@@ -1204,6 +1205,7 @@ class Model extends \stdClass
                 "message" => "no file founded",
             ];
 
+
         $handle = file($_FILES["fixture"]["tmp_name"], FILE_IGNORE_NEW_LINES);
 
         if ($handle) {
@@ -1238,6 +1240,16 @@ class Model extends \stdClass
                             ];
 
                         $keyvalue = array_combine($columns, explode(self::split, $line));
+
+                        foreach ($this as $key => $val) {
+                            if (in_array($key, self::$dvkeys))
+                                continue;
+                            if (is_object($val)) {
+                                if (isset($keyvalue[$key . '_id']) && in_array(strtolower($keyvalue[$key . '_id']), ['', 'null']))
+                                    $keyvalue[$key. '_id' ] = null;
+                            }
+                        }
+                        // dv_dump($keyvalue);
 
 //                        }catch (Exception $exception){
 //                            die(var_dump($exception));
@@ -1276,17 +1288,19 @@ class Model extends \stdClass
     {
 
         $qb = new QueryBuilder($this);
-        if ($sort == 'id')
-            $sort = $qb->getTable() . "." . $sort;
 
-        return $qb->select($column)->handlesoftdelete()->orderby($sort . " " . $order)->__exportAllRow($callable);
+        return $qb->select($column)
+            ->lazyloading("this.".$sort . " " . $order, false, true)
+            ->get($column, $callable);
+
     }
 
     public function exportCsv($classname)
     {
         $keys = [];
         foreach ($this as $key => $val) {
-            if (in_array($key, ["id"] + self::$dvkeys) || is_array($val))
+            self::$dvkeys[] = 'id';
+            if (in_array($key,  self::$dvkeys) || is_array($val))
                 continue;
             if (is_object($val)) {
                 $keys[] = $key . '_id';
@@ -1297,12 +1311,16 @@ class Model extends \stdClass
         $exportat = date("YmdHis");
         //$classname = get_class($this);
         $filename = $classname . "-" . $exportat . ".csv";
-        \DClass\lib\Util::writein(implode(";", $keys), $filename, self::classpath("", "") . "fixtures");
-        $this->exportrows(function ($row, $classname) use ($filename, $exportat) {
-            \DClass\lib\Util::writein(implode(";", $row), $filename, self::classpath("", "") . "fixtures");
-        }, implode(",", $keys));
+        $root = ROOT. "database/fixtures/".$classname;
 
-        return $keys;
+        // todo; optimization open the file once and write once
+        \DClass\lib\Util::writein(implode(";", $keys), $filename, $root);
+        $this->exportrows(function ($row, $classname) use ($filename, $exportat, $root) {
+            \DClass\lib\Util::writein(implode(";", $row), $filename,  $root);
+        }, "this.".implode(", this.", $keys));
+
+        $download = __env.$root."/".$filename;
+        return compact('keys', "download");
     }
 
     /**

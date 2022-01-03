@@ -101,7 +101,7 @@ var model = {
         }*/
 
         this._showmodal();
-        model.request(this.entity + "._new"+ddatatable.urlparam)
+        model.request(this.entity + ".form"+ddatatable.urlparam)
             //.param({path: this.entity + "._new"})
             .get(function (response) {
                 console.log(response)
@@ -120,7 +120,8 @@ var model = {
 
         this._showmodal();
 
-        model.request(this.entity + "._edit")
+        //model.request(this.entity + "._edit")
+        model.request(this.entity + ".form"+ddatatable.urlparam)
             .param({
                 id: id
             })
@@ -137,11 +138,11 @@ var model = {
     callbackdelete(id, response) {
 
     },
-    _delete: function ($this, id, entity, callback) {
+    _delete: function (id, entity, el, callback) {
         model.init(entity)
-        this.addLoader($($this))
-        var $tr = $($this).parents("tr");
-        var $td = $($this).parents("td");
+        this.addLoader($(el))
+        var $tr = $(el).parents("tr");
+        var $td = $(el).parents("td");
 
         if (!confirm('Voulez-vous Supprimer?')) return false;
 
@@ -225,6 +226,9 @@ var model = {
                 formdata.append($(input).attr('name'), $(input).val());
                 formentity[$(input).attr('name')] = $(input).val();
             } else if ($(input).attr('type') === "email") {
+                formdata.append($(input).attr('name'), $(input).val());
+                formentity[$(input).attr('name')] = $(input).val();
+            } else if ($(input).attr('type') === "date") {
                 formdata.append($(input).attr('name'), $(input).val());
                 formentity[$(input).attr('name')] = $(input).val();
             } else if ($(input).attr('type') === "number") {

@@ -41,6 +41,8 @@ class Datatable extends Lazyloading
     protected $header = []; // describe the model of the table (available column and metadata of row)
     protected $tablebody = "";
 
+    public $trattribut_callback = null;
+
     protected $defaultaction = [
         "edit" => [
             //'type' => 'btn',
@@ -114,12 +116,17 @@ class Datatable extends Lazyloading
             $dentity = \Dvups_entity::getbyattribut("this.name", $this->class);
             $this->base_url = $dentity->dvups_module->hydrate()->route();
 
-            $this->defaultgroupaction = '<button id="deletegroup" onclick="ddatatable.groupdelete(this, \'' . $this->class . '\')" class="btn btn-danger btn-block">delete</button>';
+            $this->defaultgroupaction = '<button id="deletegroup" onclick="ddatatable.groupdelete(this, \'' . $this->class . '\')" class="btn btn-danger btn-block">delete</button>'
+            .'<button data-entity="' . $this->class . '"  onclick="ddatatable._export(this, \'' . $this->class . '\')" type="button" class="btn btn-default btn-block" >
+            <i class="fa fa-arrow-down"></i> Export csv
+        </button>';
+
+            $this->qbcustom = new \QueryBuilder($entity);
         }
         $this->id_lang = \Dvups_lang::defaultLang()->id;
         $this->createaction = [
             //'type' => 'btn',
-            'content' => '<i class="fa fa-plus" ></i> create',
+            'content' => '<i class="fa fa-plus" ></i> '.t('create'),
             'class' => 'btn btn-success',
             'action' => 'onclick="model._new(this, \'' . $this->class . '\')"',
             'habit' => 'stateless',
@@ -180,17 +187,17 @@ class Datatable extends Lazyloading
 //        $top_action .= ' <button type="button" onclick="ddatatable._reload()"  class="btn btn-primary" >
 // <i class="fa fa-retweet"></i> Reload</button>
 // ';
-
-        if (getadmin()->getId()) {
+/*
+ *
+ */
+        if (getadmin()->getId() ) {
             $top_action .= '<div class="btn-group" role="group">
-    <button id="btnGroupDrop1" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    <button id="btnGroupDrop1" type="button" class="btn btn-secondary dropdown-toggle"  data-bs-toggle="dropdown" aria-expanded="false" >
       <i class="fa fa-angle-down"></i> options
     </button>
     <div class="dropdown-menu text-left" aria-labelledby="btnGroupDrop1">
-        <button data-entity="' . $this->class . '" type="button" class="dv_export_csv btn btn-default btn-block" >
-            <i class="fa fa-arrow-down"></i> Export csv
-        </button>
-        <button data-entity="' . $this->class . '" type="button" class="dv_import_csv btn btn-default btn-block" >
+    
+        <button data-entity="' . $this->class . '" type="button" onclick="ddatatable._import(this, \'' . $this->class . '\')" class="  btn btn-default btn-block" >
             <i class="fa fa-arrow-up"></i> Import csv
         </button>
     </div>
@@ -213,16 +220,23 @@ class Datatable extends Lazyloading
     {
         if (isset($this->defaultaction[$actionkey]) && in_array($method, $entityrigths)) {
             if (in_array($method, $_SESSION[dv_role_permission])) {
-                if (is_callable($this->defaultaction[$actionkey])) {
+                $method = $actionkey.'Action';
+                if (method_exists($entity, $method)) {
+                    $result = call_user_func(array($entity, $method), $this->defaultaction[$actionkey]);
+                    if (!is_null($result))
+                        $this->defaultaction[$actionkey] = $result;
+                    else
+                        $this->defaultaction[$actionkey]['action'] = 'onclick="model._' . $actionkey . '(' . $entity->getId() . ', \'' . $this->classname . '\', this)"';
+                }
+                else if (is_callable($this->defaultaction[$actionkey])) {
                     $this->defaultaction[$actionkey] = $this->defaultaction[$actionkey]($entity);
                 } else
-                    $this->defaultaction[$actionkey]['action'] = 'onclick="model._' . $actionkey . '(' . $entity->getId() . ', \'' . $this->classname . '\')"';
+                    $this->defaultaction[$actionkey]['action'] = 'onclick="model._' . $actionkey . '(' . $entity->getId() . ', \'' . $this->classname . '\', this)"';
 
                 return $this->defaultaction[$actionkey];
 
             }
         }
-        return null;
     }
 
     public function actionListView($entity)
@@ -261,42 +275,7 @@ class Datatable extends Lazyloading
             $this->rowaction[] = $this->getaction($entity, "edit", 'update', $entityrigths);
             $this->rowaction[] = $this->getaction($entity, "show", 'read', $entityrigths);
             $this->rowaction[] = $this->getaction($entity, "delete", 'delete', $entityrigths);
-            /*if (isset($this->defaultaction["edit"]) && in_array('update', $entityrigths)) {
-                if (in_array('update', $_SESSION[dv_role_permission])) {
-                    if (is_callable($this->defaultaction["edit"])) {
-                        $this->defaultaction["edit"] = $this->defaultaction["edit"]($entity);
-                    } else
-                        $this->defaultaction["edit"]['action'] = 'onclick="model._edit(' . $entity->getId() . ', \'' . $this->classname . '\')"';
 
-                    $this->rowaction[] = $this->defaultaction["edit"];
-
-                }
-            }*/
-
-            /*if (isset($this->defaultaction["show"]) && in_array('read', $entityrigths)) {
-                if (in_array('read', $_SESSION[dv_role_permission])) {
-
-                    if (is_callable($this->defaultaction["show"]))
-                        $this->defaultaction["show"] = $this->defaultaction["show"]($entity);
-                    else
-                        $this->defaultaction["show"]['action'] = 'onclick="model._show(' . $entity->getId() . ', \'' . $this->classname . '\')"';
-
-                    $this->rowaction[] = $this->defaultaction["show"];
-                }
-            }
-
-            if (isset($this->defaultaction["delete"]) && in_array('delete', $entityrigths)) {
-                if (in_array('delete', $_SESSION[dv_role_permission])) {
-
-                    if (is_callable($this->defaultaction["delete"]))
-                        $this->defaultaction["delete"] = $this->defaultaction["delete"]($entity);
-                    else
-                        $this->defaultaction["delete"]['action'] = 'onclick="model._delete(this, ' . $entity->getId() . ', \'' . $this->classname . '\')"';
-
-                    $this->rowaction[] = $this->defaultaction["delete"];
-                }
-
-            }*/
 
             if (isset($this->defaultaction[$this->mainrowaction]))
                 $this->mainrowactionbtn = $this->defaultaction[$this->mainrowaction];
@@ -307,51 +286,10 @@ class Datatable extends Lazyloading
 
         } elseif (isset($_SESSION[dv_role_permission])) {
             $entityrigths = $_SESSION[dv_role_permission];
-//            if (in_array('update', $_SESSION[dv_role_permission]) or
-//                in_array('read', $_SESSION[dv_role_permission]) or
-//                in_array('delete', $_SESSION[dv_role_permission])) {
 
             $this->rowaction[] = $this->getaction($entity, "edit", 'update', $entityrigths);
             $this->rowaction[] = $this->getaction($entity, "show", 'read', $entityrigths);
             $this->rowaction[] = $this->getaction($entity, "delete", 'delete', $entityrigths);
-
-            /*if (in_array('update', $_SESSION[dv_role_permission])) {
-                $method = 'editAction';
-                if (method_exists($entity, $method)) {
-                    $result = call_user_func(array($entity, $method), $this->defaultaction["edit"]);
-                    if (!is_null($result))
-                        $this->defaultaction["edit"] = $result;
-                    else
-                        $this->defaultaction["edit"]['action'] = 'onclick="model._edit(' . $entity->getId() . ', \'' . $this->classname . '\')"';
-                } else
-                    $this->defaultaction["edit"]['action'] = 'onclick="model._edit(' . $entity->getId() . ', \'' . $this->classname . '\')"';
-
-                $this->rowaction[] = $this->defaultaction["edit"];
-            }
-
-            if (in_array('read', $_SESSION[dv_role_permission])) {
-                $method = 'showAction';
-                if (method_exists($entity, $method) && $result = call_user_func(array($entity, $method), $this->defaultaction["show"]))
-                    $this->defaultaction["show"] = $result;
-                else
-                    $this->defaultaction["show"]['action'] = 'onclick="model._show(' . $entity->getId() . ', \'' . $this->classname . '\')"';
-
-                $this->rowaction[] = $this->defaultaction["show"];
-            }
-
-            if (in_array('delete', $_SESSION[dv_role_permission])) {
-                $method = 'deleteAction';
-                if (method_exists($entity, $method)) {
-                    $result = call_user_func(array($entity, $method), $this->defaultaction["delete"]);
-                    if (!is_null($result))
-                        $this->defaultaction["delete"] = $result;
-                    else
-                        $this->defaultaction["delete"]['action'] = 'onclick="model._delete(this, ' . $entity->getId() . ', \'' . $this->classname . '\')"';
-                } else
-                    $this->defaultaction["delete"]['action'] = 'onclick="model._delete(this, ' . $entity->getId() . ', \'' . $this->classname . '\')"';
-
-                $this->rowaction[] = $this->defaultaction["delete"];
-            }*/
 
             if (isset($this->defaultaction[$this->mainrowaction]))
                 $this->mainrowactionbtn = $this->defaultaction[$this->mainrowaction];
@@ -401,18 +339,14 @@ class Datatable extends Lazyloading
         }
 
         $html = <<<EOF
-
-<div class="card-header-tab card-header">
-                        <div class="card-header-title">
-                            <i class="header-icon lnr-rocket icon-gradient bg-tempting-azure"> </i>
-                            $groupaction
-                        </div>
-                        <div class="btn-actions-pane-right">
-                            <div class="nav">
-                            $headaction
-                            </div>
-                        </div>
-                    </div>
+<div class="d-sm-flex justify-content-between align-items-start">
+                                <div>
+                                    $groupaction
+                                </div>
+                                <div>
+                                    $headaction
+                                </div>
+                            </div> 
 EOF;
 
         $html .= ' ';//.$this->openform;
@@ -423,6 +357,8 @@ EOF;
 
     public function render()
     {
+
+        //Lazyloading::$colunms = array_keys($this->datatablemodel);
 
         $this->lazyloading($this->entity, $this->qbcustom, $this->order_by);
 
@@ -483,7 +419,7 @@ EOF;
 
         $html .= "";//</div> $this->closeform.
 
-        return '<div id="dv_' . $this->class . '_table" class="dv_datatable_container dataTables_wrapper dt-bootstrap4" >' . $html . '</div>
+        return '<div id="dv_' . $this->class . '_table" class="dv_datatable_container dt-bootstrap4 card card-rounded" >' . $html . '</div>
 ' . $this->dialogBox();
 
     }
@@ -584,6 +520,8 @@ EOF;
             //$customaction[] = "<span id='".$action["id"]."' class=\"btn btn-info\" >".$action["label"]."</span>";
             if (is_callable($action))
                 $customaction[] = $action(); //, $param)
+            else if (is_string($action))
+                $customaction[] = $action; //, $param)
             else
                 $customaction[] = call_user_func(array($this->class, $action . "Groupaction")); //, $param)
         }
@@ -592,7 +530,7 @@ EOF;
 
 <div class="col-lg-8 col-md-12">
 <div class="btn-group" role="group">
-    <button id="btnGroupDrop1" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    <button id="btnGroupDrop1" type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
       Action groupe
     </button>
     <div class="dropdown-menu" aria-labelledby="btnGroupDrop1">
@@ -639,14 +577,15 @@ EOF;
         $html = '                    
             <div data-notice="'.$this->pagination.'" class="col-lg-3 col-md-12 ">
 
-        <label class=" " >Line to show </label>';
+        <label class=" " >'.t("Line to show").'</label>';
 
         $html .= '<select id="dt_nbrow" class="form-control" style="width:100px; display: inline-block" onchange="ddatatable.setperpage(this.options[this.selectedIndex].value)" >';
         //$html .= '<option value="&next=' . $current_page . '&per_page=10" >10</option>';
 
-        for ($i = 1; $i <= $this->per_page; $i++) {
-            $html .= '<option value="' . $i * $this->per_page . '" >' . $i * $this->per_page . '</option>';
+        for ($i = 1; $i <= 10; $i++) {
+            $html .= '<option value="' . $i * 10 . '" >' . $i * 10 . '</option>';
         }
+        $html .= '<option selected value="' . $this->per_page . '" >' . $this->per_page . '</option>';
         $html .= '<option value="all" >All</option>';
         $html .= " </select>
     </div>";
@@ -798,7 +737,7 @@ EOF;
             $thf[] = '<th >' . $thfvalue . '</th>';
 
             if ($valuetd["order"])
-                $th[] = '<th  onclick="ddatatable.toggleorder(\'' . $this->class . '\', \'' . $thforder . '\')" >' . $valuetd['header'] . ' <i class="fa fa-arrow-up" ></i><i class="fa fa-arrow-down" ></i></th>';
+                $th[] = '<th  onclick="ddatatable.toggleorder(\'' . $this->class . '\', \'' . $thforder . '\')" >' . $valuetd['header'] . ' <i class="mdi mdi-debug-step-out" ></i><i class="mdi mdi-debug-step-into" ></i></th>';
             else
                 $th[] = '<th >' . $valuetd['header'] . ' </th>';
 
@@ -811,7 +750,7 @@ EOF;
             if ($this->enablecolumnaction)
                 $thf[] = '<th>'
                     . '<input name="dfilters" value="on" hidden >'
-                    . '<button onclick="ddatatable.search(\'' . $this->classname . '\', this)" class="' . $this->btnsearch_class . '" >search</button> <button id="dcancel-search" onclick="ddatatable.cancelsearch()" type="reset" class="btn btn-light hidden" hidden >cancel</button></th>';
+                    . '<button onclick="ddatatable.search(\'' . $this->classname . '\', this)" class="' . $this->btnsearch_class . '" >'.t("search").'</button> <button id="dcancel-search" onclick="ddatatable.cancelsearch()" type="reset" class="btn btn-light hidden" hidden >cancel</button></th>';
 
             return ["th" => '<tr>' . implode(" ", $th) . '</tr>',
                 "thf" => '<tr class="th-filter">' . implode(" ", $thf) . '</tr>'];
@@ -903,20 +842,11 @@ EOF;
     private function tablebodybuilder()
     {
 
-        //if($this->entity->dvtranslate) {
-        /*if(!$this->id_lang) {
-            $trace = debug_backtrace();
-            trigger_error(
-                "the entity {$this->classname} is set as multilang you must specify the default id_lang in
-                the {$this->classname}Table instance."
-//                    . ' dans ' . $trace[0]['file'] .
-//                    ' à la ligne ' . $trace[0]['line']
-                ,
-                E_USER_NOTICE);
-        }*/
         \DBAL::$id_lang_static = $this->id_lang;
         $iso_code = \Dvups_lang::getattribut("iso_code", $this->id_lang);
         //}
+
+        //dv_dump($this->listentity);
         foreach ($this->listentity as $entity) {
             $tr = [];
             $entityarray = (array) $entity;
@@ -949,9 +879,13 @@ EOF;
                      */
                     if(isset($entity->{$attrib})){
                         $tr[] = "<td>" . $entity->{$attrib} . "</td>";
-                    }else
-                        $tr[] = "<td>".$entity->{$attrib}."</td>"; // maybe we can activate debug mode so that when we are on this we show a notice!
-
+                    }else {
+                        $attrs = explode(".", $attrib);
+                        if (count($attrs)>1)
+                            $tr[] = "<td>" . $entity->{$attrs[0]}->{$attrs[1]} . "</td>"; // maybe we can activate debug mode so that when we are on this we show a notice!
+                        else
+                            $tr[] = "<td>" . $entity->{$attrib} . "</td>"; // maybe we can activate debug mode so that when we are on this we show a notice!
+                    }
                     continue;
                 }
 
@@ -1100,9 +1034,15 @@ EOF;
                 $tr[] = '<td style="padding: .3rem;" >' . $actionbutton . '</td>';
 
             }
+            if(is_callable($this->trattribut_callback)){
+                $callable = $this->trattribut_callback;
+                $trattr = $callable($entity);
+            }else
+                $trattr = "";
 
             // onclick="ddatatable.rowselect(this, ' . $entity->getId() . ')"
-            $tb[] = '<tr id="' . $entity->getId() . '" >' . implode(" ", $tr) . '</tr>';
+            $tb[] = '<tr id="' . $entity->getId() . '" '.$trattr.' >' . implode(" ", $tr) . '</tr>';
+
         }
 
         return implode(" ", $tb);

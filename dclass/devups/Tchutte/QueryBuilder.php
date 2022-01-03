@@ -61,7 +61,7 @@ class QueryBuilder extends \DBAL
         if (is_object($entity))
             parent::__construct($entity);
 
-        $this->_from = "`".$this->table."`";
+        $this->_from = "`".strtolower($this->table)."`";
         if ($defaultjoinsetted) {
             $this->defaultjoinsetted = $defaultjoinsetted;
             $this->initdefaultjoin();
@@ -149,7 +149,7 @@ class QueryBuilder extends \DBAL
 
     public function addColumns(...$columns)
     {
-        $this->columns .= implode(", ", $columns);
+        $this->custom_columns .= implode(", ", $columns);
         return $this;
     }
 
@@ -165,7 +165,7 @@ class QueryBuilder extends \DBAL
 //            $classname[] = strtolower(get_class($val));
 
         $this->tablecollection = implode("`, `", $collection);
-        $this->_from = $this->tablecollection;
+        $this->_from = strtolower($this->tablecollection);
         return $this;
     }
 
@@ -190,7 +190,7 @@ class QueryBuilder extends \DBAL
 //                    break;
             }
 
-        $this->query = " insert into `" . $this->table . "` (" . $col . ") select " . strtolower(implode(' ,', $objectVar)) . " from `" . $this->table . "` ";
+        $this->query = " insert into " . $this->_from . " (" . $col . ") select " . strtolower(implode(' ,', $objectVar)) . " from {$this->_from} ";
         return $this;
     }
 
@@ -222,7 +222,7 @@ class QueryBuilder extends \DBAL
         if ($this->softdelete) {
             $this->query = " UPDATE " . $this->table . " SET deleted_at = NOW() ";
         } else
-            $this->query = "  DELETE FROM `" . $this->table . "` ";
+            $this->query = "  DELETE FROM {$this->_from} ";
 
         if (!$this->initwhereclause) {
             $this->_where = " AND id = " . $this->instanceid;
@@ -244,7 +244,7 @@ class QueryBuilder extends \DBAL
     {
 
         $this->columns = null;
-        $this->query = "  UPDATE `" . $this->table . "` ";
+        $this->query = "  UPDATE {$this->_from} ";
 
         if ($this->_join)
             $this->query .= " {$this->_join} ";
@@ -344,7 +344,7 @@ class QueryBuilder extends \DBAL
                 if ($class_attrib[0] != $class_attrib[1])
                     $this->defaultjoin .= " LEFT JOIN `" . $class_attrib[0] . "` " . $class_attrib[1] . " ON `" . $class_attrib[1] . "`.id = " . $this->table . "." . $class_attrib[1] . "_id";
                 else
-                    $this->defaultjoin .= " LEFT JOIN `" . $class_attrib[0] . "` ON `" . $class_attrib[0] . "`.id = `" . $this->table . "`." . $class_attrib[0] . "_id";
+                    $this->defaultjoin .= " LEFT JOIN `" . $class_attrib[0] . "` ON `" . $class_attrib[0] . "`.id = {$this->_from}." . $class_attrib[0] . "_id";
             }
         }
         $this->_join .= $this->defaultjoin;
@@ -729,12 +729,12 @@ class QueryBuilder extends \DBAL
         if ($this->tablecollection)
             return " select " . $columns . " from `" . $this->tablecollection . "` ";
 
-        return " select " . $columns . " from `" . $this->table . "` ";
+        return " select " . $columns . " from {$this->_from} ";
     }
 
     protected function querysanitize($sql)
     {
-        return str_replace("this.", "`".$this->table . "`.", $sql);
+        return str_replace("this.", "{$this->_from}.", $sql);
     }
 
     public function getSqlQuery()
@@ -760,7 +760,7 @@ class QueryBuilder extends \DBAL
 
         // $this->setCollect($collect);
         // ->limit(1)
-        return $this->getInstance($recursif);
+        return $this->getInstance();
     }
 
     /**
@@ -849,8 +849,10 @@ class QueryBuilder extends \DBAL
 
     private function initSelect($columns = "*")
     {
-        $this->query = " SELECT {$this->_select_option} FROM ";
-        $this->query .= $this->_from;
+        $this->query = " SELECT {$this->_select_option} ";
+        if ($this->custom_columns != "")
+            $this->query .= ", {$this->custom_columns}";
+        $this->query .= " FROM ".$this->_from;
 
         if ($this->_join)
             $this->query .= " {$this->_join} ";
@@ -977,16 +979,42 @@ class QueryBuilder extends \DBAL
     /**
      *
      * @param string $order
-     * @return \dclass\devups\Datatable\Lazyloading
+     * @return \dclass\devups\Datatable\Lazyloading | $this
      */
-    public function lazyloading($order = "", $debug = false)
+    public function lazyloading($order = "", $debug = false, $qbinstance = false)
     {
 
         $ll = new \dclass\devups\Datatable\Lazyloading($this->object);
         $ll->debug = $debug;
-        $ll->start($this->object);
+        //$ll->start($this->object);
 
-        return $ll->lazyloading($this->object, $this, $order);
+        return $ll->lazyloading($this->object, $this, $order, null, $qbinstance);
+
+    }
+    /**
+     *
+     * @param string $order
+     * @return \dclass\devups\Datatable\Lazyloading
+     */
+    public function perPage($perpage = 10)
+    {
+
+        $ll = new \dclass\devups\Datatable\Lazyloading($this->object, $this);
+
+        return $ll->setPerPage($perpage);
+
+    }
+    /**
+     *
+     * @param string $order
+     * @return \dclass\devups\Datatable\Lazyloading
+     */
+    public function nextPage($page = 1)
+    {
+
+        $ll = new \dclass\devups\Datatable\Lazyloading($this->object, $this);
+
+        return $ll->setNext($page);
 
     }
 
@@ -1028,7 +1056,7 @@ class QueryBuilder extends \DBAL
         return $this->__findOneRow($this->query, $this->parameters);
     }
 
-    public function get($column = "*", $recursif = true, $collect = [])
+    public function get($column = "*", $callback = null, $collect = [])
     {
         $this->select($column);
         $this->initSelect($column);
@@ -1037,7 +1065,7 @@ class QueryBuilder extends \DBAL
         if (self::$debug)
             return $this->getSqlQuery();
 
-        return $this->__findAllRow($this->query, $this->parameters);
+        return $this->__findAllRow($this->query, $this->parameters, $callback);
 
     }
 

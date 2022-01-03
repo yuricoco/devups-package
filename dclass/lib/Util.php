@@ -88,12 +88,12 @@ class Util
         fclose($moddepend);
     }
 
-    public static function log($content, $file = "log", $root = ROOT) {
+    public static function log($content, $file = "log", $root = ROOT, $mode = "a+") {
 
         if (!$content)
             return;
 
-        $moddepend = fopen($root.'/'.$file, "a+");
+        $moddepend = fopen($root.'/'.$file, $mode);
         fputs($moddepend, "  ". $content."\n");
         fclose($moddepend);
     }
@@ -155,6 +155,11 @@ class Util
     public static function clearcookie($key)
     {
         setcookie($key, null, -1, null, null, false, true);
+    }
+
+    public static function dateadd($duration, $period, $from)
+    {
+        return date("Y-m-d H:i:s", strtotime($duration . " $period", strtotime($from)));
     }
 
 }
