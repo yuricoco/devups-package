@@ -591,9 +591,6 @@ class Model extends \stdClass
 
         $qb = new QueryBuilder($entity);
         if ($entity->dvtranslate) {
-//            if (!$id_lang)
-//                $id_lang = Dvups_lang::defaultLang()->getId();
-
             $qb->setLang($id_lang);
         }
         if ($sort == 'id')
@@ -609,19 +606,28 @@ class Model extends \stdClass
      * @return \QueryBuilder
      * @example name, description, category if none has been set, all will be take.
      */
-    public static function select($columns = '*', $id_lang = null)
+    public static function select($columns = '*', $id_lang = null, $defaultjoin = true)
     {
         $reflection = new ReflectionClass(get_called_class());
         $entity = $reflection->newInstance();
 
-        $qb = new QueryBuilder($entity);
+        $qb = new QueryBuilder($entity, $defaultjoin);
         if ($entity->dvtranslate) {
-//            if (!$id_lang)
-//                $id_lang = Dvups_lang::defaultLang()->getId();
 
             $qb->setLang($id_lang);
         }
         return $qb->select($columns);
+    }
+
+    /**
+     * return instance of \QueryBuilder with the select request sequence without the default join.
+     * @param string $columns
+     * @return \QueryBuilder
+     * @example name, description, category if none has been set, all will be take.
+     */
+    public static function initQb($columns = '*', $id_lang = null)
+    {
+        return self::select($columns, $id_lang, false);
     }
 
     /**
@@ -978,7 +984,7 @@ class Model extends \stdClass
                 $data = (new DBAL())->executeDbal($sql, [], DBAL::$FETCH);
                 //var_dump($classlang." - ".$attribut, $data, $fieldNames);
                 foreach ($fieldNames as $k => $val) {
-                        $this->{$k} = $data[$k];
+                    $this->{$k} = $data[$k];
                 }
                 foreach ($assiactions as $k) {
                     //if(isset($data[$k]))
@@ -1171,9 +1177,9 @@ class Model extends \stdClass
                 $keys[$key . '_id'] = $val->getId();
             } else
                 if (is_array($val))
-                $collection[] = $val;
-            else
-                $keys[$key] = $val;
+                    $collection[] = $val;
+                else
+                    $keys[$key] = $val;
         }
         //var_dump($this->dvtranslated_columns);
 

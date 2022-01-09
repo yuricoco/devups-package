@@ -27,5 +27,6 @@ cd to_project_root
 
 # get Started
 
+- presentation of the framework : https://www.youtube.com/watch?v=XlvpXZKRefI&t=21s
 - the video tutorial is available on https://www.useloom.com/share/bb07d145a9eb42e5a6adf7108603ad23 :)
-- the tutorial is available on http://easyprod.spacekola.com/devups :)
+- the tutorial is available on http://devups.spacekola.com/ :)
