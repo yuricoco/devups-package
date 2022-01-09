@@ -19,8 +19,8 @@ require 'devupscms/ModuleData/devupscms.moduledata.php';
 require 'devupscms/ModuleReporting/devupscms.modulereporting.php';
 require 'devupscms/ModuleLocation/marketplace.modulelocation.php';
 
-require 'devupstuto/ModuleStock/devupstuto.modulestock.php';
-require 'devupstuto/ModuleProduct/devupstuto.moduleproduct.php';
+//require 'devupstuto/ModuleStock/devupstuto.modulestock.php';
+//require 'devupstuto/ModuleProduct/devupstuto.moduleproduct.php';
 
 //require 'devupscms/ModuleSlide/devupscms.moduleslide.php';
 
