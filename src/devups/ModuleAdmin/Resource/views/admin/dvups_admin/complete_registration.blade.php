@@ -30,12 +30,12 @@
                 <div class="col-lg-4 mx-auto">
                     <div class="auth-form-light text-left py-5 px-4 px-sm-5">
 
-                            <h1>Bonjour, <?= $admin->getName(); ?></h1>
-                            <p class="account-subtitle">Complete your account credential</p>
+                        <h1>Bonjour, <?= $admin->getName(); ?></h1>
+                        <p class="account-subtitle">Complete your account credential</p>
 
-                            <?php if (isset($error)){ ?>
-                            <div class="alert alert-warning"><?= $error ?></div>
-                            <?php } ?>
+                        <?php if (isset($error)){ ?>
+                        <div class="alert alert-warning"><?= $error ?></div>
+                        <?php } ?>
 
                         <form role="form" method="post" action="{{$action}}">
                             <fieldset>
