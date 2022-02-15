@@ -23,10 +23,18 @@ define('__admin', __env.'admin/assets/');
 define('__prod', false);
 define('__default_lang', "fr");
 define('__lang', 'fr');
+
+/**
+ * config toolrad sync
+ */
 define('__project_id', 'devupstuto');
+define('__toolrad_server', 'https://toolrad.spacekola.com/api/');
+define('__toolrad_api_key', 'apikey');
 
 
 define('ROOT', __DIR__  . '/../');
+define('CLASS_EXTEND', ROOT . "dclass/extends");
+// define('CLASS_LANG', ROOT . "dclass/lang");
 define('UPLOAD_DIR', __DIR__. '/../uploads/');
 define('RESSOURCE', __DIR__ . '/../admin/Ressource/');
 define('admin_dir', __DIR__ . '/../admin/');
