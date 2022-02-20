@@ -16,3 +16,4 @@
     require 'Datatable/NotificationtypeTable.php';
     require 'Controller/NotificationtypeController.php';
 
+require 'ModuleNotification.php';

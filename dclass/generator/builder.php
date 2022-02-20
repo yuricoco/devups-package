@@ -2,6 +2,8 @@
 
 //require __DIR__ . '/../../config/constante.php';
 
+define('__debug', false);
+
 require __DIR__ . '/../../config/dependanceInjection.php';
 
 require __DIR__ . '/BackendGenerator.php';
@@ -79,6 +81,52 @@ if ($argv[1] === 'schema:update') {
     $result = [];
     exec("bin\doctrine orm:schema:update --dump-sql", $result);
 
+    //
+    /*$em = DBAL::getEntityManager();
+
+    $listentities = ["Cmstext"];
+    foreach ($listentities as $entity){
+        $lc_entity = strtolower($entity);
+        $migrationlang = ROOT."database/langs/migration_$lc_entity.json";
+        if(!file_exists($migrationlang)) {
+            \DClass\lib\Util::writein("{}", $migrationlang);
+        }
+        $dbal = new DBAL();
+        $sql = "";
+        $tableexist = $dbal->tableExists($lc_entity."_lang");
+        if(!$tableexist){
+            // todo: create table
+            $sql = "
+CREATE TABLE `$lc_entity\_lang` (
+  `$lc_entity\_id` int(10) UNSIGNED NOT NULL,
+  `lang_id` int(10) UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+";
+            $dbal->executeDbal($sql);
+        }
+        $migrationlang = json_decode(file_get_contents($migrationlang), true);
+        $attrs = $migrationlang["attrs"];
+        if($attrs != $entity::langs)
+            continue;
+
+        $sql .= "ALTER TABLE $lc_entity\_lang ";
+        $ec = $em->getClassMetadata("\\" . $entity);
+        $attribtodelete = array_diff($attrs, $entity::langs);
+        $attribtoadd = array_diff($entity::langs, $attrs);
+        foreach($attribtodelete as $attr){
+            // todo: alter table drop
+            $sql .= " DROP COLUMN $attr varchar(255)";
+        }
+        foreach($attribtoadd as $attr){
+            // todo: alter table
+            $sql .= " ADD $attr varchar(255)";
+        }
+        $sql .= ";";
+
+        $dbal->executeDbal($sql);
+
+    }*/
+
     $action = "--dump-sql";
     if (isset($argv[2]))
         $action = $argv[2];
@@ -94,6 +142,9 @@ if ($argv[1] === 'schema:update') {
             require ROOT . 'src/requires.php';
 
             $entitiestoupdate = [];
+//            foreach ($result as $row) {
+//
+//            }
 
             echo " Updating database schema...\n ";
 
