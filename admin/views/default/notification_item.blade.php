@@ -8,7 +8,7 @@
         </div>
     </div>
     <div>
-        <div class="small text-gray-500">{{ (new DateTime($notification->created_at))->format("D, M Y") }}</div>
+        <div class="small text-gray-500">{{ (new DateTime($notification->created_at))->format("D, M Y H:i") }}</div>
         <span class="@if(!$notification->read) font-weight-bold @endif">{!! $notification->notification->content !!}</span>
     </div>
 </a>
