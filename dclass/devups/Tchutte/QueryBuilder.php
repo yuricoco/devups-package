@@ -169,6 +169,11 @@ class QueryBuilder extends \DBAL
         return $this;
     }
 
+    public function with($entity){
+        $this->_with[] = $entity;
+        return $this;
+    }
+
     /**
      * @param bool $update
      * @return $this
@@ -766,25 +771,13 @@ class QueryBuilder extends \DBAL
 
     /**
      * @param int $index
-     * @param bool $recursif
-     * @param array $collect
+     * @param bool $id_lang
      * @return type|null
      * @deprecated use index
      */
-    public function index($index = 1, $recursif = true, $collect = [])
+    public function index($index = 1, $id_lang = null)
     {
-        $i = (int)$index;
-
-        if ($i < 0) {
-            $nbel = (int)$this->count();
-            if ($nbel == 1)
-                return $this->object;
-
-            $i += $nbel;
-            return $this->limit($i - 1, $i)->getInstance($recursif, $collect);
-        }
-
-        return $this->limit($i - 1, $i)->getInstance($recursif, $collect);
+        return $this->getIndex($index, $id_lang);
     }
 
     private function initquery($columns)
@@ -886,14 +879,16 @@ class QueryBuilder extends \DBAL
         return $this->orderBy($this->table . ".id DESC ")->limit(1)->getInstance($recursif, $collect);
     }
 
-    public function getIndex($index, $recursif = true, $collect = [])
+    public function getIndex($index, $id_lang = null)
     {
-        if (is_numeric($recursif))
-            $this->limit_iteration = $recursif;
+//        if (is_numeric($recursif))
+//            $this->limit_iteration = $recursif;
 
-        $this->setCollect($collect);
+        if (!$this->id_lang)
+            $this->setLang($id_lang);
+        // $this->setCollect($collect);
         $i = (int)$index;
-        return $this->limit($i - 1, $i)->getInstance($recursif);
+        return $this->limit($i - 1, $i)->getInstance();
     }
 
     public function __exportAllRow($callback)
@@ -1109,7 +1104,7 @@ class QueryBuilder extends \DBAL
         return $this->__findAllRow($this->query, $this->parameters, $callbackexport);
     }*/
 
-    public function getInstance($column = "*", $collect = [])
+    public function getInstance($column = "*")
     {
         $this->select($column);
         $this->initSelect();
@@ -1121,11 +1116,14 @@ class QueryBuilder extends \DBAL
         return $this->__findOneRow($this->query, $this->parameters);
     }
 
-    public function get($column = "*", $recursif = true, $collect = [])
+    public function get($column = "*", $id_lang = null)
     {
         $this->select($column);
         $this->initSelect();
         $this->sequensization();
+
+        if (!$this->id_lang)
+            $this->setLang($id_lang);
 
         if (self::$debug)
             return $this->getSqlQuery();

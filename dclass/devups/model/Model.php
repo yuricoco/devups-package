@@ -520,6 +520,17 @@ class Model extends \stdClass
 
     /**
      * @param $column
+     * @param null $operator
+     * @param null $value
+     * @return QueryBuilder
+     */
+    public static function with($entity)
+    {
+        return self::select()->with($entity);
+    }
+
+    /**
+     * @param $column
      * @param $collection
      * @return QueryBuilder
      */

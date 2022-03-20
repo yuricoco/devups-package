@@ -9,7 +9,7 @@ if (!isset($_SESSION[ADMIN]) and $_GET['path'] != 'connexion') {
 }
 
 global $viewdir, $moduledata;
-$viewdir[] = __DIR__ . '/Ressource/views';
+$viewdir[] = __DIR__ . '/Resource/views';
 
 $moduledata = Dvups_module::init('ModuleCms');
 
@@ -29,13 +29,13 @@ switch (Request::get('path')) {
         $cmstextCtrl->listView();
         break;
     case 'cmstext/new':
-        CmstextForm::renderWidget();
+        $cmstextCtrl->newContent();
         break;
     case 'cmstext/create':
         $cmstextCtrl->createWidgetAction();
         break;
     case 'cmstext/edit':
-        CmstextForm::renderWidget(Request::get("id"));
+        $cmstextCtrl->editView(Request::get("id"));
         break;
     case 'cmstext/update':
         $cmstextCtrl->updateWidgetAction(Request::get("id"));

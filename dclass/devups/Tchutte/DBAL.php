@@ -16,6 +16,7 @@ class DBAL extends Database
     protected $defaultjoin = "";
     public $custom_columns = "";
     protected $collect = [];
+    public $_with = [];
     /**
      *
      * @var type
@@ -792,6 +793,27 @@ class DBAL extends Database
     }
 
     /**
+     * createDbal
+     * persiste les entités en base de données.
+     *
+     * @param \string $object
+     * @return int l'id de l'entité persisté
+     */
+    public static function _deleteDbal($object, $where = "1")
+    {
+
+        $values = [];
+//        $objectvar = array_keys($keyvalue);
+//        $parameterQuery = ':' . implode(", :", $objectvar);
+
+        $sql = " DELETE FROM `" . strtolower($object) . "` WHERE ".$where;
+
+        $db = new DBAL();
+        return $db->executeDbal($sql, [], 1);
+
+    }
+
+    /**
      * findAllDbal
      * returne toutes les occurences de l'entite en bd
      *
@@ -954,6 +976,11 @@ class DBAL extends Database
         }
 
         $flowBD = Bugmanager::cast((object)$object_array, get_class($this->object));
+
+        foreach ($this->_with as $entity){
+            $flowBD->{"$entity"}->hydrate();
+        }
+
         $flowBD->dvfetched = true;
         $flowBD->dvinrelation = true;
         //var_dump($callables);
@@ -1320,6 +1347,7 @@ class DBAL extends Database
 
     public $hasrelation = false;
     public $objectKeyValue = [];
+    public $identifier = [];
 
     public function setClassname($objectname)
     {
@@ -1353,6 +1381,17 @@ class DBAL extends Database
             $this->table = strtolower($this->objectName);
 
             $metadata = $em->getClassMetadata("\\" . $this->objectName);
+            $this->identifier = $metadata->identifier;
+            if (count($metadata->identifier) > 1){
+                $this->identifier = [];
+                foreach ($metadata->identifier as $id){
+                    $this->identifier[] = $id."_id";
+                }
+            }
+            /*if ($this->table == "product") {
+                $metadata = $em->getClassMetadata("\\Category_lang");
+                dv_dump($metadata);
+            }*/
             $fieldNames = $metadata->fieldNames;
             $assiactions = array_keys($metadata->associationMappings);
 
