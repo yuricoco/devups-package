@@ -344,9 +344,11 @@ class Dv_image extends ImageCore implements JsonSerializable
             'description' => $this->description,
             //'position' => $this->position,
             'image' => $this->image,
-            'size' => $this->size,
-            'width' => $this->width,
-            'height' => $this->height,
+            'uploaddir' => SRC_FILE.$this->uploaddir,
+            'src' => $this->srcImage(),
+//            'size' => $this->size,
+//            'width' => $this->width,
+//            'height' => $this->height,
         ];
     }
 

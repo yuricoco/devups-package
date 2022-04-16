@@ -28,12 +28,6 @@ switch (Request::get('path')) {
     case 'cmstext/index':
         $cmstextCtrl->listView();
         break;
-    case 'cmstext/new':
-        $cmstextCtrl->newContent();
-        break;
-    case 'cmstext/create':
-        $cmstextCtrl->createWidgetAction();
-        break;
     case 'cmstext/edit':
         $cmstextCtrl->editView(Request::get("id"));
         break;

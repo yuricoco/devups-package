@@ -169,7 +169,8 @@ class QueryBuilder extends \DBAL
         return $this;
     }
 
-    public function with($entity){
+    public function with($entity)
+    {
         $this->_with[] = $entity;
         return $this;
     }
@@ -304,7 +305,7 @@ class QueryBuilder extends \DBAL
         else {
             $arrayset = [];
 
-            if ($this->object->dvtranslate ) {
+            if ($this->object->dvtranslate) {
 
                 // we check of attribut translable is present in the arrayvalue to update for an entity dvtranslated
                 // then if $attribnotexist comes with the same value of dvtranslated_columns that mean non translable attribute
@@ -839,7 +840,11 @@ class QueryBuilder extends \DBAL
     {
         $model = $this->first($recursif, $collect);
 
-        if ($model->getId())
+        // todo: implement the primary key validation
+        if (property_exists($model, "id")) {
+            if ($model->getId())
+                return $model;
+        }else
             return $model;
 
         return null;
@@ -1142,7 +1147,7 @@ class QueryBuilder extends \DBAL
             return $this->getSqlQuery();
 
         if ($asobject)
-            return (object) $this->__findAllRow($this->query, $this->parameters);
+            return (object)$this->__findAllRow($this->query, $this->parameters);
 
         return $this->__findAllRow($this->query, $this->parameters);
 

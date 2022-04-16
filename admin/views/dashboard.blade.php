@@ -45,6 +45,7 @@
 
 @section("jsimport")
 
+    <script src="<?= CLASSJS ?>devups.js"></script>
     <script src="<?= CLASSJS ?>model.js"></script>
     <script src="<?= CLASSJS ?>ddatatable.js"></script>
     <?php foreach (dclass\devups\Controller\Controller::$jsfiles as $jsfile){ ?>

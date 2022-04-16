@@ -24,7 +24,7 @@ class Dv_imageTable extends Datatable
 
     public function buildfrontcustom()
     {
-
+        $this->base_url = __env."admin/";
         global $viewdir, $moduledata;
         $viewdir[] = Dv_image::classroot("") . '/Resource/views';
 
@@ -61,7 +61,7 @@ class Dv_imageTable extends Datatable
         $this->base_url = __env . "admin/";
         $this->datatablemodel = [
             'image' => ['header' => t('Image'), 'value' => "name", 'get' => function(Dv_image $item){
-                return $item->showImage('150_')."<button class='btn btn-outline-info btn-block' onclick='cmstext.copyimage(\"{$item->srcImage()}\")' >copy</button>";
+                return $item->showImage('150_')."({$item->id})<br><button class='btn btn-outline-info btn-block' onclick='cmstext.copyimage(\"{$item->srcImage()}\")' >copy</button>";
             }, "search"=>true],
         ];
         $this->order_by = "this.id desc";

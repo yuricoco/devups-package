@@ -1,5 +1,5 @@
 <?php
-// user \dclass\devups\model\Model; 
+// user \dclass\devups\model\Model;
 
 /**
  * @Entity @Table(name="notificationbroadcasted")
