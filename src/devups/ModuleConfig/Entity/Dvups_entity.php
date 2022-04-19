@@ -13,7 +13,7 @@ class Dvups_entity extends Dvups_config_item implements JsonSerializable, DvupsT
     protected $id;
 
     /**
-     * @Column(name="enablenotification", type="integer")
+     * @Column(name="enablenotification", type="integer", nullable=true)
      * @var string
      **/
     protected $enablenotification = 0;
