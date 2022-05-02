@@ -82,10 +82,9 @@
         </div>
 
         <div class="links">
-            <a href="#">Documentation</a>
-            <a href="#">Contribut</a>
+            <a href="https://devups.spacekola.com">Documentation</a>
+            <a href="https://github.com/yuricoco/devups-package">Contribut</a>
             <a href="#">News</a>
-            <a href="#">Forge</a>
             <a href="{{route("contact")}}">Contact</a>
         </div>
     </div>

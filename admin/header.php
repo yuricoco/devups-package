@@ -12,7 +12,6 @@ $_start = microtime(true);
 
 session_start();
 
-define('__debug', false);
 
 //require __DIR__ . '/../config/constante.php';
 require __DIR__ . '/../config/dependanceInjection.php';

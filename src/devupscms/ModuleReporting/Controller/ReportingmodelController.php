@@ -189,7 +189,8 @@ class ReportingmodelController extends Controller
 
     public function loadContent($name)
     {
-        $filename = Reportingmodel::classroot("Resource/partial/$name.html");
+        $local = local();
+        $filename = Reportingmodel::classroot("Resource/partial/{$name}_$local.html");
         if (!file_exists($filename))
             return [
                 "success" => false,
@@ -199,18 +200,21 @@ class ReportingmodelController extends Controller
         return [
             "success" => true,
             "content" => $content,
+            "detail" => t("Contenu enregistrer avec sucess"),
         ];
     }
 
     public function saveContent($id)
     {
-        $rm = Reportingmodel::find($id);
+        $local = local();
+        $rm = Reportingmodel::find($id, Dvups_lang::getByIsoCode($local)->id);
 
         $filename = Reportingmodel::classroot("Resource/partial");
-        \DClass\lib\Util::log($rm->content, "{$rm->name}.html", $filename);
+        \DClass\lib\Util::log($rm->content, "{$rm->name}_$local.html", $filename);
 
         return [
             "success" => true,
+            "detail" => t("Contenu enregistrer avec sucess"),
         ];
     }
 

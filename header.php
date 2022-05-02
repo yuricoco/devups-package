@@ -2,7 +2,6 @@
 
 session_start();
 
-define('__debug', false);
 define('__cssversion', '1');
 define('__jsversion', '1');
 

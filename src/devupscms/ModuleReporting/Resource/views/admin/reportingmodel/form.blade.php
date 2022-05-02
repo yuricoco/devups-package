@@ -53,10 +53,10 @@
                             <div id="container-{{$lang->iso_code}}" class="col-lg-6   stretch-card dv-editable">
 
                                 <div class='form-group'>
-                                    <button class="btn btn-primary" onclick="reportingmodel.loadFromFile(this)">
+                                    <button class="btn btn-primary" onclick="reportingmodel.loadFromFile(this, '{{$lang->iso_code}}')">
                                         Charger le contenu depuis le fichier {{$reportingmodel->name}}_{{$lang->iso_code}}.html
                                     </button>
-                                    <button class="btn btn-warning" onclick="saveToFile(this)">
+                                    <button class="btn btn-warning" onclick="saveToFile(this, {{$reportingmodel->id}}, '{{$lang->iso_code}}')">
                                         Enregistrer le contenu dans le fichier {{$reportingmodel->name}}_{{$lang->iso_code}}.html
                                     </button>
                                 </div>
