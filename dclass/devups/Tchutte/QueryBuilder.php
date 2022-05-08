@@ -1137,7 +1137,7 @@ class QueryBuilder extends \DBAL
 
     }
 
-    public function getRows($column = "*", $asobject = false)
+    public function getRows($column = "*", $callback = null)
     {
         $this->select($column);
         $this->initSelect($column);
@@ -1146,10 +1146,10 @@ class QueryBuilder extends \DBAL
         if (self::$debug)
             return $this->getSqlQuery();
 
-        if ($asobject)
-            return (object)$this->__findAllRow($this->query, $this->parameters);
+//        if ($asobject)
+//            return (object)$this->__findAllRow($this->query, $this->parameters, $callback);
 
-        return $this->__findAllRow($this->query, $this->parameters);
+        return $this->__findAllRow($this->query, $this->parameters, $callback);
 
     }
 

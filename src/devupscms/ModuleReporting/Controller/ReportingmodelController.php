@@ -218,4 +218,20 @@ class ReportingmodelController extends Controller
         ];
     }
 
+    public function downloadContent($id)
+    {
+        $local = local();
+        $rm = Reportingmodel::find($id, Dvups_lang::getByIsoCode($local)->id);
+
+        $fileName = "{$rm->name}_$local.html";
+
+        header('Content-Type: text/html; charset=windows-1252');
+        //header("Content-Type: application/vnd.ms-excel");
+        header("Content-Disposition: attachment; filename=\"$fileName\"");
+
+        echo $rm->content;
+
+        exit;
+    }
+
 }

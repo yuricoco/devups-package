@@ -100,9 +100,24 @@ class Dvups_entityForm extends FormManager
     {
         Genesis::renderView("dvups_entity.formWidget", self::getFormData($id, $action));
     }
+
     public static function renderExportWidget($id = null, $action = "create")
     {
-        return Genesis::getView("admin.dvups_entity.formExportWidget", Request::$uri_get_param+Request::$uri_post_param);
+        //$entityCore = Core::findentitycore("../Core", Request::$uri_get_param["entity"]);
+        $entity = (ucfirst(Request::$uri_get_param["entity"]));
+        $entity = new $entity;
+        $fields = [];
+
+        $attributes = Dvups_entity::describe(Request::$uri_get_param["entity"]);
+        foreach ($attributes as $attribute)
+            $fields[] = $attribute[0];
+        foreach ($entity->dvtranslated_columns as $col)
+            $fields[] = $col;
+//            $fields[] = Request::$uri_get_param["entity"]."_lang.".$col;
+
+        $langs = Dvups_lang::allrows();
+        return Genesis::getView("admin.dvups_entity.formExportWidget", Request::$uri_get_param + Request::$uri_post_param
+            + ["langs" => $langs, 'fields' => $fields]); // +['entityCore'=>$entityCore]
     }
 
 }

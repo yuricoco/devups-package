@@ -1115,7 +1115,6 @@ class DBAL extends Database
         $query->execute($values) or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values));
 
         if (is_callable($callbackexport)) {
-
             $rows = $query->fetchAll(PDO::FETCH_NAMED);
             foreach ($rows as $row) {
                 $callbackexport($row, $this->objectName);

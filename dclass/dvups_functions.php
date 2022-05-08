@@ -16,8 +16,8 @@ if(!isset($_SESSION[LANG]))
 //    $_SESSION[PREVIOUSPAGE] = $_SERVER["url"];
 
 function local() {
-    if (Request::get('lang')) {
-        return Request::get('lang');
+    if ($lang = Request::get('lang')) {
+        return $lang;
     }elseif (isset($_SESSION[LANG]))
         return $_SESSION[LANG];
 

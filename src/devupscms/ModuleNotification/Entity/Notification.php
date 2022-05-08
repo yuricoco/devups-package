@@ -187,9 +187,9 @@ class Notification extends Model implements JsonSerializable
         $this->content = $content;
     }
 
-    public static function onadmin($entity, $event, $session = "admin")
+    public static function onadmin($entity, $event, $sendsms = false)
     {
-        return self::on($entity, $event, $session);
+        return self::on($entity, $event, $sendsms, "admin");
     }
 
     /**
@@ -198,9 +198,10 @@ class Notification extends Model implements JsonSerializable
      * @param array $params
      * @return int|Notification
      */
-    public static function on($entity, $event, $session = "user", $sendsms = false)
+    public static function on($entity, $event, $sendsms = false, $session = "user")
     {
 
+        self::$send_sms = $sendsms;
         $classname = strtolower(get_class($entity));
         $type = Notificationtype::where(["dvups_entity.name" => $classname, "_key" => $event])
             ->where("this.session", $session)
@@ -247,7 +248,7 @@ class Notification extends Model implements JsonSerializable
         if (!__prod)
             return 0;
 
-        $response = Request::initCurl("https://spacekolasms.com/api/sendsms?api_key=" . Configuration::get("sms_api_key"))
+        $response = Request::initCurl("https://spacekolasms.com/api/sendsms?api_key=" . Configuration::get("sms_api_key2"))
             ->data([
                 "phonenumber" => $receiver->phonenumber,
                 "message" => $notification->content,
@@ -414,10 +415,10 @@ class Notification extends Model implements JsonSerializable
             $note = "&read=" . $this->id;
         switch ($this->entity) {
             case "order":
-                return route("order-detail?id=" . $this->entityid) . $note;
-            case "sponsoring":
-                return route("investor-detail?id=" . $this->entityid) . $note;
-            case "cycle":
+                return route("invoice?id=" . $this->entityid) . $note;
+            case "package":
+                return route("package?id=" . $this->entityid) . $note;
+            case "promotion":
                 return route("cycle?id=" . $this->entityid) . $note;
 
         }
@@ -456,7 +457,8 @@ class Notification extends Model implements JsonSerializable
             else
                 $nb->user_id = $receiver->id;
 
-            $nb->__insert();
+            if(self::$send_sms != -1)
+                $nb->__insert();
 
             if (self::$send_sms)
                 self::sendSMS($nb, $receiver);

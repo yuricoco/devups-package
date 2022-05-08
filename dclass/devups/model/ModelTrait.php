@@ -14,6 +14,117 @@ trait ModelTrait
 
     public $dv_collection = [];
 
+    public function __get($attribut)
+    {
+        if (!property_exists($this, $attribut)) {
+
+            if ($this->dvtranslate && in_array($attribut, $this->dvtranslated_columns)) {
+                if (!$this->id)
+                    return null;
+                $classlang = get_class($this) . "_lang";
+                $cnl = strtolower($classlang);
+                if (property_exists($classlang, $attribut)) {
+                    $idlang = DBAL::$id_lang_static;
+
+                    if (!$idlang) {
+
+                        (new DBAL())->setClassname(get_class($this))->getLangValues($this, [$attribut]);
+                        return $this->{$attribut};
+                    }
+                    $sql = " SELECT $attribut FROM `$cnl` WHERE lang_id = $idlang AND " . strtolower(get_class($this)) . "_id = " . $this->id;
+                    $data = (new DBAL())->executeDbal($sql, [], DBAL::$FETCH);
+
+                    $this->{$attribut} = $data[0];
+                    return $data[0];
+                }
+            }
+            else {
+                $entityattribut = substr($attribut, 1, strlen($attribut)-1);
+                //var_dump($attribut);
+                if ($attribut != "_".$entityattribut){
+                    $trace = debug_backtrace();
+                    trigger_error(
+                        'Propriété non-définie via __get() : ' . $attribut .
+                        ' dans ' . $trace[0]['file'] .
+                        ' à la ligne ' . $trace[0]['line'],
+                        E_USER_NOTICE);
+                    die;
+                }
+                if (is_object($this->{$entityattribut})) { //  && isset($this->{$entityattribut . "_id"})
+
+                    if ($this->{$entityattribut}->dvfetched)
+                        return $this->{$entityattribut};
+
+                    $this->{$attribut} = $this->{$entityattribut}->hydrate();
+//                    $classname = get_class($this->{$attribut});
+//                    $this->{"_".$attribut} = $classname::findrow($this->{$attribut . "_id"});
+
+                    return $this->{$attribut};
+                }
+
+            }
+        } elseif (property_exists($this, $attribut)) {//$this->id &&
+
+            /*
+             * if id is defined and value of the attribut of this instance is null (problem with default value) and
+             * if devups has never fetch it before then we hydrate the hole instance with it row in database
+             */
+
+            if ($this->id && !$this->dvfetched && $attribut != "id") { //  && !$this->{$attribut}
+
+                /*
+                 * the fact is that by a mechanism I don't understand by now once the method detect an association
+                 * it automatically makes request to the db what I don't want.
+                 * by the way even if we do $entity = $object->imbricate; when the dev will do $entity->attrib it will
+                 * automatically hydrate the entity what solve the problem (at least for the current use case)
+                 */
+                /*if (is_object($this->{$attribut}) && isset($this->{$attribut."_id"})){
+
+                    $classname = get_class($this->{$attribut});
+                    $this->{$attribut} = $classname::findrow($this->{$attribut."_id"});
+
+                    return $this->{$attribut};
+                }*/
+                global $em;
+                $classlang = get_class($this);
+                $metadata = $em->getClassMetadata("\\" . $classlang);
+                $fieldNames = $metadata->fieldNames;
+                $assiactions = array_keys($metadata->associationMappings);
+                $cn = strtolower($classlang);
+                $sql = " SELECT * FROM `$cn` WHERE id = " . $this->id;
+                $data = (new DBAL())->executeDbal($sql, [], DBAL::$FETCH);
+                //var_dump($classlang." - ".$attribut, $data, $fieldNames);
+                foreach ($fieldNames as $k => $val) {
+                    $this->{$k} = $data[$k];
+                }
+                foreach ($assiactions as $k) {
+                    //if(isset($data[$k]))
+                    $this->{$k}->id = $data[$k . "_id"];
+                    $this->{$k . "_id"} = $data[$k . "_id"];
+                }
+
+                $this->dvfetched = true;
+                //return $data[0];
+            }
+            return $this->{$attribut};
+
+        }
+
+        $trace = debug_backtrace();
+        trigger_error(
+            'Propriété non-définie via __get() : ' . $attribut .
+            ' dans ' . $trace[0]['file'] .
+            ' à la ligne ' . $trace[0]['line'],
+            E_USER_NOTICE);
+        return null;
+    }
+
+    public function __set($name, $value)
+    {
+        // TODO: Implement __set() method.
+        $this->{$name} = $value;
+    }
+
     /**
      * return the row as design in the database
      * @example http://easyprod.spacekola.com description

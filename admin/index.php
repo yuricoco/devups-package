@@ -71,6 +71,9 @@ switch (Request::get("path")) {
         }
         break;
 
+    case 'export':
+        (new Dvups_entityController())->exportCsv(); //,
+        break;
     case 'connexion':
         $adminCtrl->connexionAction();
         break;
