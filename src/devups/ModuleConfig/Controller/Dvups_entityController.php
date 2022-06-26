@@ -32,18 +32,22 @@ class Dvups_entityController extends Controller
         Dvups_entityForm::__renderDetailWidget(Dvups_entity::find($id));
     }
 
-    public static function renderForm($id = null, $action = "create")
+    public function formView($id = null)
     {
         $dvups_entity = new Dvups_entity();
+        $action = Dvups_entity::classpath("services.php?path=dvups_entity.create");
         if ($id) {
-            $action = "update&id=" . $id;
+            $action = Dvups_entity::classpath("services.php?path=dvups_entity.update&id=" . $id);
             $dvups_entity = Dvups_entity::find($id);
-            $dvups_entity->collectDvups_right();
         }
 
         return ['success' => true,
-            'form' => Dvups_entityForm::__renderForm($dvups_entity, $action, true),
+            'form' => Dvups_entityForm::init($dvups_entity, $action)
+                ->buildForm()
+                ->addDformjs()
+                ->renderForm(),
         ];
+
     }
 
     public function formExportView()

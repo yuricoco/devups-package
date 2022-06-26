@@ -2,6 +2,7 @@
 
 //require __DIR__ . '/../../config/constante.php';
 
+define('__debug', false);
 
 require __DIR__ . '/../../config/dependanceInjection.php';
 
@@ -73,6 +74,32 @@ function recurse_copy_dir(string $src, string $dest): int
     }
 
     return $count;
+}
+
+if ($argv[1] === 'serve'){
+    $port = __env_port;
+    /*if (isset($argv[2])) {
+        $argp = explode("=", $argv[2]);
+        if ($argp[0] !="--port"){
+            echo "you mean --port= ?";
+        }
+        if (!isset($argp[1])){
+            echo "you post specify the port";
+            die;
+        }
+        if (!is_numeric($argp[1])){
+            echo "you post specify a valid port";
+            die;
+        }else
+            $port = $argp[1];
+    }*/
+
+    exec("php -S 127.0.0.1$port", $result);
+
+    echo __env;
+    echo "\n";
+    echo __env."admin/";
+    die;
 }
 
 if ($argv[1] === 'schema:update') {

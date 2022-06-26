@@ -165,6 +165,41 @@ trait ModelTrait
         $qb->setLang($id_lang);
         return $qb->select()->limit(1)->getInstance();
     }
+    /**
+     * return the firt
+     * @example http://easyprod.spacekola.com description
+     * @param type $id
+     * @return $this
+     */
+    public static function firstOrCreate($constraint, $data = [], $id_lang = null)
+    {
+
+        $reflection = new ReflectionClass(get_called_class());
+        $entity = $reflection->newInstance();
+
+        $qb = new QueryBuilder($entity);
+        $qb->setLang($id_lang);
+        return $qb->firstOrCreate($constraint, $data, $id_lang);
+
+    }
+
+    /**
+     * return the firt
+     * @example http://easyprod.spacekola.com description
+     * @param type $id
+     * @return $this
+     */
+    public static function firstOrNew($constraint, $data = [], $id_lang = null)
+    {
+
+        $reflection = new ReflectionClass(get_called_class());
+        $entity = $reflection->newInstance();
+
+        $qb = new QueryBuilder($entity);
+        $qb->setLang($id_lang);
+        return $qb->firstOrNew($constraint, $data, $id_lang);
+
+    }
 
     /**
      * return the row as design in the database
@@ -205,15 +240,16 @@ trait ModelTrait
      * @param type $id
      * @return $this
      */
-    public static function index($index = 1, $recursif = true, $collect = [])
+    public static function index($index = 1, $id_lang = null )
     {
         $i = (int)$index;
         $reflection = new ReflectionClass(get_called_class());
         $entity = $reflection->newInstance();
 
         $qb = new QueryBuilder($entity);
-        if ($i < 0) {
-            $nbel = $qb->__countEl();
+        return $qb->getIndex($index, $id_lang);
+        /*if ($i < 0) {
+            $nbel = $qb->count();
             if ($nbel == 1)
                 return $entity;
 
@@ -221,7 +257,7 @@ trait ModelTrait
             return $qb->select()->limit($i - 1, $i)->getInstance($recursif, $collect);
         }
 
-        return $qb->select()->limit($i - 1, $i)->getInstance($recursif, $collect);
+        return $qb->select()->limit($i - 1, $i)->getInstance($recursif, $collect);*/
     }
 
     /**
@@ -239,6 +275,16 @@ trait ModelTrait
 
         $qb = new QueryBuilder($entity);
         return $qb->select($attribut)->where("this.id", $id)->getValue();
+    }
+
+    public static function addColumns(...$columns)
+    {
+
+        $reflection = new ReflectionClass(get_called_class());
+        $entity = $reflection->newInstance();
+
+        $qb = new QueryBuilder($entity);
+        return $qb->addColumns($columns)->getValue();
     }
 
     /**
@@ -308,20 +354,12 @@ trait ModelTrait
         $qb->setLang($id_lang);
         if (is_array($id)) {
 
-            return $qb->where("this.id")->in($id)->get();
+            return $qb->whereIn("this.id", $id)->get();
         }
 
-        //if ($entity->dvtranslate) {
-//            if (!$id_lang)
-//                $id_lang = Dvups_lang::defaultLang()->getId();
-        //   $qb->setLang($id_lang);
         return $qb->select()->where("this.id", "=", $id)
             ->getInstance();
 
-//        } else {
-//            $dbal = new DBAL();
-//            return $dbal->findByIdDbal($entity);
-//        }
     }
 
     /**
@@ -332,7 +370,7 @@ trait ModelTrait
      * @param boolean $recursif [true] tell the DBAL to find all the data of the relation
      * @return \QueryBuilder
      */
-    public static function delete($id = null)
+    public static function delete($id = null, $force = false)
     {
 
         $reflection = new ReflectionClass(get_called_class());
@@ -340,14 +378,14 @@ trait ModelTrait
 
         if (is_array($id)) {
             $qb = new QueryBuilder($entity);
-            return $qb->where("this.id")->in($id)->delete();
+            return $qb->whereIn("this.id", $id)->delete($force);
         } elseif (is_numeric($id)) {
             $entity->setId($id);
             $dbal = new DBAL();
-            return $dbal->deleteDbal($entity);
+            return $dbal->deleteDbal($entity, $force);
         } else {
             $qb = new QueryBuilder($entity);
-            return $qb->delete();
+            return $qb->delete($force);
         }
 
     }
@@ -365,9 +403,6 @@ trait ModelTrait
 
         $qb = new QueryBuilder($entity);
         if ($entity->dvtranslate) {
-//            if (!$id_lang)
-//                $id_lang = Dvups_lang::defaultLang()->getId();
-
             $qb->setLang($id_lang);
         }
         if ($sort == 'id')
@@ -396,7 +431,26 @@ trait ModelTrait
         if ($sort == 'id')
             $sort = $qb->getTable() . "." . $sort;
 
-        return $qb->select()->handlesoftdelete()->orderby($sort . " " . $order)->get();
+        return $qb->select()
+            //->handlesoftdelete()
+            ->orderBy($sort . " " . $order)->get();
+    }
+
+    public static function trashed($sort = 'id', $order = "", $id_lang = null)
+    {
+        $reflection = new ReflectionClass(get_called_class());
+        $entity = $reflection->newInstance();
+
+        $qb = new QueryBuilder($entity);
+        if ($entity->dvtranslate) {
+            $qb->setLang($id_lang);
+        }
+        if ($sort == 'id')
+            $sort = $qb->getTable() . "." . $sort;
+
+        return $qb->select()
+            ->handlesoftdelete()
+            ->orderBy($sort . " " . $order)->trashed();
     }
 
 
@@ -439,6 +493,17 @@ trait ModelTrait
     public static function where($column, $operator = null, $value = null, $id_lang = null)
     {
         return self::select("*", $id_lang)->where($column, $operator, $value);
+    }
+
+    /**
+     * @param $column
+     * @param null $operator
+     * @param null $value
+     * @return QueryBuilder
+     */
+    public static function where_str($column, $link = "AND", $id_lang = null)
+    {
+        return self::select("*", $id_lang)->where_str($column, $link);
     }
 
     /**
@@ -504,6 +569,21 @@ trait ModelTrait
         return $qb->__dclone($update);
     }
 
+    /**
+     * return instance of \QueryBuilder white the select request sequence.
+     * @param string $columns
+     * @return QueryBuilder
+     * @example name, description, category if none has been set, all will be take.
+     */
+    public static function orderBy($column, $sort = "")
+    {
+        $reflection = new ReflectionClass(get_called_class());
+        $entity = $reflection->newInstance();
+
+        $qb = new QueryBuilder($entity);
+        return $qb->orderBy($column, $sort);
+
+    }
     /**
      * return instance of \QueryBuilder white the select request sequence.
      * @param string $columns

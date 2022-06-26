@@ -602,11 +602,14 @@ class Model extends \stdClass
 
 
     /**
-     *
-     * @param string $order
-     * @return \dclass\devups\Datatable\Lazyloading
+     * @param $next
+     * @param $perpage
+     * @param $order
+     * @param $debug
+     * @return \dclass\devups\Datatable\Lazyloading|int|QueryBuilder
+     * @throws ReflectionException
      */
-    public static function lazyloading($order = "", $debug = false)
+    public static function lazyloading($perpage = 10, $next = 1, $order = "", $debug = false)
     {//
         $classname = get_called_class();
         $reflection = new ReflectionClass($classname);
@@ -617,7 +620,7 @@ class Model extends \stdClass
         if ($debug)
             return $ll->renderQuery()->lazyloading($entity, null, $order);
 
-        return $ll->lazyloading($entity, null, $order);
+        return $ll->setNext($next)->setPerPage($perpage)->lazyloading($entity, null, $order);
 
     }
 

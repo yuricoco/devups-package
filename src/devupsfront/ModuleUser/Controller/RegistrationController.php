@@ -180,32 +180,7 @@ class RegistrationController extends Controller {
 //        global $appuser;
         $appuser = User::find(Request::get("user_id"));
 
-        //return $_POST;
-        if ($appuser->isActivated()) {
-            return ["success" => true, "url" => route("home")];
-        }else {
-            $code = sha1($_POST["activationcode"]);
-            if ($code == $appuser->getActivationcode()) {
-
-                $appuser->setIs_activated(1);
-                //$appuser->setLocked(false);
-                $appuser->__update();
-                //updatesession($appuser);
-                $_SESSION[USERAPP] = serialize($appuser);
-
-                Notification::on($appuser, "account_activated")
-                    ->send($appuser, $appuser->notificationData());
-
-
-                return ["success" => true, "url" => route("home")];
-            }
-        }
-
-        return [
-            "success" => false,
-            'error' => t("Le code d'activation n'est pas valide. Veuillez entrer de nouveau ou alors renvoyer un autre code")
-        ];
-
+        return $appuser->activateaccount($_POST["activationcode"], route("home"));
     }
 
 }

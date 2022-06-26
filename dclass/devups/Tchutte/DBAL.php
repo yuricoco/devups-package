@@ -77,6 +77,8 @@ class DBAL extends Database
      * @var type
      */
     protected $softdelete = false;
+    protected $dvtrashed = false;
+
     /**
      *
      * @var type
@@ -885,14 +887,14 @@ class DBAL extends Database
 
     }
 
-    public function deleteDbal($object = null)
+    public function deleteDbal($object = null, $force = false)
     {
 
         if ($object):
             $this->instanciateVariable($object);
         endif;
 
-        if ($this->softdelete)
+        if ($this->softdelete && $force == false)
             $sql = "update `" . $this->table . "` set deleted_at = NOW() where " . $this->objectVar[0] . " = ?";
         else
             $sql = "delete from `" . $this->table . "` where " . $this->objectVar[0] . " = ?";
@@ -1387,6 +1389,7 @@ class DBAL extends Database
             $this->object = $object;
             $this->objectName = get_class($object);
             $this->table = strtolower($this->objectName);
+            $this->softdelete = $object->dvsoftdelete;
 
             $metadata = $em->getClassMetadata("\\" . $this->objectName);
             $this->identifier = $metadata->identifier;

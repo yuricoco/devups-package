@@ -134,6 +134,10 @@ function randomtoken(){
     $randomtoken = base64_encode( openssl_random_pseudo_bytes(32));
 }
 
+/**
+ * @param $value used in the querybuilder to sanitize select where in constraint
+ * @return mixed|string
+ */
 function qb_sanitize($value){
     if(is_string($value))
         return "'$value'";
