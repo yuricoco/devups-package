@@ -15,13 +15,13 @@ class Dv_image extends ImageCore implements JsonSerializable
 
     /**
      * @ManyToOne(targetEntity="\Tree_item")
-     *
+     * @JoinColumn(onDelete="set null")
      * @var \Tree_item
      */
     public $folder;
     /**
      * @ManyToOne(targetEntity="\Tree_item")
-     *
+     * @JoinColumn(onDelete="set null")
      * @var \Tree_item
      */
     public $position;
@@ -47,7 +47,7 @@ class Dv_image extends ImageCore implements JsonSerializable
      */
     public static function infolder(string $foldername)
     {
-        $folder = Tree_item::where(["tree.name" => "folder", "this.name" => $foldername])->__getOne();
+        $folder = Tree_item::where(["tree.name" => "folder", "this.name" => $foldername])->first();
         return self::where("folder_id", $folder->getId())->get();
     }
     /**
@@ -57,7 +57,7 @@ class Dv_image extends ImageCore implements JsonSerializable
      */
     public static function folderhas(string $foldername)
     {
-        $folder = Tree_item::where(["tree.name" => "folder", "this.name" => $foldername])->__getOne();
+        $folder = Tree_item::where(["tree.name" => "folder", "this.name" => $foldername])->first();
         return self::where("folder_id", $folder->getId());
     }
 
@@ -68,7 +68,7 @@ class Dv_image extends ImageCore implements JsonSerializable
         $dv_image = new Dv_image();
 
         $dv_image->folder = Tree_item::mainmenu("folder")
-            ->andwhere("this.name", "fund")->__getOne();
+            ->andwhere("this.name", "fund")->first();
         $dv_image->setImage($url["file"]["hashname"]);
         $dv_image->setUploaddir($filedir);
         $dv_image->setSize($url["file"]["imagesize"]);
@@ -117,7 +117,7 @@ class Dv_image extends ImageCore implements JsonSerializable
     /**
      * @return Tree_item
      */
-    public function getFolder(): Tree_item
+    public function getFolder()
     {
         return $this->folder;
     }
@@ -125,7 +125,7 @@ class Dv_image extends ImageCore implements JsonSerializable
     /**
      * @param Tree_item $folder
      */
-    public function setFolder(Tree_item $folder): void
+    public function setFolder(Tree_item $folder)
     {
         $this->folder = $folder;
     }
@@ -168,7 +168,7 @@ class Dv_image extends ImageCore implements JsonSerializable
 
             $filedir = 'gallery/';
             $url = $dfile
-                ->sanitize(date("YmdHis") . "_")
+                ->sanitize($this->id . "_")
                 ->addresize([150, 150], "150_", "", true)
                 ->addresize([270, 270], "270_", "", true)
                 ->addresize([50, 50], "50_", "", true)
@@ -183,13 +183,12 @@ class Dv_image extends ImageCore implements JsonSerializable
             $this->image = $url['file']['hashname'];
             $this->name = $url['file']['hashname'];
             $this->reference = $url['file']['hashname'];
-            $this->width = $url['file']['hashname'][0];
-            $this->height = $url['file']['hashname'][1];
 
-            //$this->setName(Request::post("name"));
+            $this->setName(Request::post("name"));
 //            $this->setWidth($url["file"]["width"]);
 //            $this->setHeight($url["file"]["height"]);
             $this->setSize($url["file"]["size"]);
+            $this->setImage($url["file"]["hashname"]);
 
         }
     }
@@ -218,7 +217,7 @@ class Dv_image extends ImageCore implements JsonSerializable
             $this->name = $url['file']['hashname'];
             $this->reference = $url['file']['hashname'];
 
-//            $this->setName(Request::post("name"));
+            $this->setName(Request::post("name"));
 //            $this->setWidth($url["file"]["width"]);
 //            $this->setHeight($url["file"]["height"]);
             $this->setSize($url["file"]["imagesize"]);
@@ -344,11 +343,9 @@ class Dv_image extends ImageCore implements JsonSerializable
             'description' => $this->description,
             //'position' => $this->position,
             'image' => $this->image,
-            'uploaddir' => SRC_FILE.$this->uploaddir,
-            'src' => $this->srcImage(),
-//            'size' => $this->size,
-//            'width' => $this->width,
-//            'height' => $this->height,
+            'size' => $this->size,
+            'width' => $this->width,
+            'height' => $this->height,
         ];
     }
 
@@ -376,7 +373,13 @@ class Dv_image extends ImageCore implements JsonSerializable
     public static function templatePosition($ref)
     {
         $ti = Tree_item::position($ref);
-        return self::getbyattribut("this.position_id", $ti->getId())->srcImage();
+        if (!$ti->getId())
+            return __front."images/cropped-banderole-7.png";
+
+        $dvimg = self::getbyattribut("this.position_id", $ti->getId());
+        return $dvimg->srcImage();
+        return Dfile::show($dvimg->getImage(), "gallery/");
+
     }
 
 }

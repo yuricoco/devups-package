@@ -584,7 +584,8 @@ class Controller
                 } elseif ($error = call_user_func(array($object, $currentfieldsetter), $collection))
                     $this->error[$key] = $error;
 
-            } else {
+            }
+            else {
 
                 if (strpos($key_form, ".id")) {
                     // && is_object ($value['options'][0])
@@ -611,8 +612,8 @@ class Controller
 
                     if (!method_exists($object, $currentfieldsetter)) {
 //                        dv_dump($fieldNames);
-//                        if (in_array($key_form, $fieldNames))
-                            $object->{$key_form} = $value2;
+                        //if (in_array($entitname, $fieldNames))
+                            $object->{$entitname} = $value2;
 //                        else
 //                            $this->error[$key] = " You may create method " . $currentfieldsetter . " in entity ";
                     } elseif ($error = call_user_func(array($object, $currentfieldsetter), $value2)) //$value2->__show(false)
@@ -704,26 +705,52 @@ class Controller
             //else
             if (isset($imbricate[1])) {
 
-                $classtype = explode("\\", $imbricate[0]);
+                /*$classtype = explode("\\", $imbricate[0]);
                 if (count($classtype) > 1)
                     $imbricate[0] = $classtype[1];
 
-                if ($imbricate[1] !== "id") // if the default value have changed to may be other_name, then it will call a method as setOther_name() in the owner class
+                if ($imbricate[1] !== "id") { // if the default value have changed to may be other_name, then it will call a method as setOther_name() in the owner class
                     $setter = "set" . ucfirst($imbricate[1]);
-                else // if the default value is still id, then it will call a method setAttributename() in the owner class
+                    $classtype = ucfirst($imbricate[1]);
+                    $entitname = $imbricate[1];
+                }else { // if the default value is still id, then it will call a method setAttributename() in the owner class
                     $setter = "set" . ucfirst($imbricate[0]);
-
-                $reflect = new \ReflectionClass($classtype[0]);
+                    $classtype = ucfirst($imbricate[0]);
+                    $entitname = $imbricate[0];
+                }
+                $reflect = new \ReflectionClass($classtype);
                 $entityimbricate = $reflect->newInstance();
                 if (!is_numeric($value)) {
                     $entityimbricate->setId(null);
                     continue;
                 }
 
-                $entityimbricate->setId($value);
-                if (!method_exists($this->entity, $setter)) {
-                    $this->error[$field] = " You may create method " . $setter . " in entity ";
-                } elseif ($error = call_user_func(array($this->entity, $setter), $entityimbricate->hydrate(false)))
+                $entityimbricate->setId($value);*/
+
+                $entitname = str_replace(".id", "", $meta[0]);
+                if (strpos($entitname, "\\")) {
+                    $classtyperst = explode("\\", $entitname);
+                    $classtype = $classtyperst[0];
+                    $entitname = $classtyperst[1];
+                } else
+                    $classtype = $entitname;
+
+                $currentfieldsetter = 'set' . ucfirst($entitname);
+                if (!class_exists(ucfirst($classtype)))
+                    continue;
+
+                if (!is_numeric($value)) {
+                    continue;
+                }
+                $reflect = new \ReflectionClass($classtype);
+                $value2 = $reflect->newInstance();
+
+                $value2->setId($value);
+
+                if (!method_exists($this->entity, $currentfieldsetter)) {
+                    $object->{$entitname} = $value2;
+                    //$this->error[$field] = " You may create method " . $setter . " in entity ";
+                } elseif ($error = call_user_func(array($this->entity, $currentfieldsetter), $value2->hydrate(false)))
                     $this->error[$field] = $error;
 
             } else {

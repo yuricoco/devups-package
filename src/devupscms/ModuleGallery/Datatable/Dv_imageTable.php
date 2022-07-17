@@ -21,7 +21,6 @@ class Dv_imageTable extends Datatable
         return $dt;
     }
 
-
     public function buildfrontcustom()
     {
         $this->base_url = __env."admin/";
@@ -40,7 +39,6 @@ class Dv_imageTable extends Datatable
     public function buildindextable()
     {
 
-        $this->base_url = __env . "admin/";
         $this->datatablemodel = [
             'id' => ['header' => t('#'),],
             'reference' => ['header' => t('Reference'),],

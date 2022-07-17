@@ -186,7 +186,7 @@ var devups = {
             $("#notification-items").prepend(item.html)
 
         $("#notification-block").find("#notif-ping").show().html(response.unreaded+"")
-        $.notify(`vous avez ${nbnotif} nouvelles notifications`, "info")
+        model.notify(`vous avez ${nbnotif} nouvelles notifications`, "info")
 
     },
     initNotification(id, date) {

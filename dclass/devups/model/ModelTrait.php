@@ -4,13 +4,14 @@ trait ModelTrait
 {
 
     public $dvfetched = false;
+    public $dvold = false;
     public $dvsoftdelete = false;
     public $dvinrelation = false;
     public $dvtranslate = false;
     public $dvid_lang = false; // this attribute has an issue I've forgot the one but this note is just to remind me of that
     // in fact if the attribute is not setted the __get() method will throw a error: attribute not found! why Have i commented it?
     public $dvtranslated_columns = [];
-    private static $dvkeys = ["dvid_lang", "dvfetched", "dvinrelation", "dvsoftdelete", "dvtranslate", "dvtranslated_columns",];
+    private static $dvkeys = ["dvold","dvid_lang", "dvfetched", "dvinrelation", "dvsoftdelete", "dvtranslate", "dvtranslated_columns",];
 
     public $dv_collection = [];
 
@@ -70,7 +71,7 @@ trait ModelTrait
              * if devups has never fetch it before then we hydrate the hole instance with it row in database
              */
 
-            if ($this->id && !$this->dvfetched && $attribut != "id") { //  && !$this->{$attribut}
+            if (!$this->dvfetched && $attribut != "id") { // $this->id &&  && !$this->{$attribut}
 
                 /*
                  * the fact is that by a mechanism I don't understand by now once the method detect an association
@@ -91,6 +92,9 @@ trait ModelTrait
                 $fieldNames = $metadata->fieldNames;
                 $assiactions = array_keys($metadata->associationMappings);
                 $cn = strtolower($classlang);
+                if (!$this->id)
+                    return null;
+
                 $sql = " SELECT * FROM `$cn` WHERE id = " . $this->id;
                 $data = (new DBAL())->executeDbal($sql, [], DBAL::$FETCH);
                 //var_dump($classlang." - ".$attribut, $data, $fieldNames);
@@ -675,27 +679,7 @@ trait ModelTrait
                 $keys[$key] = $val;
         }
         return  $keys;
-        // $softdelete = $this->dvsoftdelete;
 
-        /*if(get_class($this) == "User") {
-            var_dump($this);
-            //die;
-        }*/
-        foreach ($this as $key => $val) {
-            if (in_array($key, self::$dvkeys))
-                continue;
-            if (is_object($val)) {
-                //var_dump(get_class($val));
-                // $entity_link_list[strtolower(get_class($val) . ":" . $key)] = $val;
-                $keys[$key . '_id'] = $val->getId();
-//            } else if (is_array($val))
-//                // $collection[] = $val;
-            } else
-                $keys[$key] = $val;
-        }
-        //var_dump($this->dvtranslated_columns);
-
-        return $keys;
     }
 
     public function entityKeyForm()

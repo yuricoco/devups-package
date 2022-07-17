@@ -84,7 +84,27 @@
     </div>
 </div>
 
-<div id="dialog-container"></div>
+
+<div id="dialog-container" class="swal2-container swal2-fade swal2-shown" style="display:none; overflow-y: auto !important;">
+    <div role="dialog" aria-labelledby="swal2-title" aria-describedby="swal2-content" class="swal2-modal swal2-show dv_modal box-container" tabindex="1"
+         style="margin:auto">
+        <div class="main-card mb-3 card " style="width: 100%" >
+            <div class="card-header">
+                <h3 class="card-title">. </h3>
+                <div class="card-toolbar text-right">
+                    <button type="button" onclick="model._dismissmodal()"
+                            class="btn btn-danger "
+                            aria-label="Close this dialog"
+                            style="display: block;">×
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <script src="<?= assets; ?>scripts/main.js"></script>
 <!-- End custom js for this page-->

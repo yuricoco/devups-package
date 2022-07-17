@@ -62,4 +62,17 @@ define('PREVIOUSPAGE', "previous_page");
 define('JSON_ENCODE_DEPTH', 512);
 
 
+/**
+ * SMTP DEFINE
+ */
+
+define('sm_port', '465');
+define('sm_smtp', 'mail.spacekola.com');
+define('sm_username', 'no-reply@spacekola.com');
+define('sm_password', 'No-reply1963');
+define('sm_from', 'no-reply@spacekola.com');
+define('sm_name', 'Subcontractor');
+define('sm_smtpsecurity', 'ssl');
+
+
 

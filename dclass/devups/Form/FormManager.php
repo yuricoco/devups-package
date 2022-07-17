@@ -44,10 +44,13 @@ define('FH_REQUIRE', 'require');
 define('FH_ENABLECOLLECTIONFORMINJECTION', true);
 define('FH_COLLECTIONFORMINJECTION', 'collectionforminjection');
 
-abstract class FormManager {
+abstract class FormManager
+{
     //put your code here
 //    abstract function __renderForm($entity = null) ;
 
+    public $title = "";
+    public $width = 600;
     public $entity;
     public $dventity;
     public $classname;
@@ -57,11 +60,12 @@ abstract class FormManager {
     public $formbutton;
     public $formaction;
     public $fields = [];
+    public $viewdatas = [];
 
     public function __construct($entity, $action = "")
     {
         $this->formaction = $action;
-        $this->formbutton = $action? true : false;
+        $this->formbutton = $action ? true : false;
         $this->entity = $entity;
         $this->classname = get_class($entity);
         $this->name = strtolower(get_class($entity));
@@ -76,120 +80,138 @@ abstract class FormManager {
      * @param $option
      * @return $this
      */
-    public function addField($name, $option){
+    public function addField($name, $option)
+    {
         $this->fields[$name] = $option;
         return $this;
     }
 
-    public function addJs($jsfile){
+    public function addJs($jsfile)
+    {
         $this->js[] = $jsfile;
         //$this->js[] = $this->dventity->hydrate()->dvups_module->route($jsfile);
         return $this;
     }
 
-    public function addCss($cssfile){
+    public function addCss($cssfile)
+    {
         $this->css[] = $this->dventity->dvups_module->route($cssfile);
         return $this;
     }
 
-    public function addDformjs(){
-        $this->js[] = CLASSJS."dform";
+    public function addDformjs()
+    {
+        $this->js[] = CLASSJS . "dform";
         return $this;
     }
 
-    public function buildEntityCore(){
-        return (object) [
-            "entity"=>$this->entity,
-            "classname"=>$this->classname,
-            "name"=>$this->name,
-            "addcss"=>$this->css,
-            "addjs"=>$this->js,
-            "formbutton"=>$this->formbutton,
-            "formaction"=>$this->formaction,
-            "field"=>$this->fields,
+    public function buildEntityCore()
+    {
+        return (object)[
+            "entity" => $this->entity,
+            "classname" => $this->classname,
+            "name" => $this->name,
+            "addcss" => $this->css,
+            "addjs" => $this->js,
+            "formbutton" => $this->formbutton,
+            "formaction" => $this->formaction,
+            "field" => $this->fields,
         ];
     }
 
-    public function renderForm(){
+    public function renderForm()
+    {
         FormFactory::$langs = Dvups_lang::allrows();
+        /*return Genesis::getView("default.dialogform", [
+                "width" => $this->width,
+                "entity" => $this->entity,
+                "formtitle" => $this->title,
+                "formcontent" => FormFactory::__renderForm($this->buildEntityCore())
+            ] + $this->viewdatas
+        );*/
         return FormFactory::__renderForm($this->buildEntityCore());
     }
 
-    public static function  printHtmlForm($entitycore, $rootdir){
+    public static function printHtmlForm($entitycore, $rootdir)
+    {
 
-        $fichier = fopen($rootdir.'/Ressource/html/' . ucfirst($entitycore->name) . '.html', 'w');
+        $fichier = fopen($rootdir . '/Ressource/html/' . ucfirst($entitycore->name) . '.html', 'w');
         fputs($fichier, FormFactory::__renderForm($entitycore));
         fclose($fichier);
 
     }
-/*
-    public static function addjs($js){
-        $reflection = new ReflectionClass(get_called_class());
-        $filename = explode("\src", str_replace(get_called_class().".php", "", $reflection->getFilename()));
-        $filename = explode("\\", $filename[1]);
 
-        return __env . "src/" .$filename[1]."/". $filename[2] ."/Ressource/js/" . $js;
-    }*/
+    /*
+        public static function addjs($js){
+            $reflection = new ReflectionClass(get_called_class());
+            $filename = explode("\src", str_replace(get_called_class().".php", "", $reflection->getFilename()));
+            $filename = explode("\\", $filename[1]);
 
-    static function Options_ToCollect_Helper($value, $entity, $currentcollection, $enablecollectionforminjection = false) {
-        
+            return __env . "src/" .$filename[1]."/". $filename[2] ."/Ressource/js/" . $js;
+        }*/
+
+    static function Options_ToCollect_Helper($value, $entity, $currentcollection, $enablecollectionforminjection = false)
+    {
+
         $qb = new QueryBuilder($entity);
-        if($currentcollection && $currentcollection[0]->getId()){
+        if ($currentcollection && $currentcollection[0]->getId()) {
             foreach ($currentcollection as $collected) {
                 $ids[] = $collected->getId();
             }
-            
+
             $entitylist = $qb->select()
-                    ->where(strtolower(get_class($entity)).".id")
-                    ->notin($ids)
-                    ->__getAll(false);
-            
-        }else{
-            
+                ->where(strtolower(get_class($entity)) . ".id")
+                ->notin($ids)
+                ->__getAll(false);
+
+        } else {
+
             $entitylist = $qb->select()->__getAll(false);
-            
+
         }
 
         return FormManager::Options_Helper($value, $entitylist, "id", $enablecollectionforminjection);
-            
+
     }
-    
-    static function Options_ToCollectFormInjection_Helper($value,  $entity, $currentcollection, $entitybaseon) {
-        
+
+    static function Options_ToCollectFormInjection_Helper($value, $entity, $currentcollection, $entitybaseon)
+    {
+
         $qb = new QueryBuilder($entitybaseon);
-        if($currentcollection && $currentcollection[0]->getId()){
+        if ($currentcollection && $currentcollection[0]->getId()) {
             foreach ($currentcollection as $collected) {
                 $ids[] = $collected->contentmodel->getId();
             }
-            
+
 //            $qb = new QueryBuilder(new Contentmodel());
             $entitylist = $qb->select()
-                    ->where("contentmodel.id")
-                    ->notin($ids)
-                    ->__getAll(false);
-            
-        }else{
-            
+                ->where("contentmodel.id")
+                ->notin($ids)
+                ->__getAll(false);
+
+        } else {
+
             $entitylist = $qb->select()->__getAll(false);
-            
+
         }
-        
-        return FormManager::Options_Helper($value, $entitylist,  "id", true);
-            
+
+        return FormManager::Options_Helper($value, $entitylist, "id", true);
+
     }
-    
-    static function Options_Helper($value, $entitylist = [], $key = "id", $enablecollectionforminjection = false) {
-        
+
+    static function Options_Helper($value, $entitylist = [], $key = "id", $enablecollectionforminjection = false)
+    {
+
         global $__controller_traitment;
-        
+
         $key_value = [];
-        
-        if(isset($entitylist[0]) && is_object($entitylist[0]) && !$entitylist[0]->getId()) return [];
+
+        if (isset($entitylist[0]) && is_object($entitylist[0]) && !$entitylist[0]->getId()) return [];
 //        if($__controller_traitment) return EntityCollection::entity_collection($value);
         $entitylist2 = [];
         foreach ($entitylist as $entity) {
             $join = explode(".", $value);
-                if (isset($join[1])) {
+            if (isset($join[1])) {
 
 //                    $collection = explode("::", $join[0]);
 //                    $src = explode(":", $join[0]);
@@ -200,11 +222,11 @@ abstract class FormManager {
 //                        $file = call_user_func(array($entityjoin, 'show' . ucfirst($join[1])));
 //
 //                        $tr[] = "<img class='dv-img' width='50' src='" . $file . "' />";
-//                        
+//
 //                        $entityjoin = call_user_func(array($entity, 'get' . ucfirst($join[1])));
-//                        
+//
 //                        $key_value[call_user_func(array($entity, 'get' . ucfirst($key)))] = call_user_func(array($entityjoin, 'get' . ucfirst($join[1])));
-//                    } 
+//                    }
 //                    elseif (isset($collection[1])) {
 //                        $td = [];
 //                        $entitycollection = call_user_func(array($entity, 'get' . ucfirst($collection[1])));
@@ -213,35 +235,34 @@ abstract class FormManager {
 //                            $td[] = '<td>' . call_user_func(array($entityjoin, 'get' . ucfirst($join[1]))) . '</td>';
 //                        }
 //                        $tr[] = '<td>' . call_user_func(array($entityjoin, 'get' . ucfirst($join[1]))) . '</td>';
-//                    } 
-//                    else {
-                        $entityjoin = call_user_func(array($entity, 'get' . ucfirst($join[0])));
-                        
-                        $key_value[call_user_func(array($entity, 'get' . ucfirst($key)))] = call_user_func(array($entityjoin, 'get' . ucfirst($join[1])));
-                    
 //                    }
-                }
-                else {
-                    if (method_exists($entity, 'get' . ucfirst($value)))
-                        $key_value[call_user_func(array( $entity, 'get' . ucfirst($key)))] = call_user_func(array($entity, 'get' . ucfirst($value)));
-                    else
-                        $key_value[$entity->{$key}] = $entity->{$value};
-                }
-                $entitylist2[call_user_func(array($entity, 'getId' ) )] = $entity; 
+//                    else {
+                $entityjoin = call_user_func(array($entity, 'get' . ucfirst($join[0])));
+
+                $key_value[call_user_func(array($entity, 'get' . ucfirst($key)))] = call_user_func(array($entityjoin, 'get' . ucfirst($join[1])));
+
+//                    }
+            } else {
+                if (method_exists($entity, 'get' . ucfirst($value)))
+                    $key_value[call_user_func(array($entity, 'get' . ucfirst($key)))] = call_user_func(array($entity, 'get' . ucfirst($value)));
+                else
+                    $key_value[$entity->{$key}] = $entity->{$value};
+            }
+            $entitylist2[call_user_func(array($entity, 'getId'))] = $entity;
         }
-        
-        if($enablecollectionforminjection)
+
+        if ($enablecollectionforminjection)
             return ["list" => $key_value, "forcollectionform" => $entitylist2];
         else
             return $key_value;
-        
+
     }
 
     public static function key_as_value(array $array, $translate = false)
     {
         $key_value = [];
-        foreach ($array as $item){
-            $key_value[$item] = t("option.".$item, $item);
+        foreach ($array as $item) {
+            $key_value[$item] = t("option." . $item, $item);
         }
         return $key_value;
     }

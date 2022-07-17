@@ -346,10 +346,13 @@ class Model extends \stdClass
         return $qb->select()->where("this." . strtolower(get_class($this)) . "_id", $this->getId());
     }
 
-    public function hydrate()
+    public function hydrate($idlang = false)
     {
         if (!$this->id || $this->dvfetched)
             return $this;
+
+        if (!$this->dvid_lang)
+            $this->dvid_lang = $idlang;
 
         global $em;
         $classlang = strtolower(get_class($this));
@@ -373,6 +376,7 @@ class Model extends \stdClass
             (new DBAL($this))->getLangValues($this, $this->dvtranslated_columns);
 
         $this->dvfetched = true;
+        $this->dvold = $this;
 
         return $this;
     }

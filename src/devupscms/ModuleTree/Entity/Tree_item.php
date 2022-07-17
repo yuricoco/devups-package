@@ -63,13 +63,13 @@ class Tree_item extends Model implements JsonSerializable
 
     public static function position($ref)
     {
-        $ti = self::mainmenu("position")->andwhere("name", $ref)
+        $ti = self::mainmenu("this.position")->andwhere("this.slug", $ref)
             ->firstOrNull();
         // dv_dump($ti);
         if (!$ti) {
-            return new Tree_item();
-            $tree = Tree::where("name", "position")->first();
-            if (!Tree::where("name", "position")->count()) {
+            //return new Tree_item();
+            $tree = Tree::where("name", "position")->firstOrNull();
+            if (!$tree) {
                 $tree = new Tree();
                 $tree->setName(["en"=>"position", "fr"=>"position"]);
                 $tree->__insert();

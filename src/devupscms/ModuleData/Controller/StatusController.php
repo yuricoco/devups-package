@@ -1,6 +1,6 @@
-<?php 
+<?php
 
-            
+
 use dclass\devups\Controller\Controller;
 
 class StatusController extends Controller{
@@ -16,17 +16,34 @@ class StatusController extends Controller{
 
         $this->entitytarget = 'Status';
         $this->title = "Manage Status";
-        
+
         $this->renderListView();
 
     }
 
     public function datatable($next, $per_page) {
-    
+
         return ['success' => true,
             'datatable' => StatusTable::init(new Status())->buildindextable()->getTableRest(),
         ];
-        
+
+    }
+
+    public function formView($id = null)
+    {
+        $status = new Status();
+        $action = Status::classpath("services.php?path=status.create");
+        if ($id) {
+            $action = Status::classpath("services.php?path=status.update&id=" . $id);
+            $status = Status::find($id);
+        }
+
+        return ['success' => true,
+            'form' => StatusForm::init($status, $action)
+                ->buildForm()
+                ->addDformjs()
+                ->renderForm(),
+        ];
     }
 
     public function createAction($status_form = null ){
@@ -36,7 +53,7 @@ class StatusController extends Controller{
         if ( $this->error ) {
             return 	array(	'success' => false,
                             'status' => $status,
-                            'action' => 'create', 
+                            'action' => 'create',
                             'error' => $this->error);
         }
 
@@ -51,24 +68,24 @@ class StatusController extends Controller{
 
     public function updateAction($id, $status_form = null){
         extract($_POST);
-            
+
         $status = $this->form_fillingentity(new Status($id), $status_form);
-     
+
         if ( $this->error ) {
             return 	array(	'success' => false,
                             'status' => $status,
                             'action_form' => 'update&id='.$id,
                             'error' => $this->error);
         }
-        
+
         $status->__update();
         return 	array(	'success' => true,
                         'status' => $status,
                         'tablerow' => StatusTable::init()->buildindextable()->getSingleRowRest(Status::find($id, Dvups_lang::getByIsoCode("fr")->id)),
                         'detail' => '');
-                        
+
     }
-    
+
 
     public function detailView($id)
     {
@@ -85,14 +102,14 @@ class StatusController extends Controller{
         );
 
     }
-    
+
     public function deleteAction($id){
-      
+
             Status::delete($id);
-        return 	array(	'success' => true, 
-                        'detail' => ''); 
+        return 	array(	'success' => true,
+                        'detail' => '');
     }
-    
+
 
     public function deletegroupAction($ids)
     {
@@ -100,7 +117,7 @@ class StatusController extends Controller{
         Status::delete()->where("id")->in($ids)->exec();
 
         return array('success' => true,
-                'detail' => ''); 
+                'detail' => '');
 
     }
 

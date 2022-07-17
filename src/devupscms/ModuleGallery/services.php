@@ -36,6 +36,7 @@ switch (R::get('path')) {
     case 'dv_image._show':
         $dv_imageCtrl->detailView(R::get("id"));
         break;
+    case 'dv_image.delete':
     case 'dv_image._delete':
         g::json_encode($dv_imageCtrl->deleteAction(R::get("id")));
         break;

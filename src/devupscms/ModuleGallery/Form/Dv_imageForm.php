@@ -44,4 +44,3 @@ class Dv_imageForm extends FormManager
     }
 
 }
-    

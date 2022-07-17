@@ -69,16 +69,18 @@ var model = {
         return route + getAttr;
 
     },
-    clonerow: function (id, entity) {
-        model.init(entity)
+    clonerow: function (id, entity, el) {
+        model.init(entity, el)
+        model.addLoader($(el))
         var regex = /_/gi;
         model.request(this.entity + "._clonerow&dclass=" + entity)
             .param({
                 id: id
             })
             .get(function (response) {
+                model.removeLoader()
                 console.log(response)
-                $.notify("Nouvelle ligne ajoutée avec succès!", "success");
+                model.notify("Nouvelle ligne ajoutée avec succès!", "success");
                 ddatatable.addrow(response.tablerow.row);
             })
             .fail(function (resultat, statut, erreur) {
@@ -95,7 +97,11 @@ var model = {
         // model.modalbody.html('<div style="height: 150px; text-align: center; padding: 5%">Loading ...</div>');
         // model.modal.modal("show");
         if (server)
-            model.modalboxcontainer.html('<div style="height: 150px; text-align: center; padding: 5%">Loading ...</div>');
+            model.modalboxcontainer.html(`
+ 
+ <div  class="alert alert-warning">Loading ...</div>
+ 
+`);
         model.modalbox.css('display', "inline-flex");
         model.modalbox.find(".swal2-modal").css('display', "inline-flex");
     },
@@ -108,9 +114,41 @@ var model = {
         model.modalbox.find(".swal2-modal").css('display', "none");
         this.init();
     },
+    notifyoptions : {
+        "closeButton": true,
+        "debug": false,
+        "newestOnTop": false,
+        "progressBar": false,
+        "positionClass": "toastr-top-right",
+        "preventDuplicates": false,
+        "onclick": null,
+        "showDuration": "300",
+        "hideDuration": "1000",
+        "timeOut": "5000",
+        "extendedTimeOut": "1000",
+        "showEasing": "swing",
+        "hideEasing": "linear",
+        "showMethod": "fadeIn",
+        "hideMethod": "fadeOut"
+    },
+    notify(message, state, title = ""){
+        $.notify(message, state)
+        return 0;
+        toastr.options = this.notifyoptions;
+        if (state === 'success')
+            toastr.success(message, title);
+        else if (state === 'info')
+            toastr.info(message, title);
+        else if (state === 'warning')
+            toastr.warning(message, title);
+        else if (state === 'danger')
+            toastr.danger(message, title);
+        else
+            toastr.success(message, title);
+    },
     entity: null,
     _new: function (el, classname) {
-        model.init(classname)
+        model.init(classname, el)
         /*if ($(el).parents(".dv-top-action").length) {
             this.baseurl = $(el).parents(".dv-top-action").data('route') + "services.php";
             this.entity = $(el).parents(".dv-top-action").data('entity');
@@ -131,8 +169,8 @@ var model = {
             });
 
     },
-    _edit: function (id, entity) {
-        model.init(entity)
+    _edit: function (id, entity, el) {
+        model.init(entity, el)
         var regex = /_/gi;
         //string..replace(regex, '-')
 
@@ -504,19 +542,21 @@ var model = {
     getformfield: function (field) {
         return $("input[name='" + this.entity + "_form[" + field + "]']");
     },
-    init: function (entity) {
+    modalbox : $("#dialog-container"),
+    modalboxcontainer : $("#dialog-container").find(".box-container .card-body"),
+    init: function (entity, el) {
 
         if (!entity)
             return;
         model.entity = entity;
-        ddatatable.init(entity);
+        ddatatable.init(entity, el);
         model.baseurl = ddatatable.baseurl;
         // model.entity = dvdatatable.eq(0).data('entity');
 
-        model.modal = $("#" + model.entity + "modal");
-        model.modalbox = $("#" + model.entity + "box");
-        model.modalbody = $("#" + model.entity + "modal").find(".modal-body");
-        model.modalboxcontainer = $("#" + model.entity + "box").find(".box-container .card-body");
+        // model.modal = $("#" + model.entity + "modal");
+        // model.modalbox = $("#" + model.entity + "box");
+        // model.modalbody = $("#" + model.entity + "modal").find(".modal-body");
+        // model.modalboxcontainer = $("#" + model.entity + "box");//.find(".box-container .card-body");
 
     }
 };

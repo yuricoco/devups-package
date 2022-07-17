@@ -10,15 +10,25 @@
 <?php } ?>
 
 @section('content')
- 
+<style>
+    .evo-pop{
+        z-index: 10;
+    }
+    .evo-pointer{
+        width: 100%;
+        height: 10px;
+    }
+</style>
     @include("default.moduleheaderwidget")
     <hr>
+
+            <div class='alert alert-info'>Specify entities that handle status in the module dependencies</div>
 
     @yield('layout_content')
 
 
         @endsection
-        
+
 <?php function script(){ ?>
 
 <script src="<?= CLASSJS ?>devups.js"></script>
@@ -30,4 +40,3 @@
 
 <?php } ?>
 
-	

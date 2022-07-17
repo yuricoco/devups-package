@@ -351,7 +351,7 @@ class DBAL extends Database
         }
 
         $qb = new QueryBuilder($relation);
-        return $qb->select()->where("id", "=", $id)->__getOneRow();
+        return $qb->select()->where("id", "=", $id)->first();
     }
 
     public function hasmany($entity, $collection, $exec = true, $incollectionof = null, $id_lang = null)
@@ -987,9 +987,9 @@ class DBAL extends Database
         }
 
         $flowBD = Bugmanager::cast((object)$object_array, get_class($this->object));
-
+        $flowBD->dvold = $flowBD;
         foreach ($this->_with as $entity){
-            $flowBD->{"$entity"}->hydrate();
+            $flowBD->{"$entity"}->hydrate($this->id_lang);
         }
 
         $flowBD->dvfetched = true;

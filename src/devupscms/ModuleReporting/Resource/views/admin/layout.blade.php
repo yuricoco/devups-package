@@ -24,15 +24,15 @@
                         </div>
                     </div>
                 </div>
-                <div class="card-body">
-                    {!!
-                        ConfigurationTable::init(new Configuration())
-                            ->buildconfigtable()
-                            ->setModel("config")
-                            ->Qb(Configuration::where("_key")->in(["sm_port", "sm_smtp", "sm_username", "sm_password", "sm_from", "sm_name", "sm_smtpsecurity", ]))
-                            ->render()
-                    !!}
-                </div>
+                <code class="card-body">
+                    define('sm_port', '{{sm_port}}');<br>
+                    define('sm_smtp', '{{sm_smtp}}');<br>
+                    define('sm_username', '{{sm_username}}');<br>
+                    define('sm_password', '{{sm_password}}');<br>
+                    define('sm_from', '{{sm_from}}');<br>
+                    define('sm_name', '{{sm_name}}');<br>
+                    define('sm_smtpsecurity', '{{sm_smtpsecurity}}');<br>
+                </code>
                 <div class="card-footer">
 
                 </div>
@@ -111,4 +111,3 @@
 
 <?php } ?>
 
-	

@@ -520,9 +520,41 @@ class QueryBuilder extends \DBAL
 
     }
 
-    public function whereMonth($column)
+    /**
+     * document https://sql.sh/fonctions/date_format
+     * @param $column
+     * @param $value
+     * @param $link
+     * @return $this
+     */
+    public function whereDay($column, $value, $link = 'AND')
     {
 
+        $this->_where .= " $link DATE_FORMAT($column, '%d') = " . $value;
+        return $this;
+    }
+    public function whereMonth($column, $value, $link = 'AND')
+    {
+
+        $this->_where .= " $link DATE_FORMAT($column, '%m') = " . $value;
+        return $this;
+    }
+    public function whereYear($column, $value, $link = 'AND')
+    {
+        $this->_where .= " $link DATE_FORMAT($column, '%Y') = " . $value;
+        return $this;
+    }
+    public function whereDate($column, $value, $link = 'AND')
+    {
+
+        $this->_where .= " $link DATE_FORMAT($column, '%Y-%m-%d') = " . $value;
+        return $this;
+    }
+    public function whereHour($column, $value, $link = 'AND')
+    {
+
+        $this->_where .= " $link DATE_FORMAT($column, '%H:%i:%s') = " . $value;
+        return $this;
     }
 
     /**
@@ -814,11 +846,13 @@ class QueryBuilder extends \DBAL
     }
 
 
-    public function first($recursif = true, $collect = [])
+    public function first($id_lang = null, $collect = [])
     {
-        if (is_numeric($recursif))
-            $this->limit_iteration = $recursif;
+//        if (is_numeric($recursif))
+            $this->limit_iteration = true;
 
+        if ($id_lang)
+            $this->setLang($id_lang);
         // $this->setCollect($collect);
         // ->limit(1)
         return $this->getInstance();

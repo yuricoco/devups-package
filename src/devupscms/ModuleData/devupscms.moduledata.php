@@ -1,4 +1,7 @@
-<?php 
+<?php
+
+const status_entities = [];
+
     require 'Entity/Status.php';
     require 'Entity/Status_lang.php';
     require 'Form/StatusForm.php';

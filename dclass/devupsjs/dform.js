@@ -44,7 +44,7 @@ var dform = {
             else if (response.reload)
                 window.location.reload();
 
-            $.notify("Nouvelle ligne ajoutée avec succès!", "success");
+            model.notify("Nouvelle ligne ajoutée avec succès!", "success");
             ddatatable.addrow(response.tablerow.row);
             //$("#dv_pagination").replaceWith(response.tablerow.tablepagination);
 
@@ -64,7 +64,7 @@ var dform = {
             else if (response.reload)
                 window.location.reload();
 
-            $.notify("Nouvelle ligne mise à jour avec succès!", "success");
+            model.notify("Nouvelle ligne mise à jour avec succès!", "success");
             ddatatable.replacerow(dform.entityid, response.tablerow.row);
             // ddatatable.addrow(response.tablerow.row);
             //$("#dv_table").find("#"+entityid).replaceWith(response.tablerow);

@@ -176,7 +176,11 @@ class Form extends FormFactory{
 
     public static function select($name, $options, $value, $directive = [], $setter = [], $callback = null) {
 
-        FormFactory::$fieldname = Form::$name."_form[".$name.']';
+        if (Form::$name)
+            FormFactory::$fieldname = Form::$name."_form[".$name.']';
+        else
+            FormFactory::$fieldname = $name;
+
         FormFactory::$fieldid = Form::$name."-".$name.'';
         $field["options"] = $options;
         $field["value"] = $value;
@@ -246,6 +250,9 @@ class Form extends FormFactory{
     }
 
     private static function fieldnamesanitize($name){
+        if (!Form::$name)
+            return $name;
+
         $key = "";
         $namearray = explode("[", $name);
         if(count($namearray) > 1){
@@ -303,7 +310,7 @@ class Form extends FormFactory{
 
     public static function email($name, $value, $directive = [], $setter = []) {
 
-        FormFactory::$fieldname = Form::$name."_form[".$name.']';
+        FormFactory::$fieldname = Form::fieldnamesanitize($name);
         FormFactory::$fieldid = Form::$name."-".$name.'';
         $field["value"] = $value;
         $field["type"] = FORMTYPE_EMAIL;
@@ -316,7 +323,7 @@ class Form extends FormFactory{
 
     public static function password($name, $value, $directive = [], $setter = []) {
 
-        FormFactory::$fieldname = Form::$name."_form[".$name.']';
+        FormFactory::$fieldname = Form::fieldnamesanitize($name);
         FormFactory::$fieldid = Form::$name."-".$name.'';
         $field["value"] = $value;
         $field["type"] = FORMTYPE_PASSWORD;

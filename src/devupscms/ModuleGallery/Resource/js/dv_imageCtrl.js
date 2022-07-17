@@ -64,7 +64,7 @@ $form.on('drag dragstart dragend dragover dragenter dragleave drop', function (e
 
 model.dvimage = {
     _delete: function (el, id) {
-        model._delete(el, id, "dv_image",(response) => {
+        model._delete(id, "dv_image", el, (response) => {
             $("#image-" + id).remove();
         })
     },

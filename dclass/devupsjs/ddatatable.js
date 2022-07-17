@@ -344,9 +344,12 @@ var ddatatable = {
         // }
 
         console.log("#dv_" + entity + "_table");
-        if (el)
-            this.dtinstance = $(el).parents("#dv_" + entity + "_table");
-        else
+        if (el) {
+            if($(el).parents("#dv_" + entity + "_table").length)
+                this.dtinstance = $(el).parents("#dv_" + entity + "_table");
+            else
+                this.dtinstance = $("#dv_" + entity + "_table");
+        }else
             this.dtinstance = $("#dv_" + entity + "_table");
         this.entity = entity;
 

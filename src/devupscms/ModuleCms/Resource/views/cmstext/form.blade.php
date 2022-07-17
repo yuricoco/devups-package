@@ -137,7 +137,7 @@
         var cmstextid = {{$cmstext->id}};
     </script>
     <?= Form::addDformjs() ?>
-    {!! Form::addjs(__admin.'plugins/tinymce.min') !!}
+    {!! Form::addjs(__admin.'plugins/tinymce/tinymce.bundle') !!}
     {!! Form::addjs(__admin.'plugins/jquery-ui-1.12.1/jquery-ui.min') !!}
     <?= Form::addjs(Cmstext::classpath('Resource/js/cmstextForm')) ?>
 

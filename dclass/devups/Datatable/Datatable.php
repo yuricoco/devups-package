@@ -168,7 +168,7 @@ class Datatable extends Lazyloading
                 // first we check if create action is available for the entity
                 if (in_array('create', $entityrigths)) {
 
-                    $top_action .= '<button type="button" class="' . $this->createaction["class"] . '" ' . $this->createaction["action"] . ' >' . $this->createaction["content"] . '</button>';
+                    $top_action .= '<button type="button" class="btn-sm ' . $this->createaction["class"] . '" ' . $this->createaction["action"] . ' >' . $this->createaction["content"] . '</button>';
 
                 }
             } elseif (isset($_SESSION[dv_role_permission])) {
@@ -176,7 +176,7 @@ class Datatable extends Lazyloading
                     if (is_string($this->createaction))
                         $top_action .= $this->createaction;
                     else
-                        $top_action .= '<button type="button" class="' . $this->createaction["class"] . '" ' . $this->createaction["action"] . ' >' . $this->createaction["content"] . '</button>';
+                        $top_action .= '<button type="button" class="btn-sm ' . $this->createaction["class"] . '" ' . $this->createaction["action"] . ' >' . $this->createaction["content"] . '</button>';
                 } else {
                     $top_action .= "<span class='alert alert-info' ></span>";
                 }
@@ -196,7 +196,7 @@ class Datatable extends Lazyloading
       <i class="fa fa-angle-down"></i> options
     </button>
     <div class="dropdown-menu text-left" aria-labelledby="btnGroupDrop1">
-    
+
         <button data-entity="' . $this->class . '" type="button" onclick="ddatatable._import(this, \'' . $this->class . '\')" class="  btn btn-default btn-block" >
             <i class="fa fa-arrow-up"></i> Import csv
         </button>
@@ -311,17 +311,20 @@ class Datatable extends Lazyloading
 
     public function disableColumnAction()
     {
+        $this->searchaction = false;
         $this->columnaction = false;
         $this->enablecolumnaction = false;
         return $this;
     }
 
-    public function renderTopaction()
+    public function renderTopaction($baseurl = null)
     {
         $headaction = "";
         if ($this->enabletopaction)
             $headaction = $this->top_action();
 
+        if ($baseurl)
+            $this->base_url = $baseurl;
         return "<div class='dv-top-action' data-entity='" . $this->class . "' data-route='" . $this->base_url . "' >" . $headaction . "</div>";
     }
 
@@ -422,12 +425,16 @@ EOF;
         $html .= "";//</div> $this->closeform.
 
         return '<div id="dv_' . $this->class . '_table" class="dv_datatable_container dt-bootstrap4 card card-rounded" >' . $html . '</div>
-' . $this->dialogBox();
+' //. $this->dialogBox()
+            ;
 
     }
 
     public function dialogBox()
     {
+//        return \Genesis::getView("default.dialog", [
+//            'title'=> ''
+//        ]);
         return ' <div id="' . $this->class . 'box" class="swal2-container swal2-fade swal2-shown" style="display:none; overflow-y: auto;">
                     <div role="dialog" aria-labelledby="swal2-title" aria-describedby="swal2-content" class="swal2-modal swal2-show dv_modal" tabindex="1"
                          style="">

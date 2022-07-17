@@ -385,7 +385,7 @@ class Reportingmodel extends Model implements JsonSerializable, DatatableOverwri
 //        if (file_exists($stylefile))
 //            return file_get_contents($stylefile);
 
-        return $this->style;
+        return ""; // $this->style;
     }
 
     static $emailreceiver = [];
@@ -480,19 +480,19 @@ class Reportingmodel extends Model implements JsonSerializable, DatatableOverwri
             $mail->isSMTP();
             $mail->CharSet = 'UTF-8';
             $mail->Encoding = 'base64';                                         // Set mailer to use SMTP
-            $mail->Host = Configuration::get("sm_smtp");  // Specify main and backup SMTP servers
+            $mail->Host = sm_smtp;  // Specify main and backup SMTP servers
             $mail->SMTPAuth = true;                                   // Enable SMTP authentication
-            $mail->Username = Configuration::get("sm_username");                     // SMTP username
-            $mail->Password = Configuration::get("sm_password");                               // SMTP password
-            $mail->SMTPSecure = Configuration::get("sm_smtpsecurity");                                  // Enable TLS encryption, `ssl` also accepted
-            $mail->Port = Configuration::get("sm_port");                                    // TCP port to connect to
+            $mail->Username = sm_username;                     // SMTP username
+            $mail->Password = sm_password;                               // SMTP password
+            $mail->SMTPSecure = sm_smtpsecurity;                                  // Enable TLS encryption, `ssl` also accepted
+            $mail->Port = sm_port;                                    // TCP port to connect to
 
             //Recipients
-            $mail->setFrom(Configuration::get("sm_from"), $title);
+            $mail->setFrom(sm_from, $title);
             foreach (self::$emailreceiver as $email => $name)
                 $mail->addAddress($email, $name);     // Add a recipient
             //$mail->addAddress('ellen@example.com');               // Name is optional
-            $mail->addReplyTo(Configuration::get("sm_from"), $title);
+            $mail->addReplyTo(sm_from, $title);
 
             foreach (self::$namecc as $email => $name)
                 $mail->addCC($email, $name);
