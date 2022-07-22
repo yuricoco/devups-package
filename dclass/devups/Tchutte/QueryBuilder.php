@@ -846,16 +846,16 @@ class QueryBuilder extends \DBAL
     }
 
 
-    public function first($id_lang = null, $collect = [])
+    public function first($id_lang = null, $nullable = false)
     {
 //        if (is_numeric($recursif))
-            $this->limit_iteration = true;
+        $this->limit_iteration = true;
 
         if ($id_lang)
             $this->setLang($id_lang);
         // $this->setCollect($collect);
         // ->limit(1)
-        return $this->getInstance();
+        return $this->getInstance("*", $nullable);
     }
 
     /**
@@ -864,9 +864,9 @@ class QueryBuilder extends \DBAL
      * @return type|null
      * @deprecated uses  firstOrNull
      */
-    public function __firstOrNull($recursif = true, $collect = [])
+    public function __firstOrNull()
     {
-        $model = $this->first($recursif, $collect);
+        $model = $this->first($this->id_lang, true);
 
         if ($model->getId())
             return $model;
@@ -876,7 +876,7 @@ class QueryBuilder extends \DBAL
 
     public function firstOrNull($recursif = true, $collect = [])
     {
-        $model = $this->first($recursif, $collect);
+        return $this->first($this->id_lang, true);
 
         // todo: implement the primary key validation
         if (property_exists($model, "id")) {
@@ -1204,7 +1204,7 @@ class QueryBuilder extends \DBAL
         return $this->__findAllRow($this->query, $this->parameters, $callbackexport);
     }*/
 
-    public function getInstance($column = "*")
+    public function getInstance($column = "*", $nullable = false)
     {
         $this->select($column);
         $this->initSelect();
@@ -1213,7 +1213,10 @@ class QueryBuilder extends \DBAL
         if (self::$debug)
             return $this->getSqlQuery();
 
-        return $this->__findOneRow($this->query, $this->parameters);
+        if ($nullable)
+            return $this->__findOneRow($this->query, $this->parameters);
+
+        return $this->__findOneRow($this->query, $this->parameters) ?? new $this->objectName;
     }
 
     public function get($column = "*", $id_lang = null)

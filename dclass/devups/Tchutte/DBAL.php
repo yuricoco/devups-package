@@ -1032,7 +1032,7 @@ class DBAL extends Database
         $flowBD = $req->fetch(PDO::FETCH_NAMED);
 
         if (!$flowBD) {
-            return new $this->objectName;
+            return null;
         }
 
         return $this->dbrow($flowBD);
