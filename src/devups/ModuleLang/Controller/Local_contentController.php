@@ -7,7 +7,7 @@ use Shuchkin\SimpleXLSX;
 class Local_contentController extends Controller
 {
 
-    private static $path = ROOT . "cache/local/";
+    private static $path = ROOT . "cache/local/".__env_lang;
     const pathmodule = ROOT . "web/app3/frontend1/src/devupsjs/";
 
     public function listView($next = 1, $per_page = 10)
@@ -137,6 +137,20 @@ class Local_contentController extends Controller
 
     public function regeneratecacheAction()
     {
+        self::$path = ROOT . "cache/local/front/";
+        $files = scandir(self::$path);
+        foreach ($files as $file){
+            if (!in_array($file, ['fr.json', 'en.json', '.', '..']))
+                unlink(self::$path.$file);
+        }
+        self::buildlocalcache();
+
+        self::$path = ROOT . "cache/local/admin/";
+        $files = scandir(self::$path);
+        foreach ($files as $file){
+            if (!in_array($file, ['fr.json', 'en.json', '.', '..']))
+                unlink(self::$path.$file);
+        }
         self::buildlocalcache();
 
         Response::success()
@@ -145,14 +159,20 @@ class Local_contentController extends Controller
 
     }
 
-    public static function buildlocalcache()
+    public static function buildlocalcache($path = null)
     {
 
         $lans = Dvups_lang::all();
         foreach ($lans as $lang) {
             $iso_code = $lang->getIso_code();
 
-            $lcs = Local_content::select()->setLang($lang->id)->get();
+            if ($path)
+                $lcs = Local_content::select()
+                    ->where("this.path_key", $path)
+                    ->setLang($lang->id)->get();
+            else
+                $lcs = Local_content::select()
+                    ->setLang($lang->id)->get();
 
             $info = [];
 
@@ -162,12 +182,18 @@ class Local_contentController extends Controller
 
             if ($info) {
                 // todo - fix issue on php warning during the first call of the function translate t().
-                if (file_exists(self::$path . $iso_code . ".json"))
-                    unlink(self::$path . $iso_code . ".json");
 
                 $contenu = json_encode($info, 1024);
 
-                $entityrooting = fopen(self::$path . $iso_code . ".json", 'w');
+                if ($path) {
+                    if (file_exists(self::$path . $iso_code . "_$path.json"))
+                        unlink(self::$path . $iso_code . "_$path.json");
+                    $entityrooting = fopen(self::$path . $iso_code . "_$path.json", 'w');
+                } else {
+                    if (file_exists(self::$path . $iso_code . ".json"))
+                        unlink(self::$path . $iso_code . ".json");
+                    $entityrooting = fopen(self::$path . $iso_code . ".json", 'w');
+                }
                 fputs($entityrooting, $contenu);
                 fclose($entityrooting);
 
@@ -176,11 +202,13 @@ class Local_contentController extends Controller
         }
     }
 
-    public static function newdatacollection($ref, $default)
+    public static function newdatacollection($ref, $default, $path = null)
     {
 
         $lck = new Local_content_key();
         $lck->setReference($ref);
+        $lck->path = __env_lang.Request::get("path");
+        $lck->path_key = $path;
         $lck->__insert();
 
         $lans = Dvups_lang::all();
@@ -188,28 +216,44 @@ class Local_contentController extends Controller
         $content = [];
         foreach ($lans as $lang) {
             //$lang = $lang->getIso_code();
-            $content[$lang->getIso_code()]=$default;
+            $content[$lang->getIso_code()] = $default;
         }
 
         //$lc->setLang($lang);
         $lc->setReference($ref);
         $lc->content = $content;
+        $lc->path = __env_lang.Request::get("path");
+        $lc->path_key = $path;
         $lc->local_content_key = $lck;
         $lc->__insert();
 
+        if ($path)
+            self::buildlocalcache($path);
         self::buildlocalcache();
 
         return ["success" => true];
 
     }
 
-    public static function getdata()
+    public static function getdata($path = null)
     {
 
         $lang = DClass\lib\Util::local();
 
+        if ($path) {
+
+            if (!file_exists(self::$path . $lang . "_$path.json")) {
+                \DClass\lib\Util::log("", $lang . "_$path.json", self::$path);
+
+                self::buildlocalcache($path);
+            }
+
+            $content = file_get_contents(self::$path . $lang . "_$path.json");
+            return json_decode($content, true);
+
+        }
         if (!file_exists(self::$path . $lang . ".json")) {
-            \DClass\lib\Util::writein(self::$path . $lang . ".json", "");
+            \DClass\lib\Util::log("", $lang . ".json", self::$path);
             self::buildlocalcache();
         }
 
@@ -234,10 +278,11 @@ class Local_contentController extends Controller
     public function exportlangView()
     {
         $langs = Dvups_lang::all();
-        Genesis::renderView("admin.exportlang", compact("langs"));
+        $pages = Local_content_key::select()->whereNotNull("path_key")->groupBy("path_key")->get();
+        Genesis::renderView("admin.exportlang", compact("langs", "pages"));
     }
 
-    public static function devups($lang_dest, $lang, &$excelData)
+    public static function devups($lang_dest, $lang, &$excelData, $target)
     {
         $id_lang_dest = $lang_dest->id;
         $id_lang = $lang->id;
@@ -255,8 +300,15 @@ class Local_contentController extends Controller
             die("Connection failed: " . $db->connect_error);
         }
 
-        $entities = Dvups_entity::all();
-
+        if ($target == "all")
+            $entities = Dvups_entity::all();
+        elseif ($target == "entities")
+            $entities = Dvups_entity::where("this.name", "!=", "local_content")->get();
+        else {
+            $entity = Dvups_entity::where("this.name", "local_content")->first();
+            self::localContentExport($entity, $id_lang, $id_lang_dest, $db, $target, $excelData);
+            return 1;
+        }
         foreach ($entities as $table) {
 
             if (!class_exists($table->name)) continue;
@@ -276,7 +328,7 @@ class Local_contentController extends Controller
             foreach ($attribs as $attr) {
                 $attfield .= ", dest.$attr AS dest_$attr ";
             }
-            $sql = " select t.* $attfield from " . $table . "_lang t,
+            $sql = " select t.* $attfield, 'entity' AS path from " . $table . "_lang t,
          (select * from " . $table . "_lang where 1 ) dest
           where t.lang_id = $id_lang AND dest.lang_id = $id_lang_dest AND dest." . $table . "_id = t.$table" . "_id";
 
@@ -292,7 +344,7 @@ class Local_contentController extends Controller
                             continue;
 
                         $lineData = array($table,
-                            $row[$key . '_id'], $attrib, $row[$attrib], $row["dest_" . $attrib]);
+                            $row[$key . '_id'], $attrib, $row["path"], $row[$attrib], $row["dest_" . $attrib]);
                         array_walk($lineData, 'filterData');
                         $excelData .= implode("\t", array_values($lineData)) . "\n";
                     }
@@ -306,11 +358,52 @@ class Local_contentController extends Controller
 
     }
 
-    public function exportlang($iso_code)
+    private static function localContentExport(\Dvups_entity $table, $id_lang, $id_lang_dest, $db, $target, &$excelData)
     {
 
-//        if (!file_exists(__DIR__ . "/../import"))
-//            mkdir(__DIR__ . "/../import", 0777, true);
+        $entity = new Local_content();
+        $attfield = "";
+        $attribs = $entity->dvtranslated_columns;
+
+        $table = "local_content";
+        foreach ($attribs as $attr) {
+            $attfield .= ", dest.$attr AS dest_$attr ";
+        }
+        if ($target != "local_content")
+            $sql = " select t.* $attfield, lc.path from " . $table . "_lang t left join local_content lc on lc.id = t.local_content_id,
+         (select * from " . $table . "_lang where 1 ) dest
+          where t.lang_id = $id_lang AND dest.lang_id = $id_lang_dest AND dest." . $table . "_id = t.$table" . "_id AND lc.path_key = '$target'";
+        else
+            $sql = " select t.* $attfield, lc.path from " . $table . "_lang t left join local_content lc on lc.id = t.local_content_id,
+         (select * from " . $table . "_lang where 1 ) dest
+          where t.lang_id = $id_lang AND dest.lang_id = $id_lang_dest AND dest." . $table . "_id = t.$table" . "_id";
+
+        // dv_dump($sql);
+        $key = $table;
+
+        $query = $db->query($sql);
+        if ($query->num_rows > 0) {
+            // Output each row of the data
+            while ($row = $query->fetch_assoc()) {
+                foreach ($attribs as $attrib) {
+                    if (!$row[$attrib] && !$row["dest_" . $attrib])
+                        continue;
+
+                    $lineData = array($table,
+                        $row[$key . '_id'], $attrib, $row["path"], $row[$attrib], $row["dest_" . $attrib]);
+                    array_walk($lineData, 'filterData');
+                    $excelData .= implode("\t", array_values($lineData)) . "\n";
+                }
+            }
+        } else {
+            //$excelData .= 'No records found...' . "\n";
+        }
+
+
+    }
+
+    public function exportlang($iso_code)
+    {
 
         function filterData(&$str)
         {
@@ -322,25 +415,16 @@ class Local_contentController extends Controller
         $dest = Request::get("dest");
         $lang = Dvups_lang::getbyattribut("iso_code", $iso_code);
         $lang_dest = Dvups_lang::getbyattribut("iso_code", $dest);
+        $target = Request::get("target", "all");
 
 // Excel file name for download
 
-// Column names
-        $excelData = "";
-        //unlink(__DIR__ . "/../import/datalang.csv");
-        $fields = array('table', 'row', 'attribut', 'content ' . (($iso_code)),);
+        $fields = array('table', 'row', 'attribut', 'path', 'content ' . (($iso_code)),);
 
         $fields[] = "content " . $dest;
         $excelData = implode("\t", array_values($fields)) . "\n";
 
-        self::devups($lang_dest, $lang, $excelData);
-//            $moddepend = fopen(__DIR__ . "/../import/datalang.csv", "w");
-//            fputs($moddepend, $excelData);
-//            fclose($moddepend);
-//            return 1;
-//        echo $excelData;
-//        die;
-// Headers for download
+        self::devups($lang_dest, $lang, $excelData, $target);
 
         $fileName = "database-lang_" . date('Y-m-d_H-i') . ".csv";
 //        $excelData = file_get_contents(__DIR__ . "/../import/datalang.csv");
@@ -403,7 +487,7 @@ class Local_contentController extends Controller
             if ($i > $next + $iteration)
                 break;
 
-            $iso = explode(" ", $head[4])[1];
+            $iso = explode(" ", $head[5])[1];
             $idlangs = [];
             // foreach ($langs as $iso) {
             if ($lang != $iso) {

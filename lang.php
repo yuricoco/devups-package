@@ -21,7 +21,10 @@ function tt($ref, $default = "", $local = null){
 
 function t($ref, $default = "", $local = null ){
     $params = [$ref,$default, $local];
-    $lang = Local_contentController::getdata();
+    $path = __env_lang.Request::get("path");
+    $path = Local_content_key::path_sanitise($path);
+
+    $lang = Local_contentController::getdata($path);
     $matcher = [];
     if(is_array($default)){
         $matcher = $default;
@@ -36,13 +39,12 @@ function t($ref, $default = "", $local = null ){
     $ref = Local_content_key::key_sanitise($ref);
 
     if(!isset($lang[$ref])){
-        Local_contentController::newdatacollection($ref, $default);
-        // t($params[0], $params[1], $params[2]);
-        return $default;
+        $lang = Local_contentController::getdata();
+        if(!isset($lang[$ref])){
+            Local_contentController::newdatacollection($ref, $default, $path);
+            return $default;
+        }
     }
-
-//    if(empty($matcher))
-//        return editlang($lang[$ref], $ref);
 
     $translate = $lang[$ref];
 

@@ -107,7 +107,7 @@ class UserFrontController extends UserController
                 "activation_code" => $activationcode,
                 "username" => $userhydrate->getFirstname(),
             ];
-            Reportingmodel::init("register", Dvups_lang::getByIsoCode($userhydrate->lang)->id)
+            Reportingmodel::init("otp", Dvups_lang::getByIsoCode($userhydrate->lang)->id)
                 ->addReceiver($userhydrate->getEmail(), $userhydrate->getUsername())
                 ->sendMail($data);
         }

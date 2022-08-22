@@ -292,12 +292,12 @@ if (isset($argv[2])) {
             break;
 
         case 'core:g:genesis':
-            __Generator::genesis($argv[2], $project); //, 
+            __Generator::genesis($argv[2], $project); //,
             echo $argv[2] . ": Genesis generated with success";
             break;
 
         case 'core:g:controller':
-            __Generator::controller($argv[2], $project); //, 
+            __Generator::controller($argv[2], $project); //,
             echo $argv[2] . ": Controller generated with success";
             break;
 
@@ -307,7 +307,7 @@ if (isset($argv[2])) {
             break;
 
         case 'core:g:form':
-            __Generator::form($argv[2], $project); //, 
+            __Generator::form($argv[2], $project); //,
             echo $argv[2] . ": Form generated with success";
             break;
 
@@ -363,12 +363,12 @@ if (isset($argv[2])) {
             break;
 
         case 'core:g:module':
-            __Generator::module($project, $argv[2]); //, 
+            __Generator::module($project, $argv[2]); //,
             echo $argv[2] . ": Module generated with success";
             break;
 
         case 'core:g:moduleendless':
-            __Generator::__moduleendless($project, $argv[2]); //, 
+            __Generator::__moduleendless($project, $argv[2]); //,
             echo $argv[2] . ": Moduleendless generated with success";
             break;
 
@@ -393,7 +393,7 @@ if (isset($argv[2])) {
             break;
 
         case 'core:g:component':
-            __Generator::component(Core::getComponentCore($argv[2])); //, 
+            __Generator::component(Core::getComponentCore($argv[2])); //,
             echo $project->name . ": component generated with success";
             break;
 
@@ -461,6 +461,8 @@ if (isset($argv[2])) {
                 mkdir('cache', 0777);
                 mkdir('cache/views', 0777);
                 mkdir('cache/local', 0777);
+                mkdir('cache/local/admin', 0777);
+                mkdir('cache/local/front', 0777);
             }
 
             if (!file_exists("database")) {
@@ -472,7 +474,7 @@ if (isset($argv[2])) {
                 mkdir('database/transaction', 0777);
             }
 
-            RequestGenerator::databasecreate(dbname); //, 
+            RequestGenerator::databasecreate(dbname); //,
             echo " > Creating Database.\n\n" . dbname . ": created with success ...\n";
             $result = [];
             exec("bin\doctrine orm:schema:create", $result);
@@ -523,7 +525,7 @@ if (isset($argv[2])) {
             break;
 
         case 'database:create':
-            RequestGenerator::databasecreate(dbname); //, 
+            RequestGenerator::databasecreate(dbname); //,
             $result = [];
             exec("bin\doctrine orm:schema:create", $result);
 

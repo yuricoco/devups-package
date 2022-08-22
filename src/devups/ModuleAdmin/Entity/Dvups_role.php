@@ -121,9 +121,13 @@ class Dvups_role extends Model implements JsonSerializable
 
     function collectDvups_entityOfModule(\Dvups_module $module)
     {
-        $this->dvups_entity = $this->__hasmany('dvups_entity', false)
-            ->andwhere("dvups_entity.dvups_module_id", $module->getId())
-            ->__getAll();
+
+//        $this->dvups_entity = $this->__hasmany('dvups_entity', false)
+//            ->andwhere("dvups_entity.dvups_module_id", $module->getId())
+//            ->__getAll();
+        $this->dvups_entity = Dvups_entity::where("this.dvups_module_id", $module->getId())
+            ->leftjoinrecto(Dvups_role_dvups_entity::class)
+            ->where("dvups_role_dvups_entity.dvups_role_id", $this->id)->get();
 
         return $this->dvups_entity;
     }

@@ -17,6 +17,17 @@ class Local_content_key extends Model implements JsonSerializable
      * @var string
      **/
     protected $reference;
+    /**
+     * @Column(name="path", type="string" , length=255,nullable=true )
+     * @var string
+     **/
+    protected $path;
+    /**
+     * @Column(name="path_key", type="string" , length=255,nullable=true )
+     * @var string
+     **/
+    protected $path_key;
+
 
 
     public function __construct($id = null)
@@ -60,9 +71,15 @@ class Local_content_key extends Model implements JsonSerializable
         $str = preg_replace('#&([A-za-z])(?:acute|cedil|caron|circ|grave|orn|ring|slash|th|tilde|uml);#', '\1', $str);
         $str = preg_replace('#&([A-za-z]{2})(?:lig);#', '\1', $str); // pour les ligatures e.g. '&oelig;'
         $str = preg_replace('#&[^;]+;#', '', $str); // supprime les autres caractères
-        $str = str_replace("\n", ' ', $str); // supprime les autres caractères
+        $str = str_replace(array("\t","\r", "\n"), ' ', $str);// supprime les autres caractères
         return strtolower(str_replace("'", '', substr(trim($str),0,254))); // supprime les autres caractères
-        ///return str_replace(' ', '_', $str); // supprime les autres caractères
+    }
+    public static function path_sanitise($str, $charset = 'utf-8')
+    {
+        $str = htmlentities($str, ENT_NOQUOTES, $charset);
+
+        $str = str_replace(array(" ","-","/","."), '_', $str);// supprime les autres caractères
+        return strtolower($str); // supprime les autres caractères
     }
 
 }

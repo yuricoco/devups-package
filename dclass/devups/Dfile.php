@@ -578,29 +578,39 @@ class Dfile
             $this->error = $item['error'];
             $this->file = $item;
 
-            if(is_callable($callback_before))
-                $data = $callback_before($this);
             //$this->file_name = $this->name;
             $this->imagesize = $this->getsize($this->tmp_name);
+            $extension = self::getextension($this->name);
             $this->extension = self::getextension($this->name);
             $this->settype();
+            $this->namewithoutextension .= "-".($i+1);
+            $this->file_name = $this->namewithoutextension.".".$this->extension;
+
+            if(is_callable($callback_before))
+                $data = $callback_before($this, $i);
+
+            if($extension != $this->extension) {
+                $this->converto = $this->extension;
+                $this->extension = $extension;
+                $this->file_name = $this->namewithoutextension.".$extension";
+            }
+
             if ($this->name == "blob") {
                 $this->extension = "png";
-                $this->file_name .= ".png";
+                $this->file_name = $this->namewithoutextension.".png";
                 $this->name .= ".png";
             }
 
-            $this->namewithoutextension .= "-".($i+1);
-            $this->file_name = $this->namewithoutextension.".".$this->extension;
             $result = $this->moveto($this->uploaddir);
 
             if(!$result["success"])
                 return $result;
 
             if(is_callable($callback_after))
-                $callback_after($result, $data);
+                $callback_after($result, $data, $i);
 
         }
+        return $result;
     }
 
 
@@ -660,6 +670,8 @@ class Dfile
                     $result = imagepng($output, UPLOAD_DIR . $this->uploaddir . '/' . $this->namewithoutextension . "." . $this->converto);
                 elseif (in_array($this->converto, ["jpg", "jpeg"]))
                     $result = imagejpeg($output, UPLOAD_DIR . $this->uploaddir . '/' . $this->namewithoutextension . "." . $this->converto);
+
+                unlink(UPLOAD_DIR . $this->uploaddir . '/' . $this->file_name);
 
             }
 

@@ -9,8 +9,8 @@
 
 require __DIR__ . '/constante.php';
 
-if (__debug)
-    require 'php_ini.php';
+//if (__debug)
+//    require 'php_ini.php';
 
 if (file_exists(__DIR__ . '/../vendor')) {
     require __DIR__ . '/../vendor/autoload.php';

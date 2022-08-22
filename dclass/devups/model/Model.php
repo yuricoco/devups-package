@@ -361,7 +361,7 @@ class Model extends \stdClass
         $assiactions = array_keys($metadata->associationMappings);
 
         $sql = " SELECT * FROM `$classlang` WHERE id = " . $this->id;
-        $data = (new DBAL())->executeDbal($sql, [], DBAL::$FETCH);
+        $data = (new DBAL($this))->executeDbal($sql, [], DBAL::$FETCH);
         //var_dump($classlang." - ".$attribut, $data, $fieldNames);
         foreach ($fieldNames as $k => $val) {
             $this->{$k} = $data[$k];

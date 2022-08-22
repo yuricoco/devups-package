@@ -1,5 +1,5 @@
 <?php
-                
+
 define('PROJECT_NAME', 'Devups Tuto');
 
 define ('dbname', 'devupstuto_bd');
@@ -21,7 +21,7 @@ define('__env', __server.'/devupstuto/');
 define('__front', __env.'web/assets/');
 define('__admin', __env.'admin/assets/');
 define('__prod', false);
-define('__debug', false);
+// define('__debug', false);
 define('__default_lang', "fr");
 define('__lang', 'fr');
 

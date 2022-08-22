@@ -302,6 +302,10 @@ class Lazyloading implements \JsonSerializable
                 } else
                     $qbcustom->limit($this->next, $this->per_page);
 
+                if (!$id_lang) {
+                    $qbcustom->setLang(Dvups_lang::getByIsoCode(Request::get('dlang'))->id);
+                }
+
             } else {
                 $qb = new QueryBuilder($this->entity);
                 if ($this->id_lang)
@@ -312,6 +316,10 @@ class Lazyloading implements \JsonSerializable
                     $qb->select()->handlesoftdelete()->orderby($order)->limit($this->next, $this->per_page);
                 else
                     $qb->select()->handlesoftdelete()->limit($this->next, $this->per_page);
+
+                if (!$id_lang) {
+                    $qb->setLang(Dvups_lang::getByIsoCode(Request::get('dlang'))->id);
+                }
 
             }
 

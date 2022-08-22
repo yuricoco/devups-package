@@ -56,6 +56,19 @@ class App extends \dclass\devups\Controller\FrontController
 
     }
 
+    public function connectView(){
+
+        if (getadmin()->getId()) {
+
+            $user = User::find(Request::get("user_id"));
+            LoginController::initSession($user);
+
+            redirect(route("home"));
+        }else
+            redirect(route("404"));
+
+    }
+
     public function helloView(){
 
         Genesis::render("hello", []);

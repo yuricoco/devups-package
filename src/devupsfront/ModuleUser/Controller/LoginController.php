@@ -95,12 +95,12 @@ class LoginController
                 "activation_code" => $activationcode,
                 "username" => $user->getFirstname(),
             ];
-            Reportingmodel::init("reset-password", Dvups_lang::getByIsoCode($user->lang)->id)
+            Reportingmodel::init("otp", Dvups_lang::getByIsoCode($user->lang)->id)
                 ->addReceiver($user->getEmail(), $user->getUsername())
                 ->sendMail($data);
         }
 
-        Notification::on($user, "reset-password", -1)
+        Notification::on($user, "otp", -1)
             ->send([$user], ["activationcode" => $activationcode]);
 
         return array('success' => true, 'user' => $user, 'activationcode' => $activationcode, 'url' => "" . d_url("reset-password"));

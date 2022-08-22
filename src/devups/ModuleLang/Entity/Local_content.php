@@ -17,6 +17,16 @@ class Local_content extends Model implements JsonSerializable
      * @var string
      **/
     protected $reference;
+    /**
+     * @Column(name="path", type="string" , length=255,nullable=true )
+     * @var string
+     **/
+    protected $path;
+    /**
+     * @Column(name="path_key", type="string" , length=255,nullable=true )
+     * @var string
+     **/
+    protected $path_key;
 
     /**
      * @ManyToOne(targetEntity="\Local_content_key")

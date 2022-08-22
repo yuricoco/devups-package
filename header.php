@@ -13,6 +13,7 @@ require 'App.php';
 
 define('assets', __env. 'web/assets/');
 define('webapp', __env. 'web/app/');
+define('__env_lang', 'front/');
 
 
 global $viewdir;

@@ -56,6 +56,17 @@
                                     @endforeach
                                 </select>
                             </div>
+                            <div class="form-group">
+                                <label>Selectionner un page</label>
+                                <select class="form-control" name="target">
+                                    <option value="all">Entites & Contenu text</option>
+                                    <option value="entities">Entites</option>
+                                    <option value="local_content">Contenu text</option>
+                                    @foreach($pages as $page)
+                                        <option value="{{$page->path_key}}">{{$page->path}}</option>
+                                    @endforeach
+                                </select>
+                            </div>
 
                             <div id="log-export">
                                 <div class="loader-container"></div>
@@ -111,7 +122,9 @@
             lang: "fr",
             exportlang(el) {
                 var form = $(el).parents("form")
-                var local = form.find("select[name=local]").val(), dest = form.find("select[name=dest]").val()
+                var local = form.find("select[name=local]").val(),
+                    dest = form.find("select[name=dest]").val(),
+                    target = form.find("select[name=target]").val()
                 if (local == dest) {
                     $("#log-import").html('<div class="alert alert-danger text-center">' +
                         'la langue source et la langue de destination doivent être différentes' + "</div>");
@@ -121,6 +134,7 @@
                 var url = //form.attr("action")
                     `&local=` + local
                     + `&dest=` + dest
+                    + `&target=` + target
                     + "&exportmodel=" + form.find("select[name=exportmodel]").val()
                 console.log(url)
                 model.addLoader($(el))

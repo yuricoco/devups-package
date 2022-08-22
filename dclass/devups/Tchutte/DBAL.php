@@ -532,7 +532,15 @@ class DBAL extends Database
                 $bd_dump->transaction($this->table, $sql, $values);
             }
         } elseif ($action == self::$FETCH) {
-            $return = $query->fetch() or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values));
+            //$return = $query->fetch() or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values));
+            try {
+                $return = $query->fetch();
+            }catch (Exception $exception){
+                if (__prod)
+                    return $this->object;
+
+                die(Bugmanager::getError(__CLASS__, __METHOD__, $exception->getMessage(), $query->errorInfo(), $sql, $values));
+            }
             //$return = 33;
         } elseif ($action == self::$INSERT) {
             if (dbtransaction) {

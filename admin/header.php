@@ -25,6 +25,7 @@ define('assets', __env . 'admin/assets/');
 
 define('__cssversion', '1');
 define('__jsversion', '1');
+define('__env_lang', 'admin/');
 
 Dvups_adminController::restartsessionAction();
 

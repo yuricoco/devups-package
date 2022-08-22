@@ -149,7 +149,7 @@ class RegistrationController extends Controller {
         $user->setActivationcode($activationcode);
 
         $user->__update();
-        
+
         $_SESSION[USER] = serialize($user);
 
         // send mail with activation code $codeactivation
@@ -159,13 +159,13 @@ class RegistrationController extends Controller {
                 "activation_code" => $activationcode,
                 "username" => $user->getFirstname(),
             ];
-            Reportingmodel::init("reset-password", Dvups_lang::getByIsoCode($user->lang)->id)
+            Reportingmodel::init("otp", Dvups_lang::getByIsoCode($user->lang)->id)
                 ->addReceiver($user->getEmail(), $user->getUsername())
                 ->sendMail($data);
         }
 
         Notification::$send_sms = true;
-        Notification::on($user, "reset-password")
+        Notification::on($user, "otp")
             ->send($user, ["username"=>$user->getFirstname(), "code"=>$activationcode]);
 
         return [
@@ -176,7 +176,7 @@ class RegistrationController extends Controller {
 
     }
 
-    public static function activateaccount() {   
+    public static function activateaccount() {
 //        global $appuser;
         $appuser = User::find(Request::get("user_id"));
 

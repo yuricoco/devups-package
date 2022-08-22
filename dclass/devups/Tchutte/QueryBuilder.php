@@ -876,14 +876,14 @@ class QueryBuilder extends \DBAL
 
     public function firstOrNull($recursif = true, $collect = [])
     {
-        return $this->first($this->id_lang, true);
+        $model =  $this->first($this->id_lang, true);
 
         // todo: implement the primary key validation
         if (property_exists($model, "id")) {
             if ($model->getId())
                 return $model;
-        } else
-            return $model;
+        } /*else
+            return $model;*/
 
         return null;
     }
