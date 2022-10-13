@@ -707,7 +707,7 @@ class Dfile
             else
                 $image = SRC_FILE . $path . $image;
         } else
-            $image = d_assets($default);
+            $image = __front.($default);
 
         return $image;
     }

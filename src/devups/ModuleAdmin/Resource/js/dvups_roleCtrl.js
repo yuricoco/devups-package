@@ -8,6 +8,7 @@ model.updateprivilege = function(el){
         console.log(response);
         model.removeLoader();
         alert(response.message);
+        window.location.reload()
     })
 
 };

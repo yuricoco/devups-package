@@ -277,6 +277,11 @@ class Controller
         $classname = self::getclassname();
         $newclass = ucfirst($classname);
 
+        if ($iso = Request::get('dlang'))
+            return array('success' => true,
+                $classname => $newclass::find($id, Dvups_lang::getByIsoCode($iso)->id),
+                'detail' => '');
+
         return array('success' => true,
             $classname => $newclass::find($id, false),
             'detail' => '');

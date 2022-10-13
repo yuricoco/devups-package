@@ -995,10 +995,16 @@ class DBAL extends Database
         }
 
         $flowBD = Bugmanager::cast((object)$object_array, get_class($this->object));
-        $flowBD->dvold = $flowBD;
+
         foreach ($this->_with as $entity){
-            $flowBD->{"$entity"}->hydrate($this->id_lang);
+            $flowBD->{"$entity"} = ucfirst($entity)::find($flowBD->{$entity."_id"}, $this->id_lang);
+            ///$flowBD->{"$entity"}->hydrate($this->id_lang);
         }
+
+        $flowBD->dvold = clone $flowBD;
+//        foreach ($this->_with as $entity){
+//            $flowBD->{"$entity"}->hydrate($this->id_lang);
+//        }
 
         $flowBD->dvfetched = true;
         $flowBD->dvinrelation = true;

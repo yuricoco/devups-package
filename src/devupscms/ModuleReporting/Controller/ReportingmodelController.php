@@ -37,7 +37,7 @@ class ReportingmodelController extends Controller
     public function editmailView($id = null)
     {
 
-        self::$jsfiles[] = Reportingmodel::classpath('Resource/js/reportingmodelCtrl.js');
+        //self::$jsfiles[] = Reportingmodel::classpath('Resource/js/reportingmodelCtrl.js');
 
         $action = Reportingmodel::classpath("services.php?path=reportingmodel.update-email&id=" . $id);
         $reportingmodel = Reportingmodel::find($id);
@@ -87,9 +87,7 @@ class ReportingmodelController extends Controller
                     'error' => $this->error);//);
         }
 
-        $reportingmodel->dvid_lang = "fr";
         $id = $reportingmodel->__insert();
-        //return redirect(Reportingmodel::classpath("reportingmodel/index"));
 
         return array('success' => true,
             'reportingmodel' => $reportingmodel,
@@ -174,7 +172,7 @@ class ReportingmodelController extends Controller
 
     public function testmail($id, $email)
     {
-        $this->testmailAction($id, $email);
+        return $this->testmailAction($id, $email);
     }
     public function testmailAction($id, $email)
     {

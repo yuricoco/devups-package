@@ -46,6 +46,7 @@ trait ModelTrait
                     $trace = debug_backtrace();
                     trigger_error(
                         'Propriété non-définie via __get() : ' . $attribut .
+                        ' de la class ' . get_class($this).
                         ' dans ' . $trace[0]['file'] .
                         ' à la ligne ' . $trace[0]['line'],
                         E_USER_NOTICE);
@@ -117,6 +118,7 @@ trait ModelTrait
         $trace = debug_backtrace();
         trigger_error(
             'Propriété non-définie via __get() : ' . $attribut .
+            ' de la class ' . get_class($this).
             ' dans ' . $trace[0]['file'] .
             ' à la ligne ' . $trace[0]['line'],
             E_USER_NOTICE);
@@ -304,6 +306,9 @@ trait ModelTrait
         $reflection = new ReflectionClass(get_called_class());
         $entity = $reflection->newInstance();
 
+        if ($id_lang)
+            $entity->dvid_lang = $id_lang;
+
         $qb = new QueryBuilder($entity);
         $qb->setLang($id_lang);
         return $qb->select()->where($attribut, $value)->getInstance();
@@ -322,6 +327,9 @@ trait ModelTrait
         $reflection = new ReflectionClass($classname);
         $entity = $reflection->newInstance();
         $entity->setId($id);
+
+        if ($id_lang)
+            $entity->dvid_lang = $id_lang;
 
         $qb = new QueryBuilder($entity);
         $qb->setLang($id_lang);
@@ -353,6 +361,9 @@ trait ModelTrait
         $reflection = new ReflectionClass(get_called_class());
         $entity = $reflection->newInstance();
         $entity->setId($id);
+
+        if ($id_lang)
+            $entity->dvid_lang = $id_lang;
 
         $qb = new QueryBuilder($entity);
         $qb->setLang($id_lang);

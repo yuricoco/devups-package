@@ -30,6 +30,12 @@ class NotificationtypeForm extends FormManager
             "value" => $this->notificationtype->get_key(),
         ];
 
+        $this->fields['session'] = [
+            "label" => t('Session'),
+            "type" => FORMTYPE_RADIO,
+            "value" => $this->notificationtype->getSession(),
+            "options" => FormManager::key_as_value(["user", "admin"]),
+        ];
 
         $this->fields['content'] = [
             "label" => t('Content <br><i>NB: use : to specify a variable i.e: :username</i>'),
@@ -38,12 +44,6 @@ class NotificationtypeForm extends FormManager
             "value" => $this->notificationtype->content,
         ];
 
-        $this->fields['session'] = [
-            "label" => t('Session'),
-            "type" => FORMTYPE_RADIO,
-            "value" => $this->notificationtype->getSession(),
-            "options" => FormManager::key_as_value(["user", "admin"]),
-        ];
         $this->fields['redirect'] = [
             "label" => t('Redirect route'),
             "type" => FORMTYPE_TEXT,
@@ -61,4 +61,3 @@ class NotificationtypeForm extends FormManager
 
 
 }
-    

@@ -452,14 +452,14 @@ class Reportingmodel extends Model implements JsonSerializable, DatatableOverwri
 
         }
 
-        $data = [
-                "style" => $this->getCss(),
-            ] + $datacustom;
+//        $data = [
+//                "style" => $this->getCss(),
+//            ] + $datacustom;
 
-        $message_html = $this->sanitizeContent($this->content, $data);
-        $message_text = $this->sanitizeContent($this->contenttext, $data);
-        $object = $this->sanitizeContent($this->object, $data);
-        $title = $this->sanitizeContent($this->title, $data);
+        $message_html = $this->sanitizeContent($this->content, $datacustom);
+        $message_text = $this->sanitizeContent($this->contenttext, $datacustom);
+        $object = $this->sanitizeContent($this->object, $datacustom);
+        $title = $this->sanitizeContent($this->title, $datacustom);
 
         global $viewdir;
         $viewdir[] = Reportingmodel::classroot("Resource/views");

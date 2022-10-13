@@ -414,12 +414,12 @@ class Notification extends Model implements JsonSerializable
         if (!$this->viewedat)
             $note = "&read=" . $this->id;
         switch ($this->entity) {
-            case "order":
+            /*case "order":
                 return route("invoice?id=" . $this->entityid) . $note;
             case "package":
                 return route("package?id=" . $this->entityid) . $note;
             case "promotion":
-                return route("cycle?id=" . $this->entityid) . $note;
+                return route("cycle?id=" . $this->entityid) . $note;*/
 
         }
     }

@@ -10,35 +10,10 @@
 <?php } ?>
 
 @section('content')
-    <div class="row">
-        <div class="col-lg-12 col-md-12  stretch-card">
-            <div class="card">
-                <div class="card-header-tab card-header">
-                    <div class="card-header-title">
-                        <i class="header-icon lnr-rocket icon-gradient bg-tempting-azure"> </i>
-                        @tt('SMTP configuration ')
-                    </div>
-                    <div class="btn-actions-pane-right">
-                        <div class="nav">
 
-                        </div>
-                    </div>
-                </div>
-                <code class="card-body">
-                    define('sm_port', '{{sm_port}}');<br>
-                    define('sm_smtp', '{{sm_smtp}}');<br>
-                    define('sm_username', '{{sm_username}}');<br>
-                    define('sm_password', '{{sm_password}}');<br>
-                    define('sm_from', '{{sm_from}}');<br>
-                    define('sm_name', '{{sm_name}}');<br>
-                    define('sm_smtpsecurity', '{{sm_smtpsecurity}}');<br>
-                </code>
-                <div class="card-footer">
-
-                </div>
-            </div>
-        </div>
-    </div>
+    @include("default.moduleheaderwidget")
+    <hr>
+    @yield('layout_content')
 
     <hr>
 
@@ -92,10 +67,35 @@
             </div>
         </div>
     </div>
-    @include("default.moduleheaderwidget")
-    <hr>
+    <div class="row">
+        <div class="col-lg-12 col-md-12  stretch-card">
+            <div class="card">
+                <div class="card-header-tab card-header">
+                    <div class="card-header-title">
+                        <i class="header-icon lnr-rocket icon-gradient bg-tempting-azure"> </i>
+                        @tt('SMTP configuration ')
+                    </div>
+                    <div class="btn-actions-pane-right">
+                        <div class="nav">
 
-    @yield('layout_content')
+                        </div>
+                    </div>
+                </div>
+                <code class="card-body">
+                    define('sm_port', '{{sm_port}}');<br>
+                    define('sm_smtp', '{{sm_smtp}}');<br>
+                    define('sm_username', '{{sm_username}}');<br>
+                    define('sm_password', '{{sm_password}}');<br>
+                    define('sm_from', '{{sm_from}}');<br>
+                    define('sm_name', '{{sm_name}}');<br>
+                    define('sm_smtpsecurity', '{{sm_smtpsecurity}}');<br>
+                </code>
+                <div class="card-footer">
+
+                </div>
+            </div>
+        </div>
+    </div>
 
 
 @endsection

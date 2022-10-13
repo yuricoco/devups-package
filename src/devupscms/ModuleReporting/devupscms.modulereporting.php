@@ -11,3 +11,8 @@
     require 'Datatable/ReportingmodelTable.php';
     require 'Controller/ReportingmodelController.php';
 
+
+    require 'Entity/Push_email.php';
+    require 'Form/Push_emailForm.php';
+    require 'Datatable/Push_emailTable.php';
+    require 'Controller/Push_emailController.php';

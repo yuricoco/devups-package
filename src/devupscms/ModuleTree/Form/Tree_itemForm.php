@@ -1,98 +1,80 @@
-<?php 
+<?php
 
-        
+
 use Genesis as g;
 
-    class Tree_itemForm extends FormManager{
+class Tree_itemForm extends FormManager
+{
 
-        public static function formBuilder($dataform, $button = false) {
-            $tree_item = new \Tree_item();
-            extract($dataform);
-            $entitycore = new Core($tree_item);
-            
-            $entitycore->formaction = $action;
-            $entitycore->formbutton = $button;
-            
-            //$entitycore->addcss('csspath');
-                
-            
-            $entitycore->field['name'] = [
-                "label" => t('tree_item.name'), 
-"type" => FORMTYPE_TEXT,
-                "value" => $tree_item->getName(), 
-            ];
+    public $tree_item;
 
-            $entitycore->field['description'] = [
-                "label" => t('tree_item.description'), 
-			FH_REQUIRE => false,
- "type" => FORMTYPE_TEXT,
-                "value" => $tree_item->getDescription(), 
-            ];
-
-            $entitycore->field['parent_id'] = [
-                "label" => t('tree_item.parent_id'), 
-			FH_REQUIRE => false,
- "type" => FORMTYPE_TEXT,
-                "value" => $tree_item->getParent_id(), 
-            ];
-
-            $entitycore->field['main'] = [
-                "label" => t('tree_item.main'), 
-			FH_REQUIRE => false,
- "type" => FORMTYPE_TEXT,
-                "value" => $tree_item->getMain(), 
-            ];
-
-                $entitycore->field['tree'] = [
-                    "type" => FORMTYPE_SELECT, 
-                    "value" => $tree_item->getTree()->getId(),
-                    "label" => t('entity.tree'),
-                    "options" => FormManager::Options_Helper('name', Tree::allrows()),
-                ];
-
-            
-            $entitycore->addDformjs($button);
-            $entitycore->addjs(Tree_item::classpath('Ressource/js/tree_itemForm'));
-            
-            return $entitycore;
-        }
-        
-        public static function __renderForm($dataform, $button = false) {
-            return FormFactory::__renderForm(Tree_itemForm::formBuilder($dataform,  $button));
-        }
-        
-        public static function getFormData($id = null, $action = "create")
-        {
-            if (!$id):
-                $tree_item = new Tree_item();
-                
-                return [
-                    'success' => true,
-                    'tree_item' => $tree_item,
-                    'action' => "create",
-                ];
-            endif;
-            
-            $tree_item = Tree_item::find($id);
-            return [
-                'success' => true,
-                'tree_item' => $tree_item,
-                'action' => "update&id=" . $id,
-            ];
-
-        }
-        
-        public static function render($id = null, $action = "create")
-        {
-            g::json_encode(['success' => true,
-                'form' => self::__renderForm(self::getFormData($id, $action),true),
-            ]);
-        }
-
-        public static function renderWidget($id = null, $action = "create")
-        {
-            Genesis::renderView("tree_item.formWidget", self::getFormData($id, $action));
-        }
-        
+    public static function init(\Tree_item $tree_item, $action = "")
+    {
+        $fb = new Tree_itemForm($tree_item, $action);
+        $fb->tree_item = $tree_item;
+        return $fb;
     }
-    
+
+    public function buildForm()
+    {
+
+
+        $this->fields['name'] = [
+            "label" => t('Libelle'),
+            "type" => FORMTYPE_TEXT,
+            "value" => $this->tree_item->name,
+            "lang" => true,
+
+        ];
+
+        $this->fields['position'] = [
+            "type" => FORMTYPE_NUMBER,
+            "value" => $this->tree_item->position,
+            "label" => t('Numero'),
+        ];
+
+        $this->fields['content'] = [
+            "label" => t('Description'),
+            "type" => FORMTYPE_TEXTAREA,
+            "value" => $this->tree_item->content,
+        ];
+
+        $this->fields['main'] = [
+            "label" => t('Reference'),
+            "type" => FORMTYPE_TEXT,
+            "hidden" => true,
+            "value" => 1,
+        ];
+
+        $this->fields['slug'] = [
+            "type" => FORMTYPE_TEXT,
+            "value" => Request::get("product_id"),
+            "label" => t('Produit'),
+            "hidden" => true,
+        ];
+        $this->fields['chain'] = [
+            "type" => FORMTYPE_TEXT,
+            "value" => Request::get("product_name"),
+            "label" => t('Produit'),
+            "hidden" => true,
+        ];
+
+        $this->fields['tree.id'] = [
+            "type" => FORMTYPE_SELECT,
+            "hidden" => true,
+            "value" => Request::get("tree_id"),
+            "label" => t('tree'),
+            "options" => [Request::get("tree_id")=>Request::get("tree_id")],
+        ];
+
+
+        return $this;
+
+    }
+
+    public static function renderWidget($id = null, $action = "create")
+    {
+        Genesis::renderView("tree_item.formWidget", self::getFormData($id, $action));
+    }
+
+}

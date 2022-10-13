@@ -39,23 +39,16 @@ class NotificationtypeTable extends Datatable
         return $this;
     }
 
-    public function buildconfigtable()
+    public function buildpushmailtable()
     {
 
-        $this->enabletopaction = false;
+        $this->base_url = __env."admin/";
         $this->datatablemodel = [
-            ['header' => t('notificationtype.id', '#'), 'value' => 'id', 'search'=>false],
-            ['header' => t('Entity'), 'value' => 'dvups_entity.name'],
+            ['header' => t('notificationtype.id', '#'), 'value' => 'id'],
             ['header' => t('notificationtype._key', '_key'), 'value' => '_key'],
             ['header' => t('notificationtype.content', 'Content'), 'value' => 'content'],
-            //['header' => t('Redirect'), 'value' => 'redirection'],
-            ['header' => 'Test', 'value' => 'test', 'search'=>false]
-
+            ['header' => 'Test', 'value' => 'test']
         ];
-
-        /*$this->addcustomaction(function ($item){
-
-        });*/
 
         return $this;
     }

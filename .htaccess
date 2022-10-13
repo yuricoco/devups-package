@@ -20,6 +20,13 @@ RewriteRule    ^api/([A-Za-z0-9-]+)/?$    services.php?path=$1    [NC,L]
 RewriteRule    ^api/([A-Za-z0-9-]+).([A-Za-z0-9-]+)?$    services.php?path=$1.$2    [NC,L]
 RewriteRule    ^api/([A-Za-z0-9-]+)/([A-Za-z0-9-]+)?$    services.php?path=$1.$2    [NC,L]
 
+RewriteRule    ^([a-z-]+)/api/?$    services.php?dlang=$1&    [NC,L]
+RewriteRule    ^([a-z-]+)/api/create.([A-Za-z0-9-]+)?$    services.php?dlang=$1&path=create&dclass=$2    [NC,L]
+RewriteRule    ^([a-z-]+)/api/update.([A-Za-z0-9-]+)?$    services.php?dlang=$1&path=update&dclass=$2    [NC,L]
+RewriteRule    ^([a-z-]+)/api/delete.([A-Za-z0-9-]+)?$    services.php?dlang=$1&path=delete&dclass=$2    [NC,L]
+RewriteRule    ^([a-z-]+)/api/detail.([A-Za-z0-9-]+)?$    services.php?dlang=$1&path=detail&dclass=$2    [NC,L]
+RewriteRule    ^([a-z-]+)/api/lazyloading.([A-Za-z0-9-]+)?$    services.php?dlang=$1&path=lazyloading&dclass=$2    [NC,L]
+
 RewriteRule    ^([a-z-]+)/api/([A-Za-z0-9-]+)/?$    services.php?lang=$1&path=$2    [NC,L]
 RewriteRule    ^([a-z-]+)/api/([A-Za-z0-9-]+).([A-Za-z0-9-]+)?$    services.php?lang=$1&path=$2.$3    [NC,L]
 RewriteRule    ^([a-z-]+)/api/([A-Za-z0-9-]+)/([A-Za-z0-9-]+)?$    services.php?lang=$1&path=$2.$3    [NC,L]

@@ -15,12 +15,10 @@
         .content {
             height: max-content;
         }
-        #yield {
-            padding: 15px 14%;
-        }
 
         .footer {
             background: #dcdbdb;
+            display: inline-flex;
             padding: 15px 14%;
             width: -webkit-fill-available;
         }
@@ -55,13 +53,15 @@
     <div class="body">
         <div id="yield">{yield}</div>
     </div>
-    <div style="text-align: center" class="footer  ">
-        <span class="">
-            <img width="30"  alt="{{PROJECT_NAME}}"
-                 src="{{__env}}logo.png" title="{{PROJECT_NAME}}">
-        </span><br>
-        <span style="font-size: 14px; line-height: 180%;">&copy; {{date("Y")}} All
-            Rights Reserved</span>
+    <div class="footer">
+        <div class="content-left">
+            Besoin d’aide ? Consultez la FAQ.
+        </div>
+        <div class="content-right">
+          <span class="content-footer-right">
+            Conditions générales
+          </span>
+        </div>
     </div>
 </section>
 </body>

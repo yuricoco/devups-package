@@ -552,17 +552,19 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
     
     public function deleteAction($" . "id){
     
-        " . ucfirst($name) . "::delete($" . "id);
+        $" . $name . " = " . ucfirst($name) . "::find($" . "id);
+        $" . $name . "->__delete();
         
         return 	array(	'success' => true, 
-                        'detail' => ''); 
+                        'detail' => t('Item deleted successfully'));
+                         
     }
     
 
     public function deletegroupAction($" . "ids)
     {
 
-        " . ucfirst($name) . "::where(\"id\")->in($" . "ids)->delete();
+        " . ucfirst($name) . "::where(\"this.id\")->in($" . "ids)->delete();
 
         return array('success' => true,
                 'detail' => ''); 

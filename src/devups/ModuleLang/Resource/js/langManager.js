@@ -69,6 +69,7 @@ Vue.component("local_content", {
         return {
             local_contenttree: [],
             local_contents: [],
+            local_content_keys: [],
             local_contentstring: "",
             search: "",
             resultdatas: [],
@@ -81,12 +82,13 @@ Vue.component("local_content", {
     props: ["tree"],
     mounted() {
         console.log(this.$parent.baseurl)
-        Drequest.api("detail.local-content?id=" + this.tree.id)
+        Drequest.init(__env+"admin/api/local-content.detaillang?id=" + this.tree.id)
         //Drequest.init(this.$parent.baseurl + "local-content.getlang&id=" + this.tree.id)
             .get((response) => {
                 //model._apiget("local-content.getlang&id=" + this.tree.id, (response) => {
                 console.log(response);
                 this.local_content = response.local_content;
+                this.local_content_keys = response.local_content_keys;
             })
 
     },
@@ -94,7 +96,7 @@ Vue.component("local_content", {
     template: `
 
         <div class="panel">
-            <div class="row">
+            <div v-if="local_content.id" class="row">
                 <div class="col-12"> 
                     <div class=" "> 
                             <h3 class="">{{local_content.reference}} | </h3>
@@ -112,6 +114,21 @@ Vue.component("local_content", {
                                 :lang="lang" 
                                 :index="$index" 
                                 class="list-group-item"></li>
+                            
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <b>Occurence dans les vues</b>
+                    <div class="card-body">
+                        
+                        <ul class="list-group">
+                                    
+                            <li v-for="(lck, $index) in local_content_keys"  
+                                class="list-group-item">
+                                <b>{{lck.path}}/</b>
+                                {{lck.default_content}}
+</li>
                             
                         </ul>
                     </div>

@@ -29,10 +29,10 @@ class ReportingmodelTable extends Datatable
 
         $this->datatablemodel = [
             ['header' => t('emailmodel.id', '#'), 'value' => 'id', "search"=>false],
-            'type' => ['header' => t('Type')],
+            // 'type' => ['header' => t('Type')],
             ['header' => t('Name'), 'value' => 'name'],
             // ['header' => t('Type'), 'value' => 'type'],
-            ['header' => t('emailmodel.object', 'Object'), 'value' => 'object'],
+            'object' => ['header' => t('emailmodel.object', 'Object'), ],
             ['header' => t('Description'), 'value' => 'description'],
             ['header' => t('emailmodel.content', 'Content'), 'value' => 'test']
         ];

@@ -182,9 +182,14 @@ class Dvups_roleController extends Controller
     public function privilegeUpdate()
     {
         $result = Core::updateDvupsTable();
-        if ($result)
+
+        if ($result) {
+            $admin = getadmin();
+            self::getNavigationAction($admin);
+            $_SESSION[ADMIN] = serialize($admin);
+
             $message = "Data admin updated with success";
-        else
+        }else
             $message = "Data admin already uptodate";
 
         return array('success' => true,

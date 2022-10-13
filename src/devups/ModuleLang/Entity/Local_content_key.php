@@ -27,6 +27,11 @@ class Local_content_key extends Model implements JsonSerializable
      * @var string
      **/
     protected $path_key;
+    /**
+     * @Column(name="default_content", type="text",nullable=true )
+     * @var string
+     **/
+    protected $default_content;
 
 
 
@@ -60,6 +65,8 @@ class Local_content_key extends Model implements JsonSerializable
         return [
             'id' => $this->id,
             'reference' => $this->reference,
+            'path' => $this->path,
+            'default_content' => $this->default_content,
         ];
     }
 
@@ -71,7 +78,7 @@ class Local_content_key extends Model implements JsonSerializable
         $str = preg_replace('#&([A-za-z])(?:acute|cedil|caron|circ|grave|orn|ring|slash|th|tilde|uml);#', '\1', $str);
         $str = preg_replace('#&([A-za-z]{2})(?:lig);#', '\1', $str); // pour les ligatures e.g. '&oelig;'
         $str = preg_replace('#&[^;]+;#', '', $str); // supprime les autres caractères
-        $str = str_replace(array("\t","\r", "\n"), ' ', $str);// supprime les autres caractères
+        $str = str_replace(array("\t","\r", "\n", ","), ' ', $str);// supprime les autres caractères
         return strtolower(str_replace("'", '', substr(trim($str),0,254))); // supprime les autres caractères
     }
     public static function path_sanitise($str, $charset = 'utf-8')

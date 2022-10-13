@@ -7,7 +7,7 @@ use Shuchkin\SimpleXLSX;
 class Local_contentController extends Controller
 {
 
-    private static $path = ROOT . "cache/local/".__env_lang;
+    private static $path = ROOT . "cache/local/" . __env_lang;
     const pathmodule = ROOT . "web/app3/frontend1/src/devupsjs/";
 
     public function listView($next = 1, $per_page = 10)
@@ -94,6 +94,22 @@ class Local_contentController extends Controller
 
     }
 
+    public function detaillang($id)
+    {
+
+        $this->entitytarget = 'Local_content';
+        $this->title = "Detail Local_content";
+
+        $local_content = Local_content::find($id);
+
+        return [
+            "success" => true,
+            "local_content" => $local_content,
+            "local_content_keys" => Local_content_key::where("this.reference", $local_content->reference)->get(),
+        ];
+
+    }
+
     public function deleteAction($id)
     {
 
@@ -139,17 +155,17 @@ class Local_contentController extends Controller
     {
         self::$path = ROOT . "cache/local/front/";
         $files = scandir(self::$path);
-        foreach ($files as $file){
+        foreach ($files as $file) {
             if (!in_array($file, ['fr.json', 'en.json', '.', '..']))
-                unlink(self::$path.$file);
+                unlink(self::$path . $file);
         }
         self::buildlocalcache();
 
         self::$path = ROOT . "cache/local/admin/";
         $files = scandir(self::$path);
-        foreach ($files as $file){
+        foreach ($files as $file) {
             if (!in_array($file, ['fr.json', 'en.json', '.', '..']))
-                unlink(self::$path.$file);
+                unlink(self::$path . $file);
         }
         self::buildlocalcache();
 
@@ -159,7 +175,7 @@ class Local_contentController extends Controller
 
     }
 
-    public static function buildlocalcache($path = null)
+    public static function buildlocalcache($path = null, $reset = false)
     {
 
         $lans = Dvups_lang::all();
@@ -168,7 +184,7 @@ class Local_contentController extends Controller
 
             if ($path)
                 $lcs = Local_content::select()
-                    ->where("this.path_key", $path)
+                    ->where_str("'$path' IN (this.path_keys)")
                     ->setLang($lang->id)->get();
             else
                 $lcs = Local_content::select()
@@ -177,12 +193,11 @@ class Local_contentController extends Controller
             $info = [];
 
             foreach ($lcs as $lc) {
+                // todo : the reset parameter could help us decide weither we take value from the local_content table or local_content_key
                 $info[$lc->getReference()] = $lc->content;
             }
 
             if ($info) {
-                // todo - fix issue on php warning during the first call of the function translate t().
-
                 $contenu = json_encode($info, 1024);
 
                 if ($path) {
@@ -205,27 +220,46 @@ class Local_contentController extends Controller
     public static function newdatacollection($ref, $default, $path = null)
     {
 
-        $lck = new Local_content_key();
-        $lck->setReference($ref);
-        $lck->path = __env_lang.Request::get("path");
-        $lck->path_key = $path;
-        $lck->__insert();
-
-        $lans = Dvups_lang::all();
-        $lc = new Local_content();
-        $content = [];
-        foreach ($lans as $lang) {
-            //$lang = $lang->getIso_code();
-            $content[$lang->getIso_code()] = $default;
+        $lck_exist = Local_content_key::where([
+            "reference" => $ref,
+            "path_key" => $path,
+        ]);
+        if (!$lck_exist->count()) {
+            $lck = new Local_content_key();
+            $lck->setReference($ref);
+            $lck->path = __env_lang . Request::get("path");
+            $lck->path_key = $path;
+            $lck->default_content = $default;
+            $lck->__insert();
+        } else {
+            $lck = $lck_exist->first();
         }
 
-        //$lc->setLang($lang);
-        $lc->setReference($ref);
-        $lc->content = $content;
-        $lc->path = __env_lang.Request::get("path");
-        $lc->path_key = $path;
-        $lc->local_content_key = $lck;
-        $lc->__insert();
+        $lc_exist = Local_content::where([
+            "reference" => $ref,
+        ]);
+        if (!$lc_exist->count()) {
+            $lans = Dvups_lang::all();
+            $lc = new Local_content();
+            $content = [];
+            foreach ($lans as $lang) {
+                //$lang = $lang->getIso_code();
+                $content[$lang->getIso_code()] = $default;
+            }
+
+            $lc->setReference($ref);
+            $lc->content = $content;
+            $lc->path_keys = $path;
+            $lc->__insert();
+        } else {
+            $lc = $lc_exist->first();
+            $paths = explode(',', $lc->path_keys);
+            if (!in_array($path, $paths)) {
+                $paths[] = $path;
+                $lc->path_keys = implode(",", $paths);
+                $lc->__update();
+            }
+        }
 
         if ($path)
             self::buildlocalcache($path);
@@ -243,17 +277,21 @@ class Local_contentController extends Controller
         if ($path) {
 
             if (!file_exists(self::$path . $lang . "_$path.json")) {
-                \DClass\lib\Util::log("", $lang . "_$path.json", self::$path);
-
+                \DClass\lib\Util::log("{}", $lang . "_$path.json", self::$path);
                 self::buildlocalcache($path);
             }
 
-            $content = file_get_contents(self::$path . $lang . "_$path.json");
+            try {
+                $content = file_get_contents(self::$path . $lang . "_$path.json");
+            } catch (Exception $exception) {
+                //if (__prod)
+                return null;
+            }
             return json_decode($content, true);
 
         }
         if (!file_exists(self::$path . $lang . ".json")) {
-            \DClass\lib\Util::log("", $lang . ".json", self::$path);
+            \DClass\lib\Util::log("{}", $lang . ".json", self::$path);
             self::buildlocalcache();
         }
 
@@ -370,11 +408,11 @@ class Local_contentController extends Controller
             $attfield .= ", dest.$attr AS dest_$attr ";
         }
         if ($target != "local_content")
-            $sql = " select t.* $attfield, lc.path from " . $table . "_lang t left join local_content lc on lc.id = t.local_content_id,
+            $sql = " select t.* $attfield, lc.path_keys as path from " . $table . "_lang t left join local_content lc on lc.id = t.local_content_id,
          (select * from " . $table . "_lang where 1 ) dest
           where t.lang_id = $id_lang AND dest.lang_id = $id_lang_dest AND dest." . $table . "_id = t.$table" . "_id AND lc.path_key = '$target'";
         else
-            $sql = " select t.* $attfield, lc.path from " . $table . "_lang t left join local_content lc on lc.id = t.local_content_id,
+            $sql = " select t.* $attfield, lc.path_keys as path from " . $table . "_lang t left join local_content lc on lc.id = t.local_content_id,
          (select * from " . $table . "_lang where 1 ) dest
           where t.lang_id = $id_lang AND dest.lang_id = $id_lang_dest AND dest." . $table . "_id = t.$table" . "_id";
 

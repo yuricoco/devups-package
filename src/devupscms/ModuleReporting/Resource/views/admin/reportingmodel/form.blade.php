@@ -28,9 +28,13 @@
                 <div class="card-header-tab card-header">
                     <div class="card-header-title">
                         <i class="header-icon lnr-rocket icon-gradient bg-tempting-azure"> </i>
-                        Email model : {{$reportingmodel->getName()}}
+                        Email model :
 
-                        <select onchange="reportingmodel.changelang(this)">
+                        {!! Form::select('name',
+FormManager::Options_Helper("name", Reportingmodel::all("name")), $reportingmodel->id,
+["class"=>"form-control","onchange"=>"changemodel(this)",]) !!}
+                        Email lang :
+                        <select class="form-control" onchange="reportingmodel.changelang(this)">
                             @foreach($langs as $lang)
                                 <option value="{{$lang->iso_code}}">{{$lang->iso_code}}</option>
                             @endforeach
@@ -49,39 +53,42 @@
                             "action" => "$action", "method" => "post"], true) ?>
 
                     <div class="row">
-                        @foreach($langs as $lang)
-                            <div id="container-{{$lang->iso_code}}" class="col-lg-6   stretch-card dv-editable">
+                        <div  class="col-lg-6  ">
 
-                                <div class='form-group'>
-                                    <button class="btn btn-primary"
-                                            onclick="reportingmodel.loadFromFile(this, '{{$lang->iso_code}}')">
-                                        Charger le contenu depuis le fichier html
-                                    </button>
-                                    <button class="btn btn-warning"
-                                            onclick="saveToFile(this, {{$reportingmodel->id}}, '{{$lang->iso_code}}')">
-                                        Enregistrer le contenu dans le fichier html
-                                    </button>
-                                    <a class="btn btn-warning"
-                                       href="{{Reportingmodel::classpath("reportingmodel/download-content?lang={$lang->iso_code}&id=".$reportingmodel->id)}}">
-                                        Telecharger le contenu dans un fichier html
-                                    </a>
-                                </div>
-                                <div class='form-group'>
-                                    <div class='alert alert-info'>
-                                        use @{{variable}} to add dynamic text in the content.
+                            @foreach($langs as $lang)
+                                <div id="container-{{$lang->iso_code}}" class=" stretch-card dv-editable " >
+
+                                    <div hidden class='form-group'>
+                                        <button class="btn btn-primary"
+                                                onclick="reportingmodel.loadFromFile(this, '{{$lang->iso_code}}')">
+                                            Charger le contenu depuis le fichier html
+                                        </button>
+                                        <button class="btn btn-warning"
+                                                onclick="saveToFile(this, {{$reportingmodel->id}}, '{{$lang->iso_code}}')">
+                                            Enregistrer le contenu dans le fichier html
+                                        </button>
+                                        <a class="btn btn-warning"
+                                           href="{{Reportingmodel::classpath("reportingmodel/download-content?lang={$lang->iso_code}&id=".$reportingmodel->id)}}">
+                                            Telecharger le contenu dans un fichier html
+                                        </a>
                                     </div>
+                                    <div class='form-group'>
+                                        <div class='alert alert-info'>
+                                            use @{{variable}} to add dynamic text in the content.
+                                        </div>
 
-                                    <?= Form::textarea('content', $reportingmodel->content[$lang->iso_code],
-                                        ['id' => 'code-' . $lang->iso_code, 'class' => 'form-control', 'placeholder' => 'Your html code here ...']); ?>
+                                        <?= Form::textarea('content', $reportingmodel->content[$lang->iso_code],
+                                            ['id' => 'code-' . $lang->iso_code, 'class' => 'form-control editor', 'placeholder' => 'Your html code here ...']); ?>
 
+                                    </div>
+                                    <div class='form-group'>
+                                        <label for='contenttext'>{{t('Content version text (use the \n to go to line) ')}}</label>
+                                        <?= Form::textarea('contenttext', $reportingmodel->contenttext[$lang->iso_code],
+                                            ['class' => 'form-control', 'id' => 'contenttext-' . $lang->iso_code]); ?>
+                                    </div>
                                 </div>
-                                <div class='form-group'>
-                                    <label for='contenttext'>{{t('Content version text (use the \n to go to line) ')}}</label>
-                                    <?= Form::textarea('contenttext', $reportingmodel->contenttext[$lang->iso_code],
-                                        ['class' => 'form-control', 'id' => 'contenttext-' . $lang->iso_code]); ?>
-                                </div>
-                            </div>
-                        @endforeach
+                            @endforeach
+                        </div>
                         <div class="col-lg-6  stretch-card">
                             <div class="text-right">
                                 <a target="_blank"
@@ -102,7 +109,7 @@
                     <hr>
                     <?= Form::submitbtn("Save and continue update", ['onclick' => 'reportingmodel.submit(this)', 'type' => 'button', 'class' => 'btn btn-info btn-block']) ?>
 
-                    <?= Form::submitbtn("save and back to list", ['class' => 'btn btn-success ']) ?>
+                    {{--                    <= Form::submitbtn("save and back to list", ['class' => 'btn btn-success ']) ?>--}}
 
                     <?= Form::close() ?>
                     <hr>
@@ -124,14 +131,15 @@
 
 @section('jsimport')
 
-    <script src="{{__admin}}plugins/codemirror/lib/codemirror.js"></script>
-    <script src="{{__admin}}plugins/codemirror/mode/xml/xml.js"></script>
-    <script src="{{__admin}}plugins/codemirror/mode/javascript/javascript.js"></script>
-    <script src="{{__admin}}plugins/codemirror/mode/css/css.js"></script>
-    <script src="{{__admin}}plugins/codemirror/mode/htmlmixed/htmlmixed.js"></script>
-    <script src="<?= CLASSJS ?>dform.js"></script>
+    <?= Form::addDformjs() ?>
+    {!! Form::addjs(__admin.'plugins/tinymce/tinymce.bundle') !!}
+    {!! Form::addjs(__admin.'plugins/jquery-ui-1.12.1/jquery-ui.min') !!}
+
     <script>
         let report = @json($reportingmodel);
+        function changemodel(el) {
+            window.location.href = __env+'src/devupscms/ModuleReporting/reportingmodel/edit-email?id='+el.value
+        }
     </script>
     <script src="{{Reportingmodel::classpath()}}Resource/js/reportingmodelCtrl.js"></script>
     <script src="{{Reportingmodel::classpath()}}Resource/js/reportingmodelForm.js"></script>

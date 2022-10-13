@@ -147,18 +147,12 @@ var model = {
             toastr.success(message, title);
     },
     entity: null,
-    _new: function (el, classname) {
+    _new: function (el, classname, param = '') {
         model.init(classname, el)
-        /*if ($(el).parents(".dv-top-action").length) {
-            this.baseurl = $(el).parents(".dv-top-action").data('route') + "services.php";
-            this.entity = $(el).parents(".dv-top-action").data('entity');
 
-            console.log("top action route", this.baseurl);
-        }*/
-
+        //ddatatable.urlparam += param;
         this._showmodal();
-        model.request(this.entity + ".form" + ddatatable.urlparam)
-            //.param({path: this.entity + "._new"})
+        model.request(this.entity + ".form" + ddatatable.urlparam+param)
             .get(function (response) {
                 console.log(response)
                 databinding.checkrenderform(response);

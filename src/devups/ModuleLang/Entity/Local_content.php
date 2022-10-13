@@ -18,22 +18,10 @@ class Local_content extends Model implements JsonSerializable
      **/
     protected $reference;
     /**
-     * @Column(name="path", type="string" , length=255,nullable=true )
+     * @Column(name="path_keys", type="text" , nullable=true )
      * @var string
      **/
-    protected $path;
-    /**
-     * @Column(name="path_key", type="string" , length=255,nullable=true )
-     * @var string
-     **/
-    protected $path_key;
-
-    /**
-     * @ManyToOne(targetEntity="\Local_content_key")
-     * @JoinColumn(onDelete="cascade")
-     * @var \Local_content_key
-     */
-    public $local_content_key;
+    protected $path_keys;
 
 
     public function __construct($id = null)
@@ -45,7 +33,6 @@ class Local_content extends Model implements JsonSerializable
             $this->id = $id;
         }
 
-        $this->local_content_key = new Local_content_key();
     }
 
     public function getId()
@@ -89,21 +76,6 @@ class Local_content extends Model implements JsonSerializable
         $this->content = $content;
     }
 
-    /**
-     *  manyToOne
-     * @return \Local_content_key
-     */
-    function getLocal_content_key()
-    {
-        $this->local_content_key = $this->local_content_key->__show();
-        return $this->local_content_key;
-    }
-
-    function setLocal_content_key(\Local_content_key $local_content_key)
-    {
-        $this->local_content_key = $local_content_key;
-    }
-
 
     public function jsonSerialize()
     {
@@ -116,7 +88,6 @@ class Local_content extends Model implements JsonSerializable
             'reference' => $this->reference,
             'content' => $this->content,
             //'lang' => $this->lang,
-            'local_content_key' => $this->local_content_key,
         ];
     }
 

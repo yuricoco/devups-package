@@ -1,6 +1,6 @@
 <?php
 
-define('PROJECT_NAME', 'Devups Tuto');
+const PROJECT_NAME = 'Devups Tuto';
 
 define ('dbname', 'devupstuto_bd');
 define ('dbuser', 'root');
@@ -17,7 +17,8 @@ define ('dbtransaction',  false);
 define('__v', '4.3');
 
 define('__server', 'http://127.0.0.1');
-define('__env', __server.'/devupstuto/');
+define('__env_port', "/devupstuto"); // leave this empty in production
+define('__env', __server.__env_port.'/');
 define('__front', __env.'web/assets/');
 define('__admin', __env.'admin/assets/');
 define('__prod', false);
@@ -71,7 +72,7 @@ define('sm_smtp', 'mail.spacekola.com');
 define('sm_username', 'no-reply@spacekola.com');
 define('sm_password', 'No-reply1963');
 define('sm_from', 'no-reply@spacekola.com');
-define('sm_name', 'Subcontractor');
+define('sm_name', PROJECT_NAME);
 define('sm_smtpsecurity', 'ssl');
 
 

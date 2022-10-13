@@ -57,7 +57,6 @@ class StatusController extends Controller{
                             'error' => $this->error);
         }
 
-        $status->dvid_lang = "fr";
         $id = $status->__insert();
         return 	array(	'success' => true,
                         'status' => $status,

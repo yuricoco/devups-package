@@ -51,7 +51,7 @@ class QueryBuilder extends \DBAL
         'not similar to', 'not ilike', '~~*', '!~~*',
     ];
 
-    public $tablecollection = [];
+    public $tablecollection = "";
     private $joincollection = [];
 
 
@@ -157,21 +157,28 @@ class QueryBuilder extends \DBAL
      * @param bool $update
      * @return $this
      */
-    public function from($collection)
+    public function from($collection, $alias = "")
     {
 
 //        $classname = [];
 //        foreach ($collection as $val)
 //            $classname[] = strtolower(get_class($val));
 
-        $this->tablecollection = implode("`, `", $collection);
-        $this->_from = strtolower($this->tablecollection);
+        if (is_array($collection))
+            $this->tablecollection .= ", ".implode(", ", $collection)." $alias";
+        else
+            $this->tablecollection .= ", ".strtolower($collection)." $alias ";
+
+        // $this->_from .= ", `".strtolower($this->tablecollection)."` $alias";
         return $this;
     }
 
     public function with($entity)
     {
-        $this->_with[] = $entity;
+        if (is_array($entity))
+            $this->_with += $entity;
+        else
+            $this->_with[] = $entity;
         return $this;
     }
 
@@ -820,7 +827,8 @@ class QueryBuilder extends \DBAL
     private function initquery($columns)
     {
         if ($this->tablecollection)
-            return " select " . $columns . " from `" . $this->tablecollection . "` ";
+            return " select " . $columns . " from  {$this->_from} " .
+                $this->tablecollection . " ";
 
         return " select " . $columns . " from {$this->_from} ";
     }
@@ -1014,6 +1022,8 @@ class QueryBuilder extends \DBAL
 
         if ($this->_join)
             $this->query .= " {$this->_join} ";
+
+        $this->query .= $this->tablecollection;
 
     }
 

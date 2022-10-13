@@ -10,8 +10,8 @@ use Genesis;
 use Request;
 use Tree_item;
 use Tree_item_imageController;
-use Tree_itemFrontController;
-use TreeFrontController;
+use Tree_itemController;
+use TreeController;
 
 class ModuleTree
 {
@@ -63,8 +63,8 @@ class ModuleTree
     public function webservices()
     {
 
-        $treeitemCtrl = new Tree_itemFrontController();
-        $treeCtrl = new TreeFrontController();
+        $treeitemCtrl = new Tree_itemController();
+        $treeCtrl = new TreeController();
 
         (new Request('hello'));
 

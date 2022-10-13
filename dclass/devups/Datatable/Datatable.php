@@ -229,7 +229,9 @@ class Datatable extends Lazyloading
                         $this->defaultaction[$actionkey]['action'] = 'onclick="model._' . $actionkey . '(' . $entity->getId() . ', \'' . $this->classname . '\', this)"';
                 } else if (is_callable($this->defaultaction[$actionkey])) {
                     $this->defaultaction[$actionkey] = $this->defaultaction[$actionkey]($entity);
-                } else
+                } elseif ($actionkey == 'show')
+                    return " ";
+                else
                     $this->defaultaction[$actionkey]['action'] = 'onclick="model._' . $actionkey . '(' . $entity->getId() . ', \'' . $this->classname . '\', this)"';
 
                 return $this->defaultaction[$actionkey];
@@ -365,7 +367,7 @@ EOF;
 
         //Lazyloading::$colunms = array_keys($this->datatablemodel);
 
-        $this->lazyloading($this->entity, $this->qbcustom, $this->order_by);
+        $this->lazyloading($this->entity, $this->qbcustom, $this->order_by, $this->id_lang);
 
         $this->rowaction = [];
         if ($this->searchaction) {
@@ -619,6 +621,9 @@ EOF;
 
     public function getSingleRowRest($entity)
     {
+        if ($entity->dvtranslated_columns)
+            $entity->singlelang($this->id_lang);
+
         $this->entity = $entity;
         $this->class = get_class($entity);
         $this->listentity = [$entity];
@@ -638,7 +643,7 @@ EOF;
     public function getTableRest($datatablemodel = [])
     {
 
-        $this->lazyloading($this->entity, $this->qbcustom, $this->order_by);
+        $this->lazyloading($this->entity, $this->qbcustom, $this->order_by, $this->id_lang);
 
         if (!$this->listentity) {
 
@@ -1155,7 +1160,7 @@ EOF;
                 $trattr = "";
 
             // onclick="ddatatable.rowselect(this, ' . $entity->getId() . ')"
-            $tb[] = '<tr id="' . $entity->getId() . '" ' . $trattr . ' >' . implode(" ", $tr) . '</tr>';
+            $tb[] = '<tr id="' . $entity->getId() . '" title="' . $this->classname.'#'.$entity->getId() . '" ' . $trattr . ' >' . implode(" ", $tr) . '</tr>';
 
         }
 

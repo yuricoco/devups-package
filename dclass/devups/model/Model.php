@@ -85,7 +85,7 @@ class Model extends \stdClass
         $fn = $reflector->getFileName();
         $dirname = explode("src", dirname($fn));
         $dirname = str_replace("Entity", "", $dirname[1]);
-        return str_replace("\\", "/", $route . $dirname . $view);
+        return $route . str_replace(["\\", '//'], "/", "admin/". $dirname . $view);
     }
 
     /**
@@ -399,6 +399,19 @@ class Model extends \stdClass
     public function __construct($id = null)
     {
         $this->id = $id;
+
+    }
+
+    public function singlelang($value)
+    {
+
+        if (is_numeric($value))
+            $iso = \Dvups_lang::getattribut("iso_code", $value);
+        else
+            $iso = $value;
+
+        foreach ($this->dvtranslated_columns as $att)
+            $this->{$att} = $this->{$att}[$iso];
 
     }
 
