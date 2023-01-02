@@ -10,6 +10,7 @@
     require 'Form/Tree_itemForm.php';
     require 'Datatable/Tree_itemTable.php';
     require 'Controller/Tree_itemController.php';
+    require 'Controller/Tree_itemFrontController.php';
 
     require 'Entity/Tree_item_image.php';
     require 'Form/Tree_item_imageForm.php';

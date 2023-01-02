@@ -360,11 +360,22 @@ class Model extends \stdClass
         $fieldNames = $metadata->fieldNames;
         $assiactions = array_keys($metadata->associationMappings);
 
-        $sql = " SELECT * FROM `$classlang` WHERE id = " . $this->id;
+        if ($this->dvtranslate && $this->dvid_lang) {
+            $columns = "{$classlang}_lang.`" . implode("`, {$classlang}_lang.`", $this->dvtranslated_columns) . "`";
+            $sql = " SELECT {$classlang}.*, $columns FROM `$classlang` , {$classlang}_lang 
+        WHERE {$classlang}_lang.lang_id = {$this->dvid_lang} AND {$classlang}_lang.{$classlang}_id = {$this->id} AND `{$classlang}`.id = " . $this->id;
+        }else
+            $sql = " SELECT * FROM `$classlang` WHERE id = " . $this->id;
+        // dv_dump($sql);
         $data = (new DBAL($this))->executeDbal($sql, [], DBAL::$FETCH);
         //var_dump($classlang." - ".$attribut, $data, $fieldNames);
         foreach ($fieldNames as $k => $val) {
             $this->{$k} = $data[$k];
+        }
+        if ($this->dvtranslate && $this->dvid_lang) {
+            foreach ($this->dvtranslated_columns as $val) {
+                $this->{$val} = $data[$val];
+            }
         }
         foreach ($assiactions as $k) {
             //if(isset($data[$k]))
@@ -372,9 +383,9 @@ class Model extends \stdClass
             $this->{$k . "_id"} = $data[$k . "_id"];
         }
 
-        if ($this->dvtranslate)
+        if ($this->dvtranslate && !$this->dvid_lang) {
             (new DBAL($this))->getLangValues($this, $this->dvtranslated_columns);
-
+        }
         $this->dvfetched = true;
         $this->dvold = $this;
 
@@ -410,8 +421,10 @@ class Model extends \stdClass
         else
             $iso = $value;
 
-        foreach ($this->dvtranslated_columns as $att)
-            $this->{$att} = $this->{$att}[$iso];
+        foreach ($this->dvtranslated_columns as $att){
+            if (is_array($this->{$att}))
+                $this->{$att} = $this->{$att}[$iso];
+        }
 
     }
 
@@ -549,8 +562,6 @@ class Model extends \stdClass
         return $datareturn;
     }
 
-    private static $keyvalues = [];
-
     /**
      * create entity row and return id(s) of row(s)
      * @param ...$keyvalues
@@ -580,6 +591,25 @@ class Model extends \stdClass
 
             }
         }
+    }
+
+    /**
+     * update a part or an entire entity
+     * @example http://easyprod.spacekola.com description
+     * @param Mixed $arrayvalues
+     * @param Mixed $seton
+     * @param Mixed $case id
+     * @return \QueryBuilder
+     */
+    public static function update($arrayvalues = null, $seton = null, $case = null, $defauljoin = true)
+    {
+        $reflection = new ReflectionClass(get_called_class());
+        $entity = $reflection->newInstance();
+        if ($seton != null && is_array($arrayvalues) || $case != null && !is_array($case))
+            $entity->setId($case);
+
+        $qb = new QueryBuilder($entity);
+        return $qb->update($arrayvalues, $seton, $case, $defauljoin);
     }
 
     public function hasRelation($name)

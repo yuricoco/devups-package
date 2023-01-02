@@ -173,10 +173,10 @@ class QueryBuilder extends \DBAL
         return $this;
     }
 
-    public function with($entity)
+    public function with(...$entity)
     {
         if (is_array($entity))
-            $this->_with += $entity;
+            $this->_with = $entity;
         else
             $this->_with[] = $entity;
         return $this;
@@ -842,7 +842,11 @@ class QueryBuilder extends \DBAL
     {
         $this->initSelect();
         $this->sequensization();
-        return ["sql" => $this->query, "parameters" => $this->parameters];
+        $query = $this->query;
+        foreach ($this->parameters as $search => $value) {
+            $query = str_replace(":". $search ."", $value, $query);
+        }
+        return ["query" => $query,"sql" => $this->query, "parameters" => $this->parameters];
     }
 
     public function exec($action = 0)
@@ -856,13 +860,12 @@ class QueryBuilder extends \DBAL
 
     public function first($id_lang = null, $nullable = false)
     {
-//        if (is_numeric($recursif))
+
         $this->limit_iteration = true;
 
         if ($id_lang)
             $this->setLang($id_lang);
-        // $this->setCollect($collect);
-        // ->limit(1)
+
         return $this->getInstance("*", $nullable);
     }
 
@@ -882,18 +885,23 @@ class QueryBuilder extends \DBAL
         return null;
     }
 
-    public function firstOrNull($recursif = true, $collect = [])
+    public function firstOrNull($id_lang = null)
     {
-        $model =  $this->first($this->id_lang, true);
+        if (!$id_lang)
+            $id_lang = $this->id_lang;
+
+        $model =  $this->first($id_lang, true);
+
+        if (is_null($model))
+            return null;
 
         // todo: implement the primary key validation
-        if (property_exists($model, "id")) {
-            if ($model->getId())
+//        if (property_exists($model, "id")) {
+//            if ($model->getId())
                 return $model;
-        } /*else
-            return $model;*/
+        /* } else
+             return $model;*/
 
-        return null;
     }
 
     /**
@@ -1024,6 +1032,8 @@ class QueryBuilder extends \DBAL
             $this->query .= " {$this->_join} ";
 
         $this->query .= $this->tablecollection;
+
+        //todo : directly add the query to get the additional attribute here
 
     }
 

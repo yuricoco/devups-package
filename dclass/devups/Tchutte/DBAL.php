@@ -100,12 +100,13 @@ class DBAL extends Database
     private $iterat;
     private $update = false;
 
-    public function __construct($object = null)
+    public function __construct($object = null, $id_lang = null)
     {
         parent::__construct();
 //        global $em;
 //        $this->em = $em;
 
+        $this->id_lang = $id_lang;
         $this->instanciateVariable($object);
     }
 
@@ -519,9 +520,25 @@ class DBAL extends Database
     public function executeDbal($sql, $values = [], $action = 0)
     {
 
-        $query = $this->link->prepare($sql);
-        $return = $query->execute($values) or die (Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values));
+        try {
+            $query = $this->link->prepare($sql);
+            $return = $query->execute($values) ;
 
+        }catch (Exception $exception){
+            /*if (__prod){
+                Emaillog::create([
+                    "object" => $query->errorInfo(),
+                    "log" => "$sql Error detail: ".json_encode($values),
+                ]);
+            }*/
+
+            /*$de =  new \dclass\devups\Tchutte\DBALException($exception->getMessage(), $exception->getCode());
+            $de->sql = $sql;
+            $de->param = $values;
+            throw $de;*/
+            dv_dump($exception, $query->errorInfo(), $sql, $values);
+            // Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values);
+        }
 //        if(!$return["success"])
 //            return $return;
 
@@ -547,10 +564,15 @@ class DBAL extends Database
                 $bd_dump = new \dclass\devups\DB_dumper();
                 $bd_dump->transaction($this->table, $sql, $values);
             }
-            $req = $this->link->prepare("select @@IDENTITY as id");
-            $req->execute();
-            $id = $req->fetch() or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values));
-            $return = $id['id'];
+            if (count($this->identifier) > 1){
+                //dump($this->identifier);
+                $return = true;
+            }else {
+                $req = $this->link->prepare("select @@IDENTITY as id");
+                $req->execute();
+                $id = $req->fetch() or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values));
+                $return = $id['id'];
+            }
         } elseif ($action == self::$FETCHALL) {
             $return = $query->fetchAll();// or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql));
         } elseif ($action == self::$FETCHOBJECT) {
@@ -624,6 +646,12 @@ class DBAL extends Database
         }
 
         if ($this->object->dvtranslate) {
+            foreach ($this->object->dvtranslated_columns as $column){
+                if (isset($this->object->{$column}[$this->id_lang]))
+                    $this->object->{$column} = $this->object->{$column}[$this->id_lang];
+            }
+        }
+        if ($this->entity_link_list) {
             foreach ($this->object->dvtranslated_columns as $column){
                 if (isset($this->object->{$column}[$this->id_lang]))
                     $this->object->{$column} = $this->object->{$column}[$this->id_lang];
@@ -714,16 +742,31 @@ class DBAL extends Database
         $this->update = true;
         //$parameterQuery = '`' . implode("`= :".$this->objectVar.", `", $this->objectVar);
 
-        $parameterQuery = '`' . $this->objectVar[1] . '`= :' . $this->objectVar[1];
-        for ($i = 2; $i < $this->nbVar; $i++) {
-            $parameterQuery .= ', `' . $this->objectVar[$i] . '`= :' . $this->objectVar[$i];
+        if ($this->identifier) {
+            $parameterQuery = [];
+            for ($i = 0; $i < $this->nbVar; $i++) {
+                if (in_array($this->objectVar[$i], $this->identifier))
+                    continue;
+
+                $parameterQuery[] = ' `' . $this->objectVar[$i] . '`= :' . $this->objectVar[$i];
+            }
+            $sql = " UPDATE `" . $this->table . "` SET " . strtolower(implode(',', $parameterQuery)) . " WHERE 1 ";
+            foreach ($this->identifier as $idf){
+                $sql .= " AND $idf = :$idf ";
+            }
+        }else {
+
+            $parameterQuery = '`' . $this->objectVar[1] . '`= :' . $this->objectVar[1];
+            for ($i = 2; $i < $this->nbVar; $i++) {
+                $parameterQuery .= ', `' . $this->objectVar[$i] . '`= :' . $this->objectVar[$i];
+            }
+            $values = $this->objectValue;
+            array_splice($values, 0, 1);
+            $values[] = $this->objectValue[0];
+
+
+            $sql = " UPDATE `" . $this->table . "` SET " . strtolower($parameterQuery) . " WHERE id = :id ";
         }
-        $values = $this->objectValue;
-        array_splice($values, 0, 1);
-        $values[] = $this->objectValue[0];
-
-        $sql = " UPDATE `" . $this->table . "` SET " . strtolower($parameterQuery) . " WHERE id = :id ";
-
         $query = $this->link->prepare($sql);
 
         $result = $query->execute($this->objectKeyValue) or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values));
@@ -804,7 +847,7 @@ class DBAL extends Database
         foreach ($objectvar as $v)
             $parameterQuery[] = '`'.$v.'` = :'.$v;
 
-        $sql = " UPDATE `" . strtolower($object) . "` SET " . strtolower(implode(', ', $parameterQuery)) . " WHERE $where ";
+        $sql = " UPDATE `" . strtolower($object) . "` SET " . strtolower(implode(', ', $parameterQuery)) . " WHERE 1  $where ";
 
         $db = new DBAL();
         return $db->executeDbal($sql, $keyvalue, 1);
@@ -966,6 +1009,7 @@ class DBAL extends Database
                         } else {
 
                             $value->setId($flowBD[$key2]);
+                            $value->dvid_lang = $this->id_lang;
                             //$callables[$cn] = $flowBD[$key2];
                             $object_array[$key] = $value;
                             $object_array[$key . "_id"] = $flowBD[$key2];
@@ -1158,8 +1202,15 @@ class DBAL extends Database
     {
         $result = [];
         $query = $this->link->prepare($sql);
-        $query->execute($values) or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values));
-
+        try {
+            $query->execute($values) or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values));
+        }catch (Exception $exception){
+            dump($sql, $values,
+                $exception->getMessage()
+            );
+            $calledfrom = debug_backtrace();
+            dv_dump($calledfrom);
+        }
 //        $flowBD = $query->fetchAll(PDO::FETCH_CLASS);
         if (is_callable($callbackexport)) {
 
@@ -1413,8 +1464,8 @@ class DBAL extends Database
                     $this->identifier[] = $id."_id";
                 }
             }
-            /*if ($this->table == "product") {
-                $metadata = $em->getClassMetadata("\\Category_lang");
+            /*if ($this->table == "product_storage") {
+                $metadata = $em->getClassMetadata("\\Product_storage");
                 dv_dump($metadata);
             }*/
             $fieldNames = $metadata->fieldNames;
@@ -1450,6 +1501,8 @@ class DBAL extends Database
                 $this->entity_link_list[strtolower(get_class($val) . ":" . $key)] = $val;
                 $this->entity_link_map_list[strtolower(get_class($val))] = $key;
                 $keys[$key . '_id'] = $val->getId();
+                // fix issue while creating an entity then try to access a foreign key user this->key_id. previously throw an exception
+                $this->object->{$key . '_id'} = $val->getId();
                 //}
             }
 

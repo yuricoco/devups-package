@@ -63,7 +63,7 @@ class ModuleTree
     public function webservices()
     {
 
-        $treeitemCtrl = new Tree_itemController();
+        $treeitemCtrl = new \Tree_itemFrontController();
         $treeCtrl = new TreeController();
 
         (new Request('hello'));

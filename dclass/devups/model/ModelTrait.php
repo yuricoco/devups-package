@@ -11,7 +11,7 @@ trait ModelTrait
     public $dvid_lang = false; // this attribute has an issue I've forgot the one but this note is just to remind me of that
     // in fact if the attribute is not setted the __get() method will throw a error: attribute not found! why Have i commented it?
     public $dvtranslated_columns = [];
-    private static $dvkeys = ["dvold","dvid_lang", "dvfetched", "dvinrelation", "dvsoftdelete", "dvtranslate", "dvtranslated_columns",];
+    private static $dvkeys = ["dvold", "dvid_lang", "dvfetched", "dvinrelation", "dvsoftdelete", "dvtranslate", "dvtranslated_columns",];
 
     public $dv_collection = [];
 
@@ -22,6 +22,7 @@ trait ModelTrait
             if ($this->dvtranslate && in_array($attribut, $this->dvtranslated_columns)) {
                 if (!$this->id)
                     return null;
+
                 $classlang = get_class($this) . "_lang";
                 $cnl = strtolower($classlang);
                 if (property_exists($classlang, $attribut)) {
@@ -38,15 +39,14 @@ trait ModelTrait
                     $this->{$attribut} = $data[0];
                     return $data[0];
                 }
-            }
-            else {
-                $entityattribut = substr($attribut, 1, strlen($attribut)-1);
+            } else {
+                $entityattribut = substr($attribut, 1, strlen($attribut) - 1);
                 //var_dump($attribut);
-                if ($attribut != "_".$entityattribut){
+                if ($attribut != "_" . $entityattribut) {
                     $trace = debug_backtrace();
                     trigger_error(
                         'Propriété non-définie via __get() : ' . $attribut .
-                        ' de la class ' . get_class($this).
+                        ' de la class ' . get_class($this) .
                         ' dans ' . $trace[0]['file'] .
                         ' à la ligne ' . $trace[0]['line'],
                         E_USER_NOTICE);
@@ -57,7 +57,7 @@ trait ModelTrait
                     if ($this->{$entityattribut}->dvfetched)
                         return $this->{$entityattribut};
 
-                    $this->{$attribut} = $this->{$entityattribut}->hydrate();
+                    $this->{$attribut} = $this->{$entityattribut}->hydrate($this->dvid_lang);
 //                    $classname = get_class($this->{$attribut});
 //                    $this->{"_".$attribut} = $classname::findrow($this->{$attribut . "_id"});
 
@@ -94,7 +94,7 @@ trait ModelTrait
                 $assiactions = array_keys($metadata->associationMappings);
                 $cn = strtolower($classlang);
                 if (!$this->id)
-                    return null;
+                    return $this->{$attribut};
 
                 $sql = " SELECT * FROM `$cn` WHERE id = " . $this->id;
                 $data = (new DBAL())->executeDbal($sql, [], DBAL::$FETCH);
@@ -118,7 +118,7 @@ trait ModelTrait
         $trace = debug_backtrace();
         trigger_error(
             'Propriété non-définie via __get() : ' . $attribut .
-            ' de la class ' . get_class($this).
+            ' de la class ' . get_class($this) .
             ' dans ' . $trace[0]['file'] .
             ' à la ligne ' . $trace[0]['line'],
             E_USER_NOTICE);
@@ -127,6 +127,12 @@ trait ModelTrait
 
     public function __set($name, $value)
     {
+        if (strpos($name, '_id')) {
+            $attribut = str_replace('_id', '', $name);
+            if (property_exists($this, $attribut) && is_object($this->{$attribut})) {
+                $this->{$attribut}->id = $value;
+            }
+        }
         // TODO: Implement __set() method.
         $this->{$name} = $value;
     }
@@ -169,8 +175,9 @@ trait ModelTrait
 
         $qb = new QueryBuilder($entity);
         $qb->setLang($id_lang);
-        return $qb->select()->limit(1)->getInstance();
+        return $qb->select()->getInstance();
     }
+
     /**
      * return the firt
      * @example http://easyprod.spacekola.com description
@@ -186,6 +193,24 @@ trait ModelTrait
         $qb = new QueryBuilder($entity);
         $qb->setLang($id_lang);
         return $qb->firstOrCreate($constraint, $data, $id_lang);
+
+    }
+
+    /**
+     * return the firt
+     * @example http://easyprod.spacekola.com description
+     * @param type $id
+     * @return $this
+     */
+    public static function firstOrNull($id_lang = null)
+    {
+
+        $reflection = new ReflectionClass(get_called_class());
+        $entity = $reflection->newInstance();
+
+        $qb = new QueryBuilder($entity);
+        $qb->setLang($id_lang);
+        return $qb->firstOrNull($id_lang);
 
     }
 
@@ -246,7 +271,7 @@ trait ModelTrait
      * @param type $id
      * @return $this
      */
-    public static function index($index = 1, $id_lang = null )
+    public static function index($index = 1, $id_lang = null)
     {
         $i = (int)$index;
         $reflection = new ReflectionClass(get_called_class());
@@ -360,7 +385,6 @@ trait ModelTrait
         $classname = get_called_class();
         $reflection = new ReflectionClass(get_called_class());
         $entity = $reflection->newInstance();
-        $entity->setId($id);
 
         if ($id_lang)
             $entity->dvid_lang = $id_lang;
@@ -368,14 +392,122 @@ trait ModelTrait
         $qb = new QueryBuilder($entity);
         $qb->setLang($id_lang);
         if (is_array($id)) {
+            if (is_string(array_key_first($id)))
+                return $qb->where($id)->getInstance();
 
             return $qb->whereIn("this.id", $id)->get();
         }
+        $entity->setId($id);
 
         return $qb->select()->where("this.id", "=", $id)
             ->getInstance();
 
     }
+    /**
+     * return the entity
+     * when recursif set to false, attribut as relation manyToOne has just their id hydrated
+     * when recursif set to true, the DBAL does recursif request to hydrate the association entity and those of it.
+     * @param integer | array $id the id of the entity
+     * @param boolean $recursif [true] tell the DBAL to find all the data of the relation
+     * @return $this | array
+     */
+    public static function findOrNull($id, $id_lang = null)
+    {
+        $classname = get_called_class();
+        $reflection = new ReflectionClass(get_called_class());
+        $entity = $reflection->newInstance();
+
+        if ($id_lang)
+            $entity->dvid_lang = $id_lang;
+
+        $qb = new QueryBuilder($entity);
+        $qb->setLang($id_lang);
+        if (is_array($id)) {
+            if (is_string(array_key_first($id)))
+                return $qb->where($id)->firstOrNull();
+
+            return $qb->whereIn("this.id", $id)->get();
+        }
+        $entity->setId($id);
+
+        return $qb->select()->where("this.id", "=", $id)
+            ->firstOrNull();
+
+    }
+
+    private static $keyvalues = [];
+
+    /**
+     * create entity row and return id(s) of row(s)
+     * @param ...$keyvalues
+     * @return array|int|mixed
+     */
+    public static function create(...$keyvalues)
+    {
+        $ids = [];
+        foreach ($keyvalues as $keyvalue) {
+            self::$keyvalues = $keyvalue;
+            $classname = get_called_class();
+            $ids[] = DBAL::_createDbal($classname, $keyvalue);
+        }
+        if (count($ids) == 1)
+            return $ids[0];
+
+        return $ids;
+    }
+
+    public static function createInstance(...$keyvalues)
+    {
+        $ids = self::create($keyvalues);
+        if (count($ids)) {
+            $instances = [];
+            foreach ($ids as $id) {
+
+            }
+        }
+    }
+
+    /**
+     * update a part or an entire entity
+     * @example http://easyprod.spacekola.com description
+     * @param Mixed $arrayvalues
+     * @param Mixed $seton
+     * @param Mixed $case id
+     * @return \QueryBuilder
+     */
+    public static function update($arrayvalues, $primarykey, $where = "", $classname = "")
+    {
+        if (!$classname)
+            $classname = get_called_class();
+
+        foreach ($primarykey as $key => $value) {
+            $where .= " AND $key = $value ";
+        }
+
+        return DBAL::_updateDbal($classname, $arrayvalues, $where);
+
+    }
+
+    /**
+     * update a part or an entire entity
+     * @example http://easyprod.spacekola.com description
+     * @param Mixed $arrayvalues
+     * @param Mixed $seton
+     * @param Mixed $case
+     * @return boolean | \QueryBuilder
+     */
+    public function __update($arrayvalues = null, $seton = null, $case = null, $defauljoin = true)
+    {
+        $dbal = new DBAL();
+        DBAL::$id_lang_static = $this->dvid_lang;
+        //if (!$arrayvalues) {
+        return $dbal->updateDbal($this);
+//        } else {
+//            $qb = new QueryBuilder($this);
+//            return $qb->update($arrayvalues, $seton, $case, $defauljoin);
+//        }
+    }
+
 
     /**
      * return the entity
@@ -548,25 +680,6 @@ trait ModelTrait
     }
 
     /**
-     * update a part or an entire entity
-     * @example http://easyprod.spacekola.com description
-     * @param Mixed $arrayvalues
-     * @param Mixed $seton
-     * @param Mixed $case id
-     * @return \QueryBuilder
-     */
-    public static function update($arrayvalues = null, $seton = null, $case = null, $defauljoin = true)
-    {
-        $reflection = new ReflectionClass(get_called_class());
-        $entity = $reflection->newInstance();
-        if ($seton != null && is_array($arrayvalues) || $case != null && !is_array($case))
-            $entity->setId($case);
-
-        $qb = new QueryBuilder($entity);
-        return $qb->update($arrayvalues, $seton, $case, $defauljoin);
-    }
-
-    /**
      * @param null $id
      * @param null $update
      * @return mixed
@@ -599,6 +712,7 @@ trait ModelTrait
         return $qb->orderBy($column, $sort);
 
     }
+
     /**
      * return instance of \QueryBuilder white the select request sequence.
      * @param string $columns
@@ -689,7 +803,7 @@ trait ModelTrait
             if (isset($fieldNames[$key]))
                 $keys[$key] = $val;
         }
-        return  $keys;
+        return $keys;
 
     }
 
@@ -706,6 +820,22 @@ trait ModelTrait
                 $keys[$key] = $val;
         }
         return $keys;
+    }
+
+    public static function getIdentifyKey($classname = ''){
+        global $em;
+        if (!$classname)
+            $classname = get_called_class();
+        $metadata = $em->getClassMetadata("\\" . $classname);
+
+        if (count($metadata->identifier) > 1){
+            $identifier = [];
+            foreach ($metadata->identifier as $id){
+                $identifier[$id."_id"] = $id."_id";
+            }
+            return $identifier;
+        }
+        return array_combine($metadata->identifier, $metadata->identifier);
     }
 
 }

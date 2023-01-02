@@ -18,7 +18,7 @@
                     </div>
                 </div>
                     {!!
-                        $notificationttypeable->buildconfigtable()
+                        $notificationttypeable->buildindextable()
                             ->setModel("config")
                             ->render()
                     !!}
@@ -46,4 +46,3 @@
         </div>
     </div>
 @endsection
-            

@@ -387,16 +387,24 @@ class Notification extends Model implements JsonSerializable
     {
         if ($this->read == 0) {
             if ($this->_notificationtype->getSession() == "admin") {
-                $entity = ucfirst($this->entity);
-                //$entity = Dvups_entity::getbyattribut("name", $this->_notification->entity);
-                //return __env.('admin/' .strtolower($entity->dvups_module->project) . '/' . $entity->dvups_module->name . '/' . $entity->url . "/detail?id=".$this->notification->entityid);
+                if ($this->redirect) {
+                    $query = parse_url($this->redirect, PHP_URL_QUERY);
 
-                //return $entity->route();
+// Returns a string if the URL has parameters or NULL if not
+                    if ($query) {
+                        $this->redirect .= '&notified=' . $this->getId();
+                    } else {
+                        $this->redirect .= '?notified=' . $this->getId();
+                    }
+                    return $this->redirect;
+                }
+
+                $entity = ucfirst($this->entity);
                 return $entity::classpath("index.php?path=".$this->entity."/index&dfilters=on&id:eq={$this->entityid}&notified=" . $this->getId());
             }
             return route('notification?read=' . $this->getId());
         }
-        return $this->redirect;
+        return $this->redirect ?? '#';
     }
 
     public static function readed($id)

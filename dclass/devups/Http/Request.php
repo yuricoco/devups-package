@@ -196,7 +196,7 @@ class Request
 
         //$array = explode("-", $path);
         $function = self::niceFunction($path, '-');
-        if (in_array($function, ["create","update","delete","_delete","deleteGroup", ]))
+        if (in_array($function, ["create","update","delete","_delete","deletegroup","deleteGroup", ]))
             $function .= "Action";
         else if (in_array($function, ["form","detail","list", ]))
             $function .= "View";

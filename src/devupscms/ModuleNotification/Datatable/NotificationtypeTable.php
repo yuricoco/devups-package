@@ -32,6 +32,7 @@ class NotificationtypeTable extends Datatable
             ['header' => t('notificationtype.content', 'Content'), 'value' => 'content'],
             ['header' => 'Test', 'value' => 'test']
         ];
+        $this->enabletopaction = false;
         $this->addcustomaction(function ($item){
             return "<button class='btn btn-default btn-block' onclick='model.clonerow(".$item->getId().", \"notificationtype\")'>duplicate</button>";
         });

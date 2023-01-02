@@ -56,10 +56,12 @@ class Dvups_entityController extends Controller
             'form' => Dvups_entityForm::renderExportWidget(),
         ];
     }
+
     public function formImportView()
     {
+        $langs = Dvups_lang::all();
         return ['success' => true,
-            'form' => Genesis::getView("admin.dvups_entity.formImportWidget", Request::$uri_get_param),
+            'form' => Genesis::getView("admin.dvups_entity.formImportWidget", Request::$uri_get_param + compact("langs")),
         ];
     }
 
@@ -161,7 +163,7 @@ class Dvups_entityController extends Controller
         $dvups_entity = Dvups_entity::find($id);
         $dvups_entity->truncate();
 
-        return 	array(	'success' => true,
+        return array('success' => true,
             'dvups_entity' => $dvups_entity,
             'tablerow' => Dvups_entityTable::init()->buildindextable()->getSingleRowRest($dvups_entity),
             'detail' => '');
@@ -177,16 +179,17 @@ class Dvups_entityController extends Controller
             if (strstr($str, '"')) $str = '"' . str_replace('"', '""', $str) . '"';
         }
 
+        $fields = Request::post("fields");
         $classname = ucfirst(Request::get("classname"));
         $entity = new $classname;
 
-        if(Request::post("allcolumns")) {
-            $keys = explode(',', Request::post("fields"));
-            $columns = "*";
-        }else {
+        if (Request::post("allcolumns")) {
+            $keys = explode(',', $fields);
+            //$columns = "$fields";
+        } else {
             $keys = Request::post("columns");
-            $columns = implode(',', $keys);
         }
+        $columns = 'this.' . implode(', this.', $keys);
 
         /*foreach ($this as $key => $val) {
             self::$dvkeys[] = 'id';
@@ -214,7 +217,7 @@ class Dvups_entityController extends Controller
         //return compact('keys', "download");
         //$message = $classname . ": CSV generated with success";
 
-        $fileName = $classname."_" . date('Y-m-d_H-i') . ".csv";
+        $fileName = $classname . "_" . date('Y-m-d_H-i') . ".csv";
 //        $excelData = file_get_contents(__DIR__ . "/../import/datalang.csv");
 
         header('Content-Type: text/html; charset=windows-1252');
@@ -227,108 +230,41 @@ class Dvups_entityController extends Controller
         exit;
     }
 
-    const split = ";";
+    public static $split = ";";
+    public static $identifies = [];
 
-    public function importCsv($classname)
+    public function importData($classname)
     {
-        if (!isset($_FILES["fixture"]) || $_FILES["fixture"]['error'] != 0)
-            return [
-                "success" => false,
-                "message" => "no file founded",
-            ];
+        $log = [];
+        $split = Request::get('split');
+        if ($split == 'tab')
+            self::$split = "\t";
 
-
-        $handle = file($_FILES["fixture"]["tmp_name"], FILE_IGNORE_NEW_LINES);
-
-        if ($handle) {
-
-            $values = [];
-            $i = 0;
-            //while (($line = fgets($handle)) !== false) {
-            foreach ($handle as $line) {
+        self::$identifies = Model::getIdentifyKey($classname);
+        if (isset($_POST['contentcsv']) && !isset($_FILES["fixture"])) {
+            $contentcsv = explode("\n", $_POST['contentcsv']);
+            foreach ($contentcsv as $line) {
                 // process the line read.
-                $references = [];
-                if ($line) {
-                    $line = (trim($line));
-                    if ($i >= 1) {
-                        // we verify if the current line is not empty. due to sometime EOF are just \n code
-                        $reference = str_replace(self::split, "", $line);
-                        if (!trim($reference))
-                            continue;
-
-                        // there are some file that has ;;; at the end of a line, programmatically it represent column
-                        // therefore we have to remove those by user array_filter fonction
-                        // we finaly combine value with column key
-                        //try {
-                        $valuetobind = explode(self::split, $line);
-                        if (count($columns) != count($valuetobind))
-                            return [
-                                "content" => $line,
-                                "index" => $i,
-                                "columns" => $columns,
-                                "nbc" => count($columns),
-                                "valuetobind" => $valuetobind,
-                                "nbv" => count($valuetobind),
-                            ];
-
-                        $keyvalue = array_combine($columns, explode(self::split, $line));
-
-                        foreach ($this as $key => $val) {
-                            if (in_array($key, self::$dvkeys))
-                                continue;
-                            if (is_object($val)) {
-                                if (isset($keyvalue[$key . '_id']) && in_array(strtolower($keyvalue[$key . '_id']), ['', 'null']))
-                                    $keyvalue[$key . '_id'] = null;
-                            }
-                        }
-                        // dv_dump($keyvalue);
-
-//                        }catch (Exception $exception){
-//                            die(var_dump($exception));
-//                        }
-
-                        if (!$keyvalue) {
-                            // and if event so we get a false
-                            // we catch error to optimize the exception
-                            $allerrors[] = [
-                                "content" => $line,
-                                "index" => $i,
-                                "combinaison_column" => $columns,
-                                "keyvalue" => $keyvalue,
-                            ];
-                            return $allerrors;
-                        } else
-                            DBAL::_createDbal(strtolower($classname), $keyvalue);
-
-                    } else {
-                        // we collect all headers and with the array_filter fonction we sanitize the array to avoid double value
-                        $columns = array_filter(explode(self::split,
-                            str_replace("\"", "", ($line))
-                        ));
-                    }
-                    $i++;
-                }
+                $log[] = $this->importProcess($classname, $line);
             }
-
-        }
-
-        return ["success" => true, "message" => "all went well"];
-
-    }
-
-
-    public static function importXlsx()
-    {
-        require ROOT . "/dclass/lib/SimpleXLSX.php";
-        $file = null;
-        if (!file_exists(UPLOAD_DIR . "/importlang"))
-            mkdir(UPLOAD_DIR . "/importlang", 0777, true);
-
-        if (isset($_FILES['filelang'])) {
-            if (move_uploaded_file($_FILES['filelang']['tmp_name'], UPLOAD_DIR . "/importdata/data.xlsx")) {
+            return [
+                "success" => true,
+                "created" => true,
+                "updated" => true,
+                "i" => self::$i,
+                "remain" => 0,
+                "log" => $log,
+                "detail" => "Importation des donnees csv termine",
+            ];
+        } elseif (isset($_FILES["fixture"]) && $_FILES["fixture"]['error'] == 0) {
+            $ext = Dfile::getextension($_FILES['fixture']['name']);
+            $filename = "data_$classname-" . date('YmdHis') . ".$ext";
+            Dfile::makedir("importdata");
+            if (move_uploaded_file($_FILES['fixture']['tmp_name'], UPLOAD_DIR . "importdata/$filename")) {
 
                 return [
                     "success" => true,
+                    "filename" => $filename,
                     "detail" => "le fichier a bien ete uploade",
                 ];
 
@@ -337,25 +273,171 @@ class Dvups_entityController extends Controller
             }
         }
 
-        $file = UPLOAD_DIR . "/importdata/data.xlsx";
-        if (!file_exists($file))
-            return [
-                "success" => false,
-                "detail" => "le fichier est introuvable",
-            ];
-
-        //$langs = explode(",", $_GET['langs']);
         $lang = Request::get('lang');
         $iteration = Request::get("iteration");
         $next = Request::get("next");
+        $filename = Request::get("filename");
+        $ext = Dfile::getextension($filename);
+        $file = UPLOAD_DIR . "importdata/$filename";
+        if (!file_exists($file))
+            return [
+                "success" => false,
+                "detail" => "le fichier $filename est introuvable",
+            ];
+
+        if ($ext == 'csv')
+            $this->importCsv($classname, $file, $next, $iteration);
+        elseif ($ext == 'xslx')
+            $this->importXlsx($classname, $file, $next, $iteration);
+
+        return [
+            "success" => true,
+            "created" => true,
+            "updated" => true,
+            "i" => self::$i,
+            "remain" => self::$iterator - $iteration,
+            "detail" => "le fichier est ok",
+        ];
+    }
+
+    private static $columns = [];
+    private static $i = 0;
+    private static $iterator = 0;
+    private static $update = true;
+    private static $where = "";
+
+    private function importProcess($classname, $line)
+    {
+        if ($line) {
+            $line = (trim($line));
+            if (self::$i >= 1) {
+                // we verify if the current line is not empty. due to sometime EOF are just \n code
+                $reference = str_replace(self::$split, "", $line);
+                if (!($reference))
+                    return null;
+
+                // there are some file that has ;;; at the end of a line, programmatically it represent column
+                // therefore we have to remove those by user array_filter fonction
+                // we finaly combine value with column key
+                //try {
+                $valuetobind = explode(self::$split, $line);
+                if (count(self::$columns) != count($valuetobind))
+                    return [
+                        "content" => $line,
+                        "index" => self::$i,
+                        "columns" => self::$columns,
+                        "nbc" => count(self::$columns),
+                        "valuetobind" => $valuetobind,
+                        "nbv" => count($valuetobind),
+                    ];
+
+                $keyvalue = array_combine(self::$columns, explode(self::$split, $line));
+
+                /*foreach ($this as $key => $val) {
+                    if (in_array($key, self::$dvkeys))
+                        continue;
+                    if (is_object($val)) {
+                        if (isset($keyvalue[$key . '_id']) && in_array(strtolower($keyvalue[$key . '_id']), ['', 'null']))
+                            $keyvalue[$key . '_id'] = null;
+                    }
+                }*/
+                // dv_dump($keyvalue);
+
+//                        }catch (Exception $exception){
+//                            die(var_dump($exception));
+//                        }
+
+                if (!$keyvalue) {
+                    // and if event so we get a false
+                    // we catch error to optimize the exception
+                    //$allerrors[] = [
+                    $allerrors = [
+                        "content" => $line,
+                        "index" => self::$i,
+                        "combinaison_column" => self::$columns,
+                        "keyvalue" => $keyvalue,
+                    ];
+                    return $allerrors;
+                } else {
+                    if (self::$update) {
+                        $sql = "  select COUNT(*) from " . $classname
+                            . " where 1 " . self::$where;
+                        $exist = (new DBAL())->executeDbal($sql, array_intersect_key($keyvalue, self::$identifies));
+
+                        if ($exist) {
+                            DBAL::_updateDbal(strtolower($classname),
+                                $keyvalue,
+                                self::$where);
+                        } else
+                            DBAL::_createDbal(strtolower($classname), $keyvalue);
+                    } else
+                        DBAL::_createDbal(strtolower($classname), $keyvalue);
+                }
+
+            } else {
+                // we collect all headers and with the array_filter fonction we sanitize the array to avoid double value
+                self::$columns = array_filter(explode(self::$split,
+                    str_replace("\"", "", ($line))
+                ));
+                foreach (self::$identifies as $id) {
+                    if (!in_array($id, self::$columns)) {
+                        self::$update = false;
+                        break;
+                    }
+                    self::$where .= " AND $id = :$id ";
+                    // unset($row['id']);
+                }
+            }
+            self::$i++;
+        }
+    }
+
+    public function importCsv($classname, $file, $next, $iteration)
+    {
+        $handle = file($file, FILE_IGNORE_NEW_LINES);
+
+            $values = [];
+            self::$i = 0;
+            //while (($line = fgets($handle)) !== false) {
+
+            foreach ($handle as $line) {
+                // process the line read.
+                $references = [];
+
+                $this->importProcess($classname, $line);
+            }
+
+
+        return ["success" => true, "message" => "all went well"];
+
+    }
+
+
+    public function importXlsx($classname, $file, $next, $iteration)
+    {
+        require ROOT . "/dclass/lib/SimpleXLSX.php";
+
+        //$langs = explode(",", $_GET['langs']);
+        $lang = Request::get('lang');
         $iterator = 0;
-        // $xlsx = new SimpleXLSX(__DIR__ . '/../import/database-lang_2022-02-23.xlsx');
+
         $xlsx = new SimpleXLSX($file);
+
+        $where = "";
+        $update = true;
 
         foreach ($xlsx->rows() as $i => $fields) {
 
             if ($i == 0) {
                 $head = $fields;
+                foreach (self::$identifies as $id) {
+                    if (!in_array($id, $head)) {
+                        $update = false;
+                        break;
+                    }
+                    $where .= " AND $id = :$id ";
+                    // unset($row['id']);
+                }
                 continue;
             }
 
@@ -365,35 +447,33 @@ class Dvups_entityController extends Controller
             if ($i > $next + $iteration)
                 break;
 
-            $row = array_combine($head, $fields);
+            $keyvalue = array_combine($head, $fields);
 
-            $id = $row["id"];
-            unset($row['id']);
-            $sql = "  select COUNT(*) from " . $row["table"]
-                . " where id = $id";
-            $exist = (new DBAL())->executeDbal($sql);
 
-            if ($exist) {
-                DBAL::_updateDbal($row["table"] . "_lang",
-                    $row,
-                    " id = " . $id);
+            if ($update) {
+                $sql = "  select COUNT(*) from " . $classname
+                    . " where 1 $where ";
+                $exist = (new DBAL())->executeDbal($sql);
+
+                if ($exist) {
+                    DBAL::_updateDbal(strtolower($classname),
+                        $keyvalue,
+                        " $where ");
+                } else
+                    DBAL::_createDbal(strtolower($classname), $keyvalue);
             } else
-                Db::getInstance()->insert($row["table"], $row);
+                DBAL::_createDbal(strtolower($classname), $keyvalue);
 
 
             //}
-
-        }
-
-        if ($iterator - $iteration < 0) {
-            self::buildlocalcache();
+            self::$i = $i;
         }
 
         return [
             "success" => true,
             "created" => true,
             "updated" => true,
-            "i" => $i,
+            "i" => self::$i,
             "remain" => $iterator - $iteration,
             "detail" => "le fichier est ok",
         ];

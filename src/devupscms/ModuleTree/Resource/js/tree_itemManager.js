@@ -24,7 +24,7 @@ Vue.component("tree_itemForm", {
         update(quit) {
             console.log(this.tree_item);
             //return ;
-            Drequest.api('tree-item.update?id=' + this.tree_item.id)
+            Drequest.api('update.tree-item?id=' + this.tree_item.id)
                 .data({
                     //"tree_item": model.entitytoformentity(this.tree_item)
                     "tree_item": this.tree_item
@@ -200,7 +200,7 @@ Vue.component("addchild", {
                 this.tree_item.parent_id = this.parent.id;
             }
             this.tree_item.name["fr"] = this.tree_item.name["en"]
-            Drequest.api("tree-item.create")
+            Drequest.api("create.tree-item")
                 .data({
                     tree_item: this.tree_item
                 })
@@ -659,7 +659,7 @@ var tree_itemview = new Vue({
         treeedit: {name: ''},
     },
     mounted() {
-        Drequest.api("tree.lazyloading").get((response) => {
+        Drequest.api("lazyloading.tree").get((response) => {
             console.log(response);
             this.trees = response.listEntity;
         })
@@ -693,7 +693,7 @@ var tree_itemview = new Vue({
             if (!this.treeedit.name)
                 return null;
 
-            Drequest.api("tree.create")
+            Drequest.api("create.tree")
                 .data({
                     tree: {
                         "name": this.treeedit.name
@@ -710,7 +710,7 @@ var tree_itemview = new Vue({
                 return null;
 
             if (treeedit.id) {
-                Drequest.api("tree.update?id=" + treeedit.id)
+                Drequest.api("update.tree?id=" + treeedit.id)
                     //.param({id: treeedit.id})
                     .data({
                         tree: {
@@ -723,7 +723,7 @@ var tree_itemview = new Vue({
                     });
 
             } else {
-                Drequest.api("tree.create")
+                Drequest.api("create.tree")
                     .data({
                         tree: {
                             "name": treeedit.name
