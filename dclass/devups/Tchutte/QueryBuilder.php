@@ -838,8 +838,9 @@ class QueryBuilder extends \DBAL
         return str_replace("this.", "{$this->_from}.", $sql);
     }
 
-    public function getSqlQuery()
+    public function getSqlQuery($column = "*")
     {
+        $this->select($column);
         $this->initSelect();
         $this->sequensization();
         $query = $this->query;

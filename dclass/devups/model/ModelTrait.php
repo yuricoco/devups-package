@@ -308,16 +308,6 @@ trait ModelTrait
         return $qb->select($attribut)->where("this.id", $id)->getValue();
     }
 
-    public static function addColumns(...$columns)
-    {
-
-        $reflection = new ReflectionClass(get_called_class());
-        $entity = $reflection->newInstance();
-
-        $qb = new QueryBuilder($entity);
-        return $qb->addColumns($columns)->getValue();
-    }
-
     /**
      * return the attribut as design in the database
      * @example http://easyprod.spacekola.com description
@@ -337,6 +327,23 @@ trait ModelTrait
         $qb = new QueryBuilder($entity);
         $qb->setLang($id_lang);
         return $qb->select()->where($attribut, $value)->getInstance();
+    }
+
+
+    /**
+     * @param ...$columns
+     * @return QueryBuilder
+     * @throws ReflectionException
+     */
+    public static function addColumns(...$columns)
+    {
+
+        $reflection = new ReflectionClass(get_called_class());
+        $entity = $reflection->newInstance();
+
+        $qb = new QueryBuilder($entity);
+        $qb->custom_columns .= implode(", ", $columns);
+        return $qb;// ->addColumns($columns)->getValue();
     }
 
     /**

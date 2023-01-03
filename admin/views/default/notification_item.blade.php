@@ -1,4 +1,6 @@
-<a class="dropdown-item d-flex align-items-center @if(!$notification->status) bg-info @endif" href="{{ $notification->getRedirect()}}">
+<a class="dropdown-item d-flex align-items-center @if(!$notification->status) bg-info @endif"
+   href="{{ $notification->getRedirect()}}"
+>
     @if(!$notification->status)
         <input type="checkbox" name="ids[]" value="{{$notification->id}}" checked hidden >
     @endif

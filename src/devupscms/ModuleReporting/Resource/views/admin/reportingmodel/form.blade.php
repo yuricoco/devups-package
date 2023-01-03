@@ -55,39 +55,39 @@ FormManager::Options_Helper("name", Reportingmodel::all("name")), $reportingmode
                     <div class="row">
                         <div  class="col-lg-6  ">
 
-                            @foreach($langs as $lang)
-                                <div id="container-{{$lang->iso_code}}" class=" stretch-card dv-editable " >
+                        @foreach($langs as $lang)
+                            <div id="container-{{$lang->iso_code}}" class=" stretch-card dv-editable " >
 
-                                    <div hidden class='form-group'>
-                                        <button class="btn btn-primary"
-                                                onclick="reportingmodel.loadFromFile(this, '{{$lang->iso_code}}')">
-                                            Charger le contenu depuis le fichier html
-                                        </button>
-                                        <button class="btn btn-warning"
-                                                onclick="saveToFile(this, {{$reportingmodel->id}}, '{{$lang->iso_code}}')">
-                                            Enregistrer le contenu dans le fichier html
-                                        </button>
-                                        <a class="btn btn-warning"
-                                           href="{{Reportingmodel::classpath("reportingmodel/download-content?lang={$lang->iso_code}&id=".$reportingmodel->id)}}">
-                                            Telecharger le contenu dans un fichier html
-                                        </a>
-                                    </div>
-                                    <div class='form-group'>
-                                        <div class='alert alert-info'>
-                                            use @{{variable}} to add dynamic text in the content.
-                                        </div>
-
-                                        <?= Form::textarea('content', $reportingmodel->content[$lang->iso_code],
-                                            ['id' => 'code-' . $lang->iso_code, 'class' => 'form-control editor', 'placeholder' => 'Your html code here ...']); ?>
-
-                                    </div>
-                                    <div class='form-group'>
-                                        <label for='contenttext'>{{t('Content version text (use the \n to go to line) ')}}</label>
-                                        <?= Form::textarea('contenttext', $reportingmodel->contenttext[$lang->iso_code],
-                                            ['class' => 'form-control', 'id' => 'contenttext-' . $lang->iso_code]); ?>
-                                    </div>
+                                <div hidden class='form-group'>
+                                    <button class="btn btn-primary"
+                                            onclick="reportingmodel.loadFromFile(this, '{{$lang->iso_code}}')">
+                                        Charger le contenu depuis le fichier html
+                                    </button>
+                                    <button class="btn btn-warning"
+                                            onclick="saveToFile(this, {{$reportingmodel->id}}, '{{$lang->iso_code}}')">
+                                        Enregistrer le contenu dans le fichier html
+                                    </button>
+                                    <a class="btn btn-warning"
+                                       href="{{Reportingmodel::classpath("reportingmodel/download-content?lang={$lang->iso_code}&id=".$reportingmodel->id)}}">
+                                        Telecharger le contenu dans un fichier html
+                                    </a>
                                 </div>
-                            @endforeach
+                                <div class='form-group'>
+                                    <div class='alert alert-info'>
+                                        use @{{variable}} to add dynamic text in the content.
+                                    </div>
+
+                                    <?= Form::textarea('content', $reportingmodel->content[$lang->iso_code],
+                                        ['id' => 'code-' . $lang->iso_code, 'class' => 'form-control editor', 'placeholder' => 'Your html code here ...']); ?>
+
+                                </div>
+                                <div class='form-group'>
+                                    <label for='contenttext'>{{t('Content version text (use the \n to go to line) ')}}</label>
+                                    <?= Form::textarea('contenttext', $reportingmodel->contenttext[$lang->iso_code],
+                                        ['class' => 'form-control', 'id' => 'contenttext-' . $lang->iso_code]); ?>
+                                </div>
+                            </div>
+                        @endforeach
                         </div>
                         <div class="col-lg-6  stretch-card">
                             <div class="text-right">
@@ -109,7 +109,7 @@ FormManager::Options_Helper("name", Reportingmodel::all("name")), $reportingmode
                     <hr>
                     <?= Form::submitbtn("Save and continue update", ['onclick' => 'reportingmodel.submit(this)', 'type' => 'button', 'class' => 'btn btn-info btn-block']) ?>
 
-                    {{--                    <= Form::submitbtn("save and back to list", ['class' => 'btn btn-success ']) ?>--}}
+{{--                    <= Form::submitbtn("save and back to list", ['class' => 'btn btn-success ']) ?>--}}
 
                     <?= Form::close() ?>
                     <hr>

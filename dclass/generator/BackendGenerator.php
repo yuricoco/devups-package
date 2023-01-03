@@ -360,7 +360,7 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
         $attrib = "";
 
         $construt = "";
-
+        $attributs = [];
         foreach ($entity->attribut as $attribut) {
             if (!isset($attribut->lang) || !$attribut->lang) {
                 continue;
@@ -376,7 +376,7 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
                 $nullable = ", nullable=true";
             }
             $defaultvalue = "";
-
+            $attributs[]=$attribut->name;
             $construt .= "
     /**
      * @Column(name=\"" . $attribut->name . "\", type=\"" . $attribut->datatype . "\" $length $nullable)
@@ -403,8 +403,19 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
 
         " . $construteur . "
         ";
-
-        $construt .= $method . "  ";
+        $attributs = implode(',', $attributs);
+        $construt .= $method . " 
+         
+    /**
+     * ==== HOW TO MIGRATE DATA FROM A PREVIOUS TABLE TO A MULTILANG TABLE ===
+     *
+     * INSERT INTO $name\\_lang (lang_id, $name\\_id, ".$attributs.")
+     * SELECT 1 as lang_id, id, $attributs FROM `$name` WHERE 1
+     *
+     * INSERT INTO $name\\_lang (lang_id, $name\\_id, ".$attributs.")
+     * SELECT 2 as lang_id, id, $attributs FROM `$name` WHERE 1
+     */
+     ";
 
         fputs($fichier, $construt);
         fputs($fichier, "\n}\n");

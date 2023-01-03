@@ -1171,23 +1171,30 @@ class DBAL extends Database
     protected function __findAllRow($sql, $values = [], $callbackexport = null)
     {
         $result = [];
-        $query = $this->link->prepare($sql);
-        $query->execute($values) or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values));
+        try {
 
-        if (is_callable($callbackexport)) {
-            $rows = $query->fetchAll(PDO::FETCH_NAMED);
-            foreach ($rows as $row) {
-                $callbackexport($row, $this->objectName);
+            $query = $this->link->prepare($sql);
+            $query->execute($values) or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values));
+
+            if (is_callable($callbackexport)) {
+                $rows = $query->fetchAll(PDO::FETCH_NAMED);
+                foreach ($rows as $row) {
+                    $callbackexport($row, $this->objectName);
+                }
+                return true;
             }
-            return true;
+
+            if (empty($this->entity_link_list) and empty($this->objectCollection))
+                return $query->fetchAll(PDO::FETCH_CLASS, $this->objectName);
+
+            $rows = $query->fetchAll(PDO::FETCH_NAMED);
+
+            return $rows;
+        }catch (Exception $exception){
+
+            dv_dump($exception, $query->errorInfo(), $sql, $values);
+            return [];
         }
-
-        if (empty($this->entity_link_list) and empty($this->objectCollection))
-            return $query->fetchAll(PDO::FETCH_CLASS, $this->objectName);
-
-        $rows = $query->fetchAll(PDO::FETCH_NAMED);
-
-        return $rows;
 
     }
 

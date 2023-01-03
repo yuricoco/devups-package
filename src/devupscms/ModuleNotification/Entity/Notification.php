@@ -387,6 +387,10 @@ class Notification extends Model implements JsonSerializable
     {
         if ($this->read == 0) {
             if ($this->_notificationtype->getSession() == "admin") {
+                //$entity = Dvups_entity::getbyattribut("name", $this->_notification->entity);
+                //return __env.('admin/' .strtolower($entity->dvups_module->project) . '/' . $entity->dvups_module->name . '/' . $entity->url . "/detail?id=".$this->notification->entityid);
+
+                //return $entity->route();
                 if ($this->redirect) {
                     $query = parse_url($this->redirect, PHP_URL_QUERY);
 

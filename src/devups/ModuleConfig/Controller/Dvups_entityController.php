@@ -189,7 +189,7 @@ class Dvups_entityController extends Controller
         } else {
             $keys = Request::post("columns");
         }
-        $columns = 'this.' . implode(', this.', $keys);
+        $columns =  implode(', ', $keys);
 
         /*foreach ($this as $key => $val) {
             self::$dvkeys[] = 'id';

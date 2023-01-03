@@ -56,15 +56,16 @@ class Dvups_entityForm extends FormManager{
     }
     public static function renderExportWidget($id = null, $action = "create")
     {
-        $entity = (ucfirst(Request::$uri_get_param["entity"]));
+        $classname = strtolower(Request::$uri_get_param["entity"]);
+        $entity = (ucfirst($classname));
         $entity = new $entity;
         $fields = [];
 
-        $attributes = Dvups_entity::describe(Request::$uri_get_param["entity"]);
+        $attributes = Dvups_entity::describe($classname);
         foreach ($attributes as $attribute)
-            $fields[] = $attribute[0];
+            $fields['this.'.$attribute[0]] = $attribute[0];
         foreach ($entity->dvtranslated_columns as $col)
-            $fields[] = $col;
+            $fields[$classname.'_lang.'.$col] = $col;
 //            $fields[] = Request::$uri_get_param["entity"]."_lang.".$col;
 
         $langs = Dvups_lang::allrows();

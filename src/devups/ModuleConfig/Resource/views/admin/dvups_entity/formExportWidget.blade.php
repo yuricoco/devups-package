@@ -3,15 +3,15 @@
     <div class="row">
         <div class="col-lg-8">
             <div class="form-group">
-                <label><input hidden name="fields" value="{{implode(',', $fields)}}"></label>
+                <label><input hidden name="fields" value="{{implode(',', array_keys($fields))}}"></label>
                 <table class="table">
                     <tr>
                         <td><input name="allcolumns" checked type="checkbox" value="all"/> (toutes)</td>
                         <th>Colonne a exporter</th>
                     </tr>
-                    @foreach($fields as $field)
+                    @foreach($fields as $key => $field)
                         <tr>
-                            <td><input name="columns[]" type="checkbox" value="{{$field}}"/></td>
+                            <td><input name="columns[]" type="checkbox" value="{{$key}}"/></td>
                             <td>{{$field}}</td>
                         </tr>
 
@@ -31,6 +31,9 @@
             <div class="form-group">
                 <label>Options</label><br>
                 {!! Form::radio("per_page", ['10'=>'Export data on first page!', "all"=>'Export all pages!'], '10') !!}
+            </div>
+            <div class="form-group">
+                Pour gerer les donnees de langue vous pouvez allez dans le <a href="{{__env.'src/devups/ModuleLang/'}}">module de traduction</a>
             </div>
         </div>
 

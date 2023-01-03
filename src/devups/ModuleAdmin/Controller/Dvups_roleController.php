@@ -182,7 +182,6 @@ class Dvups_roleController extends Controller
     public function privilegeUpdate()
     {
         $result = Core::updateDvupsTable();
-
         if ($result) {
             $admin = getadmin();
             self::getNavigationAction($admin);

@@ -10,11 +10,43 @@
 <?php } ?>
 
 @section('content')
+    @if(false)
+        <div class="row">
+            <div class="col-lg-12 col-md-12  stretch-card">
+                <div class="card">
+                    <div class="card-header-tab card-header">
+                        <div class="card-header-title">
+                            <i class="header-icon lnr-rocket icon-gradient bg-tempting-azure"> </i>
+                            @tt('SMS api configuration ')
+                        </div>
+                        <div class="btn-actions-pane-right">
+                            <div class="nav">
 
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {!!
+                            ConfigurationTable::init(new Configuration())
+                                ->buildconfigtable()
+                                ->setModel("config")
+                                ->Qb(Configuration::where("_key")
+                                ->in(["sms_api","sms_sender_id","sms_type","sms_username","sms_password","sms_refresh_token","sms_api_key" ]))
+                                ->render()
+                        !!}
+                    </div>
+                    <div class="card-footer">
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
     @include("default.moduleheaderwidget")
-    <hr>
+
     @yield('layout_content')
     <hr>
+
     <div class='col-lg-12'>
         <div class='alert alert-info row'>
             <div class='col-lg-4'>
@@ -72,7 +104,6 @@
             </div>
         </div>
     </div>
-
 @endsection
 
 <?php function script(){ ?>

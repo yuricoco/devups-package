@@ -9,7 +9,7 @@ use Genesis as g;
 use Request as R;
 
 header("Access-Control-Allow-Origin: *");
-header('Content-Type: application/json');
+//header('Content-Type: application/json');
 
 if (!isset($_SESSION[ADMIN])) {
 

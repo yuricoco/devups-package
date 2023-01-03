@@ -8,6 +8,7 @@ namespace dclass\devups\Datatable;
  * and open the template in the editor.
  */
 
+use admin\generator\TableTemplateRender;
 use dclass\devups\Datatable\TableRow;
 use DClass\lib\Util;
 use Request;
@@ -20,8 +21,8 @@ use Request;
 class Datatable extends Lazyloading
 {
 
-    protected $btnsearch_class = "btn btn-primary";
-    protected $table_class = "table table-bordered table-striped table-hover dataTable no-footer";
+    use TableTemplateRender;
+
     protected $actionDropdown = true;
     private $filterParam = [];
     protected $base_url = "";
@@ -42,40 +43,6 @@ class Datatable extends Lazyloading
 
     public $trattribut_callback = null;
 
-    protected $defaultaction = [
-        "edit" => [
-            //'type' => 'btn',
-            'content' => '<i class="fa fa-edit" ></i> edit',
-            'class' => 'edit',
-            'action' => '',
-            'habit' => 'stateless',
-            'modal' => 'data-toggle="modal" ',
-        ],
-        "show" => [
-            //'type' => 'btn',
-            'content' => '<i class="fa fa-eye" ></i> show',
-            'class' => 'show',
-            'action' => '',
-            'habit' => 'stateless',
-            'modal' => 'data-toggle="modal" ',
-        ],
-        "delete" => [
-            //'type' => 'btn',
-            'content' => '<i class="fa fa-close" ></i> delete',
-            'class' => 'delete',
-            'action' => '',
-            'habit' => 'stateless',
-            'modal' => 'data-toggle="modal" ',
-        ],
-    ];
-    protected $createaction = [
-        //'type' => 'btn',
-        'content' => '<i class="fa fa-plus" ></i> create',
-        'class' => 'btn btn-success',
-        'action' => 'onclick="model._new(this)"',
-        'habit' => 'stateless',
-        'modal' => 'data-toggle="modal" ',
-    ];
     protected $topactions = [];
     protected $groupactions = [];
     protected $customactions = [];
@@ -90,7 +57,6 @@ class Datatable extends Lazyloading
     protected $enablecolumnaction = true;
     protected $per_pageEnabled = true;
     protected $defaulttopaction = true;
-    protected $defaultgroupaction = "";
 
     protected $openform = "";
     protected $closeform = "";
@@ -102,7 +68,6 @@ class Datatable extends Lazyloading
     protected $order_by = "";
 
     protected $additionnalrow = [];
-    protected $responsive = "";
     protected $isRadio = false;
 
     public function __construct($entity = null, $datatablemodel = [])
@@ -115,10 +80,7 @@ class Datatable extends Lazyloading
             $dentity = \Dvups_entity::getbyattribut("this.name", $this->class);
             $this->base_url = $dentity->dvups_module->hydrate()->route();
 
-            $this->defaultgroupaction = '<button id="deletegroup" onclick="ddatatable.groupdelete(this, \'' . $this->class . '\')" class="btn btn-danger btn-block">delete</button>'
-                . '<button data-entity="' . $this->class . '"  onclick="ddatatable._export(this, \'' . $this->class . '\')" type="button" class="btn btn-default btn-block" >
-            <i class="fa fa-arrow-down"></i> Export csv
-        </button>';
+            $this->renderDefaultGroupAction();
 
             $this->qbcustom = new \QueryBuilder($entity);
         }
@@ -342,19 +304,7 @@ class Datatable extends Lazyloading
             $groupaction = $this->groupactionbuilder();
         }
 
-        $html = <<<EOF
-<div class="d-sm-flex justify-content-between align-items-start">
-                                
-                                
-<div class="col-lg-8 col-md-12">
-                                    $groupaction
-                                 </div>
-<div class="col-lg-4 col-md-12 text-right">
-                                    $headaction
-                               </div>
-                             
-                        </div> 
-EOF;
+        $html = $this->renderTopOptionAction($groupaction, $headaction);
 
         $html .= ' ';//.$this->openform;
 
@@ -413,12 +363,12 @@ EOF;
             $lang = "data-lang='&lang=" . \Dvups_lang::getattribut("iso_code", $this->id_lang) . "'";
         else
             $lang = "";
-        $html .= '<div class="  ' . $this->responsive . '">
+        $html .= $this->templateTable($lang, $this->per_page, $filterParam, $this->base_url, $this->class, $theader, $tbody, $newrows)/* '<div class="  ' . $this->responsive . '">
         <table id="dv_table" ' . $lang . ' data-perpage="' . $this->per_page . '" data-filterparam="' . $filterParam . '" data-route="' . $this->base_url . '" data-entity="' . $this->class . '"  class="dv_datatable ' . $this->table_class . '" >'
             . '<thead>' . $theader['th'] . $theader['thf'] . '</thead>'
             . '<tbody>' . $tbody . '</tbody>'
             . '<tfoot>' . $newrows . '</tfoot>'
-            . '</table></div>';
+            . '</table></div>'*/;
 
         //$this->html .= self::renderListViewUI($this->lazyloading['listEntity'], $header, $action, $defaultaction, $searchaction);
         if ($this->enablepagination)
@@ -581,13 +531,13 @@ EOF;
         return $this;
     }
 
-    private function perpagebuilder()
+    /*private function perpagebuilder()
     {
 
         if (!$this->per_pageEnabled)
             return "";
 
-        $html = '                    
+        $html = '
             <div data-notice="' . $this->pagination . '" class="col-lg-3 col-md-12 ">
 
         <label class=" " >' . t("Line to show") . '</label><br>';
@@ -604,7 +554,7 @@ EOF;
     </div>";
 
         return $html;
-    }
+    }*/
 
     public function paginationbuilder()
     {
@@ -648,8 +598,8 @@ EOF;
         if (!$this->listentity) {
 
             return [
-                'tablebody' => '<div id="dv_table" data-entity="' . $this->class . '" class="text-center">la liste est vide</div>',
-                'tablepagination' => '<div id="dv_pagination" class="col-lg-12"> no page</div>'
+                'tablebody' => \Genesis::getView('default.table', ['data'=>false]),
+                'tablepagination' => $this->paginationbuilder()
             ];
 
         }
@@ -943,7 +893,7 @@ EOF;
             if ($callback)
                 $callback($valuetd["label"], $td);
             else
-                $tr[] = '<tr ><td> ' . $valuetd["label"] . ' </td><td>' . $td . '</td></tr>';
+                $tr[] = self::templateTableRowDetail($valuetd["label"], $td);
 
         }
 
