@@ -1079,7 +1079,7 @@ class DBAL extends Database
             $flowBD = $req->fetchObject($this->objectName);
 
             if (!$flowBD)
-                return new $this->objectName;
+                return null;
 
             if ($this->object->dvtranslate)
                 $this->getLangValues($flowBD, $this->object->dvtranslated_columns);
