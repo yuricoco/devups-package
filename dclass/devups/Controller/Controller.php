@@ -189,6 +189,18 @@ class Controller
                 'detail' => ''
             ];
         }
+        elseif (Request::get("dview")){
+
+            $dalias = Request::get("dalias");
+            if (!$dalias)
+                $dalias = $classname;
+            return [
+                'success' => true,
+                $classname => $entity,
+                'view' => \Genesis::getView(Request::get("dview"), [$dalias=>$entity]),
+                'detail' => ''
+            ];
+        }
 
         return array('success' => true,
             $classname => $entity,
@@ -249,6 +261,18 @@ class Controller
                 'success' => true,
                 $classname => $entity,
                 'tablerow' => $table::init()->router()->getSingleRowRest($entity),
+                'detail' => ''
+            ];
+        }
+        elseif (Request::get("dview")){
+
+            $dalias = Request::get("dalias");
+            if (!$dalias)
+                $dalias = $classname;
+            return [
+                'success' => true,
+                $classname => $entity,
+                'view' => \Genesis::getView(Request::get("dview"), [$dalias=>$entity]),
                 'detail' => ''
             ];
         }

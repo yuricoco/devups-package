@@ -195,8 +195,16 @@ CREATE TABLE `$lc_entity\_lang` (
                     if (!in_array($ent, $entitiestoupdate))
                         $entitiestoupdate[] = $ent;
 
-                    $dbal->executeDbal($query);
-                    \dclass\devups\Tchutte\DB_dumper::migration($query);
+                    $sanitize = "";
+                    if (strpos($query,'ADD CONSTRAINT')) {
+                        $fk = get_string_between($query,'KEY (', ')');
+                        $fe = get_string_between($query,'REFERENCES ', ' (');
+
+                        $sanitize = " UPDATE $ent SET $fk = null WHERE (SELECT COUNT(*) FROM $fe WHERE id = $fk) = 0; ";
+                    }
+                    $dbal->executeDbal($sanitize.$query);
+                    \dclass\devups\Tchutte\DB_dumper::migration($sanitize."\n".$query);
+
                 }
             }
             //if (count($entitiestoupdate) )
