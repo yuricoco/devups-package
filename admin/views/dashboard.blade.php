@@ -18,10 +18,10 @@
                 </div>
             </div>
             <div class="page-title-actions">
-                <button type="button" data-toggle="tooltip" title="Example Tooltip" data-placement="bottom"
+                <a href="{{route('admin/config')}}" type="button" data-toggle="tooltip" title="Example Tooltip" data-placement="bottom"
                         class="btn-shadow mr-3 btn btn-dark">
                     <i class="fa fa-star"></i>
-                </button>
+                </a>
             </div>
         </div>
     </div>
@@ -31,7 +31,7 @@
         <h3><i class="">
                 {!! $module->getPrinticon(35) !!}
             </i>
-            {{$module->label}}</h3>
+            {{$module->label[local()]}}</h3>
         <hr>
         <div class="row">
             @foreach($admin->dvups_role->collectDvups_entityOfModule($module) as $entity)

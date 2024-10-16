@@ -10,5 +10,6 @@ require 'Entity/Notification.php';
 require 'Form/NotificationForm.php';
 require 'Datatable/NotificationTable.php';
 require 'Controller/NotificationController.php';
+require 'Controller/NotificationFrontController.php';
 
 require 'ModuleNotification.php';

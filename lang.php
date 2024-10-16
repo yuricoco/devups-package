@@ -20,6 +20,7 @@ function tt($ref, $default = "", $local = null){
 }
 
 function t($ref, $default = "", $local = null ){
+    //return $ref;
     $params = [$ref,$default, $local];
     $path = __env_lang.Request::get("path");
     $path = Local_content_key::path_sanitise($path);

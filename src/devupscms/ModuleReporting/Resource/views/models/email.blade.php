@@ -5,62 +5,71 @@
     <title>Email</title>
     <style>
         body {
-            background-color: white;
+            background: #EAF0F3;
             color: #222;
             font-family: 'Open Sans', sans-serif;
             line-height: 18px;
             margin: 0px;
         }
 
+        .layout {
+            display: inline-flex;
+            padding: 46px 58px 46px 58px;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
         .content {
-            height: max-content;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 67px;
         }
 
         .footer {
-            background: #dcdbdb;
-            display: inline-flex;
-            padding: 15px 14%;
-            width: -webkit-fill-available;
+            /*display: inline-flex;*/
+font-size: 10px;
+
         }
 
-        .content-right {
-            float: right;
-            width: 100%;
+        .content-body {
+            display: flex;
+            padding: 34px 55px 34px 55px;
+            flex-direction: column;
+            align-items: center;
+            border-radius: 6px;
+            background: #FFF;
         }
 
-        .content-footer-right {
-            float: right;
-        }
-
-        .body-text-content {
-            padding: 60px;
-            margin: 0px 15%;
-            line-height: 30px;
-        }
     </style>
 </head>
-<body>
+<body class="layout">
 <section class="content">
-    <div class="header" style="width: 25%; margin: 30px 34%; justify-content: center;">
+    <div class="header" style="">
         <div class="header-content" style="text-align: center;">
             <div class="header-logo">
-                <img width="150" class="img-responsive" alt="{{PROJECT_NAME}}"
+                <img width="210" class="img-responsive" alt="{{PROJECT_NAME}}"
                      src="{{__env}}logo-long.png" title="{{PROJECT_NAME}}">
-                <hr>
             </div>
+
         </div>
     </div>
-    <div class="body">
+    <div class="content-body">
         <div id="yield">{yield}</div>
     </div>
-    <div class="footer">
-        <div class="content-left">
-            Besoin d’aide ? Consultez la FAQ.
+    <div class="footer text-center">
+        <div class=" text-center ">
+            <img style="margin: auto; width: 30px" width="30"
+                 src="{{__admin}}images/facebook.svg">
         </div>
-        <div class="content-right">
-          <span class="content-footer-right">
-            Conditions générales
-          </span>
+        <div class=" ">
+            Copyright © 2023
+        </div>
+        <div class="">
+            <b class="content-footer-right">
+                COCO BEAUTY
+            </b>
         </div>
     </div>
 </section>

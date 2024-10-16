@@ -3,7 +3,7 @@
  */
 
 var ddatatable = {
-    baseurl: "services.php",
+    baseurl: "api/",
     entity: "",
     currentpage: 1,
     per_page: 10,
@@ -53,7 +53,7 @@ var ddatatable = {
         model.init(classname)
 
         model._showmodal();
-        Drequest.init( __env+"admin/services.php?path=dvups_entity.form-export-view&entity="+classname)
+        Drequest.init( __env+"admin/api/dvups-entity/form-export-view?entity="+classname)
             //.param({path: this.entity + "._new"})
             .toFormdata({filters :  "dfilters=on&next="+this.currentpage + "&per_page=" +
                     this.per_page + (this.searchparam == 'undefined' ? "" : this.searchparam)
@@ -74,7 +74,7 @@ var ddatatable = {
         model.init(classname)
 
         model._showmodal();
-        Drequest.init( __env+"admin/services.php?path=dvups_entity.form-import-view&entity="+classname)
+        Drequest.init( __env+"admin/api/dvups-entity/form-import-view?entity="+classname)
             .get(function (response) {
                 console.log(response)
                 databinding.checkrenderform(response);
@@ -291,8 +291,8 @@ var ddatatable = {
         if (!this.order)
             this.order = "";
 
-        return this.baseurl + "?path=" +
-            this.entity + ".datatable&next=" +
+        return this.baseurl + "" +
+            this.entity + "/datatable?next=" +
             this.currentpage + "&per_page=" +
             this.per_page + this.searchparam +
             this.order + this.urlparam ;
@@ -359,7 +359,7 @@ var ddatatable = {
             ddatatable.per_page = this.dtinstance.find("#dv_table").data('perpage');
 
 
-        ddatatable.baseurl = this.dtinstance.find("#dv_table").data('route') + "services.php";
+        ddatatable.baseurl = this.dtinstance.find("#dv_table").data('route') + "api/";
         console.log(ddatatable.baseurl);
         //
         ddatatable.urlparam = this.dtinstance.find("#dv_table").data('filterparam');

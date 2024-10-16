@@ -10,7 +10,7 @@
 class Dfile
 {
 
-    public static $EXTENSION_IMAGE = array('jpg', 'jpeg', 'png', 'gif');
+    public static $EXTENSION_IMAGE = array('jpg', 'jpeg', 'png', 'gif', 'webp');
     public static $EXTENSION_AUDIO = array('mp3', 'aac', 'wma', 'ogg', 'flac', "wav");
     public static $EXTENSION_VIDEO = array('mp4', 'avi', 'mov', 'mkv', 'webm', 'ogg', 'crdownload');
     public static $EXTENSION_DOCUMENT = array('pdf', 'docx', 'doc', 'txt', 'ico', 'xls', 'xlsx', 'ppt', 'pptx');
@@ -27,12 +27,13 @@ class Dfile
     private $file_name = "";
     private $constraintfiletype = null;
     private $type;
+    private $imagesize;
 
 
     public static function fileadapter($url, $name = "", $imgdir = ["style" => "max-width : 100%; max-height: 200px"])
     {
 
-        $ext = Dfile::getextension($name);
+        $ext = Dfile::getextension($url);
         if (in_array($ext, Dfile::$EXTENSION_IMAGE)) {
             return '<img ' . Form::serialysedirective($imgdir) . ' src="' . $url . '" alt="' . $name . '" />';
         } elseif (in_array($ext, Dfile::$EXTENSION_DOCUMENT)) {
@@ -43,7 +44,21 @@ class Dfile
         } elseif (in_array($ext, Dfile::$EXTENSION_ARCHIVE)) {
             return '<a href="' . $url . '" download="' . $name . '" >' . $name . '</a>';
         } else {
-            return "no file";
+            return "no file ";
+        }
+
+    }
+
+    public static function fileadapter2($url, $entity, $id, $attrib)
+    {
+
+        $form = '<input name="' . $attrib . '" type="file" onchange="model._uploadfile(' . $id . ', \'' . $entity . '\', this)" />';
+        $ext = Dfile::getextension($url);
+        if (in_array($ext, Dfile::$EXTENSION_IMAGE)) {
+            return '<img  ' . Form::serialysedirective(["style" => "max-width : 100%; max-height: 200px"]) . ' src="'
+                . $url . '" alt="" /><br>' . $form;
+        } else {
+            return "no file ";
         }
 
     }
@@ -191,7 +206,7 @@ class Dfile
                 $this->file = $_FILES[$file];*/
         } elseif (is_string($file) && isset($_FILES[$file])) {
             if (self::$multiple) {
-                for ($i = 0; $i < count($_FILES[$file]["name"]); $i++){
+                for ($i = 0; $i < count($_FILES[$file]["name"]); $i++) {
                     //foreach ($_FILES[$file] as $i => $item) {
                     $collection = [
                         "name" => $_FILES[$file]['name'][$i],
@@ -245,7 +260,10 @@ class Dfile
 
     private function getsize($file)
     {
-        return getimagesize($file);
+        if (file_exists($file)) {
+            return getimagesize($file);
+        }
+        return null;
     }
 
     public static function getextension($name)
@@ -299,7 +317,9 @@ class Dfile
 
     public function sanitize($key = "")
     {
-        $this->file_name = self::wd_remove_accents($key . $this->name);
+        $name = self::wd_remove_accents($key . $this->namewithoutextension);
+        $this->file_name = $name . "." . $this->extension;
+        $this->namewithoutextension = $name;
         return $this;
     }
 
@@ -315,6 +335,7 @@ class Dfile
         $datetime = new DateTime();
         $name = sha1($this->name . $datetime->getTimestamp());
         $this->file_name = $name . "." . $this->extension;
+        $this->namewithoutextension = $name;
 
         return $this;
     }
@@ -353,7 +374,9 @@ class Dfile
         if (!file_exists($source_url))
             return false;
 
-        $this->imagesize = $this->getsize($source_url);
+        if (!$this->imagesize) {
+            $this->imagesize = $this->getsize($source_url);
+        }
         $this->extension = self::getextension($relative_url);
         $this->settype();
 
@@ -455,7 +478,12 @@ class Dfile
         }
 
         $filename = $uploaddir . $sufix . $this->file_name;
-//        $filename = $uploaddir . str_replace("." . $this->extension, "", $this->file_name) . $sufix . "." . $this->extension;
+        /**
+         * if [ERROR function undefined]
+         * if the function is undefined, that means you have to enable GD-support configure PHP
+         * follow the link below
+         * https://www.php.net/manual/en/image.installation.php
+         */
         $newimage = imagecreatetruecolor($largeur, $hauteur) or die("Erreur");
 
         //dv_dump($this->file_name, $this->extension);
@@ -502,6 +530,40 @@ class Dfile
 //            else
 //                chmod($filename, 755);
         }
+        Dfile::webpImage($filename, $this->compressionquality, true);
+
+    }
+
+    public static function webpImage($source, $quality = 100, $removeOld = false)
+    {
+        if (!$source)
+            return -1;
+        $dir = pathinfo($source, PATHINFO_DIRNAME);
+        $name = pathinfo($source, PATHINFO_FILENAME);
+        $filename = $name . '.webp';
+        $destination = $dir . DIRECTORY_SEPARATOR . $filename;
+        $info = getimagesize($source);
+        $isAlpha = false;
+        if ($info['mime'] == 'image/jpeg')
+            $image = imagecreatefromjpeg($source);
+        elseif ($isAlpha = $info['mime'] == 'image/gif') {
+            $image = imagecreatefromgif($source);
+        } elseif ($isAlpha = $info['mime'] == 'image/png') {
+            $image = imagecreatefrompng($source);
+        } else {
+            return $source;
+        }
+        if ($isAlpha) {
+            imagepalettetotruecolor($image);
+            imagealphablending($image, true);
+            imagesavealpha($image, true);
+        }
+        imagewebp($image, $destination, $quality);
+
+        if ($removeOld)
+            unlink($source);
+
+        return $filename;
     }
 
     public function rename($newname, $sanitize = false)
@@ -583,30 +645,30 @@ class Dfile
             $extension = self::getextension($this->name);
             $this->extension = self::getextension($this->name);
             $this->settype();
-            $this->namewithoutextension .= "-".($i+1);
-            $this->file_name = $this->namewithoutextension.".".$this->extension;
+            $this->namewithoutextension .= "-" . ($i + 1);
+            $this->file_name = $this->namewithoutextension . "." . $this->extension;
 
-            if(is_callable($callback_before))
+            if (is_callable($callback_before))
                 $data = $callback_before($this, $i);
 
-            if($extension != $this->extension) {
+            if ($extension != $this->extension) {
                 $this->converto = $this->extension;
                 $this->extension = $extension;
-                $this->file_name = $this->namewithoutextension.".$extension";
+                $this->file_name = $this->namewithoutextension . ".$extension";
             }
 
             if ($this->name == "blob") {
                 $this->extension = "png";
-                $this->file_name = $this->namewithoutextension.".png";
+                $this->file_name = $this->namewithoutextension . ".png";
                 $this->name .= ".png";
             }
 
             $result = $this->moveto($this->uploaddir);
 
-            if(!$result["success"])
+            if (!$result["success"])
                 return $result;
 
-            if(is_callable($callback_after))
+            if (is_callable($callback_after))
                 $callback_after($result, $data, $i);
 
         }
@@ -633,20 +695,32 @@ class Dfile
                     $this->resizeimage($path . "tmp_" . $this->file_name, $imagetoresize);
                 }
 
+                // dv_dump(Dfile::source("tmp_" . $this->file_name, $path));
+                Dfile::webpImage($path . "tmp_" . $this->file_name,
+                    $this->compressionquality, true);
+
                 if ($this->original):
                     // rename the file
                     self::d_rename("tmp_" . $this->file_name, $this->file_name, $this->uploaddir);
                 else:
-                    $this->unlink($path . "tmp_" . $this->file_name);
+                    //dv_dump($path, $this->file_name);
+                    $this->unlink($path . "tmp_" . $this->namewithoutextension . '.webp');
+                    //$this->unlink($path . "tmp_" . $this->file_name);
                 endif;
+                $this->file_name = $this->namewithoutextension . ".webp";
+                self::d_rename("tmp_" . $this->file_name, $this->file_name, $this->uploaddir);
 
                 if ($this->validation())
                     return $this->error;
             } elseif ($this->type === "image") {
                 // rename the file
                 self::d_rename("tmp_" . $this->file_name, $this->file_name, $this->uploaddir);
-                $this->resizeimage($path . $this->file_name,
-                    ["resize" => [$this->imagesize[0], $this->imagesize[1]], "sufix" => "", "uploaddir" => $this->uploaddir, "crop" => false, "quality" => $this->compressionquality]);
+
+                $this->file_name = Dfile::webpImage($path . $this->file_name,
+                    $this->compressionquality, true);
+
+//                $this->resizeimage($path . $this->file_name,
+//                    ["resize" => [$this->imagesize[0], $this->imagesize[1]], "sufix" => "", "uploaddir" => $this->uploaddir, "crop" => false, "quality" => $this->compressionquality]);
 
             } else {
                 // rename the file
@@ -654,6 +728,9 @@ class Dfile
 
             }
 
+            /**
+             * could be interesting to add the webp conversion here.
+             */
             if (in_array($this->converto, ["jpg", "jpeg", "png", "tiff"]) && $this->extension != $this->converto) {
                 if (in_array($this->extension, ["jpg", "jpeg"]))
                     $input = imagecreatefromjpeg(UPLOAD_DIR . $this->uploaddir . '/' . $this->file_name);
@@ -707,9 +784,21 @@ class Dfile
             else
                 $image = SRC_FILE . $path . $image;
         } else
-            $image = __front.($default);
+            $image = __front . ($default);
 
         return $image;
+    }
+
+
+    public static function source($image, $path = '')
+    {
+
+        $path = self::filepath($path);
+
+        if ($image && file_exists(UPLOAD_DIR . $path . $image)) {
+            return UPLOAD_DIR . $path . $image;
+        }
+        return null;
     }
 
     public static function exist($image, $path = '')
@@ -737,7 +826,7 @@ class Dfile
      * @param string $name_file the name of the file you want to delete
      * @return boolean true if file delete an array if the file doesn't exist
      */
-    public static function deleteFile($name_file, $path = '', $absolute = false)
+    public static function deleteFile($name_file, $path = '', $absolute = false, $variants = [])
     {
 
         if ($absolute) {
@@ -746,9 +835,15 @@ class Dfile
             $path2 = self::chdirectory(self::filepath($path));
         }
 
-
         if ($name_file != '' && file_exists($path2 . $name_file)) {
             unlink($path2 . $name_file);
+
+            if ($variants) {
+                foreach ($variants as $variant)
+                    if (file_exists($path2 . $variant.$name_file))
+                        unlink($path2 . $variant. $name_file);
+            }
+
             return array('success' => true);
         } else {
             return array('success' => false, 'err' => 'ce fichier n\'existe pas!', "file" => $path2 . $name_file);

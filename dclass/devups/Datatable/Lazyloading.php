@@ -24,10 +24,12 @@ class Lazyloading implements \JsonSerializable
     public $pagination = 1;
     protected $dynamicpagination = true;
     public $paginationcustom = [];
+    public $aggregations = [];
     public $current_page = 1;
     public $next = 1;
     public $previous = 0;
     public $remain = 0;
+    public $query = null;
     public $detail = 0;
 
     public function setPerPage($page = 10)
@@ -94,11 +96,29 @@ class Lazyloading implements \JsonSerializable
             case "lkl":
                 $this->currentqb->andwhere($attr)->_like($value);
                 break;
+            case "in":
+                $this->currentqb->andwhere($attr)->in($value);
+                break;
+            case "notin":
+                $this->currentqb->andwhere($attr)->notIn($value);
+                break;
+            case "empty":
+                if($value == 1)
+                    $this->currentqb->where($attr, "=", '');
+                else
+                    $this->currentqb->where($attr, "!=", '');
+                break;
             case "isNull":
-                $this->currentqb->whereNull($attr);
+                if($value == 1)
+                    $this->currentqb->whereNull($attr);
+                else
+                    $this->currentqb->whereNotNull($attr);
                 break;
             case "notNull":
-                $this->currentqb->whereNotNull($attr);
+                if($value == 1)
+                    $this->currentqb->whereNotNull($attr);
+                else
+                    $this->currentqb->whereNotNull($attr);
                 break;
             case "btw":
                 // todo : add constraint of integrity
@@ -134,6 +154,7 @@ class Lazyloading implements \JsonSerializable
         $getparam = Request::$uri_get_param;
 
         $this->currentqb->handlesoftdelete();
+
         foreach ($getparam as $key => $value) {
 
             if (!$value)
@@ -141,7 +162,9 @@ class Lazyloading implements \JsonSerializable
 
             $attr = explode(":", $key);
             $join = explode(".", $attr[0]);
+
             if (isset($join[1])) {
+
                 $attr[0] = $this->extractXJoin($join[0], $attr[0]);
                 $this->filterswicher($attr[1], $attr[0], $value);
             } else if ($this->currentqb->hasrelation && isset($attr[1]))
@@ -200,18 +223,20 @@ class Lazyloading implements \JsonSerializable
             if ($this->dfilters)
                 $qbcustom = $this->filter($this->entity, $qbcustom);
 
-            $this->nb_element = $qbcustom->count(); //false
+            //$this->nb_element = $qbcustom->count(); //false
         } else {
             $qb = new QueryBuilder($this->entity);
             $qb->select();
             if ($this->dfilters) {
                 $qbcustom = $this->filter($this->entity, $qb);
-                $this->nb_element = $qbcustom->count();
+                //$this->nb_element = $qbcustom->count();
             } else {
-                //$qb->handlesoftdelete();
-                $this->nb_element = $qb->select()->handlesoftdelete()->count();
+                $qbcustom = $qb;
+                ///$this->nb_element = $qb->select()->handlesoftdelete()->count();
             }
         }
+        $qbcount = clone $qbcustom;
+        $this->nb_element = $qbcount->count();
         $this->qbcustom = $qbcustom;
         return $this;
     }
@@ -255,7 +280,7 @@ class Lazyloading implements \JsonSerializable
 
         if (Request::get('dcount'))
             return $this;
-        if ($dsum = Request::get('dsum')) {
+        /*if ($dsum = Request::get('dsum')) {
             if ($qbcustom != null)
                 $this->nb_element = $qbcustom->sum($dsum);
             else{
@@ -263,7 +288,7 @@ class Lazyloading implements \JsonSerializable
                 $this->nb_element = $qb->sum($dsum);
             }
             return $this;
-        }
+        }*/
 
         if (Request::get('dsort')) {
             $order = Request::get('dsort');
@@ -357,25 +382,32 @@ class Lazyloading implements \JsonSerializable
             $this->per_page = $nb_element;
         }
 
+        $finalqb = $qbcustom ?? $qb;
         if($this->debug == 2) {
-            $data = $qbcustom ? $qbcustom->getSqlQuery() : $qb->getSqlQuery();
+            $data = $finalqb->getSqlQuery();
             dv_dump($data);
         }
 
         if($this->debug)
-            return $qbcustom ? $qbcustom->getSqlQuery() : $qb->getSqlQuery();
+            return $finalqb->getSqlQuery();
 
         if ($qbinstance){
-            if ($qbcustom != null)
-                return $qbcustom;
-            else
-                return $qb;
+            return $finalqb;
+        }
+        $aggregations = [];
+        if ($columns = Request::get("dsum")){
+            $columns = explode(',', $columns);
+            foreach ($columns as $column) {
+                $agg = clone $finalqb;
+                $aggregations[$column] = $agg->sum("this.$column");
+            }
         }
 
-        if ($qbcustom != null)
-            $listEntity = $qbcustom->get(self::$colunms);
-        else
-            $listEntity = $qb->get(self::$colunms);
+        if (!__prod) {
+            $qbdev = clone $finalqb;
+            $this->query = $qbdev->getSqlQuery();
+        }
+        $listEntity = $finalqb->get(self::$colunms);
 
         $paginationcustom = [];
         if ($pagination >= self::maxpagination) {
@@ -411,6 +443,7 @@ class Lazyloading implements \JsonSerializable
         $this->previous = (int)$page - 1;
         $this->next += 1;
         $this->remain = (int)$remain;
+        $this->aggregations = $aggregations;
 
         return $this;
 
@@ -422,6 +455,7 @@ class Lazyloading implements \JsonSerializable
             'classname' => $this->classname,
             'dynamicpagination' => $this->dynamicpagination,
             'paginationcustom' => $this->paginationcustom,
+            'aggregations' => $this->aggregations,
             'nb_element' => (int)$this->nb_element,
             'per_page' => (int)$this->per_page,
             'pagination' => (int)$this->pagination,
@@ -446,6 +480,8 @@ class Lazyloading implements \JsonSerializable
             'classname' => $this->classname,
             'paginationcustom' => $this->paginationcustom,
             'listEntity' => $this->listentity,
+            'aggregations' => $this->aggregations,
+            'query' => $this->query,
             'nb_element' => (int)$this->nb_element,
             'per_page' => (int)$this->per_page,
             'pagination' => (int)$this->pagination,

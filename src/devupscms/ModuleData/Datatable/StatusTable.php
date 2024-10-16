@@ -39,6 +39,7 @@ class StatusTable extends Datatable
         $this->addcustomaction(function ($item){
             return "<button class='btn btn-default' onclick='model.clonerow(".$item->getId().", \"status\")'>duplicate</button>";
         });
+        $this->topactions[] = "<button class='btn btn-default ' onclick='model.generatecache(this, \"status\")'>Generer les constantes</button> ";
 
         return $this;
     }

@@ -88,6 +88,7 @@ class ReportingmodelController extends Controller
         }
 
         $id = $reportingmodel->__insert();
+        //return redirect(Reportingmodel::classpath("reportingmodel/index"));
 
         return array('success' => true,
             'reportingmodel' => $reportingmodel,

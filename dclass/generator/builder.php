@@ -177,7 +177,8 @@ CREATE TABLE `$lc_entity\_lang` (
             // todo: connect to toolrad and update the schema of the entity
 
             $dbal = new DBAL();
-            for ($i = 3; $i < count($result); $i++) {
+            for ($i = 2; $i < count($result); $i++) {
+
                 if (!isset($result[$i]))
                     break;
 
@@ -185,13 +186,13 @@ CREATE TABLE `$lc_entity\_lang` (
                 if ($query) {
 
                     $pos = strpos($query, "ALTER TABLE");
+
                     if (!$pos)
                         $pos = strpos($query, "CREATE TABLE");
 
                     if (!$pos)
                         continue;
-
-                    $ent = explode(" ", trim($query))[2];
+                    $ent = (explode(" ", trim($query))[2]);
                     if (!in_array($ent, $entitiestoupdate))
                         $entitiestoupdate[] = $ent;
 
@@ -202,8 +203,16 @@ CREATE TABLE `$lc_entity\_lang` (
 
                         $sanitize = " UPDATE $ent SET $fk = null WHERE (SELECT COUNT(*) FROM $fe WHERE id = $fk) = 0; ";
                     }
-                    $dbal->executeDbal($sanitize.$query);
-                    \dclass\devups\Tchutte\DB_dumper::migration($sanitize."\n".$query);
+
+
+                    try {
+
+                        $r = $dbal->executeDbal($sanitize.$query, [], 0, true);
+                        \dclass\devups\Tchutte\DB_dumper::migration($sanitize);
+                        \dclass\devups\Tchutte\DB_dumper::migration($query);
+                    }catch (Exception $exception){
+                        \dclass\devups\Tchutte\DB_dumper::migration("-- ".$query."\n-- ".$exception->getMessage());
+                    }
 
                 }
             }
@@ -215,7 +224,7 @@ CREATE TABLE `$lc_entity\_lang` (
             foreach ($entitiestoupdate as $entity) {
                 //__Generator::core($entity);
                 $backend = new BackendGenerator();
-                $backend->coreGenerator($entity, true);
+                $backend->coreGenerator(ucfirst($entity), true);
             }
 
             echo "\n \e[42m \e[1m\e[30m \n All entity has well been synchronized";
@@ -415,10 +424,13 @@ if (isset($argv[2])) {
 
     require __DIR__ . '/../../src/devups/ModuleLang/Entity/Dvups_lang.php';
     require __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_component.php';
+    require __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_component_lang.php';
     require __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_module.php';
+    require __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_module_lang.php';
     require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_role.php';
     require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_right.php';
     require __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_entity.php';
+    require __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_entity_lang.php';
     require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_role_dvups_component.php';
     require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_role_dvups_entity.php';
     require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_role_dvups_module.php';
@@ -426,6 +438,17 @@ if (isset($argv[2])) {
 
     switch ($argv[1]) {
 
+        case 'init:caches':
+
+            if (!file_exists("cache")) {
+                echo " > /cache folders created with success ...\n";
+                mkdir('cache', 0777);
+                mkdir('cache/views', 0777);
+                mkdir('cache/local', 0777);
+                mkdir('cache/local/admin', 0777);
+                mkdir('cache/local/front', 0777);
+            }
+            break;
         case 'build':
 
             $dir = __DIR__ . '/../../build';
@@ -496,40 +519,22 @@ if (isset($argv[2])) {
             TRUNCATE `configuration`;
             INSERT INTO `configuration` ( `_key`, `_value`, `_type`) VALUES
                     (\"PROJECT_NAME\", \"" . PROJECT_NAME . "\", 'string'),
-                    (\"dbname\", \"" . dbname . "\", 'string'),
-                    (\"dbuser\", \"root\", 'string'),
-                    (\"dbpassword\", \"\", 'string'),
-                    (\"dbhost\", \"localhost\", 'string'),
-                    (\"dbdumper\", \"false\", 'bool'),
-                    (\"dbtransaction\", \"false\", 'bool'),
-                    (\"__v\", 1, 'integer'),
-                    (\"__server\", \"http://127.0.0.1\", 'string'),
-                    (\"__env\", \"{__server}/" . PROJECT_NAME . "/\", 'string'),
-                    (\"__prod\", 0, 'integer'),
-                    (\"__project_id\", \"" . PROJECT_NAME . "\", 'string'),
-                    (\"UPLOAD_DIR\", \"{ROOT}uploads/\", 'string'),
-                    (\"RESSOURCE\", \"{ROOT}admin/Resource/\", 'string'),
-                    (\"admin_dir\", \"{ROOT}admin/\", 'string'),
-                    (\"web_dir\", \"{ROOT}web/\", 'string'),
-                    (\"SRC_FILE\", \"{__env}uploads/\", 'string'),
-                    (\"CLASSJS\", \"{__env}dclass/devupsjs/\", 'string'),
-                    (\"RESSOURCE2\", \"{__env}admin/Resource/\", 'string'),
-                    (\"node_modules\", \"{__env}node_modules/\", 'string'),
-                    (\"ENTITY\", 0, 'integer'),
-                    (\"VIEW\", 1, 'integer'),
-                    (\"ADMIN\", \"{__project_id}_devups\", 'string'),
-                    (\"CSRFTOKEN\", \"{__project_id}_csrf_token\", 'string'),
-                    (\"dv_role_navigation\", \"{__project_id}_navigation\", 'string'),
-                    (\"dv_role_permission\", \"{__project_id}_permission\", 'string'),
                     (\"LANG\", \"en\", 'string'),
                     (\"__lang\", \"en\", 'string'),
-                    (\"PREVIOUSPAGE\", \"previous_page\", 'string'),
                     (\"JSON_ENCODE_DEPTH\", 512, 'integer');
             ";
 
-            $rqg->link()->prepare($dvupsadminsql)->execute();
+            try {
+                $rqg->link()->prepare($dvupsadminsql)->execute();
+            }catch (Exception $e){
+                dv_dump($e->getMessage());
+            }
 
-            echo "\n\n > Set the master admin.\n\nData master admin initialized with success.\ncredential\nlogin: dv_admin\npassword: admin\n\nYour project is ready to use. Do your best :)";
+            Dvups_lang::cacheData();
+
+            echo "\n\n > Set the master admin.\n\nData master admin initialized with success.\ncredential\nlogin: dv_admin\npassword: admin
+            \nYour project is ready to use. Do your best :)
+            \n>php devups serve";
             break;
 
         case 'database:create':

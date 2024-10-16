@@ -96,11 +96,7 @@ class UserController extends Controller
 
         $user = User::find($id);
 
-        $this->renderDetailView(
-            UserTable::init()
-                ->builddetailtable()
-                ->renderentitydata($user)
-        );
+        Genesis::renderView('admin.detail', compact('user'));
 
     }
 

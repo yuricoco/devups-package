@@ -101,14 +101,20 @@ class BackendGenerator
             ";
 
         $methodcollection = "";
+        $jsonserializeRelation = "";
         if (!empty($entity->relation)) {
-
             $construteur .= "";
             foreach ($entity->relation as $relation) {
-                $entitytype = ucfirst($relation->entity);
-                if (isset($relation->entitytype))
-                    $entitytype = ucfirst($relation->entitytype);
+                $original = $relation->entity;
+                $values = explode("\\", $relation->entity);
+                $entitytype = ucfirst($values[0]);
+                if (isset($values[1]))
+//                    $entitytype = ucfirst($relation->entitytype);
+                    $relation->entity = strtolower($values[1]);
+                else
+                    $relation->entity = strtolower($values[0]);
 
+                $relation->ondelete = $relation->ondelete ?? 'cascade';
                 if ($relation->cardinality == 'manyToMany') {
 
                     $manytomany = [
@@ -165,7 +171,8 @@ class BackendGenerator
         }
         
                         ";
-                } elseif ($relation->cardinality == 'oneToOne') { // or $relation->nullable == 'DEFAULT'
+                }
+                elseif ($relation->cardinality == 'oneToOne') { // or $relation->nullable == 'DEFAULT'
 
                     $construteur .= "\n\t$" . "this->" . $relation->entity . " = new $entitytype();";
 
@@ -173,7 +180,7 @@ class BackendGenerator
         /**
          * " . ucfirst($relation->cardinality) . "
          * @ManyToOne(targetEntity=\"" . $antislash . $entitytype . "\")
-         * @JoinColumn(onDelete=\"" . $relation->ondelete . "\")
+         * @JoinColumn(onDelete=\"" . ($relation->ondelete ) . "\")
          * @var " . $antislash . $entitytype . "
          */
         public $" . $relation->entity . ";\n";
@@ -217,6 +224,10 @@ class BackendGenerator
         }
                         ";
                 }
+
+                $jsonserializeRelation .= "
+                    '" . $relation->entity . "' => $" . "this->" . $relation->entity . ",";
+               $relation->entity =  $original;
             }
 
         }
@@ -312,10 +323,11 @@ class BackendGenerator
                     '" . $attribut->name . "' => $" . "this->" . $attribut->name . ",";
         }
         if (!empty($entity->relation)) {
-            foreach ($entity->relation as $relation) {
+            $construt .= $jsonserializeRelation;
+            /*foreach ($entity->relation as $relation) {
                 $construt .= "
                     '" . $relation->entity . "' => $" . "this->" . $relation->entity . ",";
-            }
+            }*/
         }
         $construt .= "
                 ];
@@ -482,9 +494,9 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
     public function formView(\$id = null)
     {
         \$" . ($name) . " = new " . ucfirst($name) . "();
-        \$action = " . ucfirst($name) . "::classpath(\"services.php?path=" . ($name) . ".create\");
+        \$action = __env.(\"admin/api/" . ($name) . "/create\");
         if (\$id) {
-            \$action = " . ucfirst($name) . "::classpath(\"services.php?path=" . ($name) . ".update&id=\" . \$id);
+            \$action = __env.(\"admin/api/" . ($name) . "/update?id=\" . \$id);
             \$" . ($name) . " = " . ucfirst($name) . "::find(\$id);
         }
 
@@ -506,12 +518,6 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
                             'action' => 'create', 
                             'error' => $" . "this->error);
         } ";
-        // gestion des relations many to many dans le controller
-        // $contenu .= "\n" . implode($mtm, "\n");
-
-//        foreach ($entity->attribut as $attribut) {
-//
-//        }
 
         $contenu .= $contentono;
         $contenu .= "
@@ -827,10 +833,14 @@ class " . ucfirst($name) . "Table extends Datatable{
     {
         global $em;
 
-        $classmetadata = (array)$em->getClassMetadata("\\" . $entityname);
+        $name = strtolower($entityname);
+        //before, verify if it has a record with it nameMagic (with namespace)
+        if (!Dvups_entity::where("this.name", $name)->count())
+            return false;
+        $de = Dvups_entity::where("this.name", $name)->first();
+        $classmetadata = (array)$em->getClassMetadata($de->namespace."\\" . $entityname);
 
         $classdevupsmetadata = [];
-        $name = strtolower($entityname);
 
         $classdevupsmetadata["name"] = $name;
         foreach ($classmetadata["fieldMappings"] as $field) {
@@ -878,7 +888,7 @@ class " . ucfirst($name) . "Table extends Datatable{
 
             fclose($entitycore);
         }
-        if ($sync) {
+        if ($sync && false) {
             $curl = curl_init();
 
             $data = array(
@@ -1321,27 +1331,5 @@ class " . ucfirst($name) . "Form extends FormManager{
     }
 
     /* CREATION DU DAO */
-
-    public function daoGenerator($entity)
-    {
-        $name = strtolower($entity->name);
-
-        /* if($name == 'utilisateur')
-          return 0; */
-
-        $classDao = fopen('Dao/' . ucfirst($name) . 'DAO.php', 'w');
-        $contenu = "<?php \n
-	class " . ucfirst($name) . "DAO extends DBAL{
-			
-		public function __construct() {
-			parent::__construct(new " . ucfirst($name) . "());
-		}			
-		
-	}";
-
-        fputs($classDao, $contenu);
-
-        fclose($classDao);
-    }
 
 }

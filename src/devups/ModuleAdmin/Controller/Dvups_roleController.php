@@ -62,20 +62,9 @@ class Dvups_roleController extends Controller
         Dvups_roleForm::__renderDetailWidget(Dvups_role::find($id));
     }
 
-    public static function renderForm($id = null, $action = "create")
+    public static function formView($id = null, $action = "create")
     {
-        $dvups_role = new Dvups_role();
-        if ($id) {
-            $action = "update&id=" . $id;
-            $dvups_role = Dvups_role::find($id);
-            $dvups_role->collectDvups_entity();
-            $dvups_role->collectDvups_module();
-            $dvups_role->collectDvups_right();
-        }
-
-        return ['success' => true,
-            'form' => Dvups_roleForm::__renderForm($dvups_role, $action, true),
-        ];
+        return Dvups_roleForm::renderWidget($id, $action);
     }
 
     public function datatable($next, $per_page)

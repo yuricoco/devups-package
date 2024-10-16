@@ -11,3 +11,9 @@ require __DIR__ . '/ImageCore.php';
 require __DIR__ . '/Dv_langCore.php';
 require __DIR__ . '/UserCore.php';
 require __DIR__ . '/StatusTrait.php';
+require __DIR__ . '/Item.php';
+require __DIR__ . '/ScanCore.php';
+require __DIR__ . '/OrderCore.php';
+
+if (file_exists(ROOT.'cache/constants/require_constants.php'))
+    require ROOT.'cache/constants/require_constants.php';

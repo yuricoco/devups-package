@@ -2,7 +2,7 @@
     <div class="card mb-3">
         <div class="card-body">
             <div class="card-title">
-                {{$entity->label}}
+                {{$entity->label[local()]}}
             </div>
             <a href="{{ $entity->route() }}">
                 <i class="fa fa-external-link-alt"></i> {{t("Details")}}

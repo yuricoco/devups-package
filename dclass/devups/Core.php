@@ -158,6 +158,7 @@ class Core extends stdClass
         $updated = false;
         $global_navigation = Core::buildOriginCore();
 
+        $lang_isos = Dvups_lang::getLangIso();
         foreach ($global_navigation as $key => $project) {
             if (is_object($project)) {
 
@@ -166,19 +167,13 @@ class Core extends stdClass
                 $qb = new QueryBuilder(new Dvups_component());
                 $dvcomponent = $qb->select()->where("name", '=', $projectname)
                     ->firstOrNull();
-                /*(function () use ($projectname, &$updated){
-
-
-                    var_dump($projectname);
-                    $updated = true;
-
-                    return $rolecomponent;
-
-                });*/
 
                 if (is_null($dvcomponent)) {
                     $dvcomponent = new Dvups_component();
                     $dvcomponent->setName($projectname);
+
+//                    foreach ($lang_isos as $iso)
+//                        $dvcomponent->label[$iso] = $projectname;
                     $dvcomponent->setLabel($projectname);
                     $dvcomponent->__insert();
 
@@ -186,10 +181,15 @@ class Core extends stdClass
                     $rolecomponent->setDvups_component($dvcomponent);
                     $rolecomponent->setDvups_role(new Dvups_role(1));
                     $rolecomponent->__insert();
+                } else {
+                    foreach ($lang_isos as $iso)
+                        $dvcomponent->label[$iso] = $projectname;
+                    //$dvcomponent->setLabel($projectname);
+                    $dvcomponent->__update();
                 }
 
-
                 foreach ($project->listmodule as $key => $module) {
+                //foreach ([] as $key => $module) {
 
                     if (!is_object($module)) {
                         continue;
@@ -199,11 +199,11 @@ class Core extends stdClass
                     $dvmodule = $qb->select()->where("this.name", '=', $modulename)->first();
 
                     $dvmodule->setProject($project->name);
+                    $dvmodule->setLabel($modulename);
                     $dvmodule->dvups_component = $dvcomponent;
                     if (!$dvmodule->getId()) {
                         //var_dump("component_id name", $dvcomponent->id);
                         $dvmodule->setName($modulename);
-                        $dvmodule->setLabel($modulename);
                         $dvmodule->__insert();
 
                         $rolemodule = new Dvups_role_dvups_module();
@@ -223,11 +223,11 @@ class Core extends stdClass
                         $qb = new QueryBuilder(new Dvups_entity());
                         $dventity = $qb->select()->where("dvups_entity.name", '=', $entityname)->first();
 
+                        $dventity->setLabel($entityname);
                         $dventity->setDvups_module($dvmodule);
                         if (!$dventity->getId()) {
-                            $dventity = new Dvups_entity();
+                            //$dventity = new Dvups_entity();
                             $dventity->setName($entityname);
-                            $dventity->setLabel($entityname);
                             $dventity->setUrl($entityname);
                             $dventity->dvups_module = $dvmodule;
                             $dventity->__insert();
@@ -244,6 +244,9 @@ class Core extends stdClass
                             $dventity->__update();
                         }
                     }
+
+                   // dv_dump($dvmodule);
+
                 }
             }
         }

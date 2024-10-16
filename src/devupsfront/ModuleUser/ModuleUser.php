@@ -1,119 +1,23 @@
-<?php
+<?php 
 
+use dclass\devups\Controller\ModuleController; 
 
-namespace devupsfront\ModuleUser;
-
-
-use Dvups_module;
-use Genesis as g;
-use LoginController;
-use RegistrationController;
-use Request;
-use UserController;
-use UserFrontController;
-
-class ModuleUser
+class ModuleUser extends ModuleController
 {
 
-    public $moduledata;
-
-    public function __construct()
+    public function __construct($route)
     {
-
+        parent::__construct($route);
     }
 
-    public function web()
+    public function layoutView()
     {
-
-        $this->moduledata = Dvups_module::init('ModuleData');
-
-
-        (new Request('layout'));
-
-        switch (Request::get('path')) {
-
-            case 'layout':
-                g::renderView("overview");
-                break;
-
-            default:
-                g::renderView('404', ['page' => Request::get('path')]);
-                break;
-        }
+        Genesis::renderView("admin.overview");
     }
 
-    public function services()
+    public function helloService()
     {
-
-        (new Request('hello'));
-
-        switch (Request::get('path')) {
-
-            default:
-                g::json_encode(['success' => false, 'error' => ['message' => "404 : action note found", 'route' => R::get('path')]]);
-                break;
-        }
-    }
-
-    public function webservices()
-    {
-
-        $userCtrl = new UserFrontController();
-        //$addressCtrl = new \AddressController();
-
-        (new Request('hello'));
-
-        switch (Request::get('path')) {
-
-            case 'user.create':
-            case 'registration':
-            case 'user.register':
-                g::json_encode((new UserFrontController())->registration());
-                break;
-            case 'user.synchro':
-                g::json_encode((new UserFrontController())->synchro());
-                break;
-            case 'user.update':
-                g::json_encode((new UserFrontController())->updateAction(Request::get("id")));
-                break;
-            case 'user.login':
-            case 'user.authentification':
-                g::json_encode(LoginController::connexionAction());
-                break;
-            case 'user.initresetpassword':
-                g::json_encode(LoginController::resetactivationcode());
-                break;
-            case 'user.resetpassword':
-                g::json_encode(LoginController::resetpassword());
-                break;
-            case 'user.changeemail':
-                g::json_encode(RegistrationController::changeemailAction());
-                break;
-            case 'user.changetelephone':
-                g::json_encode(RegistrationController::changetelephoneAction());
-                break;
-            case 'user.changepassword':
-                //isnotconnected();
-                g::json_encode(LoginController::changepwAction());
-                break;
-            case 'user.activateaccount':
-            case 'activateaccount':
-                g::json_encode(RegistrationController::activateaccount());
-                break;
-            case 'resentactivationcode':
-                g::json_encode(RegistrationController::resendactivationcode());
-                break;
-            case 'user.checkmail':
-                g::json_encode(RegistrationController::checkmailAction());
-                break;
-            case 'user.checkphonenumber':
-                g::json_encode(RegistrationController::checktelephoneAction());
-                break;
-            case 'user.updateimageprofile':
-                g::json_encode(UserController::updateimageprofileAction(R::get("id")));
-                break;
-
-        }
-    }
+        Genesis::json_encode(['success'=>true]);
+    } 
 
 }

@@ -16,6 +16,7 @@ class Dvups_component extends Dvups_config_item implements JsonSerializable
 
     public function __construct($id = null)
     {
+        parent::__construct($id);
         $this->dvsoftdelete = true;
         if ($id) {
             $this->id = $id;

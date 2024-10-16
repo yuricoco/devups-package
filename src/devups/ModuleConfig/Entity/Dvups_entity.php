@@ -13,6 +13,11 @@ class Dvups_entity extends Dvups_config_item implements JsonSerializable, DvupsT
     protected $id;
 
     /**
+     * @Column(name="namespace", type="string" , length=250 , options={"default" : ""} )
+     * @var string
+     **/
+    protected $namespace = "";
+    /**
      * @Column(name="enablenotification", type="integer")
      * @var string
      **/
@@ -59,13 +64,7 @@ class Dvups_entity extends Dvups_config_item implements JsonSerializable, DvupsT
 
     public function __construct($id = null)
     {
-
-        $this->dvsoftdelete = true;
-
-        if ($id) {
-            $this->id = $id;
-        }
-
+        parent::__construct($id);
         $this->dvups_module = new Dvups_module();
         $this->dvups_right = EntityCollection::entity_collection('dvups_right');
     }
@@ -162,6 +161,7 @@ class Dvups_entity extends Dvups_config_item implements JsonSerializable, DvupsT
 
 
     public function route($path = "/list"){
+
         return route('admin/' .strtolower($this->dvups_module->project) . '/' . $this->dvups_module->name . '/' . $this->url . $path);
         //return route('src/' . strtolower($this->dvups_module->project) . '/' . $this->dvups_module->name . '/' . $this->url . $path);
     }
@@ -201,7 +201,7 @@ class Dvups_entity extends Dvups_config_item implements JsonSerializable, DvupsT
 
     public static function describe($table)
     {
-        return (new DBAL())->executeDbal("DESCRIBE $table; ", [], DBAL::$FETCHALL);
+        return (new DBAL())->executeDbal("DESCRIBE `$table`; ", [], DBAL::$FETCHALL);
     }
 
 }

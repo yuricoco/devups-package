@@ -21,13 +21,14 @@ class Tree_itemTable extends Datatable
         return $dt;
     }
 
-    public function buildcomictable($idcomic)
+    public function buildteststable()
     {
+
+        /*
         $idcomic = Request::get("comicbook_id", $idcomic);
-
-        $this->qbcustom->where("tree.name", "gender")
-            ->addColumns(" ( select count(*) from comicbook_gender where comicbook_id = $idcomic AND gender_id = this.id ) AS has_gender ");
-
+                $this->qbcustom->where("tree.name", "gender")
+                    ->addColumns(" ( select count(*) from comicbook_gender where comicbook_id = $idcomic AND gender_id = this.id ) AS has_gender ");
+        */
         //if ($idexp = Request::get("exploitation_id", $idexp))
         /*$this->qbcustom->leftjoinrecto("comicbook_member", "category", "cm")
             ->where("cm.comicbook_id", $idcomic)
@@ -41,12 +42,8 @@ class Tree_itemTable extends Datatable
 
         $this->datatablemodel = [
             //'id' => ['header' => t('member.id', '#') ],
-            'name' => ['header' => "Genre" ],
+            'name' => ['header' => "Genre"],
         ];
-        $this->addcustomaction(function (\Tree_item $item) {
-            return "<input onclick=\"toggleCollection(this, " . $item->id . ", 'gender')\" name='exploited-{$item->id}' value='{$item->has_gender}' " . ($item->has_gender ? "checked" : "") . " type='checkbox' >";
-
-        });
 
         $this->enabletopaction = false;
         $this->actionDropdown = false;
@@ -55,17 +52,56 @@ class Tree_itemTable extends Datatable
         return $this;
     }
 
-    public function buildindextable()
+    public function builddashboardtable()
+    {
+
+//        $this->enabletopaction = false;
+//        $this->actionDropdown = false;
+        $this->groupaction = false;
+        $this->base_url = __env . "admin/";
+        $this->responsive = " table-responsive";
+        //$this->disableDefaultaction();
+        $this->datatablemodel = [
+            'id' => ['header' => t('tree_item.id', '#'),],
+            'name' => ['header' => t('tree_item.name', 'Name'),],
+            'slug' => ['header' => t('Ref'),],
+        ];
+
+       /* $this->addcustomaction(function ($item) {
+            $url = Product::classview('product/list?dfilters=on&category.id:eq='.$item->id);
+            return "<a class='btn btn-outline-info' href='$url'>List des services</a";
+        });*/
+
+        return $this;
+    }
+
+    public function buildtree3table()
     {
 
         $this->datatablemodel = [
             ['header' => t('tree_item.id', '#'), 'value' => 'id'],
             ['header' => t('tree_item.name', 'Name'), 'value' => 'name'],
             ['header' => t('Content'), 'value' => 'content'],
-            ['header' => t('tree_item.parent_id', 'Parent_id'), 'value' => 'parent_id'],
-            ['header' => t('tree_item.main', 'Main'), 'value' => 'main'],
-            ['header' => t('Position'), 'value' => 'position'],
-            ['header' => t('tree_item.hierarchy', 'Hierarchy'), 'value' => 'chain']
+        ];
+
+        return $this;
+    }
+
+    public function buildindextable()
+    {
+
+        $this->base_url = __env . "admin/";
+        if (!Request::get("parent_id:eq") && !is_null($this->qbcustom))
+            $this->qbcustom->where("main", 1);
+
+        $this->datatablemodel = [
+            'id' => ['header' => t('tree_item.id', '#'),],
+            'name' => ['header' => t('tree_item.name', 'Name'),],
+            //['header' => t('Content'), 'value' => 'content'],
+            'parent_id' => ['header' => t('tree_item.parent_id', 'Parent_id'),],
+            'main' => ['header' => t('tree_item.main', 'Main'),],
+            'position' => ['header' => t('Position'),],
+            'chain' => ['header' => t('tree_item.hierarchy', 'Hierarchy'),]
         ];
 
         return $this;
@@ -82,6 +118,20 @@ class Tree_itemTable extends Datatable
         ];
         // TODO: overwrite datatable attribute for this view
         return $this;
+    }
+
+    public function router()
+    {
+        $tablemodel = Request::get("tablemodel", null);
+        if ($tablemodel && method_exists($this, "build" . $tablemodel . "table") && $result = call_user_func(array($this, "build" . $tablemodel . "table"))) {
+            return $result;
+        } else
+            switch ($tablemodel) {
+                // case "": return this->
+                default:
+                    return $this->buildindextable();
+            }
+
     }
 
 }

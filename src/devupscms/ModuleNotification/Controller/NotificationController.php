@@ -180,4 +180,20 @@ class NotificationController extends Controller
 
     }
 
+    public function notified()
+    {
+
+        $ids = Request::post("ids");
+        Notification::where("this.id")->in($ids)->update([
+            "status" => 1,
+            "viewedat" => date('Y-m-d'),
+            "read" => 1,
+            "ping" => 0,
+        ]);
+
+        return array('success' => true,
+            'detail' => '');
+
+    }
+
 }

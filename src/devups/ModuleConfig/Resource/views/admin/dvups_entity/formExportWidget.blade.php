@@ -1,5 +1,5 @@
 <h3>{{$entity}}</h3>
-<form action="{{__env}}admin/index.php?dfilters=on&path=export&classname={{$entity}}&{{$filters}}" method="post">
+<form action="{{__env}}admin/devups/ModuleConfig/dvups-entity/exportCsv?classname={{$entity}}&{{$filters}}" method="post">
     <div class="row">
         <div class="col-lg-8">
             <div class="form-group">
@@ -55,7 +55,7 @@
     var dventity = {
         exportdata(el) {
             //model.addLoader($(el))
-            window.location.href = __env + "admin/index.php?dfilters=on&path=export&classname={{$entity}}&" + $(el).data("filters")
+            window.location.href = __env + "admin/devups/ModuleConfig/dvups-entity/exportCsv?dfilters=on&classname={{$entity}}&" + $(el).data("filters")
             /*Drequest.init(__env + "admin/services.php?dfilters=on&path=export&classname={{$entity}}&"+$(el).data("filters"))
                 //.toFormdata()
                 .get((function (response) {

@@ -3,61 +3,65 @@
 
 namespace devupscms\ModuleTree;
 
+use dclass\devups\Controller\Controller;
+use dclass\devups\Controller\ModuleController;
+use Dv_image;
 use Genesis as g;
 use Request as R;
 use Dvups_module;
 use Genesis;
 use Request;
+use Tree;
 use Tree_item;
 use Tree_item_imageController;
 use Tree_itemController;
+use Tree_itemTable;
 use TreeController;
 
-class ModuleTree
+class ModuleTree extends ModuleController
 {
 
-    public $moduledata;
-
-    public function __construct()
+    public function __construct($route)
     {
 
+        parent::__construct($route);
     }
 
-    public function web()
+    public function layoutView()
     {
+        Controller::$jsfiles[] = __admin.'plugins/vue.min.js';
+        Controller::$cssfiles[] = Dv_image::classpath('Resource/css/image.css');
+        Controller::$jsfiles[] = Tree::classpath('Resource/js/treeForm.js');
+        Controller::$jsfiles[] = Tree::classpath('Resource/js/tree_item_imageForm.js');
+        Controller::$jsfiles[] = Tree::classpath('Resource/js/tree_itemManager.js');
 
-        $this->moduledata = Dvups_module::init('ModuleData');
 
-        $activity_sectorCtrl = new Activity_sectorController();
-
-
-        (new Request('layout'));
-
-        switch (Request::get('path')) {
-
-            case 'layout':
-                Genesis::renderView("overview");
-                break;
-
-            default:
-                Genesis::renderView('404', ['page' => Request::get('path')]);
-                break;
-        }
+        Genesis::renderView("admin.overview");
     }
 
-    public function services()
-    {
+    public function listView($next = 1, $per_page = 10){
 
-        $activity_sectorCtrl = new Activity_sectorController();
+        $this->ctrl->datatable = Tree_itemTable::init(new Tree_item())->buildindextable();
 
-        (new Request('hello'));
+        Controller::$jsfiles[] = Tree_item::classpath('Resource/js/tree_itemCtrl.js');
 
-        switch (R::get('path')) {
+        $break = '';
+        if ($parentid = Request::get("parent_id:eq")) {
+            $this->ctrl->datatable->addFilterParam("parent_id", $parentid);
+            $cat = Tree_item::find($parentid, 1);
+            $breakcumth = [$cat];
+            $cat->getParent($cat->parent_id, $breakcumth, 1);
 
-            default:
-                g::json_encode(['success' => false, 'error' => ['message' => "404 : action note found", 'route' => R::get('path')]]);
-                break;
+            $break = "<a href='" . Tree_item::classpath("tree-item/list") . "' class=''>Liste</a>";
+            foreach ($breakcumth as $i => $bc) {
+                $break .= " > <a href='" . Tree_item::classpath("tree-item/list?dfilters=on&parent_id:eq=" . $bc->id) . "' class='btn btn-info'>{$bc->name}</a>";
+            }
         }
+        $this->ctrl->entitytarget = 'Tree_item';
+        $this->ctrl->title = "Manage Tree_item > " . $break;
+
+        $this->ctrl->renderListView();
+
     }
 
     public function webservices()
@@ -101,6 +105,9 @@ class ModuleTree
                 g::json_encode($treeitemCtrl->deleteAction(Request::get('id')));
                 break;
 
+            case 'tree-item.changestatus':
+                g::json_encode($treeitemCtrl->changestatus(Request::get('id'), Request::get('status')));
+                break;
             case 'tree-item.getdatafront':
                 g::json_encode($treeitemCtrl->getdatafront());
                 break;

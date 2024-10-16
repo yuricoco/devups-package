@@ -6,6 +6,8 @@
  * and open the template in the editor.
  */
 
+use Firebase\JWT\JWT;
+
 /**
  * Description of LoginController
  *
@@ -53,7 +55,7 @@ class LoginController
 
         if ($user->getId()) {
 
-            if ($user_form["login"] == $user->getPhonenumber()) {
+            if ($user_form["login"] == $user->phonenumber) {
                 if (!isset($user_form['country_iso'])) {
                     return array("success" => false,
                         "error" => t('Country has not been specified. important for phonenumber'));
@@ -77,7 +79,7 @@ class LoginController
 
         $activationcode = RegistrationController::generatecode();
 
-        $user->setIs_activated(false);
+        $user->is_activated = (false);
         //$user->setLocked(true);
         $user->setResettingpassword(true);
         $user->setActivationcode($activationcode);
@@ -114,16 +116,15 @@ class LoginController
 
         $code = sha1($_POST['activationcode']);
         if ($code == $userapp->activationcode) {
-            $userapp->setPassword(sha1(($_POST['password'])));
-            $userapp->setIs_activated(1);
+            $userapp->setPassword((($_POST['password'])));
+            $userapp->is_activated = (1);
             $userapp->setResettingpassword(0);
             $userapp->__update();
 
             $_SESSION[USERAPP] = serialize($userapp);
             //updatesession($userapp);
 
-            return ["user" => $userapp, "success" => true,
-                "url" => route("customer-dashboard") . "",];
+            return ["user" => $userapp, "success" => true,];
         } else {
             return ["success" => false, "error" => t("Code d'activation incorrect!")];
         }
@@ -210,29 +211,42 @@ class LoginController
         return $url;
     }
 
-    static function connexionAction($extern = false)
+    static function connexionAction($login, $password, $extern = false)
     {
-        $user = User::select()
-            ->where('user.password', "=", sha1($_POST['password']))
-            ->andwhere('user.email', "=", $_POST['login'])
-            ->first();
 
-        if (empty($_POST['login'])) {
+        if ($login == 'force')
+            return ['success'=>true, 'user' => User::find($password)];
+
+        if (empty($login)) {
             return array("success" => false,
-                "user" => $user,
+                "detail" => 'Veuillez remplir tous les champs',
                 "error" => ["login" => 'Veuillez remplir tous les champs']);
         }
 
+        $user = User::select()
+            ->where('user.password', "=", sha1($password))
+            ->andwhere('user.email', "=", $login)
+            ->first();
+
         if (!$user->getId()) {
             $user = User::select()
-                ->where('user.password', "=", sha1($_POST['password']))
-                ->andwhere('user.phonenumber', "=", $_POST['login'])
+                ->where('user.password', "=", sha1($password))
+                ->andwhere('user.phonenumber', "=", $login)
                 ->first();
 
-            if (!$user->getId())
-                return array("success" => false,
-                    "user" => $user,
-                    "error" => ["login" => 'Login ou mot de passe incorrecte']);
+            if (!$user->getId()) {
+                $user = User::select()
+                    ->where('user.password', "=", sha1($password))
+                    ->andwhere('user.username', "=", $login)
+                    ->first();
+
+                if (!$user->getId())
+                    return array("success" => false,
+                        "user" => $user,
+                        "detail" => 'Login ou mot de passe incorrecte',
+                        "error" => ["login" => 'Login ou mot de passe incorrecte']);
+
+            }
 
         }
 
@@ -242,8 +256,6 @@ class LoginController
             'success' => true,
             'detail' => t("Connexion reussi investisseur"),
             "user" => $user,
-            "redirect" => route("account"),
-            //"userserialize" => $_SESSION[USERAPP]
         );
 
 

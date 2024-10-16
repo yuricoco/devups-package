@@ -11,23 +11,10 @@
 
 @section('content')
 
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">{{ $moduledata->getName() }}</h1>
-    </div>
-
-    <ul class="nav nav-justified">
-        @foreach ($moduledata->dvups_entity as $entity)
-            <li class="nav-item page-item">
-                <a class="nav-link  page-link " href="<?= path('src/' . strtolower($moduledata->getProject()) . '/' . $moduledata->getName() . '/' . $entity->getUrl() . '/index') ?>">
-                    <i class="metismenu-icon"></i> <span><?= $entity->getLabel() ?></span>
-                </a>
-            </li>
-        @endforeach
-    </ul>
+    @include("default.moduleheaderwidget")
     <hr>
 
     @yield('layout_content')
-
 
 @endsection
 

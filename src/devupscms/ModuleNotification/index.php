@@ -1,5 +1,18 @@
 <?php
-//ModuleNotification
+//ModuleService
+
+require '../../../admin/header.php';
+global $app;
+if (isset($_SERVER['PATH_INFO']) && strpos($_SERVER['PATH_INFO'], '/api/') === 0) {
+
+    header("Access-Control-Allow-Origin: *");
+//header('Content-Type: application/json');
+
+    ($app = new \devupscms\ModuleNotification\ModuleNotification('hello'))->manageServe(" ");
+}else
+    ($app = new \devupscms\ModuleNotification\ModuleNotification('layout'))->manage();
+die;
+
 
 require '../../../admin/header.php';
 
@@ -22,11 +35,6 @@ $notificationtypeCtrl = new NotificationtypeController();
 switch (Request::get('path')) {
 
     case 'layout':
-        \dclass\devups\Controller\Controller::$jsfiles[] = Notification::classpath("Resource/js/notificationCtrl.js");
-        $notificationtable = NotificationTable::init(new Notification());
-        $notificationttypeable = NotificationtypeTable::init(new Notificationtype());
-        Genesis::renderView("admin.overview",
-            compact("notificationtable", "notificationttypeable"));
         break;
 
     case 'emailmodel/preview':

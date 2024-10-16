@@ -93,13 +93,9 @@ class UserFrontController extends UserController
         $userhydrate->setActivationcode($activationcode);
 
         // todo: handle it better
-        $userhydrate->setIs_activated(0);
+        $userhydrate->is_activated = (0);
         $userhydrate->setApiKey(\DClass\lib\Util::randomcode());
         $userhydrate->__insert();
-/*
-        $_SESSION['USER'] = serialize($userhydrate);
-        $_SESSION['USERID'] = $userhydrate->getId();*/
-
 
         // send mail with activation code $codeactivation
         if ($userhydrate->getEmail()) {
@@ -116,10 +112,13 @@ class UserFrontController extends UserController
 //        Notification::on($userhydrate, "registered", -1)
 //            ->send([$userhydrate], ["username" => $userhydrate->getFirstname(), "code" => $activationcode]);
 
+        $address = $this->hydrateWithJson(new Address(), $rawdata["address"]);
+        $address->user_id = $userhydrate->id;
+        $address->__insert();
+
         return array('success' => true,
             'user' => $userhydrate,
-            'activation_code' => $activationcode,
-            //'redirect' => route("activate-account"),
+            "jwt" => Auth::getJWT($userhydrate),
             'detail' => '');
 
     }
@@ -136,6 +135,21 @@ class UserFrontController extends UserController
             'user' => $user,
             'detail' => '');
 
+    }
+
+    public function authentification()
+    {
+        $result = LoginController::connexionAction($_POST['login'], $_POST['password']);
+        if (!$result['success'])
+            return $result;
+
+        return array(
+            'success' => true,
+            'detail' => t("Connexion reussi investisseur"),
+            "user" => $result['user'],
+            "jwt" => Auth::getJWT($result['user'])
+            //"userserialize" => $_SESSION[USERAPP]
+        );
     }
 
     public function updateApiAction($id, $user_form = null)
@@ -159,7 +173,12 @@ class UserFrontController extends UserController
     }
 
 
-    public function detailAction($id)
+    /**
+     * @Auth(authorized=1)
+     * @param $id
+     * @return array
+     */
+    public function detailView($id)
     {
 
         $user = User::find($id);
@@ -170,59 +189,139 @@ class UserFrontController extends UserController
 
     }
 
-    public function synchro()
+    public function initresetpassword()
     {
-        $rawdata = \Request::raw();
+        return LoginController::resetactivationcode();
+    }
 
-        $userhydrate = $this->hydrateWithJson(new User(), $rawdata["user"]);
+    public function resetpassword()
+    {
+        return LoginController::resetpassword();
+    }
 
-        $qb = new QueryBuilder(new User());
-        $qb->select();
+    public function activateaccount()
+    {
+        return RegistrationController::activateaccount();
+    }
+    public function resentactivationcode()
+    {
+        return RegistrationController::resendactivationcode();
+    }
 
-        $qb->where('phonenumber', "=", $userhydrate->getPhonenumber());
+    /**
+     * @Auth(authorized=1)
+     */
+    public function changepassword()
+    {
+        return LoginController::changepwAction();
+    }
 
-        $nbuser = $qb
-            //->orwhere('user.username_canonical', "=", $userhydrate->getUsername_canonical())
-            ->__firstOrNull();
+    public function checktelephoneAction()
+    {
+        if(isset($_POST['phonecode']))
+            $country = Country::where("phonecode", Request::post("phonecode"))->firstOrNull();
+        else
+            $country = Country::where("iso", Request::post("country_iso"))->firstOrNull();
 
-        if (!is_null($nbuser)) {
-            $userhydrate->setId($nbuser->getId());
+        if (is_null($country)){
+            return [
+                'success'=> false,
+                'detail'=> t('country not found'),
+            ];
         }
 
-        if ($userhydrate->getEmail() && is_null($nbuser)) {
+        $phonenumber = User::sanitizePhonenumber(Request::post("phonenumber"), $country->getPhonecode());
 
-            $qb = User::where('this.email', "=", $userhydrate->getEmail());
-            $nbuser = $qb->__firstOrNull();
+        $nbuser = User::select()
+            ->where('user.phonenumber', "=", $phonenumber)
+            ->count();
 
-            if (!is_null($nbuser)) {
-                $userhydrate->setId($nbuser->getId());
-            }
-        }
+        if($nbuser)
+            return ["success" => false, "detail" => t("Ce numéro de téléphone existe déjà")];
 
-        if ($userhydrate->getId()) {
-            $userhydrate->__update();
-            return ["success" => true,
-                "user" => $userhydrate,
-                "detail" => "your account has been sync with the one of spacekola"];
-        }
-
-        $userhydrate->setPassword(md5($userhydrate->getPassword()));
+        $userhydrate = User::find(Request::get("user_id"));
 
         $activationcode = RegistrationController::generatecode();
         $userhydrate->setActivationcode($activationcode);
+        $userhydrate->__update();
 
-        // todo: handle it better
-        $userhydrate->setIs_activated(1);
-        $userhydrate->setApiKey(\DClass\lib\Util::randomcode());
+        $userhydrate->phonenumber = $phonenumber;
 
-        $userhydrate->__insert();
+        Notification::on($userhydrate, "change_telephone", -1)
+            ->send($userhydrate, ["username"=>$userhydrate->username, "code"=>$activationcode]);
 
-        return [
-            "success" => true,
-            "user" => $userhydrate,
-            "detail" => "An account has been created on aggregator system and has been sync with the one of spacekola"];
+        return ["success" => true, "detail" => t("code d'activation vous a été envoyé. Utilisez le pour confirmer le changement de votre numéro.")];
 
     }
 
+    public function  changetelephoneAction()
+    {
+        $user = User::find(Request::get("user_id"));
+        $code = sha1(Request::post("activationcode"));
+
+        if($user->getActivationcode() !==  $code )
+            return ["success" => false, "detail" => t("Activation code incorrect")];
+
+        if($user->getPassword() !== sha1(Request::post("password")))
+            return ["success" => false, "detail" => t("Mot de passe incorrect")];
+
+        $user->phonenumber = (Request::post("phonenumber"));
+
+        $user->__update();
+
+        $_SESSION[USER] = serialize($user);
+
+        return ["success" => true, "detail" => t("Numéro de téléphone mise a jour")];
+
+    }
+
+    public function deleteAction($id)
+    {
+
+        $user = User::find($id);
+        $user->__delete();
+        return array('success' => true,
+            'detail' => '');
+
+    }
+
+    public function services(){
+
+        $services = Service::where("user_id", Auth::$user_id)->get();
+        return [
+            'success'=>true,
+            'services'=>$services,
+        ];
+    }
+
+    public function resetCredential($id)
+    {
+
+        $password = \DClass\lib\Util::randomcode(6);
+        $user = User::find($id);
+        $user->setPassword(($password));
+        $user->username = \DClass\lib\Util::generateLogin($user->firstname);
+
+        $user->__update();
+
+        /*
+                Notification::on($user, 'reset_credential', -1)
+                    ->send([$user], ['password' => $password, "username" => $user->userne]);
+
+                /*if ($user->email)
+                    Reportingmodel::init('reset_credential')
+                        ->addReceiver($user->email, $user->firstname)
+                        ->sendMail(['password' => $password, "username" => $user->username]);*/
+
+        return [
+            'success' => true,
+            'credential' => [
+                'password' => $password,
+                'username' => $user->username,
+                ],
+            'detail' => 'Mot de passe reinitialise avec succes.',
+        ];
+
+    }
 
 }

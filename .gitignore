@@ -9,3 +9,4 @@
 /.idea/
 /*.zip/
 /src/*.zip/
+/config/constante.php

@@ -4,7 +4,7 @@
 /**
  * @Entity @Table(name="dvups_module")
  * */
-class Dvups_module extends Dvups_config_item implements JsonSerializable, DvupsTranslation
+class Dvups_module extends Dvups_config_item implements JsonSerializable
 {
 
     /**
@@ -18,11 +18,6 @@ class Dvups_module extends Dvups_config_item implements JsonSerializable, DvupsT
      * @var string
      * */
     protected $favicon = "fas fa-fw fa-cog";
-    /**
-     * @Column(name="label", type="string" , length=255, nullable=true )
-     * @var string
-     * */
-    protected $label;
 
     /**
      * @Column(name="project", type="string" , length=25 )
@@ -41,13 +36,7 @@ class Dvups_module extends Dvups_config_item implements JsonSerializable, DvupsT
     public function __construct($id = null)
     {
 
-//        $this->dvtranslate = true;
-//        $this->dvtranslated_columns = ["label"];
-
-        if ($id) {
-            $this->id = $id;
-        }
-
+       parent::__construct($id);
         $this->dvups_component = new Dvups_component();
     }
 

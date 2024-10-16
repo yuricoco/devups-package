@@ -22,8 +22,11 @@ INSERT INTO `dvups_admin` (`id`, `name`, `login`, `password`, `firstconnexion`, 
 -- Déchargement des données de la table `dvups_module`
 --
 
-INSERT INTO `dvups_component` (`id`, `name`, `url`, `label`) VALUES
-(1, 'devups', 'devups', 'Devups');
+INSERT INTO `dvups_component` (`id`, `name`, `url`) VALUES
+(1, 'devups', 'devups');
+INSERT INTO `dvups_component_lang` (`lang_id`, `dvups_component_id`, `label`) VALUES
+(1, 1, 'Devups'),
+(2, 1, 'Devups');
 
 --
 -- Déchargement des données de la table `dvups_module`
@@ -31,14 +34,22 @@ INSERT INTO `dvups_component` (`id`, `name`, `url`, `label`) VALUES
 
 INSERT INTO `dvups_module` (`id`, `name`, `project`, `dvups_component_id`) VALUES
 (1, 'ModuleAdmin', 'devups', 1);
+INSERT INTO `dvups_module_lang` (`lang_id`, `dvups_module_id`, `label`) VALUES
+                                                                                  (1, 1, 'ModuleAdmin'),
+                                                                                  (2, 1, 'ModuleAdmin');
 
 --
 -- Déchargement des données de la table `dvups_entity`
 --
 
-INSERT INTO `dvups_entity` (`id`, `name`,`label`,`url`, `dvups_module_id`) VALUES
-(1, 'dvups_admin','dvups_admin','dvups-admin', 1),
-(2, 'dvups_role','dvups_role', 'dvups-role', 1);
+INSERT INTO `dvups_entity` (`id`, `name`,`url`, `dvups_module_id`) VALUES
+(1, 'dvups_admin','dvups-admin', 1),
+(2, 'dvups_role', 'dvups-role', 1);
+INSERT INTO `dvups_entity_lang` (`lang_id`, `dvups_entity_id`, `label`) VALUES
+                                                                            (1, 1, 'Admin'),
+                                                                            (2, 1, 'Admin'),
+                                                                            (1, 2, 'Role'),
+                                                                            (2, 2, 'Role');
 
 
 --

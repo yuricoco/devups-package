@@ -23,7 +23,8 @@ class StatusForm extends FormManager
             "label" => t('Entity'),
             "type" => FORMTYPE_SELECT,
             "value" => $this->status->entity->getId(),
-            "options" => status_entities ? FormManager::Options_Helper("name", Dvups_entity::whereIn("this.name", status_entities)
+            "options" => status_entities ?
+                FormManager::Options_Helper("name", Dvups_entity::whereIn("this.name", status_entities)
                 ->orderBy("this.name asc")->get()) : [],
         ];
 
@@ -47,10 +48,10 @@ class StatusForm extends FormManager
             "value" => $this->status->label,
         ];
 
-        $this->fields['label'] = [
-            "label" => t('status.label'),
+        $this->fields['position'] = [
+            "label" => t('position'),
             "type" => FORMTYPE_TEXT,
-            "value" => $this->status->label,
+            "value" => $this->status->position,
         ];
 
         $this->addcss(__admin.'plugins/colorpicker/css/evol-colorpicker.min');

@@ -1,4 +1,7 @@
-<?php $dvups_navigation = unserialize($_SESSION[dv_role_navigation]); ?>
+<?php $dvups_navigation = unserialize($_SESSION[dv_role_navigation]);
+
+//dv_dump($dvups_navigation);
+?>
 
 <div class="app-sidebar sidebar-shadow">
     <div class="app-header__logo">
@@ -44,7 +47,7 @@
                     </a>
                 </li>
                 @foreach ($dvups_navigation as $key => $component)
-                    <li class="app-sidebar__heading">{{$component["component"]->getLabel()}}</li>
+                    <li class="app-sidebar__heading">{{$component["component"]->label[local()] }}</li>
 
                     @foreach ($component["modules"] as $key => $module)
                         <li>
@@ -54,7 +57,7 @@
                                 </i>
 
 {{--<i class="{{$module["module"]->getFavicon()}}"></i>--}}
-                                <span class="menu-title">{{$module["module"]->getLabel()}}</span>
+                                <span class="menu-title">{{$module["module"]->label[local()] }}</span>
                                 <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
                             </a>
                             <ul class="mm-collapse">
@@ -66,7 +69,7 @@
                                 @foreach ($module["entities"] as $entity)
                                     <li>
                                         <a href="{{ $entity->route() }}">
-                                            <i class="metismenu-icon"></i> {{$entity->getLabel()}}
+                                            <i class="metismenu-icon"></i> {{$entity->label[local()] }}
                                             @if($nb = $entity->alert())
                                               (  {{$nb}} )
                                             @endif

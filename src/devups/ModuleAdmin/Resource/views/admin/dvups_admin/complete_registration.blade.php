@@ -24,7 +24,7 @@
 
     <div class="app-main">
         <div class="container">
-            <div style="width: 400px; margin: auto" class="loginbox">
+            <div style="max-width: 600px; margin: auto" class="loginbox">
 
                 <div class="login-left">
                     <img class="img-fluid" src="<?= __env; ?>logo-long.png" alt="Logo">

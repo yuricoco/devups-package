@@ -4,7 +4,7 @@
 /**
  * @Entity @Table(name="user")
  * */
-class User extends UserCore implements JsonSerializable
+class User extends UserCore implements JsonSerializable, NotificationSerialize
 {
 
     public static $currentid;
@@ -15,10 +15,22 @@ class User extends UserCore implements JsonSerializable
     protected $id;
 
     /**
-     * @Column(name="address", type="string", length=255 , nullable=true )
+     * @Column(name="profile", type="string", length=255 , nullable=true )
      * @var string
      **/
-    protected $address;
+    protected $profile;
+
+    /**
+     * @Column(name="birthdate", type="date", nullable=true )
+     * @var string
+     **/
+    protected $birthdate;
+
+    /**
+     * @Column(name="available", type="integer", nullable=true )
+     * @var string
+     **/
+    protected $available;
 
     /**
      * @ManyToOne(targetEntity="\Country")
@@ -27,7 +39,84 @@ class User extends UserCore implements JsonSerializable
      */
     public $country;
 
+    /**
+     * rate of the user as a client
+     * @Column(name="rate", type="integer", nullable=true  )
+     * @var integer
+     **/
+    protected $rate;
 
+    /**
+     * rate of the user as a client
+     * @Column(name="nb_rate", type="integer", nullable=true  )
+     * @var integer
+     **/
+    protected $nb_rate;
+
+    /**
+     * @Column(name="canpublish", type="integer" , nullable=true)
+     * @var string
+     **/
+    protected $canpublish = 0;
+    /**
+     * @Column(name="avatar", type="text" , nullable=true)
+     * @var string
+     **/
+    protected $avatar ;
+    /**
+     * @Column(name="currency_iso", type="string", length=5 , nullable=true)
+     * @var string
+     **/
+    protected $currency_iso = 0;
+    /**
+     * @Column(name="config", type="text", nullable=true)
+     * @var string
+     **/
+    protected $config = "{}";
+
+    /**
+     * @ManyToOne(targetEntity="\Status")
+     * @var \Status
+     */
+    public $status;
+    /**
+     * @Column(name="address", type="string", length=255 , nullable=true )
+     * @var string
+     **/
+    protected $address;
+    /**
+     * @Column(name="city", type="string", length=55 , nullable=true )
+     * @var string
+     **/
+    protected $city;
+    /**
+     * @Column(name="bio", type="text" , nullable=true )
+     * @var string
+     **/
+    protected $bio;
+
+    /**
+     * @Column(name="website", type="string", length=55 , nullable=true )
+     * @var string
+
+    protected $website; **/
+    /**
+     * @Column(name="cp", type="string", length=25 , nullable=true )
+     * @var string
+     **/
+    protected $cp;
+    /**
+     * @Column(name="devices", type="text" , nullable=true )
+     * @var string
+     **/
+    protected $devices;
+
+    /**
+     * @ManyToOne(targetEntity="\Wallet")
+     * @JoinColumn(onDelete="set null")
+     * @var \Wallet
+     */
+    public $wallet;
     public function __construct($id = null)
     {
 
@@ -35,7 +124,9 @@ class User extends UserCore implements JsonSerializable
             $this->id = $id;
         }
 
+        $this->status = new Status();
         $this->country = new Country();
+        $this->wallet = new Wallet();
 
     }
 
@@ -50,6 +141,12 @@ class User extends UserCore implements JsonSerializable
         if ($this->getPassword() != md5($confirm))
             return t("Mot de passe incorrect. veuillez reessayer svp!");
 
+    }
+
+    public function setResetpassword($value)
+    {
+        if ($value)
+            $this->password = sha1($value);
     }
 
     /**
@@ -91,31 +188,6 @@ class User extends UserCore implements JsonSerializable
             $this->password = (sha1($pwd));
     }
 
-    public function getSexe()
-    {
-        return $this->sexe;
-    }
-
-    public function setSexe($sexe)
-    {
-        $this->sexe = $sexe;
-    }
-
-    public function getPhonenumber()
-    {
-        return $this->phonenumber;
-    }
-
-    public function getIs_activated()
-    {
-        return $this->is_activated;
-    }
-
-    public function setIs_activated($is_activated)
-    {
-        $this->is_activated = $is_activated;
-    }
-
     public function setCountry_iso($iso_code)
     {
         $this->country = Country::getbyattribut("iso", $iso_code);
@@ -130,78 +202,25 @@ class User extends UserCore implements JsonSerializable
     }
 
 
-    public function getBirthdate()
-    {
-        return $this->birthdate;
-    }
-
-    public function setBirthdate($birthdate)
-    {
-        $this->birthdate = $birthdate;
-    }
-
-    /**
-     *  manyToOne
-     * @return \Country
-     */
-    function getCountry()
-    {
-        $this->country = $this->country->__show();
-        return $this->country;
-    }
-
-    function setCountry(\Country $country)
-    {
-        $this->country = $country;
-    }
-
     public static function sanitizePhonenumber($phonenumber, $phone_code)
     {
         $telephone = str_replace("+" . $phone_code, "", "+" . $phonenumber);
         return str_replace("+", "", $telephone);
     }
 
-    function userdata()
+    public function srcProfile($p = '')
     {
-        return [
-            'id' => $this->id,
-            'firstname' => $this->firstname,
-            'lastname' => $this->lastname,
-            'username' => $this->username,
-            'spacekola_ref' => $this->spacekola_ref,
-        ];
+        return Dfile::show($p . $this->profile, 'user');
     }
 
-    public function jsonSerialize()
+    public function __delete($exec = true)
     {
-        return [
-            'id' => $this->id,
-            'firstname' => $this->firstname,
-            //'spacekola_ref' => $this->spacekola_ref,
-            'lastname' => $this->lastname,
-            'email' => $this->email,
-            'country' => $this->country,
-            'phonenumber' => $this->phonenumber,
-            'password' => $this->password,
-            'resettingpassword' => $this->resettingpassword,
-            'is_activated' => $this->is_activated,
-            'activationcode' => $this->activationcode,
-            //'birthdate' => $this->birthdate,
-            'lang' => $this->lang,
-            'username' => $this->username,
-            'api_key' => $this->api_key,
-            'session_token' => $this->session_token,
 
-        ];
-    }
-
-    public function __insert()
-    {
-        $this->is_activated = 0;
-
-        parent::__insert(); // TODO: Change the autogenerated stub
-
-        return $this->id;
+        if ($this->profile) {
+            Dfile::deleteFile($this->profile, 'user');
+            Dfile::deleteFile('50_' . $this->profile, 'user');
+        }
+        return parent::__delete($exec); // TODO: Change the autogenerated stub
     }
 
     /**
@@ -244,15 +263,16 @@ class User extends UserCore implements JsonSerializable
         ];
     }
 
-    public function activateaccount($activationcode, $url = ""){
+    public function activateaccount($activationcode, $url = "")
+    {
         if ($this->isActivated())
             return ["success" => true, "url" => route('home')];
         else {
             $code = sha1($activationcode);
-            if ($code == $this->getActivationcode()) {
+            if ($code == $this->activationcode) {
                 //if (substr($code, 0, 5) == $appuser->getActivationcode()) {
 
-                $this->setIs_activated(1);
+                $this->is_activated = (1);
                 //$appuser->setLocked(false);
                 $this->__update();
                 //updatesession($appuser);
@@ -264,9 +284,204 @@ class User extends UserCore implements JsonSerializable
 
         return [
             "success" => false,
-            'error' => t("Le code d'activation n'est pas valide. Veuillez entrer de nouveau ou alors renvoyer un autre code")
+            'detail' => t("Le code d'activation n'est pas valide. Veuillez entrer de nouveau ou alors renvoyer un autre code")
         ];
 
+    }
+
+    public function uploadProfile($file = "profile")
+    {
+
+        $dfile = self::Dfile($file);
+        if (!$dfile->errornofile) {
+
+            $filedir = "user/";
+            if ($this->profile) {
+                Dfile::deleteFile($this->profile, 'user');
+                Dfile::deleteFile('50_' . $this->profile, 'user');
+            }
+            $url = $dfile
+                ->hashname()
+                //->saveoriginal(false)
+                ->addresize([50, 50], "50_")
+                ->addresize([150, 150], "")
+                ->moveto($filedir);
+
+            if (!$url['success']) {
+                return array('success' => false,
+                    'error' => $url);
+            }
+
+            $this->profile = $url['file']['hashname'];
+            if ($this->id) {
+                $this->__update();
+            }
+
+        }
+
+    }
+
+
+    public function showProfile()
+    {
+        $url = Dfile::show($this->profile, "user");
+        return Dfile::fileadapter($url, "user");
+    }
+
+
+    public function dataSerialize()
+    {
+        return [
+            'id' => $this->id,
+            'firstname' => $this->firstname,
+            'lastname' => $this->lastname,
+        ];
+    }
+
+    function setConfig($config)
+    {
+        $this->config = json_encode($config);
+    }
+
+    public function getConfig(){
+        $config = json_decode($this->config);
+        if(!isset($config->buyauto))
+            return [
+                'buyauto' => false,
+            ];
+
+        return [
+            'buyauto' => $config->buyauto,
+        ];
+    }
+
+    function userdata()
+    {
+        return [
+            'id' => (int) $this->id,
+            'firstname' => $this->firstname,
+            'lastname' => $this->lastname,
+            'username' => $this->username,
+            'country' => $this->_country,
+            'avatar' => $this->avatar,
+            'city' => $this->city,
+            'cp' => $this->cp,
+            'bio' => $this->bio,
+            'birthdate' => $this->birthdate,
+            'address' => $this->address,
+            'is_activated' => (int) $this->is_activated,
+            'currency_iso' => $this->currency_iso,
+            'config' => $this->getConfig(),
+            'profile' => $this->profile ? $this->srcProfile() : null,
+            //'spacekola_ref' => $this->spacekola_ref,
+        ];
+    }
+
+    public function subscriptionOngoing(){
+        $sameperiod = Subscription::where(["this.user_id" => $this->id,
+            // "status._key" => "ongoing"
+        ])
+            ->where_str(" '" . date("Y-m-d") . "' BETWEEN date_from AND date_to ", "AND")
+            ->firstOrNull();
+
+        return $sameperiod;
+    }
+
+    public function jsonSerialize()
+    {
+        return [
+            'id' => (int) $this->id,
+            'password' => $this->password,
+            'firstname' => $this->firstname,
+            //'spacekola_ref' => $this->spacekola_ref,
+            'lastname' => $this->lastname,
+            'email' => $this->email,
+            'currency_iso' => $this->currency_iso,
+            'country' => $this->_country,
+            'phonenumber' => $this->phonenumber,
+            'avatar' => $this->avatar,
+            'city' => $this->city,
+            'cp' => $this->cp,
+            'address' => $this->address,
+            'birthdate' => $this->birthdate,
+            'resettingpassword' => $this->resettingpassword,
+            'is_activated' => (int) $this->is_activated,
+            //'activationcode' => $this->activationcode,
+            //'birthdate' => $this->birthdate,
+            'lang' => $this->lang,
+            'username' => $this->username,
+            'api_key' => $this->api_key,
+            'config' => $this->getConfig(),
+            'session_token' => $this->session_token,
+            'wallet' => $this->_wallet,
+            'nbpost' => $this->nbpost,
+            'nbfollowing' => $this->nbfollowing,
+            'nbfollowers' => $this->nbfollowers,
+            'following' => $this->following,
+            //'devices' => $this->devices,
+            'subscription' => isset($this->subscription) ? $this->subscription : null,
+            'profile' => $this->profile ? $this->srcProfile() : null,
+
+        ];
+    }
+
+    public function __insert()
+    {
+        $this->is_activated = 0;
+
+        parent::__insert(); // TODO: Change the autogenerated stub
+
+        $id = Wallet::create([
+            "reference"=>  "".$this->id,
+            "amount"=>  0,
+            "status"=>  1,
+        ]);
+        $this->__update([
+            "wallet_id"=>$id
+        ]);
+        return $this->id;
+    }
+
+
+    public function showAction($btarray)
+    {
+        return "<a class='btn btn-info' href='".User::classpath('user/detail?id=').$this->id."'> Detail</a>";
+    }
+
+    public static function getdefault(){
+        return User::getbyattribut("username", "3agEdition");
+    }
+
+    public function boughtItem(){
+        return Chapter::select()
+            ->addColumns(" (select count(*) from favorite where user_id = {$this->id} and chapter_id = this.id) AS bought ")
+            //->leftjoinrecto(Favorite::class)
+            //->leftjoin(Order::class, Order_item::class)
+            //->where("favorite.chapter_id")
+            ;
+    }
+
+    public $nbfollowers = 0;
+    public $nbfollowing = 0;
+    public $follow_back = 0;
+    public $following = 0;
+    public $nbpost = 0;
+
+    public static function find($id, $id_lang = null, $qb = null)
+    {
+        if ($id)
+            $qb = self::addColumns(' (select count(*) from follow where user_id = this.id) as nbfollowers ')
+                ->addColumns(', (select count(*) from follow where follower_id = this.id) as nbfollowing ')
+                ->addColumns(", (select count(*) from `post` where user_id = $id) as nbpost ")
+            ;
+        $user_id = Request::get("user_id");
+        if ($user_id && $user_id != $id) {
+            $qb //->addColumns(", (select count(*) from follow where follower_id = $id and user_id = {$user_id} ) as following ")
+            ->addColumns(", f.notify as following, f.follow_back ")
+                ->leftJoinOn('follow', 'f', " f.user_id = $id and f.follower_id = {$user_id} ");
+        }
+
+        return parent::find($id, $id_lang, $qb);
     }
 
 }

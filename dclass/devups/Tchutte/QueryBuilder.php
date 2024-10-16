@@ -36,6 +36,7 @@ class QueryBuilder extends \DBAL
     private $endquery = "";
     private $initwhereclause = false;
     private $defaultjoinsetted = true;
+    private $sequensized = false;
 
     /**
      * All of the available clause operators.
@@ -105,6 +106,7 @@ class QueryBuilder extends \DBAL
         return $this;
     }
 
+
     /**
      * Set the columns to be selected.
      *
@@ -118,12 +120,12 @@ class QueryBuilder extends \DBAL
         $this->softdeletehandled = false;
         $this->defaultjoin = "";
         if (is_object($columns)):
-            $this->instanciateVariable($columns);
+            //$this->instanciateVariable($columns);
             $columns = "*";
-        elseif (is_bool($object)):
-            $defaultjoin = $object;
-        elseif (is_object($object)):
-            $this->instanciateVariable($object);
+            /*elseif (is_bool($object)):
+                $defaultjoin = $object;*/
+//        elseif (is_object($object)):
+//            $this->instanciateVariable($object);
         endif;
 
         if ($columns == '*') {
@@ -153,6 +155,24 @@ class QueryBuilder extends \DBAL
         return $this;
     }
 
+    public function addColumn($column, $as)
+    {
+        if ($this->custom_columns)
+            $this->custom_columns .= ", ";
+        if (in_array($as, $this->objectVar)) {
+            // var_dump($this->objectVar);
+            unset($this->objectVar[array_search($as, $this->objectVar)]);
+            // dv_dump($this->objectVar);
+        }
+        $this->custom_column_keys[] = $as;
+        if (is_object($column))
+            $this->custom_columns .= "( " . $column->getSqlQuery()['query'] . " ) AS $as ";
+        else
+            $this->custom_columns .= "( " . $column . " ) AS $as ";
+
+        return $this;
+    }
+
     /**
      * @param bool $update
      * @return $this
@@ -165,22 +185,22 @@ class QueryBuilder extends \DBAL
 //            $classname[] = strtolower(get_class($val));
 
         if (is_array($collection))
-            $this->tablecollection .= ", ".implode(", ", $collection)." $alias";
+            $this->tablecollection .= ", " . implode(", ", $collection) . " $alias";
         else
-            $this->tablecollection .= ", ".strtolower($collection)." $alias ";
+            $this->tablecollection .= ", " . strtolower($collection) . " $alias ";
 
         // $this->_from .= ", `".strtolower($this->tablecollection)."` $alias";
         return $this;
     }
 
-    public function with(...$entity)
+    public function with($entity, $columns)
     {
-        if (is_array($entity))
-            $this->_with = $entity;
-        else
-            $this->_with[] = $entity;
+        foreach ($columns as $column)
+            $this->addColumn($entity . "." . $column, $entity . "_" . $column);
+
         return $this;
     }
+
 
     /**
      * @param bool $update
@@ -207,7 +227,7 @@ class QueryBuilder extends \DBAL
         return $this;
     }
 
-    private function sequensization()
+    private function sequensization($aggregation = false)
     {
         $query = $this->query;
         $query .= " WHERE 1 ";
@@ -220,22 +240,23 @@ class QueryBuilder extends \DBAL
                     $query .= ' AND ' . $this->table . '.deleted_at IS NOT NULL ';
                 else
                     $query .= ' AND deleted_at IS NOT NULL ';
-            }
-            elseif ($this->hasrelation)
+            } elseif ($this->hasrelation)
                 $query .= ' AND ' . $this->table . '.deleted_at IS NULL ';
             else
                 $query .= ' AND deleted_at IS NULL ';
         }
 
+        if (!$aggregation) {
+            if ($this->_order_by)
+                $query .= " {$this->_order_by} ";
 
-        if ($this->_order_by)
-            $query .= " {$this->_order_by} ";
-
-        if ($this->_limit)
-            $query .= " {$this->_limit} ";
+            if ($this->_limit)
+                $query .= " {$this->_limit} ";
+        }
 
         $this->query = $this->querysanitize($query);
 
+        $this->sequensized = true;
         return $this;
 
     }
@@ -249,13 +270,67 @@ class QueryBuilder extends \DBAL
         if ($this->softdelete && $force == false) {
             $this->query = " UPDATE " . $this->table . " SET deleted_at = NOW() ";
         } else
-            $this->query = "  DELETE FROM {$this->_from} ";
+            $this->query = "  DELETE {$this->_from} FROM {$this->_from} " . $this->_join;
 
         if (!$this->initwhereclause) {
             $this->_where = " AND id = " . $this->instanceid;
         }
 
         return $this->sequensization()->exec();
+    }
+
+    /**
+     * @param $table
+     * @param $primary_key_values
+     * @param $keyvalue
+     * @return int|true|type
+     * @throws Exception
+     */
+    public function createFromTable($table, $primary_key_values, $keyvalue)
+    {
+
+        $primary_key = array_keys($primary_key_values);
+        $primary_value = array_values($primary_key_values);
+        //dv_dump($primary_key, $primary_value);
+        $objectvar = array_keys($keyvalue);
+        $finaldata = [];
+        $sql = "INSERT INTO `" . $this->table . "` (`"
+            . strtolower(implode('` ,`', $primary_key))
+            . "`, `" . strtolower(implode('` ,`', $objectvar))
+            . "`) ";
+        $sql .= " SELECT ";
+        $sqlcolumns = [];
+        for ($i = 0; $i < count($primary_key); $i++) {
+            if (is_null($primary_value[$i]))
+                $sqlcolumns[] = " id AS {$primary_key[$i]} ";
+            else {
+                $finaldata[$primary_key[$i]] = $primary_value[$i];
+                $sqlcolumns[] = " :{$primary_key[$i]} AS {$primary_key[$i]} ";
+            }
+        }
+
+        foreach ($keyvalue as $key => $value) {
+            if (is_object($value) && get_class($value) == QueryBuilder::class)
+                $sqlcolumns[] = " (" . $value->getSqlQuery()['query'] . ") AS $key ";
+            else {
+                $sqlcolumns[] = " :$key AS $key ";
+                $finaldata[$key] = $value;
+            }
+        }
+        $sql .= (implode(', ', $sqlcolumns)) . " FROM  " . strtolower($table);
+
+
+        $this->query = $sql;
+
+        if ($this->_join)
+            $this->query .= " {$this->_join} ";
+
+        $this->query .= $this->tablecollection;
+
+        $this->sequensization();
+        // dv_dump($this->query, $finaldata);
+        return $this->executeDbal($this->query, $finaldata, 1);
+
     }
 
     /**
@@ -274,8 +349,14 @@ class QueryBuilder extends \DBAL
         if ($this->_join)
             $this->query .= " {$this->_join} ";
 
-        if ($arrayvalues)
+        if ($arrayvalues) {
+            if (self::$debug)
+                dv_dump($this->set($arrayvalues, $seton, $case)->sequensization()->getSqlQuery());
+
             return $this->set($arrayvalues, $seton, $case)->sequensization()->exec();
+        }
+        if (self::$debug)
+            return $this->sequensization()->getSqlQuery();
 
         return $this->sequensization()->exec();
     }
@@ -370,8 +451,16 @@ class QueryBuilder extends \DBAL
 
                 if (is_object($value)) {
 
-                    $this->parameters[strtolower(get_class($value)) . "_id"] = $value->getId();
-                    $arrayset[] = strtolower(get_class($value)) . "_id = :" . strtolower(get_class($value)) . "_id";
+                    if (get_class($value) == \dclass\devups\Tchutte\Column::class) {
+                        //$this->parameters[$attrib] = ;
+                        $arrayset[] = $dot . implode('.`', $keymap) . "` = (" . $value->column . ")";
+                    } elseif (get_class($value) == QueryBuilder::class) {
+                        //$this->parameters[$attrib] = ;
+                        $arrayset[] = $dot . implode('.`', $keymap) . "` = (" . $value->getSqlQuery()['query'] . ")";
+                    } else {
+                        $this->parameters[strtolower(get_class($value)) . "_id"] = $value->getId();
+                        $arrayset[] = strtolower(get_class($value)) . "_id = :" . strtolower(get_class($value)) . "_id";
+                    }
 
                 } else {
                     $this->parameters[$attrib] = $value;
@@ -381,6 +470,7 @@ class QueryBuilder extends \DBAL
             $this->_set .= implode(", ", $arrayset);
             if ($this->instanceid)
                 $this->endquery = " AND " . $this->table . ".id = " . $this->instanceid;
+
         }
 
         $this->query .= $this->_set;
@@ -443,6 +533,18 @@ class QueryBuilder extends \DBAL
         return $this;
     }
 
+    public function innerJoinOn($classname, $alias = "", $constraint = "")
+    {
+        $join = strtolower(str_replace(" ", "", $classname));
+
+        if (!$alias)
+            $alias = $this->table;
+
+        $this->_join .= " INNER JOIN `" . $join . "` $alias ON ( $constraint )";
+
+        return $this;
+    }
+
     public function join_str($classname, $on)
     {
         $join = strtolower($classname);
@@ -472,6 +574,19 @@ class QueryBuilder extends \DBAL
         return $this;
     }
 
+    public function leftJoinOn($classname, $alias = "", $constraint = "")
+    {
+        $join = strtolower(str_replace(" ", "", $classname));
+
+        if (!$alias)
+            $alias = $this->table;
+
+        $this->hasrelation = true;
+        $this->_join .= " LEFT JOIN `" . $join . "` $alias ON ( $constraint )";
+
+        return $this;
+    }
+
     /**
      * rather than take relation.id = table.relation_id to create the link,
      * it uses relation.table_id = table.id
@@ -494,7 +609,7 @@ class QueryBuilder extends \DBAL
         if (!$alias)
             $alias = $this->join;
 
-        $this->_join .= " INNER JOIN `" . $this->join . "` `$alias` ON `" . $alias . "`." . strtolower($classnameon) . "_id = `" . strtolower($classnameon) . "`.id";
+        $this->_join .= " LEFT JOIN `" . $this->join . "` `$alias` ON `" . $alias . "`." . strtolower($classnameon) . "_id = `" . strtolower($classnameon) . "`.id";
 
         return $this;
     }
@@ -540,23 +655,27 @@ class QueryBuilder extends \DBAL
         $this->_where .= " $link DATE_FORMAT($column, '%d') = " . $value;
         return $this;
     }
+
     public function whereMonth($column, $value, $link = 'AND')
     {
 
         $this->_where .= " $link DATE_FORMAT($column, '%m') = " . $value;
         return $this;
     }
+
     public function whereYear($column, $value, $link = 'AND')
     {
         $this->_where .= " $link DATE_FORMAT($column, '%Y') = " . $value;
         return $this;
     }
+
     public function whereDate($column, $value, $link = 'AND')
     {
 
         $this->_where .= " $link DATE_FORMAT($column, '%Y-%m-%d') = " . $value;
         return $this;
     }
+
     public function whereHour($column, $value, $link = 'AND')
     {
 
@@ -580,10 +699,11 @@ class QueryBuilder extends \DBAL
 //            $link = "and";
 
         if (is_object($column)) {
-
-            $attrib = strtolower(get_class($column)) . '_id';
+            $colmnlinkname = explode("\\", get_class($column));
+            $colmnlinkname = $colmnlinkname[count($colmnlinkname) - 1];
+            $attrib = strtolower($colmnlinkname) . '_id';
             if ($this->defaultjoinsetted) {
-                $this->_where .= " " . $link . " " . strtolower(get_class($column)) . '.id';
+                $this->_where .= " " . $link . " " . strtolower($colmnlinkname) . '.id';
             } else
                 $this->_where .= " " . $link . " " . $attrib;
 
@@ -632,8 +752,23 @@ class QueryBuilder extends \DBAL
             //$this->query .= " " . $link . " " . $column;
             if ($operator) {
                 if (in_array($operator, $this->operators)) {
-                    $this->_where .= " " . $operator . " :$attrib";
-                    $this->parameters[$attrib] = $value;
+
+                    if (is_object($value)) {
+
+                        if (get_class($value) == \dclass\devups\Tchutte\Column::class) {
+                            //$this->parameters[$attrib] = ;
+                            $this->_where .= " = (" . $value->column . ")";
+                        } elseif (get_class($value) == QueryBuilder::class) {
+                            //$this->parameters[$attrib] = ;
+                            $this->_where .= " = (" . $value->getSqlQuery()['query'] . ")";
+                        } else {
+                            throw new Exception('The class Is not recognized');
+                        }
+
+                    } else {
+                        $this->_where .= " " . $operator . " :$attrib";
+                        $this->parameters[$attrib] = $value;
+                    }
                 } elseif (strtolower($operator) == "like") {
                     $this->_where .= " LIKE '%" . $operator . "%' ";
                 } else {
@@ -669,13 +804,42 @@ class QueryBuilder extends \DBAL
         return $this;
     }
 
+    /**
+     * find a value of a database column from a list of potential values
+     * @param $column
+     * @param $values
+     * @param $negate
+     * @return $this
+     */
     public function whereIn($column, $values, $negate = "")
     {
 
         if (is_array($values)) {
             $this->_where .= " AND $column $negate IN (" . implode(",", array_map("qb_sanitize", $values)) . ")";
-        } else
+        } else if (is_object($values))
+            $this->_where .= " AND $column $negate IN ( " . $values->getSqlQuery()['query'] . " ) ";
+        else
             $this->_where .= " AND $column $negate IN ( $values )";
+
+        return $this;
+        // return $this->where($column)->in($collection);
+    }
+
+    /**
+     * find the value in list of database column's values,
+     * you have to pay attention on string
+     * @param $value
+     * @param $columns
+     * @param $negate
+     * @return $this
+     */
+    public function whereInReverse($value, $columns, $negate = "")
+    {
+
+        if (is_array($columns)) {
+            $this->_where .= " AND $value $negate IN (" . implode(",", $columns) . ")";
+        } else
+            $this->_where .= " AND $value $negate IN ( $columns )";
 
         return $this;
         // return $this->where($column)->in($collection);
@@ -776,6 +940,12 @@ class QueryBuilder extends \DBAL
         return $this;
     }
 
+    public function whereBetween($column, $values)
+    {
+        $this->_where .= " AND $column BETWEEN '" . $values[0] . "' AND '" . $values[1] . "'";
+        return $this;
+    }
+
     public function orderBy($critere, $order = "")
     {
         $this->_order_by .= " ORDER BY " . $critere . " " . $order;
@@ -813,17 +983,6 @@ class QueryBuilder extends \DBAL
         return $this;
     }
 
-    /**
-     * @param int $index
-     * @param bool $id_lang
-     * @return type|null
-     * @deprecated use index
-     */
-    public function index($index = 1, $id_lang = null)
-    {
-        return $this->getIndex($index, $id_lang);
-    }
-
     private function initquery($columns)
     {
         if ($this->tablecollection)
@@ -840,22 +999,30 @@ class QueryBuilder extends \DBAL
 
     public function getSqlQuery($column = "*")
     {
-        $this->select($column);
-        $this->initSelect();
-        $this->sequensization();
+        if (!$this->_set) {
+            // $this->select($this->columns);
+            $this->initSelect();
+            $this->sequensization();
+        }
         $query = $this->query;
         foreach ($this->parameters as $search => $value) {
-            $query = str_replace(":". $search ."", $value, $query);
+            $query = str_replace(":" . $search . "", $value, $query);
         }
-        return ["query" => $query,"sql" => $this->query, "parameters" => $this->parameters];
+        return ["query" => $query, "sql" => $this->query, "parameters" => $this->parameters];
     }
 
     public function exec($action = 0)
     {
         if (in_array($action, [DBAL::$FETCH, DBAL::$FETCHALL]))
-            return $this->executeDbal($this->querysanitize($this->initquery($this->columns) . $this->defaultjoin . $this->query . $this->_where), $this->parameters, $action);
+            if ($this->sequensized)
+                return $this->executeDbal($this->query, $this->parameters, $action);
+            else
+                return $this->executeDbal($this->querysanitize($this->initquery($this->columns) . $this->defaultjoin . $this->query . $this->_where), $this->parameters, $action);
 
-        return $this->executeDbal($this->querysanitize($this->query . $this->_where . $this->endquery), $this->parameters, $action);
+        if ($this->sequensized)
+            return $this->executeDbal($this->query, $this->parameters, $action);
+        else
+            return $this->executeDbal($this->querysanitize($this->query . $this->_where . $this->endquery), $this->parameters, $action);
     }
 
 
@@ -891,7 +1058,7 @@ class QueryBuilder extends \DBAL
         if (!$id_lang)
             $id_lang = $this->id_lang;
 
-        $model =  $this->first($id_lang, true);
+        $model = $this->first($id_lang, true);
 
         if (is_null($model))
             return null;
@@ -899,7 +1066,27 @@ class QueryBuilder extends \DBAL
         // todo: implement the primary key validation
 //        if (property_exists($model, "id")) {
 //            if ($model->getId())
-                return $model;
+        return $model;
+        /* } else
+             return $model;*/
+
+    }
+
+
+    public function lastOrNull($id_lang = null)
+    {
+        if (!$id_lang)
+            $id_lang = $this->id_lang;
+
+        $model = $this->getLast($id_lang, true);
+
+        if (is_null($model))
+            return null;
+
+        // todo: implement the primary key validation
+//        if (property_exists($model, "id")) {
+//            if ($model->getId())
+        return $model;
         /* } else
              return $model;*/
 
@@ -982,12 +1169,56 @@ class QueryBuilder extends \DBAL
 
     }
 
-    public function getLast($recursif = true, $collect = [])
+    public function getLast($id_lang = null, $nullable = false)
     {
-        return $this->orderBy($this->table . ".id DESC ")->limit(1)->getInstance($recursif, $collect);
+        return $this->setLang($id_lang)
+            ->orderBy($this->table . ".id DESC ")
+            ->limit(1)
+            ->getInstance("*", $nullable);
     }
 
+    public function getLastOrNull($id_lang = null)
+    {
+        return $this->setLang($id_lang)
+            ->orderBy($this->table . ".id DESC ")
+            ->limit(1)
+            ->getInstance("*", true);
+    }
+
+    /**
+     * return the index of a specific entity within a list
+     * @param $index
+     * @param $id_lang
+     * @return array|mixed|Object|type|null
+     */
     public function getIndex($index, $id_lang = null)
+    {
+//        if (is_numeric($recursif))
+//            $this->limit_iteration = $recursif;
+
+        if (!$this->id_lang)
+            $this->setLang($id_lang);
+        // $this->setCollect($collect);
+        $i = (int)$index;
+        if ($i < 0) {
+            $nbel = $this->count();
+            if ($nbel == 1)
+                return $this->object;
+
+            $i += $nbel;
+        }
+
+        return $this->limit($i - 1, $i)->getInstance();
+
+    }
+
+    /**
+     * retrieve entity from a specific index
+     * @param $index
+     * @param $id_lang
+     * @return array|mixed|Object|type|null
+     */
+    public function getFromIndex($index, $id_lang = null)
     {
 //        if (is_numeric($recursif))
 //            $this->limit_iteration = $recursif;
@@ -1022,10 +1253,10 @@ class QueryBuilder extends \DBAL
         return $this->get();
     }
 
-    private function initSelect($columns = "*")
+    private function initSelect($aggregation = false)
     {
         $this->query = " SELECT {$this->_select_option} ";
-        if ($this->custom_columns != "")
+        if ($this->custom_columns != "" && !$aggregation)
             $this->query .= ", {$this->custom_columns}";
         $this->query .= " FROM " . $this->_from;
 
@@ -1093,6 +1324,30 @@ class QueryBuilder extends \DBAL
         return $this->getValue();
     }
 
+    /**
+     * @param int $index
+     * @param bool $id_lang
+     * @return type|null
+     */
+    public function index($columnOrder, $alias)
+    {
+
+        $this->_select_option = " ROW_NUMBER() OVER ( $columnOrder ) AS $alias ";
+        return $this->getValue();
+        return $this->getIndex($index, $id_lang);
+    }
+
+    /**
+     * @param int $index
+     * @param bool $id_lang
+     * @return $this
+     */
+    public function addIndex($columnOrder, $alias)
+    {
+        $this->custom_columns = " ROW_NUMBER() OVER ( ORDER BY $columnOrder ) AS $alias ";
+        return $this;
+    }
+
     public function distinct($column)
     {
         return $this->get(" DISTINCT " . $column);
@@ -1110,12 +1365,41 @@ class QueryBuilder extends \DBAL
         return $this->get($column);
     }
 
-    public function cursor($callback)
+    /**
+     * @param $callback
+     * @param $return_data
+     * @return array|false|null
+     */
+    public function cursor($callback, $return_data = false, $cache = null)
     {
+
+        if ($cache) {
+            $this->cache_key = $cache;
+
+            global $devups_cache;
+
+            if (isset($devups_cache[$this->cache_key])) {
+
+                $arg = \DClass\lib\Util::get_func_argNames($callback);
+                foreach ($devups_cache[$this->cache_key] as $i => $row) {
+                    if (count($arg) > 1)
+                        $callback($row, $i);
+                    else
+                        $callback($row);
+                }
+                if ($return_data)
+                    return $devups_cache[$this->cache_key];
+
+                return null;
+            } else
+                $devups_cache[$this->cache_key] = [];
+
+        }
+
         $this->initSelect();
         $this->sequensization();
 
-        return $this->__cursor($this->query, $this->parameters, $callback);
+        return $this->__cursor($this->query, $this->parameters, $callback, $return_data);
 
     }
 
@@ -1160,13 +1444,15 @@ class QueryBuilder extends \DBAL
      * @param string $order
      * @return \dclass\devups\Datatable\Lazyloading | $this
      */
-    public function lazyloading($order = "", $debug = false, $qbinstance = false)
+    public function lazyloading($order = "", $debug = false, $qbinstance = false, $limit = null)
     {
 
         $ll = new \dclass\devups\Datatable\Lazyloading($this->object);
         $ll->debug = $debug;
         //$ll->start($this->object);
 
+        if ($limit)
+            $ll->setPerPage($limit);
         return $ll->lazyloading($this->object, $this, $order, null, $qbinstance);
 
     }
@@ -1196,6 +1482,24 @@ class QueryBuilder extends \DBAL
         $ll = new \dclass\devups\Datatable\Lazyloading($this->object, $this);
 
         return $ll->setNext($page);
+
+    }
+
+    /**
+     *
+     * @param string $page
+     * @param string $per_page
+     * @return $this
+     */
+    public function skip($page = 1, $per_page = 10)
+    {
+        if ($page > 0) {
+            $next = ($page - 1) * $per_page;
+        } else {
+            $next = 1;
+        }
+
+        return $this->limit($next, $per_page);
 
     }
 
@@ -1292,8 +1596,8 @@ class QueryBuilder extends \DBAL
     public function getValue()
     {
         // todo: put select() here
-        $this->initSelect();
-        $this->sequensization();
+        $this->initSelect(true);
+        $this->sequensization(true);
 
         if (self::$debug)
             return $this->getSqlQuery();
@@ -1303,6 +1607,19 @@ class QueryBuilder extends \DBAL
             return $value[0];
 
         return $value;
+    }
+
+    public function getValues()
+    {
+        // todo: put select() here
+        $this->initSelect();
+        $this->sequensization();
+
+        if (self::$debug)
+            return $this->getSqlQuery();
+
+        return $this->executeDbal($this->query, $this->parameters, DBAL::$FETCH);
+
     }
 
 }

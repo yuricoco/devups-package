@@ -71,65 +71,6 @@ class RegistrationController extends Controller {
 
     }
 
-    public static function checktelephoneAction()
-    {
-        if(isset($_POST['phonecode']))
-            $country = Country::where("phonecode", Request::post("phonecode"))->firstOrNull();
-        else
-            $country = Country::where("iso", Request::post("country_iso"))->firstOrNull();
-
-        if (is_null($country)){
-            return [
-                'success'=> false,
-                'detail'=> t('country not found'),
-            ];
-        }
-
-        $phonenumber = User::sanitizePhonenumber(Request::post("phonenumber"), $country->getPhonecode());
-
-        $nbuser = User::select()
-            ->where('user.phonenumber', "=", $phonenumber)
-            ->count();
-
-        if($nbuser)
-            return ["success" => false, "detail" => t("Ce numéro de téléphone existe déjà")];
-
-        $userhydrate = User::find(Request::get("user_id"));
-
-        $activationcode = RegistrationController::generatecode();
-        $userhydrate->setActivationcode($activationcode);
-        $userhydrate->__update();
-
-        $userhydrate->phonenumber = $phonenumber;
-
-        Notification::on($userhydrate, "change_telephone", -1)
-            ->send($userhydrate, ["username"=>$userhydrate->username, "code"=>$activationcode]);
-
-        return ["success" => true, "detail" => t("code d'activation vous a été envoyé. Utilisez le pour confirmer le changement de votre numéro.")];
-
-    }
-
-    public static function changetelephoneAction()
-    {
-        $user = User::find(Request::get("user_id"));
-        $code = sha1(Request::post("activationcode"));
-
-        if($user->getActivationcode() !==  $code )
-            return ["success" => false, "detail" => t("Activation code incorrect")];
-
-        if($user->getPassword() !== sha1(Request::post("password")))
-            return ["success" => false, "detail" => t("Mot de passe incorrect")];
-
-        $user->setPhonenumber(Request::post("phonenumber"));
-
-        $user->__update();
-
-        $_SESSION[USER] = serialize($user);
-
-        return ["success" => true, "detail" => t("Numéro de téléphone mise a jour")];
-
-    }
-
     public static function generatecode() {
 
         $datetime = new DateTime();
@@ -150,7 +91,7 @@ class RegistrationController extends Controller {
 
         $user->__update();
 
-        $_SESSION[USER] = serialize($user);
+        // $_SESSION[USER] = serialize($user);
 
         // send mail with activation code $codeactivation
         if ($user->getEmail()) {
@@ -180,7 +121,7 @@ class RegistrationController extends Controller {
 //        global $appuser;
         $appuser = User::find(Request::get("user_id"));
 
-        return $appuser->activateaccount($_POST["activationcode"], route("home"));
+        return $appuser->activateaccount($_POST["activationcode"]);
     }
 
 }

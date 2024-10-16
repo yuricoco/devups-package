@@ -35,6 +35,11 @@ class Drequest {
         r.baseurl = __env + "api/" + url;
         return r;
     };
+    static adminApi(url) {
+        let r = new Drequest();
+        r.baseurl = __env + "admin/api/" + url;
+        return r;
+    };
 
     param(_param) {
         this._param = _param;

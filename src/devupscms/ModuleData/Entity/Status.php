@@ -18,7 +18,7 @@ class Status extends Model implements JsonSerializable
      **/
     protected $color;
     /**
-     * @Column(name="_key", type="string", length=55, nullable=true  )
+     * @Column(name="_key", type="string", length=55  )
      * @var integer
      **/
     protected $_key;
@@ -179,20 +179,8 @@ class Status extends Model implements JsonSerializable
             'color' => $this->color,
             '_key' => $this->_key,
             'label' => $this->label,
-            'colortab' => $this->getColortab(),
+            ///'colortab' => $this->getColortab(),
         ];
-        if (Request::get("stat")) {
-            $qb = Order::where($this);
-            if ($id = Request::get("affiliate_id"))
-                $qb->where("affiliate.id", $id);
-            if ($id = Request::get("order_id"))
-                $qb->where("order.id", $id);
-            if ($id = Request::get("user_id"))
-                $qb->where("user.id", $id);
-            $nb_element = $qb->count();
-
-            $return["stat"] = $nb_element;
-        }
 
         return $return;
     }

@@ -23,6 +23,12 @@ class Dvups_entityForm extends FormManager{
             "value" => $this->dvups_entity->getName(),
         ];
 
+        $this->fields['url'] = [
+            "label" => t('URL'),
+            "type" => FORMTYPE_TEXT,
+            "value" => $this->dvups_entity->url,
+        ];
+
         $this->fields['label'] = [
             "label" => t('dvups_entity.label'),
             "type" => FORMTYPE_TEXT,

@@ -2,10 +2,14 @@
 
 namespace dclass\devups\Controller;
 
+use Auth;
 use dclass\devups\Datatable\Lazyloading;
+use Dvups_lang;
+use Exception;
 use Genesis as g;
 use Philo\Blade\Blade;
 use phpDocumentor\Reflection\Types\Self_;
+use ReflectionAnnotatedClass;
 use ReflectionClass;
 use Request;
 
@@ -22,6 +26,7 @@ class Controller
     public static $formname = "";
     public static $ctrlname = "";
     public static $entityname = "";
+    public static $classMagic = "";
 
     protected $error = [];
     protected $nopersist = [];
@@ -29,25 +34,32 @@ class Controller
     protected $entity = null;
     public $indexView = "default.index";
 
+    public function setEntity($entity){
+        $this->entity = $entity;
+    }
+
     /**
      * this method is used by devups from the admin/services.php file to manage router as we use to do at the front App.php
      * @return false|int|mixed
      */
-    public static function serve(\Dvups_entity $entity){
+    public static function serve($route, \Dvups_entity $entity)
+    {
 
         global $viewdir;
 
         $viewdir[] = $entity->dvups_module->hydrate()->moduleRoot() . 'Resource/views';
 
         //dv_dump($viewdir);
-        $ctrl = $entity->name."Controller";
-        return Request::Controller(new $ctrl(), Request::get('path'));
+        $ctrl = $entity->name . "Controller";
+        return Request::Controller($route, Request::get('path'), $ctrl);
     }
+
     /**
      * this method is used by devups from the admin/services.php file to manage router as we use to do at the front App.php
      * @return false|int|mixed
      */
-    public static function views(\Dvups_entity $entity){
+    public static function views($route, \Dvups_entity $entity)
+    {
 
         global $viewdir, $moduledata;
 
@@ -57,8 +69,8 @@ class Controller
         $moduledata->dvups_entity = $admin->dvups_role->collectDvups_entityOfModule($moduledata);
 
         //dv_dump($viewdir);
-        $ctrl = $entity->name."Controller";
-        return Request::Controller(new $ctrl(), Request::get('path'));
+        $ctrl = ucfirst($entity->name) . "Controller";
+        return Request::Controller( $route , Request::get('path'), $ctrl);
 
     }
 
@@ -109,265 +121,42 @@ class Controller
 
     }
 
-    public static function getclassname()
+    public static function getclassname($public_access = [])
     {
 
         $classname = str_replace('-', '_', Request::get('dclass'));
-        $dventity = \Dvups_entity::getbyattribut("this.name", $classname);
-        if (!$dventity->getId()) {
-            echo json_encode([
+
+        // we first check if the entity is in the public access list then try to shown all the available entity
+        // this is the first level security for webservice. the secon one will be the auth with annotation.
+        if (!isset($public_access[$classname])){
+            /*echo json_encode([
                 "success" => false,
                 "message" => "entity " . $classname . " not found",
-                "available" => \Dvups_entity::all(),
+                "available" => \Dvups_entity::whereIn("this.name", $public_access)->get(),
             ]);
-            die;
+            die;*/
+            throw new Exception("entity " . $classname . " has no public access or has not been found", 22 );
         }
+        // if the entity is available for webservice we check if it is stored in the database
+        $exist = \Dvups_entity::where("this.name", $classname)->count();
+        if (!$exist) {
+            /*echo json_encode([
+                "success" => false,
+                "message" => "entity " . $classname . " not found",
+                "available" => $public_access ?
+                    \Dvups_entity::whereIn("this.name", $public_access)->get()
+                    : \Dvups_entity::all(),
+            ]);
+            die;*/
+            throw new Exception("entity " . $classname . " not found", 22 );
+        }
+
+        // if everything is OK we set the classname and start the next process.
+        self::$entityname = $classname;
+        self::$classMagic = $public_access[$classname];
         return $classname;
     }
 
-    public function createCore($persist = true)
-    {
-        $classname = self::getclassname();
-        $newclass = ucfirst($classname);
-        $entity = new $newclass;
-        $entities = [];
-        $rawdata = \Request::raw();
-        if (is_null($rawdata)) {
-            if (!isset($_POST[$classname . "_form"]))
-                return array('success' => false,
-                    $classname => $entity,
-                    'detail' => $classname . "_form is missing in your form_data. ex: entity_form[attribute] ");
-            $entity = $this->form_fillingentity($entity, $_POST[$classname . "_form"]);
-        } else {
-            if (isset($rawdata[$classname."_bulk"])) {
-                $datacollection = [];
-                foreach ($rawdata[$classname."_bulk"] as $rawentity) {
-                    $this->error = [];
-                    $entity_item = $this->hydrateWithJson($entity, $rawentity);
-                    $entity_item->id = null;
-                    if ($this->error) {
-                        $datacollection[] = array('success' => false,
-                            $classname => $entity_item,
-                            'error' => $this->error);
-                        continue;
-                    }
-
-                    $id = $entity_item->__insert();
-
-                    $datacollection[] = array('success' => true,
-                        $classname => $entity_item,
-                        'detail' => '');
-                }
-                return compact("datacollection");
-            }
-            else
-                $entity = $this->hydrateWithJson($entity, $rawdata[$classname]);
-        }
-        if (!$persist)
-            return $entity;
-
-        if (isset($_FILES[$classname . "_form"])) {
-            foreach ($_FILES[$classname . "_form"]['name'] as $key_form => $value_form) {
-                self::addEventListenerAfterCreate(get_class($this->entity), 'upload' . ucfirst($key_form));
-            }
-        }
-
-        if ($this->error) {
-            return array('success' => false,
-                $classname => $entity,
-                'error' => $this->error);
-        }
-
-        $id = $entity->__insert();
-
-        if (Request::get("tablemodel")){
-            $table = $classname."Table";
-            return [
-                'success' => true,
-                $classname => $entity,
-                'tablerow' => $table::init()->router()->getSingleRowRest($entity),
-                'detail' => ''
-            ];
-        }
-        elseif (Request::get("dview")){
-
-            $dalias = Request::get("dalias");
-            if (!$dalias)
-                $dalias = $classname;
-            return [
-                'success' => true,
-                $classname => $entity,
-                'view' => \Genesis::getView(Request::get("dview"), [$dalias=>$entity]),
-                'detail' => ''
-            ];
-        }
-
-        return array('success' => true,
-            $classname => $entity,
-            'detail' => '');
-
-    }
-
-    public function uploadCore($id)
-    {
-
-        $classname = self::getclassname();
-        $newclass = ucfirst($classname);
-        $entity = $newclass::find($id, false);
-
-        if (isset($_FILES[$classname . "_form"])) {
-            foreach ($_FILES[$classname . "_form"]['name'] as $key_form => $value_form) {
-                $method = 'upload' . ucfirst($key_form);
-                $entity->{$method}();
-            }
-            return array('success' => true,
-                $classname => $entity->__show(true),
-                'detail' => 'file uploaded with success');
-        }
-
-        return array('success' => false,
-            'detail' => 'no file founded');
-
-    }
-
-    public function updateCore($id)
-    {
-
-        $classname = self::getclassname();
-        $newclass = ucfirst($classname);
-        $entity = new $newclass($id);
-
-        $rawdata = \Request::raw();
-        if (is_null($rawdata)) {
-            if (!isset($_POST[$classname . "_form"]))
-                return array('success' => false,
-                    $classname => $entity,
-                    'detail' => $classname . "_form is missing in your form_data. ex: entity_form[attribute] ");
-            $entity = $this->form_fillingentity($entity, $_POST[$classname . "_form"]);
-        } else
-            $entity = $this->hydrateWithJson($entity, $rawdata[$classname]);
-
-        if ($this->error) {
-            return array('success' => false,
-                $classname => $entity,
-                'error' => $this->error);
-        }
-
-        $entity->__update();
-
-        if (Request::get("tablemodel")){
-            $table = $classname."Table";
-            return [
-                'success' => true,
-                $classname => $entity,
-                'tablerow' => $table::init()->router()->getSingleRowRest($entity),
-                'detail' => ''
-            ];
-        }
-        elseif (Request::get("dview")){
-
-            $dalias = Request::get("dalias");
-            if (!$dalias)
-                $dalias = $classname;
-            return [
-                'success' => true,
-                $classname => $entity,
-                'view' => \Genesis::getView(Request::get("dview"), [$dalias=>$entity]),
-                'detail' => ''
-            ];
-        }
-
-        return array('success' => true,
-            $classname => $entity,
-            'detail' => '');
-
-    }
-
-    public function deleteCore($id)
-    {
-
-        $classname = self::getclassname();
-        $newclass = ucfirst($classname);
-        $newclass::find($id, false)->__delete();
-
-        return array('success' => true,
-            'detail' => '');
-
-    }
-
-    public function detailCore($id)
-    {
-
-        $classname = self::getclassname();
-        $newclass = ucfirst($classname);
-
-        if ($iso = Request::get('dlang'))
-            return array('success' => true,
-                $classname => $newclass::find($id, Dvups_lang::getByIsoCode($iso)->id),
-                'detail' => '');
-
-        return array('success' => true,
-            $classname => $newclass::find($id, false),
-            'detail' => '');
-
-    }
-
-    public function dcollection()
-    {
-        $rawdata = Request::raw();
-        $result = [];
-        foreach ($rawdata as $entityaction => $filter) {
-            $option = explode(".", $entityaction);
-            if (!isset($option[1])) {
-                $result[$entityaction] = [
-                    "success" => false,
-                    "detail" => t("action " . $entityaction . " not supported. available option are: lazyloadin or detail"),
-                ];
-                continue;
-            }
-            $entity = $option[1];
-            if ($option[0] == "lazyloading") {
-                Request::$uri_get_param['dclass'] = $entity;
-                Request::collectUrlParam($filter);
-                $result[$entity . "_ll"] = $this->ll();
-            } elseif ($option[0] == "detail") {
-                Request::$uri_get_param['dclass'] = $entity;
-                $result[$entity] = $this->detailCore($filter);
-            } else {
-                $result[$entityaction] = [
-                    "success" => false,
-                    "detail" => t("action " . $entityaction . " not supported. available option are: lazyloadin or detail"),
-                ];
-            }
-            // we reset static variable with the one in the url  so that next time
-            // default filter set in the url can be apply to other lazyloadin.
-            Request::$uri_get_param = [];
-            (new Request("hello"));
-        }
-        $result["success"] = true;
-        return $result;
-    }
-
-    public function ll()
-    {
-
-        $classname = str_replace('-', '_', Request::get('dclass'));
-        $dventity = \Dvups_entity::getbyattribut("this.name", $classname);
-        if (!$dventity->getId())
-            return [
-                "success" => false,
-                "message" => "entity " . $classname . " not found",
-                "available" => \Dvups_entity::all(),
-            ];
-
-        $newclass = ucfirst($classname);
-        $entity = new $newclass;
-
-        $ll = new Lazyloading();
-        $ll->lazyloading($entity);
-        return $ll;
-
-    }
 
     /**
      *
@@ -613,8 +402,7 @@ class Controller
                 } elseif ($error = call_user_func(array($object, $currentfieldsetter), $collection))
                     $this->error[$key] = $error;
 
-            }
-            else {
+            } else {
 
                 if (strpos($key_form, ".id")) {
                     // && is_object ($value['options'][0])
@@ -642,7 +430,7 @@ class Controller
                     if (!method_exists($object, $currentfieldsetter)) {
 //                        dv_dump($fieldNames);
                         //if (in_array($entitname, $fieldNames))
-                            $object->{$entitname} = $value2;
+                        $object->{$entitname} = $value2;
 //                        else
 //                            $this->error[$key] = " You may create method " . $currentfieldsetter . " in entity ";
                     } elseif ($error = call_user_func(array($object, $currentfieldsetter), $value2)) //$value2->__show(false)
@@ -669,15 +457,6 @@ class Controller
             }
 
         }
-//        }
-
-//        if($this->error)
-//            foreach ($this->error as $error){
-//                if($error){
-//                    $this->error_exist = true;
-//                    break;
-//                }
-//            }
 
         return $object;
     }
@@ -699,7 +478,9 @@ class Controller
         $this->entity = $object;
         global $em;
         $classlang = get_class($object);
-        $metadata = $em->getClassMetadata("\\" . $classlang);
+        $metadata = $em->getClassMetadata( $classlang);
+        //dv_dump($metadata);
+        $associationMappings = ($metadata->associationMappings);
         $fieldNames = array_keys($metadata->fieldNames);
         $fieldNames = array_merge($fieldNames, $object->dvtranslated_columns);
 
@@ -761,9 +542,13 @@ class Controller
                     $classtyperst = explode("\\", $entitname);
                     $classtype = $classtyperst[0];
                     $entitname = $classtyperst[1];
-                } else
+                } else {
                     $classtype = $entitname;
 
+                    if (!isset($associationMappings[$entitname]))
+                        continue;
+                    $classtype = $associationMappings[$classtype]["targetEntity"];
+                }
                 $currentfieldsetter = 'set' . ucfirst($entitname);
                 if (!class_exists(ucfirst($classtype)))
                     continue;
@@ -786,8 +571,8 @@ class Controller
                 if (!method_exists($this->entity, $setter)) {
                     if (in_array($field, $fieldNames))
                         $this->entity->{$field} = $value;
-                    else
-                        $this->error[$field] = " You may create method " . $setter . " in entity. ";
+//                    else
+//                        $this->error[$field] = " You may create method " . $setter . " in entity. ";
                 } elseif ($error = call_user_func(array($this->entity, $setter), $value))
                     $this->error[$field] = $error;
             }
@@ -810,9 +595,9 @@ class Controller
         include __DIR__ . "/../../" . $view;
     }
 
-    protected $entitytarget = "";
-    protected $datatablemodel = [];
-    protected $title = "View Title";
+    public $entitytarget = "";
+    public $datatablemodel = [];
+    public $title = "View Title";
     public static $cssfiles = [];
     public static $jsscript = "";
     public static $jsfiles = [];
@@ -891,15 +676,16 @@ class Controller
         echo $blade->view()->make($view, $data)->render();
     }
 
-    public function cloneAction($id){
+    public function cloneAction($id)
+    {
 
         $classname = self::getclassname();
         $newclass = ucfirst($classname);
-        $newclasstable = $newclass.'Table';
+        $newclasstable = $newclass . 'Table';
         $entity = $newclass::find($id);
         $entity->setId(null);
         $entity->__insert();
-        return 	array(	'success' => true,
+        return array('success' => true,
             $classname => $entity,
             'tablerow' => $newclasstable::init()->buildindextable()->getSingleRowRest($entity),
             'detail' => '');

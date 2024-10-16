@@ -45,7 +45,7 @@ Vue.component("tree_item_image", {
 
                     $.notify("Uploading " + file.name, "info")
                     // Drequest.init($("#dv_table").data("route") + "services.php?path=chapter.scanpages" + param)
-                    Drequest.api("tree-item-image.upload?tree_item_id=" + this.tree_item.id)
+                    Drequest.adminApi("tree-item-image/upload?tree_item_id=" + this.tree_item.id)
                         .data(fd)
                         .post((response) => {
                             console.log(response);
@@ -60,7 +60,7 @@ Vue.component("tree_item_image", {
                 }
             });
 
-        Drequest.api("tree-item.images?id=" + this.tree_item.id)
+        Drequest.adminApi("tree-item/images?id=" + this.tree_item.id)
             .get((response) => {
                 console.log(response);
                 this.images = response.items;
@@ -70,7 +70,7 @@ Vue.component("tree_item_image", {
     methods: {
         _delete(id, index){
             console.log(id, index)
-            Drequest.api("tree-item-image.delete?id=" + id)
+            Drequest.adminApi("tree-item-image/delete?id=" + id)
                 .get((response) => {
                     console.log(response);
                     this.images.splice(index, 1)
@@ -90,8 +90,11 @@ Vue.component("tree_item_image", {
                                             class="btn btn-danger">delete
                                     </button>
                                 </div>
-                                <div class="">
+                                <div v-if="['jpg', 'jpeg', 'png', 'tiff'].includes(image.image.extension)" class="">
                                     <img :src="image.srcImage_100" />
+                                </div>
+                                <div v-else class="">
+                                    <a href="image.srcImage" download="" >{{image.image.name}}</a>
                                 </div>
                             </div>
                         </div>

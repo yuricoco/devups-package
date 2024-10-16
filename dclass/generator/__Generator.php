@@ -611,6 +611,34 @@ Usage:
 
         }
 
+        $moduleclass = "<?php 
+
+use dclass\devups\Controller\ModuleController; 
+
+class $repertoire extends ModuleController
+{
+
+    public function __construct(\$route)
+    {
+        parent::__construct(\$route);
+    }
+
+    public function layoutView()
+    {
+        Genesis::renderView(\"admin.overview\");
+    }
+
+    public function helloService()
+    {
+        Genesis::json_encode(['success'=>true]);
+    } 
+
+}";
+
+        $moddepend = fopen($repertoire.".php", "w");
+        fputs($moddepend, $moduleclass);
+        fclose($moddepend);
+
         // on sort du module
         chdir('../');
     }
@@ -642,6 +670,8 @@ Usage:
     //require 'Controller/" . $name . "FrontController.php';\n";
 
         }
+
+        $package .= "require '$module->name.php';\n";
 
         $moddepend = fopen($filename, "w");
         fputs($moddepend, $package);
@@ -694,10 +724,9 @@ Usage:
         $htaccess = "\n
 RewriteEngine On
 
-RewriteRule    ^/?$    index.php    [NC,L]
-#RewriteRule    ^([A-Za-z0-9-]+)/?$    index.php?path=$1    [NC,L]    # Process all products
-RewriteRule    ^([A-Za-z0-9-]+)/?$    index.php?path=$1/index    [NC,L]    # Process all products
-RewriteRule    ^([A-Za-z0-9-]+)/([A-Za-z0-9-]+)/?$    index.php?path=$1/$2   [NC,L]    # Process all products
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^(.+)$ index.php?url=$1 [QSA,L]
 
 <IfModule mod_headers.c>
     Header always set X-FRAME-OPTIONS \"DENY\"
@@ -714,50 +743,19 @@ RewriteRule    ^([A-Za-z0-9-]+)/([A-Za-z0-9-]+)/?$    index.php?path=$1/$2   [NC
             //" . $module->name . "
         
         require '../../../admin/header.php';
-        
-// move comment scope to enable authentication
-if (!isset($" . "_SESSION[ADMIN]) and $"."_GET['path']"." != 'connexion') {
-    header(\"location: \" . __env . 'admin/login.php');
-}
+        global \$app;
+if (isset(\$_SERVER['PATH_INFO']) && strpos(\$_SERVER['PATH_INFO'], '/api/') === 0) {
 
-global $" . "viewdir, $" . "moduledata;
-$" . "viewdir[] = __DIR__ . '/Resource/views';
+    header(\"Access-Control-Allow-Origin: *\");
+//header('Content-Type: application/json');
 
-$" . "moduledata = Dvups_module::init('" . $module->name . "');
-                \n\n";
+    (\$app = new " . $module->name . "('hello'))->manageServe();
+}else
+    (\$app = new " . $module->name . "('layout'))->manage();
+die;
+";
 
         $contenu .= "";
-
-        foreach ($modulelistentity as $entity) {
-            $contenu .= "\t\t$" . strtolower($entity->name) . "Ctrl = new " . ucfirst($entity->name) . "Controller();\n";
-        }
-
-        $contenu .= "\t\t
-
-(new Request('layout'));
-
-switch (Request::get('path')) {
-
-    case 'layout':
-        Genesis::renderView(\"admin.overview\");
-        break;
-        ";
-
-        foreach ($modulelistentity as $entity) {
-            $name = strtolower($entity->name);
-            $contenu .= "
-    case '" . str_replace("_", "-", $name) . "/index':
-        $".$name."Ctrl->listView();
-        break;\n";
-        }
-
-        $contenu .= "\n\t\t
-    default:
-        Genesis::renderView('404', ['page' => Request::get('path')]);
-        break;
-}
-    
-    ";
 
         fputs($root, $contenu);
         fclose($root);
@@ -822,59 +820,12 @@ switch (Request::get('path')) {
 		
         require '../../../admin/header.php';
         
-// verification token
-//
+header(\"Access-Control-Allow-Origin: *\");
+//header('Content-Type: application/json');
 
-        use Genesis as g;
-        use Request as R;
-        
-        header(\"Access-Control-Allow-Origin: *\");
-                \n\n";
-
-        foreach ($modulelistentity as $entity) {
-            $contenu .= "\t\t$" . strtolower($entity->name) . "Ctrl = new " . ucfirst($entity->name) . "Controller();\n";
-        }
-
-        $contenu .= "\t\t
-     (new Request('hello'));
-
-     switch (R::get('path')) {
-                ";
-
-        foreach ($modulelistentity as $entity) {
-            $name = strtolower($entity->name);
-            $contenu .= "
-        case '" . $name . "._new':
-                g::json_encode($" . $name . "Ctrl->formView());
-                break;
-        case '" . $name . ".create':
-                g::json_encode($" . $name . "Ctrl->createAction());
-                break;
-        case '" . $name . "._edit':
-                g::json_encode($" . $name . "Ctrl->formView(R::get(\"id\")));
-                break;
-        case '" . $name . ".update':
-                g::json_encode($" . $name . "Ctrl->updateAction(R::get(\"id\")));
-                break;
-        case '" . $name . "._show':
-                $" . $name . "Ctrl->detailView(R::get(\"id\"));
-                break;
-        case '" . $name . "._delete':
-                g::json_encode($" . $name . "Ctrl->deleteAction(R::get(\"id\")));
-                break;
-        case '" . $name . "._deletegroup':
-                g::json_encode($" . $name . "Ctrl->deletegroupAction(R::get(\"ids\")));
-                break;
-        case '" . $name . ".datatable':
-                g::json_encode($" . $name . "Ctrl->datatable(R::get('next'), R::get('per_page')));
-                break;\n";
-        }
-
-        $contenu .= "\n\t
-        default:
-            g::json_encode(['success' => false, 'error' => ['message' => \"404 : action note found\", 'route' => R::get('path')]]);
-            break;
-     }
+global \$app;
+(\$app = new " . $module->name . "('hello'))->manageServe();
+die;
 
 ";
 

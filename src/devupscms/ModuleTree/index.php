@@ -11,6 +11,9 @@ if (!isset($_SESSION[ADMIN]) and $_GET['path'] != 'connexion') {
 global $viewdir, $moduledata;
 $viewdir[] = __DIR__ . '/Resource/views';
 
+global $app;
+($app = new \devupscms\ModuleTree\ModuleTree('layout'))->manage();
+die;
 $moduledata = Dvups_module::init('ModuleTree');
 
 $treeCtrl = new TreeController();

@@ -8,6 +8,7 @@
 
 namespace DClass\lib;
 
+use ReflectionFunction;
 use Request;
 
 class Util
@@ -77,13 +78,14 @@ class Util
      * @param $content
      * @param string $file
      * @param string $root
+     * @param string $mode
      */
-    static function writein($content, $file = "log", $root = ""){
+    static function writein($content, $file = "log", $root = "", $mode = "a+"){
 
         if (!file_exists(ROOT . $root))
             mkdir(ROOT . $root, 0777, true);
 
-        $moddepend = fopen(ROOT .$root.'/'.$file, "a+");
+        $moddepend = fopen(ROOT .$root.'/'.$file, $mode);
         fputs($moddepend, $content."\n");
         fclose($moddepend);
     }
@@ -168,6 +170,51 @@ class Util
         $telephone = str_replace(")","", $telephone);
         $telephone = str_replace("+".$phone_code,"", "+".$telephone);
         return str_replace("+","", $telephone);
+    }
+
+    /**
+     * @throws \ReflectionException
+     */
+    public static function get_func_argNames($funcName) {
+        $f = new ReflectionFunction($funcName);
+        $result = array();
+        foreach ($f->getParameters() as $param) {
+            $result[] = $param->name;
+        }
+        return $result;
+    }
+
+
+    /**
+     * @param mixed $login
+     */
+    public static function generateLogin($base)
+    {//on envoi une liste de login
+        $list = "1234567890";
+        mt_srand((double)microtime() * 10000);
+        $generate = "";
+        while (strlen($generate) < 4) {
+            $generate .= $list[mt_rand(0, strlen($list) - 1)];
+        }
+
+        if (strlen($base) > 6)
+            $alias = substr($base, 0, -(strlen($base) - 6));
+        else
+            $alias = $base;
+
+        $login = self::wd_remove_accents($alias) . $generate;
+        return strtolower($login);
+
+    }
+
+    protected static function wd_remove_accents($str, $charset = 'utf-8')
+    {
+        $str = htmlentities($str, ENT_NOQUOTES, $charset);
+
+        $str = preg_replace('#&([A-za-z])(?:acute|cedil|caron|circ|grave|orn|ring|slash|th|tilde|uml);#', '\1', $str);
+        $str = preg_replace('#&([A-za-z]{2})(?:lig);#', '\1', $str); // pour les ligatures e.g. '&oelig;'
+        $str = preg_replace('#&[^;]+;#', '', $str); // supprime les autres caractères
+        return str_replace(' ', '_', $str); // supprime les autres caractères
     }
 
 }

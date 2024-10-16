@@ -98,7 +98,7 @@ var reportingmodel = {
         }
         model.addLoader($(el))
 
-        Drequest.init(__env + "api/update.reportingmodel?id=" + report.id)
+        Drequest.init(__env + "api/update/reportingmodel?id=" + report.id)
             .data(fd)
             .post((response) => {
                 console.log(response);

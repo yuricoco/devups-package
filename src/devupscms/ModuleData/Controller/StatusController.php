@@ -81,8 +81,9 @@ class StatusController extends Controller{
         $status->__update();
         return 	array(	'success' => true,
                         'status' => $status,
-                        'tablerow' => StatusTable::init()->buildindextable()->getSingleRowRest(Status::find($id, Dvups_lang::getByIsoCode("fr")->id)),
-                        'detail' => '');
+
+            'tablerow' => StatusTable::init()->buildindextable()->getSingleRowRest($status),
+            'detail' => '');
 
     }
 

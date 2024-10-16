@@ -121,7 +121,7 @@ class Dvups_entityController extends Controller
                 'dvups_entity' => $dvups_entity,
                 'tablerow' => Dvups_entityTable::init()
                     ->buildindextable()
-                    ->getSingleRowRest($dvups_entity),
+                    ->getSingleRowRest(Dvups_entity::find($id, 1)),
                 'detail' => ''); //Detail de l'action ou message d'erreur ou de succes
         } else {
             return array('success' => false, // pour le restservice
@@ -233,16 +233,18 @@ class Dvups_entityController extends Controller
     public static $split = ";";
     public static $identifies = [];
 
-    public function importData($classname)
+    public function importData($classname, $separator = ';')
     {
         $log = [];
-        $split = Request::get('split');
+        $split = Request::get('split', $separator);
         if ($split == 'tab')
             self::$split = "\t";
 
         self::$identifies = Model::getIdentifyKey($classname);
+
         if (isset($_POST['contentcsv']) && !isset($_FILES["fixture"])) {
             $contentcsv = explode("\n", $_POST['contentcsv']);
+
             foreach ($contentcsv as $line) {
                 // process the line read.
                 $log[] = $this->importProcess($classname, $line);
@@ -256,7 +258,8 @@ class Dvups_entityController extends Controller
                 "log" => $log,
                 "detail" => "Importation des donnees csv termine",
             ];
-        } elseif (isset($_FILES["fixture"]) && $_FILES["fixture"]['error'] == 0) {
+        }
+        elseif (isset($_FILES["fixture"]) && $_FILES["fixture"]['error'] == 0) {
             $ext = Dfile::getextension($_FILES['fixture']['name']);
             $filename = "data_$classname-" . date('YmdHis') . ".$ext";
             Dfile::makedir("importdata");
@@ -359,6 +362,11 @@ class Dvups_entityController extends Controller
                     ];
                     return $allerrors;
                 } else {
+
+                    foreach ($keyvalue as $key => $value){
+                        $keyvalue[$key] = $classname::importSanitizer($key, $value);
+                    }
+
                     if (self::$update) {
                         $sql = "  select COUNT(*) from " . $classname
                             . " where 1 " . self::$where;

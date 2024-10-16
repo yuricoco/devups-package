@@ -94,7 +94,7 @@
                                         {{t("Settings")}}
                                     </a>
                                     <a class="dropdown-item"
-                                       href="<?= __env . 'admin/index.php?path=deconnexion' ?>">
+                                       href="<?= __env . 'admin/devups/ModuleAdmin/dvups-admin/deconnexion-action' ?>">
                                         <i class="mdi mdi-logout text-primary"></i>
                                         {{t("Logout")}}
                                     </a>

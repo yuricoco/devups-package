@@ -12,7 +12,7 @@
                     <h3 class="panel-title">Change password <?php echo $detail; ?></h3>
                 </div>
                 <div class="panel-body">
-                    <form role="form" method="post" action="index.php?path=dvups_admin/changepassword" >
+                    <form role="form" method="post" action="{{Dvups_admin::classview('dvups_admin/changepassword')}}" >
                         <fieldset>
                             <div class="form-group">
                                 <label>Old Password</label>

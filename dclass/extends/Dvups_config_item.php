@@ -1,7 +1,7 @@
 <?php
 
 
-class Dvups_config_item extends Model implements JsonSerializable, DvupsTranslation
+class Dvups_config_item extends Model implements JsonSerializable
 {
 
     /**
@@ -14,11 +14,8 @@ class Dvups_config_item extends Model implements JsonSerializable, DvupsTranslat
      * @var string
      **/
     protected $name;
-    /**
-     * @Column(name="label", type="string" , length=50, nullable=true )
-     * @var string
-     **/
-    protected $label;
+
+    public $label;
 
 
     /**
@@ -26,6 +23,14 @@ class Dvups_config_item extends Model implements JsonSerializable, DvupsTranslat
      * @var string
      * */
     protected $url;
+
+    public function __construct($id = null)
+    { 
+        $this->dvtranslate = true;
+        $this->dvtranslated_columns = ['label'];
+        if($id)
+            $this->id = $id;
+    }
 
     /**
      * @return string
@@ -81,7 +86,9 @@ class Dvups_config_item extends Model implements JsonSerializable, DvupsTranslat
      */
     public function setLabel($label)
     {
-        $this->label = $label;
+        $lang_isos = Dvups_lang::getLangIso();
+        foreach ($lang_isos as $iso)
+            $this->label[$iso] = $label;
     }
 
     public function getName()
@@ -100,13 +107,6 @@ class Dvups_config_item extends Model implements JsonSerializable, DvupsTranslat
             'name' => $this->name,
             'label' => $this->label,
         ];
-    }
-
-    public function dvupsTranslate()
-    {
-        // we can iterate on howmuch lang the system may have to initiate all the lang of the new entry
-//        self::inittranslate($this,"label", $this->label, "en");
-//        self::inittranslate($this,"label", $this->label, "fr");
     }
 
 }

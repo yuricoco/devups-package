@@ -4,8 +4,10 @@ Vue.component("tree_itemForm", {
             chain: [],
             treeitem: {},
             contenturl: "",
+            currentlang: "fr",
             tree_itemparent: {},
             tree_itemtree: [],
+            tinyfr: {}
         }
     },
     props: ["tree_item", 'langs'],
@@ -18,13 +20,39 @@ Vue.component("tree_itemForm", {
         else
             this.contenturl = url + 'new?tree_item=' + this.tree_item.id;
 
+        tinymce.init({
+            selector: 'textarea#content_advanced',
+            height: 550,
+            fontSize: 10,
+            relative_urls : false,
+            remove_script_host : false,
+            convert_urls : true,
+            menubar: false,
+            plugins: [
+                'advlist autolink lists link image preview anchor ',
+                'searchreplace visualblocks code fullscreen',
+                'insertdatetime media table paste code help wordcount'
+            ],
+            toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help code',
+            content_css: [
+                '//fonts.googleapis.com/css?family=Lato:300,300i,400,400i',
+                // '//www.tiny.cloud/css/codepen.min.css'
+            ]
+        })
+
+        setTimeout(()=>{
+            if(this.tree_item.content[this.currentlang])
+                tinymce.activeEditor.setContent(this.tree_item.content[this.currentlang] )
+        }, 300)
     },
     methods: {
 
         update(quit) {
+            this.savecontent ()
             console.log(this.tree_item);
+
             //return ;
-            Drequest.api('update.tree-item?id=' + this.tree_item.id)
+            Drequest.adminApi('update/tree-item?id=' + this.tree_item.id)
                 .data({
                     //"tree_item": model.entitytoformentity(this.tree_item)
                     "tree_item": this.tree_item
@@ -37,6 +65,28 @@ Vue.component("tree_itemForm", {
                         $.notify("mise à jour avec succès!", "success");
                     });
         },
+        setadvancedcontent(lang){
+            console.log(lang, this.currentlang)
+            if(lang != this.currentlang){
+
+                tinymce.triggerSave();
+                this.tree_item.content[this.currentlang] = tinymce.activeEditor.getContent()
+
+            }
+            this.currentlang = lang
+            if(this.tree_item.content[lang])
+                tinymce.activeEditor.setContent(this.tree_item.content[lang] )
+            else
+                tinymce.activeEditor.setContent( "" )
+
+        },
+        savecontent (){
+
+            tinymce.triggerSave();
+            this.tree_item.content[this.currentlang] = tinymce.activeEditor.getContent()
+            console.log(this.currentlang, this.tree_item.content[this.currentlang] )
+
+        },
         createcontent() {
         }
 
@@ -44,7 +94,7 @@ Vue.component("tree_itemForm", {
     template: `
         
         <div class="panel">
-            <div class="card-header ">Edit item</div>
+            <div class="card-header ">Edit item #{{tree_item.id}}</div>
             <div class="card-body">
                 <form id="frmEdit" class="form-horizontal">
                 
@@ -64,6 +114,7 @@ Vue.component("tree_itemForm", {
                             </li>
                         </ul>
                         <div class="tab-content" id="myTabContent">
+                        
                             <div class="tab-pane active" id="general-tab" role="tabpanel"
                                  aria-labelledby="home-tab"> 
                                     <div v-for="lang in langs" class="form-group">
@@ -129,15 +180,45 @@ Vue.component("tree_itemForm", {
                                     </div>
                                 
                             </div>
+                            
                             <div class="tab-pane fade" id="content-tab" role="tabpanel" aria-labelledby="content-tab">
-                                <div v-for="lang in langs" class="form-group">
-                                    <label for="text">Content {{lang.iso_code}}</label>
-                                    <textarea style="min-height: 300px" class="form-control" v-model="tree_item.content[lang.iso_code]" ></textarea>
+                            
+                                <div class="panel">
+                                    <ul class="nav nav-tabs" id="myCTab" role="tablist">
+                                        <li class="nav-item">
+                                            <a class="nav-link " id="home-tab" data-toggle="tab" href="#textarea-tab" role="tab"
+                                               aria-controls="home" aria-selected="true">General</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link active"  id="cont-tab" data-toggle="tab" href="#advancedcontent-tab" role="tab"
+                                               aria-controls="content" aria-selected="false">Advanced</a>
+                                        </li>
+                                    </ul>
+                                    <div class="tab-content" id="contentTabContaider">
+                                        <div class="tab-pane" id="textarea-tab" role="tabpanel"
+                                             aria-labelledby="home-tab"> 
+                                                <div v-for="lang in langs" class="form-group">
+                                                    <label for="text">Content {{lang.iso_code}}</label>
+                                                    <textarea @click="setadvancedcontent( lang.iso_code )" style="min-height: 300px" :id="'content_'+lang.iso_code" class="form-control" v-model="tree_item.content[lang.iso_code]" ></textarea>
+                                                </div>
+                                         </div>
+                                        <div class="tab-pane active" id="advancedcontent-tab" role="tabpanel"
+                                             aria-labelledby="home-tab"> 
+                                             <div class="form-group">{{currentlang}}
+                                                    <button v-for="lang in langs" type="button" class="btn" 
+                                                     @click="setadvancedcontent( lang.iso_code )"  >Content {{lang.iso_code}}</button>
+                                            </div>
+                                            <textarea @blur="savecontent( )" name="" id="content_advanced" cols="30" rows="10"></textarea>
+                                         </div>
+                                     </div>
                                 </div>
+                                
                             </div>
+                            
                             <div class="tab-pane fade" id="image-tab" role="tabpanel" aria-labelledby="profile-tab">
                                     <tree_item_image :tree_item="tree_item" ></tree_item_image>
                             </div>
+                            
                         </div>
                     </div>
                 </form>
@@ -184,6 +265,7 @@ Vue.component("addchild", {
         create() {
             console.log(this.tree_item, this.tree)
             this.tree_item.main = 1;
+            this.tree_item.slug = this.tree_item.name['en'];
 
             if (this.tree_items)
                 this.tree_item.position = this.tree_items.length;
@@ -200,7 +282,7 @@ Vue.component("addchild", {
                 this.tree_item.parent_id = this.parent.id;
             }
             this.tree_item.name["fr"] = this.tree_item.name["en"]
-            Drequest.api("create.tree-item")
+            Drequest.adminApi("create/tree-item")
                 .data({
                     tree_item: this.tree_item
                 })
@@ -244,7 +326,7 @@ Vue.component("childrenTree", {
     methods: {
 
         findchildren(el) {
-            Drequest.api("tree-item.lazyloading?dfilters=on&next=1&per_page=25&parent_id:eq=" + this.tree_item.id)
+            Drequest.adminApi("lazyloading/tree-item?dfilters=on&next=1&per_page=25&parent_id:eq=" + this.tree_item.id)
                 .get((response) => {
                     console.log(response);
 
@@ -265,7 +347,7 @@ Vue.component("childrenTree", {
                 this.children.forEach((item) => {
                     toupdate.push([item.id, item.position])
                 })
-                Drequest.api("tree-item.order")
+                Drequest.adminApi("tree-item/order")
                     .data({
                         tree_items: toupdate
                     })
@@ -279,14 +361,14 @@ Vue.component("childrenTree", {
         changestatus(el, status) {
             el.status = status;
             console.log(el);
-            Drequest.api("tree-item.changestatus?id=" + el.id + "&status=" + status)
+            Drequest.adminApi("tree-item/changestatus?id=" + el.id + "&status=" + status)
                 .get(function (response) {
                     console.log(response);
                 })
         },
         addcontent() {
 
-            Drequest.api("tree-item.addcontent?id=" + this.tree_item.id)
+            Drequest.adminApi("tree-item/addcontent?id=" + this.tree_item.id)
                 .get(function (response) {
                     console.log(response);
                     window.location.href = response.redirect;
@@ -295,7 +377,7 @@ Vue.component("childrenTree", {
         },
         _delete(el, index) {
             // this.el =el;
-            Drequest.api("tree-item.delete?id=" + this.tree_item.id)
+            Drequest.adminApi("tree-item/delete?id=" + this.tree_item.id)
                 .get((response) => {
                     console.log(response);
                     if (this.$parent)
@@ -315,8 +397,7 @@ Vue.component("childrenTree", {
         <li class="list-group-item">
             <div class="dd-handle dd-primary">
                 <button style="width: 120px; overflow: hidden"  class="btn btn-light">
-                <span v-html="tree_item.name['en']"></span> {{tree_item.position}} {{nbitem}}
-                ({{tree_item.children}})</button>
+                <span v-html="tree_item.name['en']"></span> {{tree_item.position}} </button>
                 <button v-if="tree_item.position" @click="move(1)" class="btn btn-info btn-sm"><i class="fa fa-angle-down"></i></button> 
                 <button v-if="tree_item.position <= nbitem - 1" @click="move(-1)" class="btn btn-info btn-sm"><i class="fa fa-angle-up"></i></button> 
 
@@ -378,7 +459,7 @@ Vue.component("tree_item", {
     mounted() {
 
         Drequest
-            .api("tree-item.lazyloading")
+            .adminApi("lazyloading/tree-item")
             .param({
                 dfilters: "on",
                 next: 1,
@@ -421,7 +502,7 @@ Vue.component("tree_item", {
             this.currentpage = next;
 
             Drequest
-                .api("tree-item.nextchildren?id="+catid+"&next="+next)
+                .adminApi("tree-item/nextchildren?id="+catid+"&next="+next)
                 //.param({id: catid, next: next})
                 .get((response) => {
                     console.log(response);
@@ -435,7 +516,7 @@ Vue.component("tree_item", {
 
             this.currentpage = next;
 
-            Drequest.api("tree-item.lazyloading")
+            Drequest.adminApi("lazyloading/tree-item")
                 .param({
                     dfilters: "on",
                     next: next,
@@ -479,7 +560,7 @@ Vue.component("tree_item", {
                 // else
 
                 Drequest
-                    .api("tree-item.find")
+                    .adminApi("tree-item/find")
                     .param({search: devups.escapeHtml(this.search)})
                     .get((response) => {
                         console.log(response);
@@ -501,7 +582,7 @@ Vue.component("tree_item", {
             var index = this.tree_item_id[1];
 
             Drequest
-                .api("tree-item.delete")
+                .adminApi("tree-item/delete")
                 .param({id: tree_item_id, "option": option})
                 .get((response) => {
                     console.log(response);
@@ -518,7 +599,7 @@ Vue.component("tree_item", {
             console.log(this.tree_items);
             this.tree_itemstring = cc;
             Drequest
-                .api("tree-item.create")
+                .adminApi("tree-item/create")
                 .data({data: cc}).post((response) => {
                 console.log(response);
             });
@@ -548,7 +629,7 @@ Vue.component("tree_item", {
                 })
                 console.log(toupdate);
                 Drequest
-                    .api("tree-item.order")
+                    .adminApi("tree-item/order")
                     .data({
                         tree_items: toupdate
                     }).raw((response) => {
@@ -571,7 +652,7 @@ Vue.component("tree_item", {
                                 <div class="topbar-left">
                                     <ol class="breadcrumb">
                                         <li class="breadcrumb-link">
-                                            <strong class="">{{tree.name['en']}} | </strong>
+                                            <strong class="">{{tree.name}} | </strong>
                                         </li>
                                         <li class="breadcrumb-link">
                                             <a @click="init(tree_item, $index)">Main</a>
@@ -589,7 +670,7 @@ Vue.component("tree_item", {
                     </div>
                 </div>
             </div>
-            <div class="col-md-7">
+            <div class="col-md-6">
                 <div class="panel">
                     <div class="card-header">
 
@@ -639,7 +720,7 @@ Vue.component("tree_item", {
                 </div>
             </div>
 
-            <div style=" position: sticky;  top: 150px;" class="col-md-5">
+            <div style=" position: sticky;  top: 150px;" class="col-md-6">
                 <tree_itemForm :langs="langs" :key="tree_item.id" v-if="tree_item.id" :tree_item="tree_item" ></tree_itemForm>
             </div>
 
@@ -657,9 +738,10 @@ var tree_itemview = new Vue({
         tree: {},
         langs: langs,
         treeedit: {name: ''},
+        treeselected: {name: ''},
     },
     mounted() {
-        Drequest.api("lazyloading.tree").get((response) => {
+        Drequest.adminApi("lazyloading/tree").get((response) => {
             console.log(response);
             this.trees = response.listEntity;
         })
@@ -673,6 +755,11 @@ var tree_itemview = new Vue({
             this.tree = tree;
             console.log("tree_item.getdata client");
         },
+        fillData(tree) {
+            Drequest.adminApi("tree/fillData").get((response) => {
+                console.log(response);
+            });
+        },
         edit(tree) {
             this.treeedit = tree
         },
@@ -682,7 +769,7 @@ var tree_itemview = new Vue({
             if (!confirm("confirmer la suppression?"))
                 return;
 
-            Drequest.api("tree.delete?id=" + id).get((response) => {
+            Drequest.adminApi("tree/delete?id=" + id).get((response) => {
                 console.log(response);
                 this.trees.slice(index, 1)
             });
@@ -693,7 +780,7 @@ var tree_itemview = new Vue({
             if (!this.treeedit.name)
                 return null;
 
-            Drequest.api("create.tree")
+            Drequest.adminApi("create/tree")
                 .data({
                     tree: {
                         "name": this.treeedit.name
@@ -710,7 +797,7 @@ var tree_itemview = new Vue({
                 return null;
 
             if (treeedit.id) {
-                Drequest.api("update.tree?id=" + treeedit.id)
+                Drequest.adminApi("update/tree?id=" + treeedit.id)
                     //.param({id: treeedit.id})
                     .data({
                         tree: {
@@ -723,7 +810,7 @@ var tree_itemview = new Vue({
                     });
 
             } else {
-                Drequest.api("create.tree")
+                Drequest.adminApi("create/tree")
                     .data({
                         tree: {
                             "name": treeedit.name

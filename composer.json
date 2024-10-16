@@ -17,7 +17,11 @@
         "philo/laravel-blade": "3.*",
         "ifsnop/mysqldump-php": "^2.9",
         "phpmailer/phpmailer": "^6.6",
-        "mpdf/mpdf": "^8.0"
+        "mpdf/mpdf": "^8.0",
+        "guzzlehttp/guzzle": "^7.5",
+        "maslosoft/addendum": "*",
+        "firebase/php-jwt": "^6.9",
+        "barcode-bakery/barcode-1d": "^7.0"
     },
     "autoload": {
         "classmap": [
@@ -28,5 +32,10 @@
     },
     "require-dev": {
         "symfony/var-dumper": "^5.4"
+    },
+    "config": {
+        "allow-plugins": {
+            "kylekatarnls/update-helper": false
+        }
     }
 }

@@ -4,7 +4,7 @@ require '../config/constante.php';
 define('VENDOR', __env . 'admin/vendors/');
 define('assets', __env . 'admin/assets/');
 
-$action = 'index.php?path=connexion';
+$action = __env.'/admin/devups/ModuleAdmin/dvups-admin/connexion-action';
 
 ?>
 

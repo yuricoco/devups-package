@@ -87,6 +87,9 @@ trait ModelTrait
 
                     return $this->{$attribut};
                 }*/
+                if (!isset($this->id))
+                    return $this->{$attribut};
+
                 global $em;
                 $classlang = get_class($this);
                 $metadata = $em->getClassMetadata("\\" . $classlang);
@@ -127,7 +130,7 @@ trait ModelTrait
 
     public function __set($name, $value)
     {
-        if (strpos($name, '_id')) {
+        if (str_contains($name, '_id')) {
             $attribut = str_replace('_id', '', $name);
             if (property_exists($this, $attribut) && is_object($this->{$attribut})) {
                 $this->{$attribut}->id = $value;
@@ -346,13 +349,82 @@ trait ModelTrait
         return $qb;// ->addColumns($columns)->getValue();
     }
 
+    public static $columns = [];
+
+    /**
+     * @param ...$columns
+     * @return QueryBuilder
+     * @throws ReflectionException
+     */
+    public static function addColumn($column, $as = "")
+    {
+
+        $reflection = new ReflectionClass(get_called_class());
+        $entity = $reflection->newInstance();
+
+        if ($as) {
+            if (!isset(Model::$columns[get_called_class()]))
+                Model::$columns[get_called_class()] = [];
+
+            $var = explode(':', $as);
+            if(count($var) == 2){
+                Model::$columns[get_called_class()][] = $var;
+                $as = $var[0];
+            }else
+                Model::$columns[get_called_class()][] = $as;
+
+            $as = " AS $as";
+        }
+        $qb = new QueryBuilder($entity);
+        $qb->custom_columns .= (" ". $column." $as ");
+        return $qb;// ->addColumns($columns)->getValue();
+
+    }
+    public static function addAttributes($entity){
+        $attrs = [];
+        if (!isset(Model::$columns[get_called_class()]))
+            return [];
+        //dv_dump($entity, Model::$columns[get_called_class()]);
+        foreach (Model::$columns[get_called_class()] as $att){
+            if (!isset($entity->{$att[0]}))
+                continue;
+
+            if(is_array($att)){
+                if($att[1] == 'bool')
+                    $attrs[$att[0]] = (bool) $entity->{$att[0]};
+                elseif($att[1] == 'int')
+                    $attrs[$att[0]] = (int) $entity->{$att[0]};
+                else
+                    throw new Exception("The parsing key ".$att[1]." is not recognized!");
+            }else
+                $attrs[$att] = $entity->{$att};
+        }
+        return $attrs;
+    }
+
+    /**
+     * @param ...$columns
+     * @return QueryBuilder
+     * @throws ReflectionException
+     */
+    public static function addIndexColumn($columnOrder, $alias)
+    {
+
+        $reflection = new ReflectionClass(get_called_class());
+        $entity = $reflection->newInstance();
+
+        $qb = new QueryBuilder($entity);
+        $qb->addIndex($columnOrder, $alias);
+        return $qb;// ->addColumns($columns)->getValue();
+    }
+
     /**
      * return the row as design in the database
      * @example http://easyprod.spacekola.com description
      * @param int $id
      * @return $this
      */
-    public static function findrow($id, $id_lang = null)
+    public static function findrow($id, $id_lang = null, $qb = null)
     {
 
         $classname = get_called_class();
@@ -363,13 +435,18 @@ trait ModelTrait
         if ($id_lang)
             $entity->dvid_lang = $id_lang;
 
-        $qb = new QueryBuilder($entity);
+        if (!$qb)
+            $qb = new QueryBuilder($entity);
         $qb->setLang($id_lang);
+        if (is_array($id)) {
+
+            return $qb->where("this.id")->in($id)->get();
+        }
         if ($entity->dvtranslate) {
 //            if (!$id_lang)
 //                $id_lang = Dvups_lang::defaultLang()->getId();
 
-            return $qb->select()
+            return $qb //->select()
                 //->leftjoinrecto($classname . "_lang")
                 ->where("this.id", "=", $id)
                 //->where($classname . "_lang.lang_id", "=", $id_lang)
@@ -387,7 +464,7 @@ trait ModelTrait
      * @param boolean $recursif [true] tell the DBAL to find all the data of the relation
      * @return $this | array
      */
-    public static function find($id, $id_lang = null)
+    public static function find($id, $id_lang = null, $qb = null)
     {
         $classname = get_called_class();
         $reflection = new ReflectionClass(get_called_class());
@@ -396,7 +473,8 @@ trait ModelTrait
         if ($id_lang)
             $entity->dvid_lang = $id_lang;
 
-        $qb = new QueryBuilder($entity);
+        if (!$qb)
+            $qb = new QueryBuilder($entity);
         $qb->setLang($id_lang);
         if (is_array($id)) {
             if (is_string(array_key_first($id)))
@@ -474,6 +552,18 @@ trait ModelTrait
         }
     }
 
+    public static function createFrom($data, $table_targeted){
+
+        $classname = get_called_class();
+
+        $reflection = new ReflectionClass(get_called_class());
+        $entity = $reflection->newInstance();
+
+        $qb = new QueryBuilder($entity);
+        return $qb->createFrom($data, $table_targeted);
+
+    }
+
     /**
      * update a part or an entire entity
      * @example http://easyprod.spacekola.com description
@@ -507,12 +597,12 @@ trait ModelTrait
     {
         $dbal = new DBAL();
         DBAL::$id_lang_static = $this->dvid_lang;
-        //if (!$arrayvalues) {
-        return $dbal->updateDbal($this);
-//        } else {
-//            $qb = new QueryBuilder($this);
-//            return $qb->update($arrayvalues, $seton, $case, $defauljoin);
-//        }
+        if (!$arrayvalues) {
+            return $dbal->updateDbal($this);
+        } else {
+            $qb = new QueryBuilder($this);
+            return $qb->update($arrayvalues, $seton, $case, $defauljoin);
+        }
     }
 
 
@@ -628,14 +718,25 @@ trait ModelTrait
     }
 
     /**
-     * return instance of \QueryBuilder with the select request sequence without the default join.
-     * @param string $columns
-     * @return \QueryBuilder
-     * @example name, description, category if none has been set, all will be take.
+     * @param $column
+     * @return QueryBuilder
      */
-    public static function initQb($columns = '*', $id_lang = null)
+    public static function selectSum($column){
+        return self::select("SUM($column)", false, false);
+    }
+
+    /**
+     * @param $defaultjoin
+     * @return QueryBuilder
+     * @throws ReflectionException
+     */
+    public static function initQb($defaultjoin = true)
     {
-        return self::select($columns, $id_lang, false);
+        $reflection = new ReflectionClass(get_called_class());
+        $entity = $reflection->newInstance();
+
+        $qb = new QueryBuilder($entity, $defaultjoin);
+        return $qb;
     }
 
     /**
@@ -672,6 +773,16 @@ trait ModelTrait
     }
 
     /**
+     * @param $classname
+     * @param $alias
+     * @param $constraint
+     * @return QueryBuilder
+     */
+    public static function leftJoinOn($classname, $alias = "", $constraint = "")
+    {
+        return self::select()->leftJoinOn($classname, $alias = "", $constraint = "");
+    }
+    /**
      * @param $column
      * @param $collection
      * @return QueryBuilder
@@ -679,6 +790,16 @@ trait ModelTrait
     public static function whereIn($column, $collection)
     {
         return self::select()->whereIn($column, $collection);
+    }
+
+    /**
+     * @param $column
+     * @param $collection
+     * @return QueryBuilder
+     */
+    public static function whereInReverse($value, $collection)
+    {
+        return self::select()->whereInReverse($value, $collection);
     }
 
     public static function join($classname, $classnameon = null, $id_lang = null)
@@ -764,6 +885,19 @@ trait ModelTrait
         return $qb->distinct("$columns");
     }
 
+    public function hydrateMatch($flowDB, $entity)
+    {
+
+        foreach ($this as $key => $val) {
+            if (isset($flowDB[$entity.'_'.$key])) {
+                $this->{$key} = $flowDB[$entity . '_' . $key];
+            }elseif (is_object($this->{$key})) {
+                if (isset($flowDB[$entity . '_' . $key . '_id']))
+                    $this->{$key}->id = $flowDB[$entity . '_' . $key . '_id'];
+            }
+        }
+
+    }
     public function inCollectionOf($collection, $key_map = "")
     {
 
@@ -830,6 +964,7 @@ trait ModelTrait
     }
 
     public static function getIdentifyKey($classname = ''){
+
         global $em;
         if (!$classname)
             $classname = get_called_class();
@@ -843,6 +978,34 @@ trait ModelTrait
             return $identifier;
         }
         return array_combine($metadata->identifier, $metadata->identifier);
+    }
+
+
+    /**
+     * @param $next
+     * @param $perpage
+     * @param $order
+     * @param $debug
+     * @return \dclass\devups\Datatable\Lazyloading|int|QueryBuilder
+     * @throws ReflectionException
+     */
+    public static function lazyloading($order = "", $qb = null, $debug = false)
+    {//
+        $classname = get_called_class();
+        $reflection = new ReflectionClass($classname);
+        $entity = $reflection->newInstance();
+
+        $ll = new \dclass\devups\Datatable\Lazyloading($entity);
+        $ll->start(new QueryBuilder($entity));
+        if ($debug)
+            return $ll->renderQuery()->lazyloading($entity, $qb, $order);
+
+        return $ll->lazyloading($entity, $qb, $order);
+
+    }
+
+    public static function importSanitizer($key, $value){
+        return $value;
     }
 
 }

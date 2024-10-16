@@ -29,7 +29,7 @@
                     </button>
                 @endif
 
-                @if ($ll->pagination > 10)
+                @if ($ll->pagination > \dclass\devups\Datatable\Lazyloading::maxpagination)
                     @if(!$ll->dynamicpagination)
 
                         <span class="paginate_button page-item ">

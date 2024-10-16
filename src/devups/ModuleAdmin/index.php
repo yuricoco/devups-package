@@ -5,17 +5,16 @@ require '../../../admin/header.php';
 global $viewdir, $moduledata;
 $viewdir[] = __DIR__ . '/Resource/views';
 $moduledata = Dvups_module::init("ModuleAdmin");
-//require 'header.php';
-//require 'App.php';
 
-//$module = new \devups\ModuleAdmin\ModuleAdmin();
-//die;
-
-define('CHEMINMODULE', ' ');
 
 $dvups_adminCtrl = new Dvups_adminController();
 $dvups_rightCtrl = new Dvups_rightController();
 $dvups_roleCtrl = new Dvups_roleController();
+
+
+global $app;
+($app = new \devups\ModuleAdmin\ModuleAdmin('layout'))->manage();
+die;
 
 
 (new Request('layout'));

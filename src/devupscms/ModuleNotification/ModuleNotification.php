@@ -3,7 +3,12 @@
 
 namespace devupscms\ModuleNotification;
 
+use dclass\devups\Controller\ModuleController;
 use Genesis as g;
+use Notification;
+use NotificationTable;
+use Notificationtype;
+use NotificationtypeTable;
 use Request as R;
 use Dvups_module;
 use Genesis;
@@ -11,16 +16,28 @@ use Request;
 use Tree_item;
 use Tree_item_imageController;
 use Tree_itemFrontController;
-use TreeFrontController;
 
-class ModuleNotification
+class ModuleNotification extends ModuleController
 {
 
-    public $moduledata;
-
-    public function __construct()
+    public function __construct($route)
     {
+        parent::__construct($route);
+    }
 
+    public function layoutView()
+    {
+        \dclass\devups\Controller\Controller::$jsfiles[] = Notification::classpath("Resource/js/notificationCtrl.js");
+        $notificationtable = NotificationTable::init(new Notification());
+        $notificationttypeable = NotificationtypeTable::init(new Notificationtype());
+        Genesis::renderView("admin.overview",
+            compact("notificationtable", "notificationttypeable"));
+
+    }
+
+    public function helloService()
+    {
+        Genesis::json_encode(['success'=>true]);
     }
 
     public function web()

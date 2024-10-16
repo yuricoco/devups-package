@@ -49,6 +49,11 @@ class ImageCore extends Model implements JsonSerializable
      * @var float
      **/
     protected $height;
+    /**
+     * @Column(name="extensionnpm", type="float"  , nullable=true)
+     * @var float
+     **/
+    protected $extension;
 
 
     public function __construct($id = null)

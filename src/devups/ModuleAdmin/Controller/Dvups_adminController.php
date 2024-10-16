@@ -101,15 +101,15 @@ class Dvups_adminController extends Controller
         die;
     }
 
-    public function connexionAction($login = "", $password = "")
+    public function connexionAction()
     {
         if (!isset($_POST['login']) and $_POST['login'] != '' and !isset($_POST['password'])) {
             redirect( __env . "admin/login.php?error=Entré le login et le mot de passe.");
         }
         extract($_POST);
 
-        $admin = Dvups_admin::select()->where('login', $login)->andwhere('password', sha1($password))->__getOne();
-        //dv_dump($login, $password, $admin);
+        $admin = Dvups_admin::select()->where('login', $login)->andwhere('password', sha1($password))->first();
+
         if (!$admin->getId())
             redirect( __env . "admin/login.php?err=" . 'Login ou mot de passe incorrect.');
 
@@ -121,7 +121,7 @@ class Dvups_adminController extends Controller
         $admin->__update(["lastlogin_at" => date("Y-m-d H:i:s")]);
 
         if ($admin->getFirstconnexion()) {
-            redirect(Dvups_admin::classpath() . "dvups-admin/complete-registration?id=" . $admin->getId());
+            redirect(Dvups_admin::classview("dvups-admin/complete-registration?id=" . $admin->getId()));
             return;
         }
 
@@ -138,8 +138,8 @@ class Dvups_adminController extends Controller
 
         $_SESSION[CSRFTOKEN] = serialize($admin);
         //$_SESSION[LANG] = $_POST['lang'];
-
-        redirect(__env . "admin/");
+        //dv_dump($login, $password, $admin);
+        redirect(__env . "admin/dashboard");
 
 //        return array('success' => true,
 //            'url' => 'index.php',
@@ -201,7 +201,7 @@ class Dvups_adminController extends Controller
 
     }
 
-    public static function renderForm($id = null, $action = "create")
+    public function formView($id = null)
     {
         $dvups_admin = new Dvups_admin();
         $action = Dvups_admin::classpath("services.php?path=dvups_admin.create");
@@ -245,12 +245,15 @@ class Dvups_adminController extends Controller
         return ["success" => true];
     }
 
-    public function completeRegistrationView($id)
+    public function completeRegistration($id)
     {
+        // if ()
         self::$sidebar = false;
         $admin = Dvups_admin::find($id);
         $action = Dvups_admin::classpath("dvups-admin/complete?id=" . $id);
-        return compact("admin", "action");
+        //return compact("admin", "action");
+        Genesis::renderView('admin.dvups_admin.complete_registration', compact("admin", "action"));
+
     }
 
     public function completeRegistrationAction($id)
@@ -261,10 +264,9 @@ class Dvups_adminController extends Controller
         if ($newpwd == $confimnewpwd) {
 
             if (sha1($currentpwd) == $admin->getPassword()) {
-                $admin->__update([
-                    "password" => sha1($newpwd),
-                    "firstconnexion" => 0,
-                ]);
+                $admin->password = sha1($newpwd);
+                $admin->firstconnexion = 0;
+                $admin->__update();
 
                 unset($_SESSION[ADMIN]);
                 redirect(__env."admin/");

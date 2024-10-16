@@ -26,7 +26,7 @@
         <li class="nav-item">
             <a class="nav-link active"
                href="<?=  $entity->route() ?>">
-                <i class="metismenu-icon"></i> <span><?= $entity->getLabel() ?></span>
+                <i class="metismenu-icon"></i> <span><?= $entity->label[local()] ?></span>
             </a>
         </li>
     @endforeach

@@ -11,7 +11,7 @@ use Philo\Blade\Blade;
 
 class BladeD extends Blade
 {
-    public function __construct($viewPaths = array(), $cachePath, \Illuminate\Events\Dispatcher $events = null)
+    public function __construct($viewPaths, $cachePath, \Illuminate\Events\Dispatcher $events = null)
     {
         parent::__construct($viewPaths, $cachePath, $events);
     }
@@ -98,6 +98,8 @@ class Genesis
 
     public static function json_encode($value, $options = 0, $depth = 512)
     {
+        // header('Content-Type: application/json');
+
         global $_start;
         if (is_array($value)) {
             $_end = microtime(true);
@@ -181,13 +183,17 @@ class Genesis
 
         global $viewdir, $moduledata;
 
-        $blade = new BladeD($viewdir, ROOT . "cache/views");
+        try {
+            $blade = new BladeD($viewdir, ROOT . "cache/views");
 
-        ob_start();
-        echo $blade->view()->make($view, $data)->render();
-        $viewhtml = ob_get_contents();
-        ob_end_clean();
-        return $viewhtml;
+            ob_start();
+            echo $blade->view()->make($view, $data)->render();
+            $viewhtml = ob_get_contents();
+            ob_end_clean();
+            return $viewhtml;
+        }catch (Exception $e){
+            dv_dump($e);
+        }
     }
 
 

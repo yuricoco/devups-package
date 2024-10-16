@@ -12,8 +12,8 @@ require __DIR__ . '/constante.php';
 //if (__debug)
 //    require 'php_ini.php';
 
-if (file_exists(__DIR__ . '/../vendor')) {
-    require __DIR__ . '/../vendor/autoload.php';
+if (file_exists(__vendor_folder)) {
+    require __vendor_folder . '/autoload.php';
 }
 
 require __DIR__ . '/Database.php';
@@ -25,6 +25,7 @@ require __DIR__ . '/../dclass/devups/Core.php';
 require __DIR__ . '/../dclass/devups/Tchutte/DBAL.php';
 require __DIR__ . '/../dclass/devups/Tchutte/DB_dumper.php';
 require __DIR__ . '/../dclass/devups/Tchutte/QueryBuilder.php';
+require __DIR__ . '/../dclass/devups/Tchutte/Column.php';
 require __DIR__ . '/../dclass/devups/Dfile.php';
 require __DIR__ . '/../dclass/devups/ScanDir.php';
 require __DIR__ . '/../dclass/devups/model/ModelTrait.php';
@@ -47,9 +48,14 @@ require __DIR__ . '/../dclass/devups/Form/FormManager.php';
 require __DIR__ . '/../dclass/devups/Form/Form.php';
 require __DIR__ . '/../dclass/devups/Http/Request.php';
 require __DIR__ . '/../dclass/devups/Http/Response.php';
+require __DIR__ . '/../dclass/devups/Http/Route.php';
+require __DIR__ . '/../dclass/devups/Http/Router.php';
+
+require __DIR__ . '/../dclass/devups/Interfaces/NotificationSerialize.php';
 
 require __DIR__ . '/../dclass/dvups_functions.php';
 require __DIR__ . '/../dclass/lib/lib_dependances.php';
+
 
 require __DIR__ . '/../dclass/extends/extends_dependances.php';
 require __DIR__ . '/../dclass/generator/template/Templatedependences.php';

@@ -6,7 +6,6 @@ use dclass\devups\Datatable\Datatable as Datatable;
 class UserTable extends Datatable
 {
 
-    public $entity = "user";
 
     public function __construct($user = null, $datatablemodel = [])
     {
@@ -25,43 +24,63 @@ class UserTable extends Datatable
     public function buildindextable()
     {
 
-        $this->base_url = __env."admin/";
+        $this->base_url = __env . "admin/";
         $this->datatablemodel = [
-            ['header' => t('#'), 'value' => 'id', "search"=>false],
-            ['header' => t('Nom'), 'value' => 'username'],
-            ['header' => t('Country'), 'value' => 'country.name'],
-            ['header' => t( 'Phonenumber'), 'value' => 'phonenumber'],
-            ['header' => t('email'), 'value' => 'email'],
-            ['header' => t( 'Is activated'), 'value' => 'is_activated'],
-            ['header' => t('Register at'), 'value' => 'createdAt'],
-            //['header' => t('user.birthdate', 'Birthdate'), 'value' => 'birthdate'],
+            'id' => ['header' => t('#'),],
+            'src_profile' => ['header' => t('Profile'),'value'=>'src:profile'],
+            'profile' => ['header' => t('Profile'),],
+            'firstname' => ['header' => t('Firstname'),],
+            'lastname' => ['header' => t('Lastname'),],
+            'email' => ['header' => t('Email'),],
+            'phonenumber' => ['header' => t('Phonenumber'),],
+            //'lang' => ['header' => t('Lang'),],
+            'username' => ['header' => t('Username'),],
+            'role.name' => ['header' => t('Role'),],
         ];
 
-        $this->order_by = " this.id desc ";
-        $this->per_page = 30;
+        $this->addcustomaction(function ($item){
+           return \dclass\devups\model\Dbutton::link('Detail',
+               User::classview('user/detail?id='.$item->id), 'btn btn-info')
+               ->render();
+        });
+
         return $this;
     }
 
     public function builddetailtable()
     {
         $this->datatablemodel = [
-            ['label' => 'Firstname', 'value' => 'firstname'],
-            ['label' => 'Lastname', 'value' => 'lastname'],
-            ['label' => 'Email', 'value' => 'email'],
-            ['label' => 'Sexe', 'value' => 'sexe'],
-            ['label' => 'Phonenumber', 'value' => 'phonenumber'],
-            //['label' => 'Password', 'value' => 'password'],
-            ['label' => 'Resettingpassword', 'value' => 'resettingpassword'],
-            ['label' => 'Is_activated', 'value' => 'is_activated'],
-            ['label' => 'Activationcode', 'value' => 'activationcode'],
-            ['label' => 'Birthdate', 'value' => 'birthdate'],
-            ['label' => 'Creationdate', 'value' => 'creationdate'],
-            ['label' => 'Lang', 'value' => 'lang'],
-            ['label' => 'Username', 'value' => 'username'],
-            ['label' => 'Has_shop', 'value' => 'has_shop']
+            ['label' => t('firstname'), 'value' => 'firstname'],
+            ['label' => t('lastname'), 'value' => 'lastname'],
+            ['label' => t('email'), 'value' => 'email'],
+            ['label' => t('sexe'), 'value' => 'sexe'],
+            ['label' => t('phonenumber'), 'value' => 'phonenumber'],
+            ['label' => t('password'), 'value' => 'password'],
+            ['label' => t('resettingpassword'), 'value' => 'resettingpassword'],
+            ['label' => t('is_activated'), 'value' => 'is_activated'],
+            ['label' => t('activationcode'), 'value' => 'activationcode'],
+            ['label' => t('birthdate'), 'value' => 'birthdate'],
+            ['label' => t('creationdate'), 'value' => 'creationdate'],
+            ['label' => t('lang'), 'value' => 'lang'],
+            ['label' => t('username'), 'value' => 'username'],
+            ['label' => t('has_shop'), 'value' => 'has_shop']
         ];
         // TODO: overwrite datatable attribute for this view
         return $this;
+    }
+
+    public function router()
+    {
+        $tablemodel = Request::get("tablemodel", null);
+        if ($tablemodel && method_exists($this, "build" . $tablemodel . "table") && $result = call_user_func(array($this, "build" . $tablemodel . "table"))) {
+            return $result;
+        } else
+            switch ($tablemodel) {
+                // case "": return this->
+                default:
+                    return $this->buildindextable();
+            }
+
     }
 
 }

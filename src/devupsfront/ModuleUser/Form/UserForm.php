@@ -19,12 +19,12 @@ class UserForm extends FormManager
     {
 
 
-        $this->fields['country.id'] = [
-            "label" => t('Country'),
+        $this->fields['dvups_role\\role.id'] = [
+            "label" => t('Role'),
             FH_REQUIRE => false,
             "type" => FORMTYPE_SELECT,
-            "options" => FormManager::Options_Helper("name", Country::all("name")),
-            "value" => $this->user->country->id,
+            "options" => FormManager::Options_Helper("name", Dvups_role::all("name")),
+            "value" => $this->user->role->id,
         ];
 
         $this->fields['firstname'] = [
@@ -45,7 +45,7 @@ class UserForm extends FormManager
             "label" => t('user.email'),
             FH_REQUIRE => false,
             "type" => FORMTYPE_TEXT,
-            "value" => $this->user->getEmail(),
+            "value" => $this->user->email,
         ];
 
 
@@ -53,7 +53,7 @@ class UserForm extends FormManager
             "label" => t('user.phonenumber'),
             FH_REQUIRE => false,
             "type" => FORMTYPE_TEXT,
-            "value" => $this->user->getPhonenumber(),
+            "value" => $this->user->phonenumber,
         ];
 
         $this->fields['resetpassword'] = [
@@ -68,16 +68,14 @@ class UserForm extends FormManager
             FH_REQUIRE => false,
             "type" => FORMTYPE_RADIO,
             "options" => ["Desactivate", "Activate"],
-            "value" => $this->user->getIs_activated(),
+            "value" => $this->user->is_activated,
         ];
-
-
-        $this->fields['lang'] = [
+       /* $this->fields['lang'] = [
             "label" => t('user.lang'),
             FH_REQUIRE => false,
             "type" => FORMTYPE_TEXT,
             "value" => $this->user->getLang(),
-        ];
+        ];*/
 
         $this->fields['username'] = [
             "label" => t('user.username'),

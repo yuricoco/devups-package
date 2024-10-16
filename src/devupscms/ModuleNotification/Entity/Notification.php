@@ -8,6 +8,7 @@ class Notification extends Model implements JsonSerializable
 {
 
     public static $send_sms = false;
+    public static $send_push = false;
 
     /**
      * @Id @GeneratedValue @Column(type="integer")
@@ -61,6 +62,16 @@ class Notification extends Model implements JsonSerializable
     protected $entityid;
 
     /**
+     * @Column(name="path", type="string" , length=255 , nullable=true)
+     * @var string
+     **/
+    protected $path;
+    /**
+     * @Column(name="image", type="string" , length=255 , nullable=true)
+     * @var string
+     **/
+    protected $image;
+    /**
      * @Column(name="content", type="string" , length=255 , nullable=true)
      * @var string
      **/
@@ -78,6 +89,12 @@ class Notification extends Model implements JsonSerializable
      */
     public $notificationtype;
 
+    /**
+     * the user_id of the one who emitted the push notification
+     * @Column(name="emitted_by", type="integer" , nullable=true )
+     * @var string
+     **/
+    protected $emitted_by;
     /**
      * @Column(name="user_id", type="integer" , nullable=true )
      * @var string
@@ -117,7 +134,7 @@ class Notification extends Model implements JsonSerializable
 
         // once php load data it sets the ping value to 0 so that timer escape it
         self::where("admin_id", $user->getId())->andwhere("this.ping", "=", 1)->update([
-            "this.ping"=>0
+            "this.ping" => 0
         ]);
         return compact("notifcount", "notifs");
     }
@@ -143,7 +160,7 @@ class Notification extends Model implements JsonSerializable
     /**
      * @param string $redirect
      */
-    public function setRedirect(  $redirect)
+    public function setRedirect($redirect)
     {
         $this->redirect = $redirect;
         return $this;
@@ -232,11 +249,12 @@ class Notification extends Model implements JsonSerializable
         return $notification;
     }
 
-    public function send($mb = [], $params = [])
+    public function send($mb = [], $params = [], $push = false)
     {
         if (!$this->entityid)
             return $this;
 
+        self::$send_push = $push;
         self::braodcast($this, $mb, $params);
 
         return $this;
@@ -248,7 +266,11 @@ class Notification extends Model implements JsonSerializable
         if (!__prod)
             return 0;
 
-        $response = Request::initCurl("https://spacekolasms.com/api/sendsms?api_key=" . Configuration::get("sms_api_key2"))
+        $sms_api_key2 = Configuration::get("sms_api_key2");
+        if (!$sms_api_key2)
+            return 0;
+
+        $response = Request::initCurl("https://spacekolasms.com/api/sendsms?api_key=" . $sms_api_key2)
             ->data([
                 "phonenumber" => $receiver->phonenumber,
                 "message" => $notification->content,
@@ -258,7 +280,7 @@ class Notification extends Model implements JsonSerializable
             ->json();
 
         Emaillog::create([
-            "object" => " - object : " . $notification->notificationtype->_key . ' to '.$receiver->country->phonecode . $receiver->phonenumber,
+            "object" => " - object : " . $notification->notificationtype->_key . ' to ' . $receiver->country->phonecode . $receiver->phonenumber,
             "log" => json_encode($response),
         ]);
 
@@ -279,24 +301,24 @@ class Notification extends Model implements JsonSerializable
         $from = Configuration::get("sms_sender_id");
         $gateway_url = Configuration::get("sms_api");
 
-        $access = Request::initCurl($gateway_url."auth?type=".Configuration::get("sms_refresh_token"))
+        $access = Request::initCurl($gateway_url . "auth?type=" . Configuration::get("sms_refresh_token"))
             ->raw_data(
                 [
-                    "type"=> Configuration::get("sms_type"),
-                    "username"=> Configuration::get("sms_username"),
-                    "password"=> Configuration::get("sms_password"),
+                    "type" => Configuration::get("sms_type"),
+                    "username" => Configuration::get("sms_username"),
+                    "password" => Configuration::get("sms_password"),
                 ]
             )
             ->send()
             ->json();
 
-        if($access->status_code != 200) {
+        if ($access->status_code != 200) {
             Emaillog::create([
-                "object" => "sms exception"." dest: ".$destination,
+                "object" => "sms exception" . " dest: " . $destination,
                 "log" => $access->errors[0]->message,
             ]);
             return [
-                "success"=>false,
+                "success" => false,
                 "detail" => $access->errors[0]->message,
             ];
         }
@@ -315,13 +337,13 @@ class Notification extends Model implements JsonSerializable
 
         try {
 
-            $output = Request::initCurl($gateway_url."sms/mt/v2/send")
+            $output = Request::initCurl($gateway_url . "sms/mt/v2/send")
                 ->raw_data([$sms_body])
-                ->addHeader('Authorization', "Bearer ".$access->payload->access_token)
+                ->addHeader('Authorization', "Bearer " . $access->payload->access_token)
                 ->send();
 
             Emaillog::create([
-                "object" => "sms sent".$event." dest: ".$destination,
+                "object" => "sms sent" . $event . " dest: " . $destination,
                 "log" => $output->_response,
             ]);
             //var_dump($output);
@@ -329,7 +351,7 @@ class Notification extends Model implements JsonSerializable
         } catch (Exception $exception) {
 
             Emaillog::create([
-                "object" => "sms exception"." dest: ".$destination,
+                "object" => "sms exception" . " dest: " . $destination,
                 "log" => $exception->getMessage(),
             ]);
             //echo $exception->getMessage();
@@ -338,34 +360,43 @@ class Notification extends Model implements JsonSerializable
 
     public function sendMail($mb = ["editorial.3ag@gmail.com" => "3agedition"])
     {
-        if ($this->id){
+        if ($this->id) {
             Reportingmodel::init($this->notificationtype->getEmailmodel())
                 ->addReceiver($mb)
-                ->sendMail(["notification"=>$this->content]);
+                ->sendMail(["notification" => $this->content]);
         }
         return $this;
     }
 
     public function jsonSerialize()
     {
+        $entity = ucfirst($this->entity);
         if (Request::get("jsonmodel") == "html") {
             global $viewdir;
-            $viewdir[] = ROOT."admin/views";
+            $viewdir[] = ROOT . "admin/views";
             return [
                 'id' => $this->id,
-                'html' => Genesis::getView("default.notification_item", ["notification"=>$this]),
+                'viewedat' => $this->viewedat,
+                'read' => $this->read,
+                'notificationtype' => $this->notificationtype->_key,
+                'html' => Genesis::getView("default.notification_item", ["notification" => $this]),
                 'status' => $this->status,
-                'created_at' => $this->created_at,
-
+                'created_at' => $this->getTimeStamp(),
+                'target' => $entity::find($this->entityid),
             ];
         }
 
         return [
             'id' => $this->id,
             'viewedat' => $this->viewedat,
+            'read' => $this->read,
+            'notificationtype' => $this->notificationtype->_key,
             'status' => $this->status,
-            'notification' => $this->notification,
+            'content' => $this->content,
+            'entity' => $this->entity,
+            'created_at' => $this->getTimeStamp(),
             //'user' => $this->user,
+            'target' => $entity::find($this->entityid),
         ];
     }
 
@@ -385,6 +416,7 @@ class Notification extends Model implements JsonSerializable
 
     public function getRedirect()
     {
+        $entity = ucfirst($this->entity);
         if ($this->read == 0) {
             if ($this->_notificationtype->getSession() == "admin") {
                 //$entity = Dvups_entity::getbyattribut("name", $this->_notification->entity);
@@ -403,12 +435,11 @@ class Notification extends Model implements JsonSerializable
                     return $this->redirect;
                 }
 
-                $entity = ucfirst($this->entity);
-                return $entity::classpath("index.php?path=".$this->entity."/index&dfilters=on&id:eq={$this->entityid}&notified=" . $this->getId());
+                return $entity::classview("" . $this->entity . "/list?dfilters=on&id:eq={$this->entityid}&notified=" . $this->getId());
             }
             return route('notification?read=' . $this->getId());
         }
-        return $this->redirect ?? '#';
+        return $this->redirect ?? $entity::classview("" . $this->entity . "/list?dfilters=on&id:eq={$this->entityid}");;
     }
 
     public static function readed($id)
@@ -456,25 +487,65 @@ class Notification extends Model implements JsonSerializable
             if (isset($type->content[$local]))
                 $msg = $type->content[$local];
             else
-                $msg = $type->content["en"];
+                $msg = $type->content[__lang];
 
             foreach ($params as $search => $value) {
-                $msg = str_replace(":". $search ."", $value, $msg);
-                //$msg = str_replace("{{". $search ."}}", $value, $msg);
+//                try {
+                    $msg = str_replace(":" . $search . "", $value, $msg);
+                    //$msg = str_replace("{{". $search ."}}", $value, $msg);
+//                } catch (Exception $e) {
+//                    throw new Exception($e->getMessage() . " " . $search);
+//                }
             }
             $nb->setContent($msg);
 
-            if($type->session == "admin")
+            if ($type->session == "admin")
                 $nb->admin_id = $receiver->id;
             else
                 $nb->user_id = $receiver->id;
 
-            if(self::$send_sms != -1)
+            if (self::$send_sms != -1)
                 $nb->__insert();
 
             if (self::$send_sms)
                 self::sendSMS($nb, $receiver);
 
+            if (self::$send_push)
+                $nb->cloudMessagingPush( $receiver, $msg);
+
+        }
+
+    }
+
+    /**
+     * @param User|null $user the receiver of the push notification
+     * @param $message
+     * @param $link
+     * @param $icon
+     * @return array
+     */
+    public function cloudMessagingPush(\User $user, $message, $link = "", $icon = null)
+    {
+
+        if (!__prod)
+            return [];
+
+        if ($user)
+            $subscriptions = Push_subscription::where(
+                [
+                    'subscription_type' => 'user',
+                    'subscription_id' => $user->id,
+                ])->get();
+        else
+            $subscriptions = Push_subscription::where(
+                [
+                    'subscription_type' => 'user',
+                ])->get();
+
+
+        foreach ($subscriptions as $subscription) {
+            $subscription->fcmPushNotification( $message,
+                $this->jsonSerialize(), $icon);
         }
 
     }

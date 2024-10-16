@@ -19,18 +19,9 @@ class Dvups_module_lang extends Dv_langCore
      */
     public $dvups_module;
 
-    public function __construct($id = null)
+    public function __construct()
     {
 
-        if ($id) {
-            $this->id = $id;
-        }
-
-    }
-
-    public function getId()
-    {
-        return $this->id;
     }
 
     /**

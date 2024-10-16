@@ -16,18 +16,34 @@ class Request
 
 
     public static $uri_get_param = [];
+    public static $uri_get_route_param = [];
     public static $uri_post_param = [];
     public static $uri_raw_param = [];
     public static $uri = "";
     public static $system = "customer";
 
-    function strReplaceAssoc(array $replace, $subject)
+    static function strReplaceAssoc(array $replace, $subject)
     {
         return str_replace(array_keys($replace), array_values($replace), $subject);
     }
 
-    public static function collectUrlParam($url){
-        $param = explode('&', $url);
+    public static function collectUrlParam($url)
+    {
+        $query = explode("?", $url);
+        if (!isset($query[1]))
+            return 1;
+
+        $query[1] = self::strReplaceAssoc([
+            "%3C" => "<",
+            "%20" => " ",
+            "%3A" => ":",
+            "+d" => " d",
+            "+a" => " a",
+            "+D" => " D",
+            "+A" => " A",
+        ], $query[1]);
+
+        $param = explode('&', $query[1]);
         //$param = explode('&', $uri[1]);
         foreach ($param as $el) {
             $kv = explode("=", $el);
@@ -50,20 +66,20 @@ class Request
         self::$uri = str_replace("api//", "api/", $_SERVER['REQUEST_URI']);
 
         $uri = [];
-        if(isset($_SERVER['REDIRECT_URL'])) {
+        if (isset($_SERVER['REDIRECT_URL'])) {
             $REDIRECT_URL = str_replace("api//", "api/", $_SERVER['REDIRECT_URL']);
-            $uristr = str_replace( $REDIRECT_URL. '?', "", self::$uri);
+            $uristr = str_replace($REDIRECT_URL . '?', "", self::$uri);
             // dv_dump($_SERVER);
             if ($uristr != $REDIRECT_URL) {
                 $uri = [$REDIRECT_URL, $uristr];
             }
-        }else{
+        } else {
             $uri = explode('?', self::$uri);
         }
 
         if (isset($uri[1])) {
 
-            $uri[1] = $this->strReplaceAssoc([
+            $uri[1] = self::strReplaceAssoc([
                 "%3C" => "<",
                 "%20" => " ",
                 "%3A" => ":",
@@ -125,12 +141,18 @@ class Request
             return false;
     }
 
-    public static function raw($format = "json")
+    public static function raw($key = null, $default = null, $format = "json")
     {
         $rawdata = file_get_contents("php://input");
 
         if ($format == "json") {
             self::$uri_raw_param = json_decode($rawdata, true);
+            if ($key) {
+                if (isset(Request::$uri_raw_param[$key]))
+                    return Request::$uri_raw_param[$key];
+                else
+                    return $default;
+            }
             return self::$uri_raw_param;
         } else
             return $rawdata;
@@ -150,7 +172,8 @@ class Request
         return str_replace(__base_dir, "", $uri);
     }
 
-    public static function niceFunction($name, $separator = '_'){
+    public static function niceFunction($name, $separator = '_')
+    {
         $array = explode($separator, $name);
         $function = "";
         foreach ($array as $i => $item) {
@@ -168,7 +191,7 @@ class Request
         if (!Dvups_lang::where("iso_code", Request::get("lang"))->count()) {
             //die(var_dump(__env.local().'/'.(Request::get("lang"))));
             $env = str_replace(__server, "", __env);
-            $url = str_replace($env, __env.__lang.'/', self::$uri);
+            $url = str_replace($env, __env . __lang . '/', self::$uri);
             //die(var_dump(self::$uri, $url));
             redirect($url);
         }
@@ -185,33 +208,76 @@ class Request
         if ($paramvalues)
             //$app->{$function}(...$paramvalues);
             call_user_func_array(array($app, $function), $paramvalues);
-            //Genesis::json_encode(call_user_func_array(array($app, $function), $paramvalues));
+        //Genesis::json_encode(call_user_func_array(array($app, $function), $paramvalues));
         else
             $app->{$function}();
         //call_user_func(array($app, $function));
     }
 
-    public static function Controller($app, $path)
+    /**
+     * @throws Exception
+     */
+    public static function Controller($route, $path, $ctrl = null)
     {
-
         //$array = explode("-", $path);
         $function = self::niceFunction($path, '-');
-        if (in_array($function, ["create","update","delete","_delete","deletegroup","deleteGroup", ]))
+        if (in_array($function, ["create", "update", "delete", "_delete", "deletegroup", "deleteGroup",]))
             $function .= "Action";
-        else if (in_array($function, ["form","detail","list", ]))
+        else if (in_array($function, ["form", "detail", "list",]))
             $function .= "View";
+
+
+        $app = new $ctrl();
+        /**
+         * restriction are used in the webservice controller to handle @Auth in system crud
+         */
+        if (isset(Auth::$restrictions[Request::$uri_get_param["dclass"]])
+            && !in_array($function, Auth::$restrictions[Request::$uri_get_param["dclass"]])) {
+            $Auth = new Auth();
+            $result = $Auth->execute();
+            if (is_array($result) && $result['success'] == false) {
+                throw new Exception($result['detail']);
+            }
+            Router::$route_builder['auth'] = true;
+            Request::$uri_get_param['user_id'] = $result->userId;
+
+        } else if ($ctrl) {
+
+            $reflection = new ReflectionAnnotatedClass($ctrl);
+            $method = $reflection->getMethod($function);//
+            //dv_dump($method);
+            if ($method->hasAnnotation('Auth')) {
+                $Auth = $method->getAnnotation('Auth');
+                $result = $Auth->execute();
+                if (is_array($result) && $result['success'] == false) {
+                    throw new Exception($result['detail']);
+                }
+
+                Router::$route_builder['auth'] = true;
+                Request::$uri_get_param['user_id'] = $result->userId;
+            }
+        }
 
         if (!method_exists($app, $function)) {
             var_dump(" You may create method " . " " . $function . " in entity. ");
             die;
         }
         $paramvalues = self::getMethodParamValues(get_class($app), $function);
-        if ($paramvalues)
+
+        //
+        if ($paramvalues) {
+
+            Router::cacheRoute($route->url, $ctrl . '@' . $function, array_keys($paramvalues), Router::$route_builder['auth']);
+
             //$app->{$function}(...$paramvalues);
             return call_user_func_array(array($app, $function), $paramvalues);
             //Genesis::json_encode(call_user_func_array(array($app, $function), $paramvalues));
-        else
+        } else {
+
+            Router::cacheRoute($route->url, $ctrl . '@' . $function, [], Router::$route_builder['auth']);
+
             return $app->{$function}();
+        }
         //call_user_func(array($app, $function));
     }
 
@@ -254,7 +320,7 @@ class Request
             Genesis::json_encode(call_user_func_array(array($app, $function), $paramvalues));
         else
             $app->{$function}();
-            //Genesis::json_encode(call_user_func(array($app, $function)));
+        //Genesis::json_encode(call_user_func(array($app, $function)));
 
     }
 
@@ -264,36 +330,47 @@ class Request
     public $url = "";
     public $_method = "GET";
     public $_log = false;
+
     public static function initCurl($url, $_data = [])
     {
         $request = new Request(NULL);
         $request->url = $url;
         $request->_data = $_data;
-        if($_data)
+        if ($_data)
             $request->_method = "POST";
         return $request;
     }
-    public function data($post){
+
+    public function data($post)
+    {
         $this->_data = $post;
         $this->_method = "POST";
         return $this;
     }
-    public function addHeader($key, $value){
+
+    public function addHeader($key, $value)
+    {
         $this->_header[] = "$key: $value";
         return $this;
     }
-    public function raw_data($post){
+
+    public function raw_data($post)
+    {
         $this->_data = json_encode($post);
         $this->_method = "POST";
         $this->_header[] = "Content-Type: application/json";
         return $this;
     }
-    public function parameters($data){
+
+    public function parameters($data)
+    {
         $this->_data = http_build_query($data);
         $this->_method = "GET";
         return $this;
     }
-    public function send(){
+
+    public function send()
+    {
         $curl = curl_init();
 
         $data = array(
@@ -307,10 +384,10 @@ class Request
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => $this->_method
         );
-        if($this->_data && $this->_method == 'POST')
+        if ($this->_data && $this->_method == 'POST')
             $data[CURLOPT_POSTFIELDS] = $this->_data;
 
-        if($this->_header)
+        if ($this->_header)
             $data[CURLOPT_HTTPHEADER] = $this->_header;
 
         curl_setopt_array($curl, $data);
@@ -334,7 +411,8 @@ class Request
     /**
      * @return \stdClass
      */
-    public function json(){
+    public function json()
+    {
         return json_decode($this->_response);
     }
 

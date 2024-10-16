@@ -85,7 +85,7 @@ class Model extends \stdClass
         $fn = $reflector->getFileName();
         $dirname = explode("src", dirname($fn));
         $dirname = str_replace("Entity", "", $dirname[1]);
-        return $route . str_replace(["\\", '//'], "/", "admin/". $dirname . $view);
+        return $route . str_replace(["\\", '//'], "/", "/". $dirname . $view);
     }
 
     /**
@@ -230,7 +230,7 @@ class Model extends \stdClass
         $this->updated_at = date(\DClass\lib\Util::dateformat);
         $dbal = new DBAL();
         DBAL::$id_lang_static = $this->dvid_lang;
-        if (!$arrayvalues) {
+        if ($arrayvalues === null) {
             return $dbal->updateDbal($this);
         } else {
             $qb = new QueryBuilder($this);
@@ -355,8 +355,11 @@ class Model extends \stdClass
             $this->dvid_lang = $idlang;
 
         global $em;
-        $classlang = strtolower(get_class($this));
-        $metadata = $em->getClassMetadata("\\" . $classlang);
+        $classlang = (get_class($this));
+        $metadata = $em->getClassMetadata( $classlang);
+
+        //dv_dump($metadata);
+        $tablename = $metadata->table["name"];
         $fieldNames = $metadata->fieldNames;
         $assiactions = array_keys($metadata->associationMappings);
 
@@ -365,7 +368,7 @@ class Model extends \stdClass
             $sql = " SELECT {$classlang}.*, $columns FROM `$classlang` , {$classlang}_lang 
         WHERE {$classlang}_lang.lang_id = {$this->dvid_lang} AND {$classlang}_lang.{$classlang}_id = {$this->id} AND `{$classlang}`.id = " . $this->id;
         }else
-            $sql = " SELECT * FROM `$classlang` WHERE id = " . $this->id;
+            $sql = " SELECT * FROM `$tablename` WHERE id = " . $this->id;
         // dv_dump($sql);
         $data = (new DBAL($this))->executeDbal($sql, [], DBAL::$FETCH);
         //var_dump($classlang." - ".$attribut, $data, $fieldNames);
@@ -394,7 +397,7 @@ class Model extends \stdClass
 
     public function getId()
     {
-        return (int)$this->id;
+        return $this->id;
     }
 
     public function setId($id)
@@ -431,12 +434,19 @@ class Model extends \stdClass
     /**
      * @return string
      */
-    public function getCreatedAt($format = "")
+    public function getCreatedAt($format = "d/m/Y")
     {
         if (!$format)
             return $this->created_at;
 
         return date($format, strtotime($this->created_at));
+    }
+    /**
+     * @return float
+     */
+    public function getTimeStamp($attribute = "created_at", $precision = 1000 )
+    {
+        return  (new DateTime($this->{$attribute}))->getTimestamp() * $precision;
     }
 
     /**
@@ -584,13 +594,14 @@ class Model extends \stdClass
 
     public static function createInstance(...$keyvalues)
     {
-        $ids = self::create($keyvalues);
-        if (count($ids)) {
+        $ids = self::create($keyvalues[0]);
+        if (is_array($ids)) {
             $instances = [];
             foreach ($ids as $id) {
 
             }
         }
+        return self::find($ids);
     }
 
     /**
@@ -644,30 +655,6 @@ class Model extends \stdClass
     {
         $entity = strtolower(get_called_class());
         return Dvups_entity::getbyattribut("this.name", $entity, false);
-
-    }
-
-
-    /**
-     * @param $next
-     * @param $perpage
-     * @param $order
-     * @param $debug
-     * @return \dclass\devups\Datatable\Lazyloading|int|QueryBuilder
-     * @throws ReflectionException
-     */
-    public static function lazyloading($perpage = 10, $next = 1, $order = "", $debug = false)
-    {//
-        $classname = get_called_class();
-        $reflection = new ReflectionClass($classname);
-        $entity = $reflection->newInstance();
-
-        $ll = new \dclass\devups\Datatable\Lazyloading($entity);
-        $ll->start(new QueryBuilder($entity));
-        if ($debug)
-            return $ll->renderQuery()->lazyloading($entity, null, $order);
-
-        return $ll->setNext($next)->setPerPage($perpage)->lazyloading($entity, null, $order);
 
     }
 

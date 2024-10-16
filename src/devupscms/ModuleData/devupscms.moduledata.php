@@ -1,6 +1,8 @@
 <?php
 
-const status_entities = [];
+const status_entities = [
+    'purchase','cart', 'orders'
+];
 
     require 'Entity/Status.php';
     require 'Entity/Status_lang.php';
@@ -8,3 +10,10 @@ const status_entities = [];
     require 'Datatable/StatusTable.php';
     require 'Controller/StatusController.php';
 
+
+
+    require 'Entity/Interval.php';
+    require 'Entity/Interval_group.php';
+    require 'Form/IntervalForm.php';
+    require 'Datatable/IntervalTable.php';
+    require 'Controller/IntervalController.php';

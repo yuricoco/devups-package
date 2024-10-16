@@ -204,5 +204,49 @@ class Dvups_lang extends Model implements JsonSerializable
     public static function getByIsoCode($iso_code){
         return Dvups_lang::getbyattribut("iso_code",$iso_code);
     }
+    /**
+     * @param $iso_code
+     * @return Dvups_lang
+     */
+    public static function cacheData(){
+        $contenu = ['lang_iso'=>[],'lang_id'=>[],];
+        $langs = self::all();
+        foreach ($langs as $lang){
+            $contenu[$lang->iso_code] = $lang;
+            $contenu[$lang->id] = $lang;
+            $contenu['lang_iso'][] = $lang->iso_code;
+            $contenu['lang_id'][] = $lang->id;
+        }
+
+        $entityrooting = fopen(ROOT . "cache/local/lang.json", 'w+');
+        fputs($entityrooting, json_encode($contenu));
+        fclose($entityrooting);
+    }
+
+    public static function local($ref){
+
+        try {
+            $content = file_get_contents(ROOT . "cache/local/lang.json");
+        } catch (Exception $exception) {
+            //if (__prod)
+            return null;
+        }
+        $cache = json_decode($content, true);
+        return $cache[$ref];
+
+    }
+
+    public static function getLangIso(){
+
+        try {
+            $content = file_get_contents(ROOT . "cache/local/lang.json");
+        } catch (Exception $exception) {
+            //if (__prod)
+            return null;
+        }
+        $cache = json_decode($content, true);
+        return $cache['lang_iso'];
+
+    }
 
 }

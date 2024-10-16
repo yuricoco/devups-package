@@ -39,7 +39,7 @@
                 fd.append( "fixture", $("#csvfile")[0].files[0])
             else
                 fd.append( "contentcsv", $("#contentcsv").val())
-            Drequest.init(__env + "admin/services.php?path=import&classname={{$entity}}")
+            Drequest.init(__env + "admin/api/import?classname={{$entity}}")
                 .data(fd)
                 .post((function (response) {
                     model.removeLoader();
@@ -53,7 +53,7 @@
         importlang(el, loadlang = false) {
             var form = $(el).parents("form")
             var fd = new FormData();
-            var url = __env + "admin/services.php?path=dvups_entity.importData&classname={{$entity}}&split="+$("#separator").val();
+            var url = __env + "admin/api/dvups-entity/importData?classname={{$entity}}&split="+$("#separator").val();
 
             this.lang = form.find("select[name=idlang]").val();
             /*if (!contentlang.langs.length) {

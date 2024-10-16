@@ -73,7 +73,7 @@ var model = {
         model.init(entity, el)
         model.addLoader($(el))
         var regex = /_/gi;
-        model.request(this.entity + "._clonerow&dclass=" + entity)
+        Drequest.init(__env + "admin/api/clonerow?dclass=" + entity)
             .param({
                 id: id
             })
@@ -146,13 +146,21 @@ var model = {
         else
             toastr.success(message, title);
     },
+    generatecache : function (el, entity) {
+        model.addLoader($(el))
+        Drequest.adminApi('generateConstantes?entity_name='+entity).get((response)=>{
+            console.log(response)
+            alert(response.detail)
+            model.removeLoader()
+        })
+    },
     entity: null,
     _new: function (el, classname, param = '') {
         model.init(classname, el)
 
         //ddatatable.urlparam += param;
         this._showmodal();
-        model.request(this.entity + ".form" + ddatatable.urlparam+param)
+        Drequest.adminApi(this.entity + "/form" + ddatatable.urlparam+param)
             .get(function (response) {
                 console.log(response)
                 databinding.checkrenderform(response);
@@ -171,13 +179,40 @@ var model = {
         this._showmodal();
 
         //model.request(this.entity + "._edit")
-        model.request(this.entity + ".form" + ddatatable.urlparam)
+        Drequest.adminApi(this.entity + "/form?1" + ddatatable.urlparam)
             .param({
                 id: id
             })
             .get(function (response) {
                 console.log(response)
                 databinding.checkrenderform(response);
+            })
+            .fail(function (resultat, statut, erreur) {
+                console.log(statut, erreur);
+                databinding.bindmodal(resultat.responseText);
+            });
+
+    },
+    _uploadfile: function (id, entity, el, attr) {
+        model.init(entity, el)
+        var regex = /_/gi;
+        //string..replace(regex, '-')
+
+        var fd = new FormData();
+        fd.append(this.entity +'_form['+$(el).attr('name')+']', el.files[0])
+        //model.request(this.entity + "._edit")
+        $(el).attr("disabled", true);
+        $(el).replaceWith('<span class="spinner-border spinner-border-sm mr-2" role="status"></span>');
+        Drequest.adminApi(this.entity + "/update?id=" + id)
+            .data(fd)
+            .post(function (response) {
+                console.log(response)
+                model.notify("Nouvelle ligne mise à jour avec succès!", "success");
+                ddatatable.replacerow(id, response.tablerow.row);
+                // ddatatable.addrow(response.tablerow.row);
+                //$("#dv_table").find("#"+entityid).replaceWith(response.tablerow);
+                model._dismissmodal();
+                return;
             })
             .fail(function (resultat, statut, erreur) {
                 console.log(statut, erreur);
@@ -196,7 +231,7 @@ var model = {
 
         if (!confirm('Voulez-vous Supprimer?')) return false;
 
-        model.request(this.entity + ".delete")
+        Drequest.adminApi(this.entity + "/delete?1"+ ddatatable.urlparam)
             .param({
                 id: id
             })

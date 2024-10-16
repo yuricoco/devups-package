@@ -44,6 +44,17 @@ class Tree_item extends Model implements JsonSerializable
     protected $chain;
 
     /**
+     * @Column(name="image", type="string" , length=255, nullable=true )
+     * @var string
+     **/
+    protected $image;
+    /**
+     * @Column(name="uploaddir", type="string" , length=25, nullable=true )
+     * @var string
+     **/
+    protected $uploaddir;
+
+    /**
      * @ManyToOne(targetEntity="\Tree")
      * @var \Tree
      */
@@ -71,11 +82,11 @@ class Tree_item extends Model implements JsonSerializable
             $tree = Tree::where("name", "position")->firstOrNull();
             if (!$tree) {
                 $tree = new Tree();
-                $tree->setName(["en"=>"position", "fr"=>"position"]);
+                $tree->setName(["en" => "position", "fr" => "position"]);
                 $tree->__insert();
             }
             $ti = new Tree_item();
-            $ti->name = ["en"=>$ref, "fr"=>$ref];
+            $ti->name = ["en" => $ref, "fr" => $ref];
             $ti->setMain(1);
             $ti->setSlug($ref);
             $ti->tree = $tree;
@@ -84,124 +95,101 @@ class Tree_item extends Model implements JsonSerializable
         return $ti;
     }
 
+    public static function append($treename, ...$tree_items)
+    {
+        //if (!$ti) {
+        //return new Tree_item();
+        $tree = Tree::where("name", $treename)->firstOrNull();
+        if (!$tree) {
+            $tree = new Tree();
+            $tree->name = $treename;
+            $tree->__insert();
+        }
+        foreach ($tree_items as $item) {
+            $ti = new Tree_item();
+            $ti->name = $item['name'];
+            $ti->main = 1;
+            $ti->slug = $item['slug'];
+            $ti->tree = $tree;
+            $ti->__insert();
+        }
+        //}
+        return $ti;
+    }
+
     public function getId()
     {
         return $this->id;
     }
 
-//    public function setName($name)
-//    {
-//        $this->name = $name;
-//    }
-
-    /**
-     * @return int
-     */
-    public function getStatus()
+    public function uploadImage($file = 'image')
     {
-        return $this->status;
+        $this->uploaddir = $this->tree->name;
+        $dfile = self::Dfile($file);
+        if (!$dfile->errornofile) {
+
+            $url = $dfile
+                ->hashname()
+                ->addresize([50 ], "50_")
+                ->moveto($this->uploaddir);
+
+            if (!$url['success']) {
+                return array('success' => false,
+                    'error' => $url);
+            }
+
+            if ($this->image) {
+                Dfile::deleteFile("50_".$this->image, $this->uploaddir);
+                Dfile::deleteFile($this->image, $this->uploaddir);
+            }
+            $this->image = $url['file']['hashname'];
+        }
     }
 
-    /**
-     * @param int $status
-     */
-    public function setStatus($status)
+    public function srcImage($prefix = "")
     {
-        $this->status = $status;
+        return $this->image ? Dfile::show($prefix . $this->image, $this->uploaddir) : null;
+    }
+    public function showImage($prefix = "")
+    {
+        if(is_array($prefix)) {
+            if($prefix)
+                $prefix = $prefix[0];
+            else
+                $prefix = "";
+        }
+        $url = Dfile::show($prefix.$this->image, $this->uploaddir);
+        return Dfile::fileadapter($url, $this->image);
     }
 
-    /**
-     * @return string
-     */
-    public function getPosition()
-    {
-        return $this->position;
-    }
-
-    /**
-     * @param string $position
-     */
-    public function setPosition($position)
-    {
-        $this->position = $position;
-    }
-
-    /**
-     * @return string
-     */
-    public function getSlug()
-    {
-        return $this->slug;
-    }
-
-    /**
-     * @param string $slug
-     */
-    public function setSlug($slug)
-    {
-        $this->slug = $slug;
-    }
-
-    public function getContent()
-    {
-        return $this->content;
-    }
-
-    public function setContent($content)
-    {
-        $this->content = $content;
-    }
-
-    public function getParent_id()
-    {
-        return $this->parent_id;
-    }
-
-    public function setParent_id($parent_id)
-    {
-        $this->parent_id = $parent_id;
-    }
-
-    public function getMain()
-    {
-        return $this->main;
-    }
-
-    public function setMain($main)
-    {
-        $this->main = $main;
-    }
-
-    public function getChain()
-    {
-        return $this->chain;
-    }
-
-    public function setChain($chain)
-    {
-        $this->chain = $chain;
-    }
-
-    /**
-     *  manyToOne
-     * @return \Tree
-     */
-    function getTree()
-    {
-        $this->tree = $this->tree->__show();
-        return $this->tree;
-    }
-
-    function setTree(\Tree $tree)
-    {
-        $this->tree = $tree;
+    public function jsonMini(){
+        return [
+            'id' => $this->id,
+            'src_image' => $this->srcImage(),
+            'name' => $this->name,
+            'slug' => $this->slug,
+        ];
     }
 
     public function jsonSerialize()
     {
 
+        $children = [];
+        $countchildren = (int)self::where("parent_id", $this->id)->count();
+        if (!$this->parent_id  && $countchildren){
+            $children = self::where("parent_id", $this->id)->get();
+        }
+        $parent = [];
+        if($this->parent_id){
+            $item = self::find($this->parent_id);
+            $parent = [
+                'parent_slug' => $item->slug
+            ];
+        }
+
         return [
             'id' => $this->id,
+            'src_image' => $this->srcImage(),
             'name' => $this->name,
             'slug' => $this->slug,
             'position' => (int)$this->position,
@@ -211,10 +199,15 @@ class Tree_item extends Model implements JsonSerializable
             'status' => $this->status,
             'chain' => $this->chain,
             'content_id' => $this->getCmstext()->getId(),
-            'children' => (int)self::where("parent_id", $this->id)->count(),
-        ];
+            'count_children' => $countchildren,
+            'children' => $children,
+            'in_company' => $this->in_company,
+            // 'children' => (int)self::where("parent_id", $this->id)->count(),
+        ]+self::addAttributes($this);
 
     }
+
+    public $in_company;
 
     public function getChildren($category = null)
     {
@@ -228,11 +221,12 @@ class Tree_item extends Model implements JsonSerializable
             ->get();
     }
 
-    public static function childrenOf(string $slug)
+    public static function childrenOf(string $slug, $id_lang = null)
     {
         return self::select()
             ->where("this.parent_id")
             ->in(" select id from tree_item where slug = '$slug' ")
+            ->setLang($id_lang)
             ->orderby("this.position")
             ->get();
     }
@@ -298,12 +292,6 @@ class Tree_item extends Model implements JsonSerializable
         return $categorytree;
     }
 
-//        public function getAttributesCat(){
-//            $categoryattribut = Attribute::whereIn("category_id", explode(",", $this->chain))->get();
-//
-//            return $categoryattribut;
-//        }
-
     public function ofSameTree()
     {
         $categoryparent = self::find($this->parent_id);
@@ -314,13 +302,13 @@ class Tree_item extends Model implements JsonSerializable
      * @param string $tree
      * @return QueryBuilder
      */
-    public static function mainmenu($tree = "menu")
+    public static function mainmenu($tree = "menu", $id_lang = null)
     {
         return self::select("*", Dvups_lang::defaultLang()->id)
             //->leftjoin(Tree::class)
             //->leftjoinrecto(Tree_lang::class, Tree::class)
             ->where("tree.name", $tree)
-            ->where("this.main", 1);
+            ->where("this.main", 1)->setLang($id_lang);
     }
 
     /**
@@ -373,12 +361,17 @@ class Tree_item extends Model implements JsonSerializable
         return compact("items", "success");
     }
 
+    public function get_image()
+    {
+        return $this->__hasone(Tree_item_image::class);
+    }
+
     /**
      * @return Tree_item_image|null
      */
     public function firstImage()
     {
-        return $this->__hasmany(Tree_item_image::class, false)->__getFirst(true);
+        return $this->__hasmany(Tree_item_image::class, false)->first();
     }
 
 }

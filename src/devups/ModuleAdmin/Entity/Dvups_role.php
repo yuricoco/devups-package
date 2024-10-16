@@ -53,32 +53,6 @@ class Dvups_role extends Model implements JsonSerializable
         return $array_rigth;
     }
 
-    public function array_gestion()
-    {
-        $array_gestion = [];
-        $array_gestion_avance = [];
-        $gestionDao = new GestionDAO();
-        foreach ($this->gestion as $gestion) {
-            $gestion = $gestionDao->findById($gestion->getId());
-//				$privilege = $gestion->array_rigth();
-//				$array_gestion[] = strtolower($gestion->getNom());
-//				if(!empty($privilege)):
-//					$array_gestion_avance[strtolower($gestion->getNom())] = $privilege;
-//				endif;
-            $array_gestion[] = strtolower($gestion->getNom());
-            if (!empty($this->rigth)):
-                $array_gestion_avance[strtolower($gestion->getNom())] = $this->array_rigth();
-            elseif (empty($this->rigth)):
-                $privilege = $gestion->array_rigth();
-                if (!empty($privilege))
-                    $array_gestion_avance[strtolower($gestion->getNom())] = $privilege;
-            endif;
-        }
-        $_SESSION['privilege_avance'] = $array_gestion_avance;
-
-        return $array_gestion;
-    }
-
     public function __construct($id = null)
     {
 
@@ -93,13 +67,17 @@ class Dvups_role extends Model implements JsonSerializable
 
     function collectDvups_right()
     {
-        $this->dvups_right = $this->__hasmany('dvups_right');
+        $this->dvups_right = $this->__hasmany('dvups_right', true, false, 1);
         return $this->dvups_right;
     }
 
     function collectDvups_component()
     {
-        $this->dvups_component = $this->__hasmany('dvups_component');
+//        $this->dvups_component = Dvups_component::select()
+//            ->leftJoinOn('dvups_role_dvups_component', 'dcdr', 'dcdr.dvups_role_id = '.$this->id)
+//        ->get();
+        $this->dvups_component = $this->__hasmany('dvups_component', true, false );
+        //dv_dump($this->dvups_component);
         return $this->dvups_component;
     }
 
@@ -107,14 +85,15 @@ class Dvups_role extends Model implements JsonSerializable
     {
         $this->dvups_module = $this->__hasmany('dvups_module', false)
             ->andwhere("dvups_module.dvups_component_id", $component->getId())
-            ->__getAll();
+            //->setLang(1)
+            ->get();
 
         return $this->dvups_module;
     }
 
     function collectDvups_module()
     {
-        $this->dvups_module = $this->__hasmany('dvups_module');
+        $this->dvups_module = $this->__hasmany('dvups_module', true, false, 1);
 
         return $this->dvups_module;
     }
@@ -127,13 +106,15 @@ class Dvups_role extends Model implements JsonSerializable
 //            ->__getAll();
         $this->dvups_entity = Dvups_entity::where("this.dvups_module_id", $module->getId())
             ->leftjoinrecto(Dvups_role_dvups_entity::class)
-            ->where("dvups_role_dvups_entity.dvups_role_id", $this->id)->get();
+            ->where("dvups_role_dvups_entity.dvups_role_id", $this->id)
+            //->setLang(1)
+            ->get();
 
         return $this->dvups_entity;
     }
     function collectDvups_entity()
     {
-        $this->dvups_entity = $this->__hasmany('dvups_entity');
+        $this->dvups_entity = $this->__hasmany('dvups_entity', true, false, 1);
         return $this->dvups_entity;
     }
 
