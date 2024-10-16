@@ -1,0 +1,7 @@
+{
+    "require": {
+        "barcode-bakery/barcode-common": ">=7.0.3",
+        "barcode-bakery/barcode-1d": "7.0.4",
+        "barcode-bakery/gs1ai": ">=1.0"
+    }
+}
