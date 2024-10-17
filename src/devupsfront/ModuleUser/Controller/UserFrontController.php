@@ -55,26 +55,6 @@ class UserFrontController extends UserController
         return \Response::$data;
     }
 
-
-    public function createAction($user_form = null)
-    {
-
-        $response = (new RegistrationController())->register();
-
-        if (!$response["success"]) {
-            return $response;
-        }
-        extract($_POST);
-
-        $user = $response["user"];
-
-        return array('success' => true,
-            'user' => $user,
-            'redirect' => route("activate-account"),
-            'detail' => '');
-
-    }
-
     public function registration()
     {
 
@@ -112,9 +92,6 @@ class UserFrontController extends UserController
 //        Notification::on($userhydrate, "registered", -1)
 //            ->send([$userhydrate], ["username" => $userhydrate->getFirstname(), "code" => $activationcode]);
 
-        $address = $this->hydrateWithJson(new Address(), $rawdata["address"]);
-        $address->user_id = $userhydrate->id;
-        $address->__insert();
 
         return array('success' => true,
             'user' => $userhydrate,
@@ -283,15 +260,6 @@ class UserFrontController extends UserController
         return array('success' => true,
             'detail' => '');
 
-    }
-
-    public function services(){
-
-        $services = Service::where("user_id", Auth::$user_id)->get();
-        return [
-            'success'=>true,
-            'services'=>$services,
-        ];
     }
 
     public function resetCredential($id)

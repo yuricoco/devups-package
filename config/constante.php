@@ -36,24 +36,12 @@ const dbhost = 'localhost';
 const dbdumper = false;
 const dbtransaction = true;
 
-$ip_remote = @gethostbyname(getHostName());
-$ipaddress = "127.0.0.1";
-
-if (isset($_SERVER["SERVER_NAME"])) {
-    $currentip = $_SERVER["SERVER_NAME"];
-
-    if ($currentip == "127.0.0.1" && $ipaddress != "127.0.0.1") {
-
-        $ipaddress = $ip_remote;
-    }
-}
 // base url
 // in production, replace by "/"
 const __v = '4.3';
 
-define('__ip', $ip_remote);
 const __server = 'http://127.0.0.1';
-const __env_port = ":3333"; // leave this empty in production
+const __env_port = ":8080"; // leave this empty in production
 // const __env_port = "/devupstest"; // leave this empty in production
 const __env = __server . __env_port . '/';
 const __vendor_folder = __DIR__ . '/../vendor';
@@ -74,9 +62,10 @@ const __toolrad_api_key = 'apikey';
 
 const ROOT = __DIR__ . '/../';
 const CLASS_EXTEND = ROOT . "dclass/extends";
-const UPLOAD_DIR = ROOT . '/../uploads/';
-const admin_dir = ROOT . '/../admin/';
-const web_dir = ROOT . '/../web/';
+const UPLOAD_DIR = __DIR__ . '/../uploads/';
+const admin_dir = __DIR__ . '/../admin/';
+const web_dir = __DIR__ . '/../web/';
+
 
 const SRC_FILE = __env . 'uploads/';
 const CLASSJS = __env . 'dclass/devupsjs/';

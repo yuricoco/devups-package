@@ -35,7 +35,6 @@ class UserTable extends Datatable
             'phonenumber' => ['header' => t('Phonenumber'),],
             //'lang' => ['header' => t('Lang'),],
             'username' => ['header' => t('Username'),],
-            'role.name' => ['header' => t('Role'),],
         ];
 
         $this->addcustomaction(function ($item){

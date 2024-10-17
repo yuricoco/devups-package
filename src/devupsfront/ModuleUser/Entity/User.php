@@ -7,7 +7,6 @@
 class User extends UserCore implements JsonSerializable, NotificationSerialize
 {
 
-    public static $currentid;
     /**
      * @Id @GeneratedValue @Column(type="integer")
      * @var int
@@ -19,12 +18,6 @@ class User extends UserCore implements JsonSerializable, NotificationSerialize
      * @var string
      **/
     protected $profile;
-
-    /**
-     * @Column(name="birthdate", type="date", nullable=true )
-     * @var string
-     **/
-    protected $birthdate;
 
     /**
      * @Column(name="available", type="integer", nullable=true )
@@ -40,83 +33,11 @@ class User extends UserCore implements JsonSerializable, NotificationSerialize
     public $country;
 
     /**
-     * rate of the user as a client
-     * @Column(name="rate", type="integer", nullable=true  )
-     * @var integer
-     **/
-    protected $rate;
-
-    /**
-     * rate of the user as a client
-     * @Column(name="nb_rate", type="integer", nullable=true  )
-     * @var integer
-     **/
-    protected $nb_rate;
-
-    /**
-     * @Column(name="canpublish", type="integer" , nullable=true)
-     * @var string
-     **/
-    protected $canpublish = 0;
-    /**
-     * @Column(name="avatar", type="text" , nullable=true)
-     * @var string
-     **/
-    protected $avatar ;
-    /**
-     * @Column(name="currency_iso", type="string", length=5 , nullable=true)
-     * @var string
-     **/
-    protected $currency_iso = 0;
-    /**
-     * @Column(name="config", type="text", nullable=true)
-     * @var string
-     **/
-    protected $config = "{}";
-
-    /**
-     * @ManyToOne(targetEntity="\Status")
-     * @var \Status
-     */
-    public $status;
-    /**
      * @Column(name="address", type="string", length=255 , nullable=true )
      * @var string
      **/
     protected $address;
-    /**
-     * @Column(name="city", type="string", length=55 , nullable=true )
-     * @var string
-     **/
-    protected $city;
-    /**
-     * @Column(name="bio", type="text" , nullable=true )
-     * @var string
-     **/
-    protected $bio;
 
-    /**
-     * @Column(name="website", type="string", length=55 , nullable=true )
-     * @var string
-
-    protected $website; **/
-    /**
-     * @Column(name="cp", type="string", length=25 , nullable=true )
-     * @var string
-     **/
-    protected $cp;
-    /**
-     * @Column(name="devices", type="text" , nullable=true )
-     * @var string
-     **/
-    protected $devices;
-
-    /**
-     * @ManyToOne(targetEntity="\Wallet")
-     * @JoinColumn(onDelete="set null")
-     * @var \Wallet
-     */
-    public $wallet;
     public function __construct($id = null)
     {
 
@@ -124,10 +45,7 @@ class User extends UserCore implements JsonSerializable, NotificationSerialize
             $this->id = $id;
         }
 
-        $this->status = new Status();
         $this->country = new Country();
-        $this->wallet = new Wallet();
-
     }
 
     public function getId()
@@ -138,7 +56,7 @@ class User extends UserCore implements JsonSerializable, NotificationSerialize
     public function setConfirm($confirm)
     {
 
-        if ($this->getPassword() != md5($confirm))
+        if ($this->getPassword() != sha1($confirm))
             return t("Mot de passe incorrect. veuillez reessayer svp!");
 
     }
@@ -148,39 +66,6 @@ class User extends UserCore implements JsonSerializable, NotificationSerialize
         if ($value)
             $this->password = sha1($value);
     }
-
-    /**
-     * @return string
-     */
-    public function getSpacekolaRef()
-    {
-        return $this->spacekola_ref;
-    }
-
-    /**
-     * @param string $spacekola_ref
-     */
-    public function setSpacekola_ref($spacekola_ref)
-    {
-        $this->spacekola_ref = $spacekola_ref;
-    }
-
-    /**
-     * @return Status
-     */
-    public function getStatus()
-    {
-        return $this->status;
-    }
-
-    /**
-     * @param Status $status
-     */
-    public function setStatus(Status $status)
-    {
-        $this->status = $status;
-    }
-
 
     public function setUpdatePassword($pwd)
     {
@@ -338,22 +223,6 @@ class User extends UserCore implements JsonSerializable, NotificationSerialize
         ];
     }
 
-    function setConfig($config)
-    {
-        $this->config = json_encode($config);
-    }
-
-    public function getConfig(){
-        $config = json_decode($this->config);
-        if(!isset($config->buyauto))
-            return [
-                'buyauto' => false,
-            ];
-
-        return [
-            'buyauto' => $config->buyauto,
-        ];
-    }
 
     function userdata()
     {
@@ -362,29 +231,9 @@ class User extends UserCore implements JsonSerializable, NotificationSerialize
             'firstname' => $this->firstname,
             'lastname' => $this->lastname,
             'username' => $this->username,
-            'country' => $this->_country,
-            'avatar' => $this->avatar,
-            'city' => $this->city,
-            'cp' => $this->cp,
-            'bio' => $this->bio,
-            'birthdate' => $this->birthdate,
-            'address' => $this->address,
             'is_activated' => (int) $this->is_activated,
-            'currency_iso' => $this->currency_iso,
-            'config' => $this->getConfig(),
             'profile' => $this->profile ? $this->srcProfile() : null,
-            //'spacekola_ref' => $this->spacekola_ref,
         ];
-    }
-
-    public function subscriptionOngoing(){
-        $sameperiod = Subscription::where(["this.user_id" => $this->id,
-            // "status._key" => "ongoing"
-        ])
-            ->where_str(" '" . date("Y-m-d") . "' BETWEEN date_from AND date_to ", "AND")
-            ->firstOrNull();
-
-        return $sameperiod;
     }
 
     public function jsonSerialize()
@@ -393,35 +242,15 @@ class User extends UserCore implements JsonSerializable, NotificationSerialize
             'id' => (int) $this->id,
             'password' => $this->password,
             'firstname' => $this->firstname,
-            //'spacekola_ref' => $this->spacekola_ref,
             'lastname' => $this->lastname,
             'email' => $this->email,
-            'currency_iso' => $this->currency_iso,
             'country' => $this->_country,
             'phonenumber' => $this->phonenumber,
-            'avatar' => $this->avatar,
-            'city' => $this->city,
-            'cp' => $this->cp,
-            'address' => $this->address,
-            'birthdate' => $this->birthdate,
             'resettingpassword' => $this->resettingpassword,
             'is_activated' => (int) $this->is_activated,
-            //'activationcode' => $this->activationcode,
-            //'birthdate' => $this->birthdate,
             'lang' => $this->lang,
             'username' => $this->username,
-            'api_key' => $this->api_key,
-            'config' => $this->getConfig(),
-            'session_token' => $this->session_token,
-            'wallet' => $this->_wallet,
-            'nbpost' => $this->nbpost,
-            'nbfollowing' => $this->nbfollowing,
-            'nbfollowers' => $this->nbfollowers,
-            'following' => $this->following,
-            //'devices' => $this->devices,
-            'subscription' => isset($this->subscription) ? $this->subscription : null,
             'profile' => $this->profile ? $this->srcProfile() : null,
-
         ];
     }
 
@@ -431,14 +260,6 @@ class User extends UserCore implements JsonSerializable, NotificationSerialize
 
         parent::__insert(); // TODO: Change the autogenerated stub
 
-        $id = Wallet::create([
-            "reference"=>  "".$this->id,
-            "amount"=>  0,
-            "status"=>  1,
-        ]);
-        $this->__update([
-            "wallet_id"=>$id
-        ]);
         return $this->id;
     }
 
@@ -448,40 +269,5 @@ class User extends UserCore implements JsonSerializable, NotificationSerialize
         return "<a class='btn btn-info' href='".User::classpath('user/detail?id=').$this->id."'> Detail</a>";
     }
 
-    public static function getdefault(){
-        return User::getbyattribut("username", "3agEdition");
-    }
-
-    public function boughtItem(){
-        return Chapter::select()
-            ->addColumns(" (select count(*) from favorite where user_id = {$this->id} and chapter_id = this.id) AS bought ")
-            //->leftjoinrecto(Favorite::class)
-            //->leftjoin(Order::class, Order_item::class)
-            //->where("favorite.chapter_id")
-            ;
-    }
-
-    public $nbfollowers = 0;
-    public $nbfollowing = 0;
-    public $follow_back = 0;
-    public $following = 0;
-    public $nbpost = 0;
-
-    public static function find($id, $id_lang = null, $qb = null)
-    {
-        if ($id)
-            $qb = self::addColumns(' (select count(*) from follow where user_id = this.id) as nbfollowers ')
-                ->addColumns(', (select count(*) from follow where follower_id = this.id) as nbfollowing ')
-                ->addColumns(", (select count(*) from `post` where user_id = $id) as nbpost ")
-            ;
-        $user_id = Request::get("user_id");
-        if ($user_id && $user_id != $id) {
-            $qb //->addColumns(", (select count(*) from follow where follower_id = $id and user_id = {$user_id} ) as following ")
-            ->addColumns(", f.notify as following, f.follow_back ")
-                ->leftJoinOn('follow', 'f', " f.user_id = $id and f.follower_id = {$user_id} ");
-        }
-
-        return parent::find($id, $id_lang, $qb);
-    }
 
 }
