@@ -29,18 +29,6 @@ class Auth extends Annotation
     public function execute(&$router = null)
     {
 
-
-        self::$user_id = Request::get('user_id');
-        self::$group = Request::get('group');
-        self::$group_id = Tree_item::getbyattribut('this.slug', self::$group)->id;
-
-        $jwt = new stdClass;
-        $jwt->userId = Request::get('user_id');
-        if ($router)
-            $router->jwt = $jwt;
-
-        return $jwt;
-
         if (!isset($_SERVER['HTTP_AUTHORIZATION']) && !isset($_SERVER['HTTP_AUTH'])) {
             header('HTTP/1.0 400 Bad Request AUTHORIZATION not found');
             return ([

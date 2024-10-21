@@ -8,11 +8,10 @@
 
 //require __DIR__ . '/HZip.php';
 //require __DIR__ . '/My_ziparchive.php';
-require __DIR__ . '/Util.php';
-require __DIR__ . '/addendum/annotations.php';
-require __DIR__ . '/annotation/ApiLazyloading.php';
-require __DIR__ . '/annotation/MethodView.php';
-require __DIR__ . '/annotation/Auth.php';
+//require __DIR__ . '/Util.php';
+//require __DIR__ . '/addendum/annotations.php';
+//require __DIR__ . '/annotation/ApiLazyloading.php';
+//require __DIR__ . '/annotation/MethodView.php';
+//require __DIR__ . '/annotation/Auth.php';
 
-require __DIR__ . '/php-qrcode/qrcode.php';
 

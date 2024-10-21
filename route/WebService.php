@@ -9,9 +9,6 @@ use Genesis as g;
 use Push_emailController;
 use Request;
 use Router;
-use saagry\ModuleSalary\Entity\Company_fund;
-use saagry\ModuleSalary\Entity\Session;
-use Tree_item;
 
 /**
  * this class refer to the front pages. each method represent a page. where we can add js css and some other parameter
@@ -73,10 +70,6 @@ class WebService extends Router
                 'success' => false,
                 'detail' => $e->getMessage()]);
         }
-
-        Auth::$group = Request::get('group');
-        if (Auth::$group)
-            Auth::$group_id = Tree_item::getbyattribut('this.slug', Auth::$group)->id;
 
         try {
 

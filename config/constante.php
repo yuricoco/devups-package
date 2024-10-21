@@ -1,29 +1,6 @@
 <?php
 
 /* config environment
-* DirectAdmin LOGIN INFORMATION:
- *
- * https://3ag-edition.com:2083/
- * login: agedngyh
-* pwd: Q2yZPJXxrehuK4
-*
- * app password bitbucket
-* MHyw5ruN9MegtDBrsL7p
-*
- * config environment
-* info@3ag-edition.com pwd: =h^(!R~OOTsj
-*
- * contact@3ag-edition.com
-* pwd: AXlY5fS5k_%s
-*
- *
- * no-reply@3ag-edition.com
-* {9@H6sbPMClH
-*
- * Informations de connexion
-Utilisateur : xznwjmbs
-Mot de passe : zGxXE7MBqhw9eZ
-Connexion : https://mg.n0c.com
  *
  */
 
@@ -34,6 +11,11 @@ const dbuser = 'root';
 const dbpassword = '';
 const dbhost = 'localhost';
 const dbdumper = false;
+
+/**
+ * Allow the log of each write in the database
+ * Those log file are located in database/transaction/ folder
+ */
 const dbtransaction = true;
 
 // base url
