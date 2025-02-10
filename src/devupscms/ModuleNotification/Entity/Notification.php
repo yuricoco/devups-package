@@ -1,5 +1,6 @@
 <?php
 // user \dclass\devups\model\Model;
+use Google\Auth\Credentials\ServiceAccountCredentials;
 
 /**
  * @Entity @Table(name="notification")
@@ -62,16 +63,6 @@ class Notification extends Model implements JsonSerializable
     protected $entityid;
 
     /**
-     * @Column(name="path", type="string" , length=255 , nullable=true)
-     * @var string
-     **/
-    protected $path;
-    /**
-     * @Column(name="image", type="string" , length=255 , nullable=true)
-     * @var string
-     **/
-    protected $image;
-    /**
      * @Column(name="content", type="string" , length=255 , nullable=true)
      * @var string
      **/
@@ -89,12 +80,6 @@ class Notification extends Model implements JsonSerializable
      */
     public $notificationtype;
 
-    /**
-     * the user_id of the one who emitted the push notification
-     * @Column(name="emitted_by", type="integer" , nullable=true )
-     * @var string
-     **/
-    protected $emitted_by;
     /**
      * @Column(name="user_id", type="integer" , nullable=true )
      * @var string
@@ -249,13 +234,13 @@ class Notification extends Model implements JsonSerializable
         return $notification;
     }
 
-    public function send($mb = [], $params = [], $push = false)
+    public function send($mb = [], $params = [], $push = null)
     {
         if (!$this->entityid)
             return $this;
 
-        self::$send_push = $push;
-        self::braodcast($this, $mb, $params);
+        self::$send_push = (is_callable($push));
+        self::braodcast($this, $mb, $params, $push);
 
         return $this;
 
@@ -396,7 +381,7 @@ class Notification extends Model implements JsonSerializable
             'entity' => $this->entity,
             'created_at' => $this->getTimeStamp(),
             //'user' => $this->user,
-            'target' => $entity::find($this->entityid),
+            'target' => $entity::find($this->entityid)->jsonSerialize(),
         ];
     }
 
@@ -467,15 +452,32 @@ class Notification extends Model implements JsonSerializable
         }
     }
 
-    public static function braodcast($notification, $receivers, $params)
+    public static function braodcast($notification, $receivers, $params, $callable = null)
     {
 
         if (!is_array($receivers))
             $receivers = [$receivers];
 
         $type = $notification->notificationtype;
-        foreach ($receivers as $receiver) {
 
+        if (self::$send_push){
+
+            if (file_exists(ROOT . fcm_jwt_auth_file)) {
+
+// define the scopes for your API call
+                $scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
+
+// Créer des credentials à partir du fichier de compte de service
+                $credentials = new ServiceAccountCredentials($scopes, ROOT . fcm_jwt_auth_file);
+
+// Générer le token d'accès
+                /// global $fcm_access_token;
+                Push_subscription::$access_token = $credentials->fetchAuthToken()['access_token'];
+            }
+        }
+
+        foreach ($receivers as $receiver) {
+            /** @var Notification $nb */
             $nb = clone $notification;
             // $nb->notification = $notification;
             $nb->status = 0;
@@ -491,8 +493,8 @@ class Notification extends Model implements JsonSerializable
 
             foreach ($params as $search => $value) {
 //                try {
-                    $msg = str_replace(":" . $search . "", $value, $msg);
-                    //$msg = str_replace("{{". $search ."}}", $value, $msg);
+                $msg = str_replace(":" . $search . "", $value, $msg);
+                //$msg = str_replace("{{". $search ."}}", $value, $msg);
 //                } catch (Exception $e) {
 //                    throw new Exception($e->getMessage() . " " . $search);
 //                }
@@ -511,7 +513,7 @@ class Notification extends Model implements JsonSerializable
                 self::sendSMS($nb, $receiver);
 
             if (self::$send_push)
-                $nb->cloudMessagingPush( $receiver, $msg);
+                $nb->cloudMessagingPush(user: $receiver, message:$msg, callable: $callable);
 
         }
 
@@ -524,7 +526,7 @@ class Notification extends Model implements JsonSerializable
      * @param $icon
      * @return array
      */
-    public function cloudMessagingPush(\User $user, $message, $link = "", $icon = null)
+    public function cloudMessagingPush(\User $user, $message, $link = "", $icon = null, $callable = null)
     {
 
         if (!__prod)
@@ -544,8 +546,11 @@ class Notification extends Model implements JsonSerializable
 
 
         foreach ($subscriptions as $subscription) {
-            $subscription->fcmPushNotification( $message,
-                $this->jsonSerialize(), $icon);
+            /** @var Push_subscription $subscription */
+
+            $callable($subscription, $message);
+//            $subscription->fcmPushNotification( $message,
+//                $this->jsonSerialize(), $icon);
         }
 
     }

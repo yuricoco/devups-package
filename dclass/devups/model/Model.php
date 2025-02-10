@@ -234,7 +234,7 @@ class Model extends \stdClass
             return $dbal->updateDbal($this);
         } else {
             $qb = new QueryBuilder($this);
-            return $qb->update($arrayvalues, $seton, $case, $defauljoin);
+            return $qb->where("this.id", $this->id)->update($arrayvalues, $seton, $case, $defauljoin);
         }
     }
 

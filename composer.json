@@ -24,6 +24,7 @@
     },
     "autoload": {
         "classmap": [
+            "admin/generator/",
             "dclass/",
             "src/"
         ],

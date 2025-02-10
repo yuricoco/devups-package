@@ -88,6 +88,8 @@ const jwt_expire_time = false; //'+72 hours'
 const fcm_server_key = 'AAAAZfYoMKg:APA91bGg5SPh1X5u...YlzhUZRIz2W';
 const fcm_pair_key = 'BG5ROP03CbHe_khfeFrR...GqR2jxs33VMDHaSs';
 const fcm_user_id = '4379...5928';
+const fcm_project_id  = 'xxx-000';
+const fcm_jwt_auth_file  = 'xxx-6faff3f88a.json';
 
 const cron_token = 'da39a3ee5e6b4b0...fef95601890afd80709';
 
