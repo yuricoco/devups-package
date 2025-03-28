@@ -199,7 +199,7 @@ class Dvups_admin extends Model implements JsonSerializable
 
     function callbackbtnAction()
     {
-        return "<a class='btn btn-default' href='".Dvups_admin::classpath("dvups-admin/resetcredential?id=" . $this->getId() ). "'>".t('reset password')."</a>";
+        return "<a class='btn btn-default' href='".("/admin/devups/ModuleAdmin/dvups-admin/resetcredential?id=" . $this->getId() ). "'>".t('reset password')."</a>";
     }
 
     function resetCredential()

@@ -23,56 +23,40 @@ class UserCore extends \Model implements JsonSerializable
      * @Column(name="username", type="string" , length=55 , nullable=true)
      * @var string
      **/
-    protected $username;
-
-    /**
-     * @return string
-     */
-    public function getUsername()
-    {
-        return $this->username;
-    }
-
-    /**
-     * @param string $username
-     */
-    public function setUsername( $username)
-    {
-        $this->username = $username;
-    }
+    public $username;
 
     /**
      * @Column(name="email", type="string" , length=55 , nullable=true)
      * @var string
      **/
-    protected $email;
+    public $email;
 
     /**
      * @Column(name="phonenumber", type="string" , length=25 , nullable=true)
      * @var string
      **/
-    protected $phonenumber;
+    public $phonenumber;
     /**
      * @Column(name="password", type="string" , length=255 , nullable=true)
      * @var string
      **/
-    protected $password;
+    public $password;
     /**
      * @Column(name="resettingpassword", type="integer"  , nullable=true)
      * @var integer
      **/
-    protected $resettingpassword;
+    public $resettingpassword;
     /**
      * @Column(name="is_activated", type="integer"  , nullable=true)
      * @var integer
      **/
-    protected $is_activated = 1;
+    public $is_activated = 1;
 
     /**
      * @Column(name="activationcode", type="string" , length=255 , nullable=true)
      * @var string
      **/
-    protected $activationcode;
+    public $activationcode;
     /**
      * @Column(name="activationcode_expired_at", type="date", nullable=true)
      * @var string
@@ -217,159 +201,6 @@ class UserCore extends \Model implements JsonSerializable
     }
 
     /**
-     * @return string
-     */
-    public function getFirstname()
-    {
-        return $this->firstname;
-    }
-
-    /**
-     * @param string $firstname
-     */
-    public function setFirstname( $firstname)
-    {
-        $this->firstname = $firstname;
-    }
-
-    /**
-     * @return string
-     */
-    public function getLastname()
-    {
-        return $this->lastname;
-    }
-
-    /**
-     * @param string $lastname
-     */
-    public function setLastname( $lastname)
-    {
-        $this->lastname = $lastname;
-    }
-
-    /**
-     * @return string
-     */
-    public function getPassword()
-    {
-        return $this->password;
-    }
-
-
-    /**
-     * @return int
-     */
-    public function getResettingpassword()
-    {
-        return $this->resettingpassword;
-    }
-
-    /**
-     * @param int $resettingpassword
-     */
-    public function setResettingpassword( $resettingpassword)
-    {
-        $this->resettingpassword = $resettingpassword;
-    }
-
-    /**
-     * @return int
-     */
-    public function getIsActivated()
-    {
-        return $this->is_activated;
-    }
-
-    /**
-     * @param int $is_activated
-     */
-    public function setIsActivated( $is_activated)
-    {
-        $this->is_activated = $is_activated;
-    }
-
-    /**
-     * @return string
-     */
-    public function getActivationcode()
-    {
-        return $this->activationcode;
-    }
-
-    /**
-     * @param string $activationcode
-     */
-    public function setActivationcode( $activationcode)
-    {
-        $this->activationcode = $activationcode;
-    }
-
-    /**
-     * @return date
-     */
-    public function getLastLogin()
-    {
-        return $this->last_login;
-    }
-
-    /**
-     * @param date $last_login
-     */
-    public function setLastLogin( $last_login)
-    {
-        $this->last_login = $last_login;
-    }
-
-    /**
-     * @return string
-     */
-    public function getLang()
-    {
-        return $this->lang;
-    }
-
-    /**
-     * @param string $lang
-     */
-    public function setLang( $lang)
-    {
-        $this->lang = $lang;
-    }
-
-    /**
-     * @return string
-     */
-    public function getApiKey()
-    {
-        return $this->api_key;
-    }
-
-    /**
-     * @param string $api_key
-     */
-    public function setApiKey( $api_key)
-    {
-        $this->api_key = $api_key;
-    }
-
-    /**
-     * @return string
-     */
-    public function getSessionToken()
-    {
-        return $this->session_token;
-    }
-
-    /**
-     * @param string $session_token
-     */
-    public function setSessionToken(  $session_token)
-    {
-        $this->session_token = $session_token;
-    }
-
-    /**
      * @param $token
      * @return User|null
      */
@@ -378,14 +209,6 @@ class UserCore extends \Model implements JsonSerializable
         return User::select("*")->where_str(" '$token' = CONCAT(api_key, '.', session_token) ")
             ->firstOrNull();
 
-    }
-
-    /**
-     * @return string
-     */
-    public function getEmail()
-    {
-        return $this->email;
     }
 
     /**
@@ -411,9 +234,9 @@ class UserCore extends \Model implements JsonSerializable
     public function jsonSerialize()
     {
 
-        if (Request::get("synchro", null)) {
+//        if (Request::get("synchro", null)) {
             return $this->mapAvailableData($this);
-        }// TODO: Change the autogenerated stub
+//        }// TODO: Change the autogenerated stub
     }
 
 

@@ -1,7 +1,5 @@
-<?php  ?>
-<?php //Form::addcss(Dvups_role ::classpath('Ressource/js/dvups_role')) ?>
 
-<?= Form::open($dvups_role, ["action" => Dvups_role::classpath("services.php?path=dvups_role.$action"), "method" => "post"]) ?>
+<?= Form::open($dvups_role, ["action" => $action, "method" => "post"]) ?>
 
 <div class='text-left'>
     <div class='form-group'>
@@ -10,7 +8,7 @@
     </div>
     <div class='form-group'>
         <label for='alias'>{{t('Alias for commun')}}</label>
-        <?= Form::input('alias', $dvups_role->getAlias(), ['class' => 'form-control']); ?>
+        <?= Form::input('alias', $dvups_role->alias, ['class' => 'form-control']); ?>
     </div>
     <div class='form-group'>
         <label for='dvups_right'>Dvups_right</label>
@@ -23,19 +21,19 @@
             <td>Component</td>
             <td></td>
         </tr>
-        @foreach($components as $component)
+        @foreach($configs as $component)
             <tr class='form-group'>
                 <th class='form-group '>
-                    <?= Form::input('dvups_component::values', [$component->getId(), $value_components], ['class' => ''], "checkbox"); ?>
-                    {{$component->getName()}}
+                    <?= Form::input('components', [$component->name, $components], ['class' => ''], "checkbox"); ?>
+                    {{$component->name}}
                 </th>
                 <td>
                     <table class='table'>
-                        @foreach($component->__hasmany(Dvups_module::class) as $module)
+                        @foreach($component->listmodule as $module)
                             <tr class='form-group'>
                                 <th class='form-group '>
-                                    <?= Form::input('dvups_module::values', [$module->getId(), $value_modules], ['class' => ''], "checkbox"); ?>
-                                    {{$module->getName()}}
+                                    <?= Form::input('modules', [$module->name, $modules], ['class' => ''], "checkbox"); ?>
+                                    {{$module->name}}
                                 </th>
                                 <td>
 
@@ -44,11 +42,11 @@
                             <tr>
                                 <td colspan="2">
                                     <div class='row pl-6'>
-                                        @foreach($module->__hasmany(Dvups_entity::class) as $entity)
+                                        @foreach($module->listentity as $entity)
                                             <div class="col-lg-3">
                                                 <label class='form-group '>
-                                                    <?= Form::input('dvups_entity::values', [$entity->getId(), $value_entities], ['class' => ''], "checkbox"); ?>
-                                                    {{$entity->getName()}}
+                                                    <?= Form::input('entities', [$entity->name, $entities], ['class' => ''], "checkbox"); ?>
+                                                    {{$entity->name}}
                                                 </label>
                                             </div>
                                         @endforeach
@@ -60,6 +58,7 @@
                 </td>
             </tr>
         @endforeach
+
     </table>
 
 </div>

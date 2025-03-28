@@ -106,7 +106,7 @@
                                 {{ getadmin()->getName() }}
                             </div>
                             <div class="widget-subheading">
-                                {{ getadmin()->dvups_role->getName() }}
+                                {{ getadmin()->dvups_role->name }}
                             </div>
                         </div>
                         <div class="widget-content-right header-user-info ml-3">

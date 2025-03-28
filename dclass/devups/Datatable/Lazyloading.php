@@ -19,6 +19,7 @@ class Lazyloading implements \JsonSerializable
     public $classname = "";
     public $listentities = [];
     public $listentity = [];
+    public $append_values = [];
     public $nb_element = 0;
     public $per_page = 30;
     public $pagination = 1;
@@ -41,6 +42,10 @@ class Lazyloading implements \JsonSerializable
     {
         $this->next = $next;
         return $this;
+    }
+
+    public function append($key, $value){
+        $this->append_values[$key] = $value;
     }
 
     public function lazyloading2($listEntity, $classname = "")
@@ -168,7 +173,8 @@ class Lazyloading implements \JsonSerializable
                 $attr[0] = $this->extractXJoin($join[0], $attr[0]);
                 $this->filterswicher($attr[1], $attr[0], $value);
             } else if ($this->currentqb->hasrelation && isset($attr[1]))
-                $this->filterswicher($attr[1], strtolower(get_class($entity)) . "." . $join[0], $value);
+                $this->filterswicher($attr[1],  "this." . $join[0], $value);
+//                $this->filterswicher($attr[1], strtolower(get_class($entity)) . "." . $join[0], $value);
             elseif (isset($attr[1]))
                 $this->filterswicher($attr[1], $join[0], $value);
 //            else
@@ -489,7 +495,8 @@ class Lazyloading implements \JsonSerializable
             'next' => (int)$this->next,
             'previous' => (int)$this->previous,
             'remain' => (int)$this->remain,
-            'detail' => $this->detail);
+            'detail' => $this->detail)
+            +$this->append_values;
     }
 
 }

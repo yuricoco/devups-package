@@ -53,7 +53,7 @@ class Genesis
         $index_modifier = "$action/index";
 
         $rigths = getadmin()->availableentityright($action);
-        $entityrigths = Dvups_entity::getRigthOf($action);
+        $entityrigths = ['create']; //Dvups_entity::getRigthOf($action);
         $top_action = '';
 
 //        if($action === 'product_storage')
@@ -98,7 +98,7 @@ class Genesis
 
     public static function json_encode($value, $options = 0, $depth = 512)
     {
-        // header('Content-Type: application/json');
+         header('Content-Type: application/json');
 
         global $_start;
         if (is_array($value)) {

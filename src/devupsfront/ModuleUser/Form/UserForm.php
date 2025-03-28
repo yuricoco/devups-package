@@ -19,26 +19,18 @@ class UserForm extends FormManager
     {
 
 
-        $this->fields['dvups_role\\role.id'] = [
-            "label" => t('Role'),
-            FH_REQUIRE => false,
-            "type" => FORMTYPE_SELECT,
-            "options" => FormManager::Options_Helper("name", Dvups_role::all("name")),
-            "value" => $this->user->role->id,
-        ];
-
         $this->fields['firstname'] = [
             "label" => t('user.firstname'),
             FH_REQUIRE => false,
             "type" => FORMTYPE_TEXT,
-            "value" => $this->user->getFirstname(),
+            "value" => $this->user->firstname,
         ];
 
         $this->fields['lastname'] = [
             "label" => t('user.lastname'),
             FH_REQUIRE => false,
             "type" => FORMTYPE_TEXT,
-            "value" => $this->user->getLastname(),
+            "value" => $this->user->lastname,
         ];
 
         $this->fields['email'] = [
@@ -80,7 +72,7 @@ class UserForm extends FormManager
         $this->fields['username'] = [
             "label" => t('user.username'),
             "type" => FORMTYPE_TEXT,
-            "value" => $this->user->getUsername(),
+            "value" => $this->user->username
         ];
 
 

@@ -102,6 +102,17 @@ if ($argv[1] === 'serve'){
     die;
 }
 
+if ($argv[1] === 'tests') {
+
+    $result = [];
+    exec(__DIR__."\\..\\..\\vendor\\bin\\phpunit tests", $result);
+
+    echo implode("\n ", $result);
+
+    die;
+
+}
+
 if ($argv[1] === 'schema:update') {
 
     $result = [];
@@ -372,6 +383,7 @@ if (isset($argv[2])) {
                 __Generator::crud($argv[2], $project); //,
                 echo $argv[2] . ": CRUD generated with success";
             }
+            Core::updateDvupsTable();
             break;
 
         case 'core:g:dependencies':
@@ -381,6 +393,7 @@ if (isset($argv[2])) {
 
         case 'core:g:module':
             __Generator::module($project, $argv[2]); //,
+            Core::updateDvupsTable();
             echo $argv[2] . ": Module generated with success";
             break;
 
@@ -411,6 +424,8 @@ if (isset($argv[2])) {
 
         case 'core:g:component':
             __Generator::component(Core::getComponentCore($argv[2])); //,
+
+            Core::updateDvupsTable();
             echo $project->name . ": component generated with success";
             break;
 
@@ -423,18 +438,10 @@ if (isset($argv[2])) {
 } else {
 
     require __DIR__ . '/../../src/devups/ModuleLang/Entity/Dvups_lang.php';
-    require __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_component.php';
-    require __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_component_lang.php';
-    require __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_module.php';
-    require __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_module_lang.php';
     require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_role.php';
     require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_right.php';
     require __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_entity.php';
     require __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_entity_lang.php';
-    require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_role_dvups_component.php';
-    require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_role_dvups_entity.php';
-    require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_role_dvups_module.php';
-    require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_right_dvups_entity.php';
 
     switch ($argv[1]) {
 
@@ -531,8 +538,11 @@ if (isset($argv[2])) {
             }
 
             Dvups_lang::cacheData();
+            Core::updateDvupsTable();
 
-            echo "\n\n > Set the master admin.\n\nData master admin initialized with success.\ncredential\nlogin: dv_admin\npassword: admin
+            echo "\n\n > Set the master admin.
+            \nData master admin initialized with success.
+            \ncredential\nlogin: dv_admin\npassword: admin
             \nYour project is ready to use. Do your best :)
             \n>php devups serve";
             break;

@@ -34,11 +34,10 @@ global $global_navigation, $viewdir;
 $viewdir = [admin_dir . "views"];
 $dvups_navigation = [];
 if (isset($_SESSION[__project_id . "_navigation"])) {
-    $dvups_navigation = unserialize($_SESSION[__project_id . "_navigation"]);
 
     if (isset($_GET["notified"]) && $idnb = $_GET["notified"]) {
         Notification::readed($idnb);
     }
 }
-//$global_navigation = Core::buildOriginCore();
+
 

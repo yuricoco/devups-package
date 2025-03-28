@@ -1,5 +1,7 @@
 <?php
 
+//namespace dclass\lib\annotation;
+//use Annotation;
 use Firebase\JWT\JWT;
 
 class Auth extends Annotation
@@ -9,8 +11,6 @@ class Auth extends Annotation
     public $userId;
     public $user;
     public static $user_id;
-    public static $group;
-    public static $group_id;
     public static $systemic = false;
     public static $restrictions = [];
 
@@ -26,11 +26,39 @@ class Auth extends Annotation
         self::$restrictions[$entity] = $methodException;
     }
 
-    public function execute(&$router = null)
+    public function authorize(&$router = null)
     {
 
         if (!isset($_SERVER['HTTP_AUTHORIZATION']) && !isset($_SERVER['HTTP_AUTH'])) {
             header('HTTP/1.0 400 Bad Request AUTHORIZATION not found');
+            return ([
+                'success' => false,
+                'detail' => "Bad Request AUTHORIZATION or AUTH not found",
+            ]);
+        }
+        return  $this->execute($router);
+
+    }
+
+
+    public function execute(&$router = null)
+    {
+
+
+        /*self::$user_id = Request::get('user_id');
+        self::$group = Request::get('group');
+        self::$group_id = Tree_item::getbyattribut('this.slug', self::$group)->id;
+
+        $jwt = new stdClass;
+        $jwt->userId = Request::get('user_id');
+        if ($router)
+            $router->jwt = $jwt;
+
+        return $jwt;
+        */
+
+        if (!isset($_SERVER['HTTP_AUTHORIZATION']) && !isset($_SERVER['HTTP_AUTH'])) {
+//            header('HTTP/1.0 400 Bad Request AUTHORIZATION not found');
             return ([
                 'success' => false,
                 'detail' => "Bad Request AUTHORIZATION or AUTH not found",
@@ -52,7 +80,6 @@ class Auth extends Annotation
             ]);
             //exit;
         }
-
         $jwt = $matches[1];
         if (!$jwt) {
             // No token was able to be extracted from the authorization header

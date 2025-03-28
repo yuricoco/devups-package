@@ -16,7 +16,8 @@ class Util
 
     const dateformat = 'Y-m-d H:i:s';
 
-    public static function handleSessionLost($redirect = "admin/"){
+    public static function handleSessionLost($redirect = "admin/")
+    {
 
         if (!isset($_SESSION[ADMIN]) and $_GET['path'] != 'connexion') {
             header("location: " . __env . $redirect);
@@ -64,10 +65,11 @@ class Util
         return number_format($quantity, 2, ',', ' ');
     }
 
-    public static function local() {
+    public static function local()
+    {
         if (Request::get('lang')) {
             return Request::get('lang');
-        }elseif (isset($_SESSION[LANG]))
+        } elseif (isset($_SESSION[LANG]))
             return $_SESSION[LANG];
 
         return __lang;
@@ -80,23 +82,25 @@ class Util
      * @param string $root
      * @param string $mode
      */
-    static function writein($content, $file = "log", $root = "", $mode = "a+"){
+    static function writein($content, $file = "log", $root = "", $mode = "a+")
+    {
 
         if (!file_exists(ROOT . $root))
             mkdir(ROOT . $root, 0777, true);
 
-        $moddepend = fopen(ROOT .$root.'/'.$file, $mode);
-        fputs($moddepend, $content."\n");
+        $moddepend = fopen(ROOT . $root . '/' . $file, $mode);
+        fputs($moddepend, $content . "\n");
         fclose($moddepend);
     }
 
-    public static function log($content, $file = "log", $root = ROOT, $mode = "a+") {
+    public static function log($content, $file = "log", $root = ROOT, $mode = "a+")
+    {
 
         if (!$content)
             return;
 
-        $moddepend = fopen($root.'/'.$file, $mode);
-        fputs($moddepend, "  ". $content."\n");
+        $moddepend = fopen($root . '/' . $file, $mode);
+        fputs($moddepend, "  " . $content . "\n");
         fclose($moddepend);
     }
 
@@ -127,10 +131,10 @@ class Util
 
     public static function validation($value, $type = "telephone")
     {
-        if($type == "telephone"){
-            if(!is_numeric($value))
+        if ($type == "telephone") {
+            if (!is_numeric($value))
                 return t("Entrer une valeur numérique");
-            if (strlen($value."") != 9)
+            if (strlen($value . "") != 9)
                 return t("le numéro doit etre constitué de 9 caractères");
         }
         return null;
@@ -154,6 +158,7 @@ class Util
     {
         setcookie($key, $value, time() + 365 * 24 * 3600, null, null, false, true); // On écrit un cookie
     }
+
     public static function clearcookie($key)
     {
         setcookie($key, null, -1, null, null, false, true);
@@ -164,18 +169,20 @@ class Util
         return date("Y-m-d H:i:s", strtotime($duration . " $period", strtotime($from)));
     }
 
-    public static function sanitizePhonenumber($phonenumber, $phone_code){
-        $telephone = str_replace(" ","", $phonenumber);
-        $telephone = str_replace("(","", $telephone);
-        $telephone = str_replace(")","", $telephone);
-        $telephone = str_replace("+".$phone_code,"", "+".$telephone);
-        return str_replace("+","", $telephone);
+    public static function sanitizePhonenumber($phonenumber, $phone_code)
+    {
+        $telephone = str_replace(" ", "", $phonenumber);
+        $telephone = str_replace("(", "", $telephone);
+        $telephone = str_replace(")", "", $telephone);
+        $telephone = str_replace("+" . $phone_code, "", "+" . $telephone);
+        return str_replace("+", "", $telephone);
     }
 
     /**
      * @throws \ReflectionException
      */
-    public static function get_func_argNames($funcName) {
+    public static function get_func_argNames($funcName)
+    {
         $f = new ReflectionFunction($funcName);
         $result = array();
         foreach ($f->getParameters() as $param) {
@@ -215,6 +222,23 @@ class Util
         $str = preg_replace('#&([A-za-z]{2})(?:lig);#', '\1', $str); // pour les ligatures e.g. '&oelig;'
         $str = preg_replace('#&[^;]+;#', '', $str); // supprime les autres caractères
         return str_replace(' ', '_', $str); // supprime les autres caractères
+    }
+
+    public static function arrayToPhpFile($array, $filename, $folder = 'cache/'){
+        $phpContent = "<?php\n\nreturn " . var_export($array, true) . ";\n";
+//        file_put_contents(ROOT . "cache/routes.json", json_encode(self::$routes));
+//        if (!file_exists(ROOT . "cache/routes.php"))
+        file_put_contents(ROOT . $folder."$filename.php", $phpContent);
+    }
+
+    // camalcasing
+    public static function toPascalCase($string)
+    {
+        // Supprime les caractères non alphabétiques et remplace les séparateurs par des espaces
+        $string = preg_replace('/[^a-zA-Z0-9]+/', ' ', $string);
+
+        // Met chaque mot en majuscule et supprime les espaces
+        return lcfirst(str_replace(' ', '', ucwords(strtolower($string))));
     }
 
 }

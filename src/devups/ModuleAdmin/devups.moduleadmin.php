@@ -14,12 +14,6 @@ require 'Entity/Dvups_right.php';
 require 'Form/Dvups_rightForm.php';
 require 'Controller/Dvups_rightController.php';
 
-require 'Entity/Dvups_role_dvups_component.php';
-require 'Entity/Dvups_role_dvups_module.php';
-
-require 'Entity/Dvups_role_dvups_entity.php';
-
-require 'Entity/Dvups_right_dvups_entity.php';
 
 //require 'Entity/Dvups_role_dvups_admin.php';
 

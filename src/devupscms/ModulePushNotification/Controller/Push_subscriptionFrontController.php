@@ -24,11 +24,15 @@ use sngrl\PhpFirebaseCloudMessaging\Recipient\Device;
 use sngrl\PhpFirebaseCloudMessaging\Notification;
 use dclass\devups\Controller\Controller;
 
-class Push_subscriptionFrontController extends \Push_subscriptionController
+/**
+ * @Api(name='/push_subscription')
+ */
+class Push_subscriptionFrontController extends \dclass\devups\Controller\FrontController
 {
 
     /**
      * @Auth(authorized=1)
+     * @POST(path='/register')
      * @return array
      */
     public function register()
@@ -39,7 +43,7 @@ class Push_subscriptionFrontController extends \Push_subscriptionController
             [
                 //'endpoint' => $subscription['endpoint'],
                 'auth_token' => $subscription['auth_token'],
-                'subscription_id' => $subscription['subscription_id'],
+                'user_id' => $subscription['user_id'],
             ])->firstOrNull();
         if (!$exist)
             $exist = Push_subscription::create((array)$subscription);

@@ -151,25 +151,27 @@ class QueryBuilder extends \DBAL
 
     public function addColumns(...$columns)
     {
-        $this->custom_columns .= implode(", ", $columns);
+        $this->custom_columns_array = [...$this->custom_columns_array,...$columns];
+//        $this->custom_columns .= implode(", ", $columns);
         return $this;
     }
 
     public function addColumn($column, $as)
     {
-        if ($this->custom_columns)
-            $this->custom_columns .= ", ";
+//        if ($this->custom_columns)
+//            $this->custom_columns .= ", ";
         if (in_array($as, $this->objectVar)) {
-            // var_dump($this->objectVar);
+
             unset($this->objectVar[array_search($as, $this->objectVar)]);
-            // dv_dump($this->objectVar);
+
         }
         $this->custom_column_keys[] = $as;
         if (is_object($column))
-            $this->custom_columns .= "( " . $column->getSqlQuery()['query'] . " ) AS $as ";
+            $columns = "( " . $column->getSqlQuery()['query'] . " ) AS $as ";
         else
-            $this->custom_columns .= "( " . $column . " ) AS $as ";
+            $columns = "( " . $column . " ) AS $as ";
 
+        $this->custom_columns_array[] = $columns;
         return $this;
     }
 
@@ -617,6 +619,7 @@ class QueryBuilder extends \DBAL
     public function on($entity)
     {
         //" left join `".strtolower(get_class($entity)).
+
         $this->query .= " ON `" . $this->join . "`.id = `" . strtolower(get_class($entity)) . "`." . $this->join . "_id";
 
         return $this;
@@ -791,6 +794,11 @@ class QueryBuilder extends \DBAL
     public function orWhere($column, $sign = null, $value = null)
     {
         return $this->where($column, $sign, $value, 'OR');
+    }
+
+    public function whereId($value)
+    {
+        return $this->where("this.id", "=", $value);
     }
 
     public function orWhere_str($constraint)
@@ -1255,6 +1263,10 @@ class QueryBuilder extends \DBAL
 
     private function initSelect($aggregation = false)
     {
+
+        if ($this->custom_columns_array)
+            $this->custom_columns = implode(", ", $this->custom_columns_array);
+
         $this->query = " SELECT {$this->_select_option} ";
         if ($this->custom_columns != "" && !$aggregation)
             $this->query .= ", {$this->custom_columns}";
@@ -1531,6 +1543,7 @@ class QueryBuilder extends \DBAL
 
     public function getInstance($column = "*", $nullable = false)
     {
+
         $this->select($column);
         $this->initSelect();
         $this->sequensization();

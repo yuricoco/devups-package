@@ -77,8 +77,10 @@ class Datatable extends Lazyloading
             $this->entity = $entity;
             $this->class = strtolower(get_class($this->entity));
 
-            $dentity = \Dvups_entity::getbyattribut("this.name", $this->class);
-            $this->base_url = $dentity->dvups_module->hydrate()->route();
+            $global_config = require ROOT.'config/dvups_configurations.php';
+            $dentity = $global_config["\\".ucfirst($this->class)];
+//            $dentity = \Dvups_entity::getbyattribut("this.name", $this->class);
+            $this->base_url = '/admin/'.$dentity['path'].'';
 
             $this->renderDefaultGroupAction();
 
@@ -124,7 +126,8 @@ class Datatable extends Lazyloading
             if (!$this->defaulttopaction)
                 return $top_action;
 
-            $entityrigths = \Dvups_entity::getRigthOf($this->class);
+            $entityrigths = ['create'];
+//            $entityrigths = \Dvups_entity::getRigthOf($this->class);
 
             if ($entityrigths) {
                 // first we check if create action is available for the entity
@@ -181,7 +184,11 @@ class Datatable extends Lazyloading
     private function getaction($entity, $actionkey, $method, $entityrigths)
     {
         if (isset($this->defaultaction[$actionkey]) && in_array($method, $entityrigths)) {
-            if (in_array($method, $_SESSION[dv_role_permission])) {
+
+//            dv_dump($this->defaultaction, $actionkey, $method, $entityrigths);
+            if (in_array($method, ['update', 'delete'])) {
+
+//            if (in_array($method, $_SESSION[dv_role_permission])) {
                 $method = $actionkey . 'Action';
                 if (method_exists($entity, $method)) {
                     $result = call_user_func(array($entity, $method), $this->defaultaction[$actionkey]);
@@ -206,36 +213,19 @@ class Datatable extends Lazyloading
     {
 
         if ($this->isFrontEnd) {
-            /*$method = 'editFrontAction';
-            if (method_exists($entity, $method) && $result = call_user_func(array($entity, $method), $this->defaultaction["edit"])) {
-                $this->defaultaction["edit"] = $result;
-            } else {
-                $this->defaultaction["edit"]['action'] = 'onclick="model._edit(' . $entity->getId() . ', \'' . $this->classname . '\')"';
-            }
-            $method = 'showFrontAction';
-            if (method_exists($entity, $method) && $result = call_user_func(array($entity, $method), $this->defaultaction["show"])) {
-                $this->defaultaction["show"] = $result;
-            }
-            $method = 'deleteFrontAction';
-            if (method_exists($entity, $method) && $result = call_user_func(array($entity, $method), $this->defaultaction["delete"])) {
-                $this->defaultaction["delete"] = $result;
-            } else {
-                $this->defaultaction["delete"]['action'] = 'onclick="model._delete(this, ' . $entity->getId() . ', \'' . $this->classname . '\')"';
-            }
-
-            if (isset($this->defaultaction[$this->mainrowaction]))
-                $this->mainrowactionbtn = $this->defaultaction[$this->mainrowaction];*/
-
             return 1;
         }
 
-        if (!isset($_SESSION[dv_role_permission]))
-            return false;
+//        if (!isset($_SESSION[dv_role_permission]))
+//            return false;
 
         //$rigths = getadmin()->availableentityright($path);
-        $entityrigths = \Dvups_entity::getRigthOf($this->class);
+        $entityrigths = ['update', 'delete'];
+
+//        $entityrigths = \Dvups_entity::getRigthOf($this->class);
         if ($entityrigths) {
             $this->rowaction[] = $this->getaction($entity, "edit", 'update', $entityrigths);
+
             $this->rowaction[] = $this->getaction($entity, "show", 'read', $entityrigths);
             $this->rowaction[] = $this->getaction($entity, "delete", 'delete', $entityrigths);
 
@@ -355,10 +345,10 @@ EOF;
             //$filterParam = "&" . implode("&", $this->filterParam);
         }
 
-        if (!$this->base_url) {
+        /*if (!$this->base_url) {
             $dentity = \Dvups_entity::select()->where("this.name", $this->class)->getInstance();
             $this->base_url = path('src/' . strtolower($dentity->dvups_module->project) . '/' . $dentity->dvups_module->name . '/');
-        }
+        }*/
         if ($this->entity->dvtranslate)
             $lang = "data-lang='&lang=" . \Dvups_lang::getattribut("iso_code", $this->id_lang) . "'";
         else
@@ -764,11 +754,11 @@ EOF;
             //$filterParam = "&" . implode("&", $this->filterParam);
         }
 
-        $dentity = \Dvups_entity::select()->where("this.name", $this->class)->__getOne();
-        if ($this->base_url)
+//        $dentity = \Dvups_entity::select()->where("this.name", $this->class)->__getOne();
+//        if ($this->base_url)
             $route = $this->base_url;
-        else
-            $route = $dentity->dvups_module->route();
+//        else
+//            $route = $dentity->dvups_module->route();
 
         $directive = \Form::serialysedirective($directive);
         // data-perpage="' . $this->per_page . '" data-filterparam="' . $filterParam . '" data-route="' . $route . '" data-entity="' . $this->class . '"  class="dv_datatable ' . $this->table_class . '"
@@ -1028,9 +1018,9 @@ EOF;
                         //dv_dump($join[0]);
                         $entityjoin = $entity->{strtolower($join[0])}->hydrate();
                         // todo: perform this option next time
-                        $dventity = \Dvups_entity::getbyattribut("this.name", ucfirst($join[0]));
-                        //$tdcontent = $entityjoin->{strtolower($join[1])};
-                        $tdcontent = "<a class='" . $join[0] . "' href='" . $dventity->route() . "' target='_blank'>" .
+//                        $dventity = \Dvups_entity::getbyattribut("this.name", ucfirst($join[0]));
+
+                        $tdcontent = "<a class='" . $join[0] . "' href='" . $this->base_url . "' target='_blank'>" .
                             call_user_func(array($entityjoin, 'get' . ucfirst($join[1])), $param) . "</a>";
 
                     }

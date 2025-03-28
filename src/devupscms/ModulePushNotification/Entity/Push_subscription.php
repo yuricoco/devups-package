@@ -1,11 +1,12 @@
 <?php
 // user \dclass\devups\model\Model;
-use Minishlink\WebPush\SubscriptionInterface;
+//use Minishlink\WebPush\SubscriptionInterface;
+use Google\Auth\Credentials\ServiceAccountCredentials;
 
 /**
  * @Entity @Table(name="push_subscription")
  * */
-class Push_subscription extends Model implements JsonSerializable, SubscriptionInterface
+class Push_subscription extends Model implements JsonSerializable //, SubscriptionInterface
 {
 
     public static $access_token;
@@ -20,15 +21,15 @@ class Push_subscription extends Model implements JsonSerializable, SubscriptionI
      **/
     protected $subscription_type;
     /**
-     * @Column(name="subscription_id", type="integer"  )
+     * @Column(name="user_id", type="integer"  )
      * @var integer
      **/
-    protected $subscription_id;
+    protected $user_id;
     /**
-     * @Column(name="endpoint", type="text" , length=255 )
+     * @Column(name="status", type="integer" , options={"default": "1"} )
      * @var string
      **/
-    protected $endpoint;
+    protected $status;
     /**
      * @Column(name="public_key",  type="text" , nullable=true )
      * @var string
@@ -70,11 +71,9 @@ class Push_subscription extends Model implements JsonSerializable, SubscriptionI
         return [
             'id' => $this->id,
             'subscription_type' => $this->subscription_type,
-            'subscription_id' => $this->subscription_id,
-            'endpoint' => $this->endpoint,
-            'public_key' => $this->public_key,
+            'user_id' => $this->user_id,
+            'status' => $this->status,
             'auth_token' => $this->auth_token,
-            'content_type' => $this->content_type,
         ];
     }
 
@@ -106,19 +105,24 @@ class Push_subscription extends Model implements JsonSerializable, SubscriptionI
                 "notification" => array(
                     "title" => PROJECT_NAME,
                     "body" => "$message",
-                    //"icon" => $icon, // Replace https://example.com/icon.png with your PUSH ICON URL
+//                    "icon" => $icon, // Replace https://example.com/icon.png with your PUSH ICON URL
                     //"click_action" => "$postlink"
                 ),
                 "data" => $payload,
                 "android" => [
+                    "priority" => "high",
                     "notification" => [
-                        "click_action" => "TOP_STORY_ACTIVITY"
+                        "click_action" => "ST_ACTIVATE"
                     ]
                 ],
                 "apns" => [
+                    "headers" => [
+                        "apns-priority" => "10"
+                    ],
                     "payload" => [
                         "aps" => [
-                            "category" => "NEW_MESSAGE_CATEGORY"
+                            "category" => "NEW_MESSAGE_CATEGORY",
+                            "content_available" => true
                         ]
                     ]
                 ]
@@ -148,24 +152,54 @@ class Push_subscription extends Model implements JsonSerializable, SubscriptionI
 // Variable for Print the Result
         $result = curl_exec($ch);
 
+        curl_close($ch);
+
         Emaillog::create([
-            "object" => "push notification to #" . $this->subscription_id,
-            "log" => "Message [ " . $message . " ] => " . $result,
+            "object" => "push notification id:" . $this->id,
+            "log" => "Message [ " . $message . " ] => " . $result." - ".json_encode($payload),
         ]);
         // dv_dump($result, $data);
-        $json = json_decode($result);
+        try {
+            $json = json_decode($result);
 //        if (isset($json->error))
 //            return null;
 
-        if (isset($json->error)) {
-            if ($json->error->code == 404)
-                Push_subscription::where("auth_token", $this->auth_token)->delete();
+            if (isset($json->error)) {
+                if ($json->error->code == 404)
+                    Push_subscription::where("auth_token", $this->auth_token)
+                        ->update([
+                            "status"=>0
+                        ]);
+            }
+        }catch (Exception $exception){
+            Emaillog::create([
+                "object" => "push notification Exception id:" . $this->id,
+                "log" => "Message => " . $exception->getMessage(),
+            ]);
         }
 
-        curl_close($ch);
 
         // return $result;
 
+    }
+
+    public static function initPusher(){
+
+        if (file_exists(ROOT .'config/'. fcm_jwt_auth_file)) {
+
+// define the scopes for your API call
+            $scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
+
+// Créer des credentials à partir du fichier de compte de service
+            $credentials = new ServiceAccountCredentials($scopes, ROOT .'config/'. fcm_jwt_auth_file);
+
+// Générer le token d'accès
+            /// global $fcm_access_token;
+            Push_subscription::$access_token = $credentials->fetchAuthToken()['access_token'];
+
+            return Push_subscription::$access_token;
+        }
+        return  null;
     }
 
 }

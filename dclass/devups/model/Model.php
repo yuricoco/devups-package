@@ -234,7 +234,7 @@ class Model extends \stdClass
             return $dbal->updateDbal($this);
         } else {
             $qb = new QueryBuilder($this);
-            return $qb->where("this.id", $this->id)->update($arrayvalues, $seton, $case, $defauljoin);
+            return $qb->whereId($this->id)->update($arrayvalues, $seton, $case, $defauljoin);
         }
     }
 
@@ -654,7 +654,8 @@ class Model extends \stdClass
     public static function getDvupsEntity()
     {
         $entity = strtolower(get_called_class());
-        return Dvups_entity::getbyattribut("this.name", $entity, false);
+        return $entity;
+//        return Dvups_entity::getbyattribut("this.name", $entity, false);
 
     }
 

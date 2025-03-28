@@ -25,16 +25,17 @@ class UserTable extends Datatable
     {
 
         $this->base_url = __env . "admin/";
+        $this->order_by = " this.id desc ";
         $this->datatablemodel = [
             'id' => ['header' => t('#'),],
             'src_profile' => ['header' => t('Profile'),'value'=>'src:profile'],
-            'profile' => ['header' => t('Profile'),],
-            'firstname' => ['header' => t('Firstname'),],
-            'lastname' => ['header' => t('Lastname'),],
+            'username' => ['header' => t('Username'),],
             'email' => ['header' => t('Email'),],
+            'country.nicename' => ['header' => t('Pays'),],
             'phonenumber' => ['header' => t('Phonenumber'),],
             //'lang' => ['header' => t('Lang'),],
-            'username' => ['header' => t('Username'),],
+            'created_at' => ['header' => t('Cree le'),],
+//            'role.name' => ['header' => t('Role'),],
         ];
 
         $this->addcustomaction(function ($item){

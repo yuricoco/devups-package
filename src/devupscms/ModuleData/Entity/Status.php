@@ -213,7 +213,7 @@ class Status extends Model implements JsonSerializable
 
     public static function getStatusOf($entity)
     {
-        return Status::where("entity.name", $entity);
+        return Status::where("entity.name", $entity)->get();
     }
 
 }

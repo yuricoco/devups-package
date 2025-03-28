@@ -23,32 +23,11 @@ class Dvups_adminController extends Controller
         $password = $dvups_admin->generatePassword();
         $dvups_admin->setPassword(sha1($password));
 //        $dvups_admin->setLogin();
-        $dvups_admin->generateLogin($dvups_admin->getName());
+        $dvups_admin->generateLogin();
 
         $dvups_admin->__save();
+        redirect('/admin/devups/ModuleAdmin/dvups-admin/added?login=' . $dvups_admin->getLogin() . "&password=" . $password);
 
-        return array('success' => true, // pour le restservice
-            'dvups_admin' => $dvups_admin,
-            //'redirect' => 'added&login=' . $dvups_admin->getLogin() . "&password=" . $password, // pour le web service
-            'redirect' => Dvups_admin::classpath() . 'dvups-admin/added?login=' . $dvups_admin->getLogin() . "&password=" . $password, // pour le web service
-            'detail' => ''); //Detail de l'action ou message d'erreur ou de succes
-        //
-    }
-
-    public function changepwAction()
-    {
-//        $adminDao = new AdminDAO();
-        $dvups_admin = Dvups_admin::find(getadmin()->getId());
-        extract($_POST);
-        if (sha1($oldpwd) == $dvups_admin->getPassword()) {
-            $dvups_admin->__update("password", sha1($newpwd));
-            return array('success' => true, // pour le restservice
-                'redirect' => Dvups_admin::classpath() . 'dvups-admin/profile?detail=password updated successfully', // pour le web service
-                'detail' => '');
-        } else {
-            return array('success' => false, // pour le restservice
-                'detail' => 'mot de passe incorrect');
-        }
     }
 
     public function deconnexionAction()
@@ -88,10 +67,10 @@ class Dvups_adminController extends Controller
 
         $admin = Dvups_admin::where("this.login", $_COOKIE[ADMIN."_login"])
             ->andwhere('this.password', $_COOKIE[ADMIN."_pwd"])
-            ->__getOne();
+            ->first();
         if ($admin->getId()) {
 
-            Dvups_roleController::getNavigationAction($admin);
+//            Dvups_roleController::getNavigationAction($admin);
             $_SESSION[ADMIN] = serialize($admin);
             return 1;
             //header("location: " . __env ."/admin". $url);
@@ -113,7 +92,7 @@ class Dvups_adminController extends Controller
         if (!$admin->getId())
             redirect( __env . "admin/login.php?err=" . 'Login ou mot de passe incorrect.');
 
-        Dvups_roleController::getNavigationAction($admin);
+//        Dvups_roleController::getNavigationAction($admin);
         $_SESSION[ADMIN] = serialize($admin);
         //Local_contentController::buildlocalcachesinglelang($_POST['lang']);
 
@@ -173,7 +152,7 @@ class Dvups_adminController extends Controller
         return array('success' => true, // pour le restservice
             'dvups_admin' => $dvups_admin,
             'tablerow' => Dvups_adminTable::init()->buildindextable()->getSingleRowRest($dvups_admin),
-            'redirect' => Dvups_admin::classpath() . 'dvups-admin/added?login=' . $dvups_admin->getLogin() . "&password=" . $password, // pour le web service
+            'redirect' => '/admin/devups/ModuleAdmin/dvups-admin/added?login=' . $dvups_admin->getLogin() . "&password=" . $password, // pour le web service
             'detail' => ''); //Detail de l'action ou message d'erreur ou de succes
 
     }
@@ -250,13 +229,13 @@ class Dvups_adminController extends Controller
         // if ()
         self::$sidebar = false;
         $admin = Dvups_admin::find($id);
-        $action = Dvups_admin::classpath("dvups-admin/complete?id=" . $id);
+        $action = "/admin/devups/ModuleAdmin/dvups-admin/complete?id=" . $id;
         //return compact("admin", "action");
         Genesis::renderView('admin.dvups_admin.complete_registration', compact("admin", "action"));
 
     }
 
-    public function completeRegistrationAction($id)
+    public function complete($id)
     {
         $admin = Dvups_admin::find($id);
         $error = "";
@@ -278,7 +257,7 @@ class Dvups_adminController extends Controller
             $error = 'Incorrect confirmation password! It must be the same as the new password';
 
         self::$sidebar = false;
-        $action = Dvups_admin::classpath("dvups-admin/complete?id=" . $id);
+        $action = "/admin/devups/ModuleAdmin/dvups-admin/complete?id=" . $id;
         Genesis::renderView('admin.dvups_admin.complete_registration', compact("admin", "action", "error"));
     }
 
@@ -288,4 +267,38 @@ class Dvups_adminController extends Controller
         Genesis::renderView('admin.dvups_admin.profile', ["admin" => $admin]);
 
     }
+
+    public function added()
+    {
+        $admin = getadmin();
+        Genesis::renderView('admin.dvups_admin.added');
+
+    }
+    public function credential()
+    {
+        Genesis::renderView('admin.dvups_admin.credential', ["admin" => Dvups_admin::find(getadmin()->getId())], "profile");
+    }
+    public function changepwd()
+    {
+        Genesis::renderView('admin.dvups_admin.changepwd', ["detail" => ""], 'list');
+
+    }
+
+    public function changepassword()
+    {
+//        $adminDao = new AdminDAO();
+        $dvups_admin = Dvups_admin::find(getadmin()->getId());
+        extract($_POST);
+        if (sha1($oldpwd) == $dvups_admin->getPassword()) {
+            $dvups_admin->__update("password", sha1($newpwd));
+            $data = array('success' => true, // pour le restservice
+                'redirect' => Dvups_admin::classpath() . 'dvups-admin/profile?detail=password updated successfully', // pour le web service
+                'detail' => '');
+        } else {
+            $data = array('success' => false, // pour le restservice
+                'detail' => 'mot de passe incorrect');
+        }
+        Genesis::renderView('admin.dvups_admin.changepwd', $data);
+    }
+
 }

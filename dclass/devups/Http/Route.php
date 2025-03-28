@@ -57,4 +57,22 @@ class Route {
         }
     }
 
+    public static function parseRoute($routePattern, $requestUri) {
+        $regexPattern = preg_replace('/:\w+/', '([^/]+)', $routePattern);
+        $regexPattern = "#^" . $regexPattern . "$#";
+
+        preg_match_all('/:(\w+)/', $routePattern, $paramNames);
+
+        if (preg_match($regexPattern, $requestUri, $matches)) {
+            array_shift($matches);
+
+            $params = array_combine($paramNames[1], $matches);
+            $params["path"] = explode("/", trim($requestUri, "/"))[0]; // Extraire le chemin principal
+
+            return $params;
+        }
+
+        return null;
+    }
+
 }

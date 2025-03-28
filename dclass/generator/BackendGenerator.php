@@ -595,110 +595,67 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
     private function frontCtrlContent($name, $entity)
     {
 
-        $contentono = "";
         $contentform = "";
 
-        if (!empty($entity->relation)) {
-            //relation sera l'entité
-            foreach ($entity->relation as $relation) {
-
-                if ($relation->cardinality == "oneToOne") {
-                    $contentform .= ", $" . $relation->entity . "_form = null";
-                }
-            }
-        }
-
-        $contenu = "public function ll($" . "next = 1, $" . "per_page = 10){
+        $contenu = "
+    /**
+     * @GET
+     * @return Lazyloading|QueryBuilder
+     * @throws ReflectionException
+     */
+     public function index(){
         
-            \$ll = new Lazyloading();
-            \$ll->lazyloading(new " . ucfirst($name) . "());
-            return \$ll;
-
-    }
-
-    public function createAction($" . $name . "_form = null $contentform){
-        $" . "rawdata = \Request::raw();
-        $" . $name . " = $" . "this->hydrateWithJson(new " . ucfirst($name) . "(), $" . "rawdata[\"$name\"]);\n ";
-        // gestion des relations many to many dans le controller
-        $mtm = [];
-        $mtmedit = [];
-        $iter = 0;
-        if (!empty($entity->relation)) {
-            //relation sera l'entité
-            foreach ($entity->relation as $relation) {
-
-                if ($relation->cardinality == "oneToOne") {
-                    $contenu .= "
-                    
-        $" . $relation->entity . " = $" . "this->hydrateWithJson(new " . ucfirst($relation->entity) . "(), $" . "rawdata[\"" . $relation->entity . "\"]);
-        $" . $relation->entity . "->__insert();
-        $" . $name . "->set" . ucfirst($relation->entity) . "($" . $relation->entity . "); ";
-                }
-            }
-        }
-        $contenu .= "\n" . implode("\n", $mtm);
-        $otherattrib = false;
-//        if (isset($entity->attribut[1])) {
-//            $otherattrib = true;
-        foreach ($entity->attribut as $attribut) {
-//			for($i = 1; $i < count($entity->attribut); $i++){
-            if (in_array($attribut->formtype, ['document', 'music', 'video', 'image'])) {
-                $otherattrib = true;
-                $contenu .= "
-        $" . $name . "->upload" . ucfirst($attribut->name) . "();\n";
-            }
-
-            if (in_array($attribut->datatype, ['date', 'datetime', 'time']) && isset($attribut->defaultvalue)) {
-                $contenu .= "
-        $" . $name . "->set" . ucfirst($attribut->name) . "(new DateTime());\n";
-            }
-
-        }
-//        }
-
-        $contenu .= "
-        
-        $" . "id = $" . $name . "->__insert();
-        return 	array(	'success' => true,
-                        '" . $name . "' => $" . $name . ",
-                        'detail' => '');
-
-    }
-
-    public function updateAction($" . "id, $" . $name . "_form = null){
-        $" . "rawdata = \Request::raw();
+            \$qb = " . ucfirst($name) . "::initQb();
             
-        $" . $name . " = $" . "this->hydrateWithJson(new " . ucfirst($name) . "($" . "id), $" . "rawdata[\"$name\"]);
+            return \$qb->lazyloading();
 
-            "; //.implode($mtmedit, "\n")
-        if ($otherattrib):
-            foreach ($entity->attribut as $attribut) {
-//                            for($i = 1; $i < count($entity->attribut); $i++){
-                if (in_array($attribut->formtype, ['document', 'music', 'video', 'image']))
-                    $contenu .= "
-                        $" . $name . "->upload" . ucfirst($attribut->name) . "();\n";
-            }
-        endif;
-        $contenu .= "      
-        
-        $" . $name . "->__update();
-        return 	array(	'success' => true,
-                        '" . $name . "' => $" . $name . ",
-                        'detail' => '');
-                        
     }
+
+    /**
+     * @POST
+     */
+    public function create(){
     
+        return 	parent::createCore();
 
-    public function detailAction($" . "id)
-    {
+    }
 
+    /**
+     * @GET(path='/:id')
+     */
+    public function detail(\$id){
+    
         $" . $name . " = " . ucfirst($name) . "::find($" . "id);
 
         return 	array(	'success' => true,
                         '" . $name . "' => $" . $name . ",
                         'detail' => '');
-          
-}       
+                        
+    }
+
+    /**
+     * @PUT(path='/:id')
+     */
+    public function update($" . "id){
+    
+        return 	parent::updateCore(\$id);
+                        
+    }
+    
+
+    /**
+     * @DELETE(path='/:id')
+     */
+    public function delete(\$id){
+
+        $" . $name . " = " . ucfirst($name) . "::find($" . "id);
+        $" . $name . "->__delete();
+        
+        return 	array(	'success' => true,
+                        'detail' => '$name deleted successfully');
+                        
+    }
+     
 ";
 
         return $contenu;
@@ -715,13 +672,15 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
 
             $ctrlname = '' . ucfirst($name) . 'FrontController';
             $classController = fopen('Controller/' . $ctrlname . '.php', 'w');
-            $extend = ucfirst($name) . 'Controller';
+            $extend = '\dclass\devups\Controller\FrontController';
 
             $content = $this->frontCtrlContent($name, $entity);
 
             $contenu = "<?php \n
-use dclass\devups\Datatable\Lazyloading;
 
+/**
+ * @Api(name='/$name')
+ */
 class " . $ctrlname . " extends $extend{
 
     $content
@@ -829,16 +788,29 @@ class " . ucfirst($name) . "Table extends Datatable{
 
     /* CREATION OF CORE */
 
-    public function coreGenerator($entityname, $sync = false)
+    public function coreGenerator($entitywithnamespace, $sync = false)
     {
         global $em;
 
-        $name = strtolower($entityname);
+        $ns = explode("\\", $entitywithnamespace);
+        $classname = ($ns[count($ns)-1]);
+        $name = strtolower($classname);
+        /*echo "this command has to be rework";
+        die;
         //before, verify if it has a record with it nameMagic (with namespace)
         if (!Dvups_entity::where("this.name", $name)->count())
             return false;
-        $de = Dvups_entity::where("this.name", $name)->first();
-        $classmetadata = (array)$em->getClassMetadata($de->namespace."\\" . $entityname);
+        $de = Dvups_entity::where("this.name", $name)->first();*/
+        try {
+            $classmetadata = (array) $em->getClassMetadata($entitywithnamespace);
+        }catch (Exception $e){
+            try {
+                $classmetadata = (array) $em->getClassMetadata("\\$classname");
+            }catch (Exception $exception){
+                echo $e->getMessage()." AND ".$exception->getMessage();
+                die();
+            }
+        }
 
         $classdevupsmetadata = [];
 

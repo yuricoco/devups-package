@@ -63,6 +63,16 @@ class Notification extends Model implements JsonSerializable
     protected $entityid;
 
     /**
+     * @Column(name="path", type="string" , length=255 , nullable=true)
+     * @var string
+     **/
+    protected $path;
+    /**
+     * @Column(name="image", type="string" , length=255 , nullable=true)
+     * @var string
+     **/
+    protected $image;
+    /**
      * @Column(name="content", type="string" , length=255 , nullable=true)
      * @var string
      **/
@@ -80,6 +90,12 @@ class Notification extends Model implements JsonSerializable
      */
     public $notificationtype;
 
+    /**
+     * the user_id of the one who emitted the push notification
+     * @Column(name="emitted_by", type="integer" , nullable=true )
+     * @var string
+     **/
+    protected $emitted_by;
     /**
      * @Column(name="user_id", type="integer" , nullable=true )
      * @var string
@@ -100,6 +116,19 @@ class Notification extends Model implements JsonSerializable
 
         $this->notificationtype = new Notificationtype();
 
+    }
+
+    public function illustration($image, $path)
+    {
+        $this->image = $image;
+        $this->path = $path;
+        return $this;
+    }
+
+    public function setEmittedBy($entityid)
+    {
+        $this->emitted_by = $entityid;
+        return $this;
     }
 
     public static function unreaded($user)
@@ -234,12 +263,12 @@ class Notification extends Model implements JsonSerializable
         return $notification;
     }
 
-    public function send($mb = [], $params = [], $push = null)
+    public function send($mb = [], $params = [], $push = false)
     {
         if (!$this->entityid)
             return $this;
 
-        self::$send_push = (is_callable($push));
+//        self::$send_push = $push;
         self::braodcast($this, $mb, $params, $push);
 
         return $this;
@@ -381,7 +410,7 @@ class Notification extends Model implements JsonSerializable
             'entity' => $this->entity,
             'created_at' => $this->getTimeStamp(),
             //'user' => $this->user,
-            'target' => $entity::find($this->entityid)->jsonSerialize(),
+            'target' => $entity::find($this->entityid),
         ];
     }
 
@@ -452,32 +481,19 @@ class Notification extends Model implements JsonSerializable
         }
     }
 
-    public static function braodcast($notification, $receivers, $params, $callable = null)
+    public static function braodcast($notification, $receivers, $params, $next = null)
     {
 
         if (!is_array($receivers))
             $receivers = [$receivers];
 
         $type = $notification->notificationtype;
-
-        if (self::$send_push){
-
-            if (file_exists(ROOT . fcm_jwt_auth_file)) {
-
-// define the scopes for your API call
-                $scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
-
-// Créer des credentials à partir du fichier de compte de service
-                $credentials = new ServiceAccountCredentials($scopes, ROOT . fcm_jwt_auth_file);
-
-// Générer le token d'accès
-                /// global $fcm_access_token;
-                Push_subscription::$access_token = $credentials->fetchAuthToken()['access_token'];
-            }
+        if (self::$send_push) {
+            Push_subscription::initPusher();
         }
 
         foreach ($receivers as $receiver) {
-            /** @var Notification $nb */
+
             $nb = clone $notification;
             // $nb->notification = $notification;
             $nb->status = 0;
@@ -512,8 +528,9 @@ class Notification extends Model implements JsonSerializable
             if (self::$send_sms)
                 self::sendSMS($nb, $receiver);
 
-            if (self::$send_push)
-                $nb->cloudMessagingPush(user: $receiver, message:$msg, callable: $callable);
+            if (is_callable($next))
+                $next($notification, $receiver);
+//                $nb->cloudMessagingPush( $receiver, $msg);
 
         }
 
@@ -526,7 +543,7 @@ class Notification extends Model implements JsonSerializable
      * @param $icon
      * @return array
      */
-    public function cloudMessagingPush(\User $user, $message, $link = "", $icon = null, $callable = null)
+    public function cloudMessagingPush(\User $user, $message, $link = "", $icon = null)
     {
 
         if (!__prod)
@@ -535,8 +552,7 @@ class Notification extends Model implements JsonSerializable
         if ($user)
             $subscriptions = Push_subscription::where(
                 [
-                    'subscription_type' => 'user',
-                    'subscription_id' => $user->id,
+                    'user_id' => $user->id,
                 ])->get();
         else
             $subscriptions = Push_subscription::where(
@@ -546,11 +562,8 @@ class Notification extends Model implements JsonSerializable
 
 
         foreach ($subscriptions as $subscription) {
-            /** @var Push_subscription $subscription */
-
-            $callable($subscription, $message);
-//            $subscription->fcmPushNotification( $message,
-//                $this->jsonSerialize(), $icon);
+            $subscription->fcmPushNotification($message,
+                $this->jsonSerialize(), $icon);
         }
 
     }

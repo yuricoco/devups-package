@@ -60,7 +60,7 @@ class Core extends stdClass
         return $entitycore;
     }
 
-    public static function findprojectcore($dir, $file)
+    public static function findprojectcore($dir, $file, $next = null)
     {
 //            var_dump($dir."/".strtolower($file) . ".json");
         if (!file_exists($dir . "/" . strtolower($file) . "Core.json"))
@@ -71,36 +71,47 @@ class Core extends stdClass
 
         $projectcore = json_decode(file_get_contents($dir . "/" . strtolower($file) . "Core.json"));
 
+        if (is_callable($next))
+            if (!$next($projectcore->name, 'component'))
+                return null;
+
+        $load = true;
         foreach ($files as $file) {
 
             if (is_dir($dir . "/" . $file)) {
 
 //                if (!file_exists($dir . "/" . strtolower($file) . "Core.json")){
-                $modulecores[] = Core::findmodulecore($dir . "/" . $file, $file);
+                if ($module = Core::findmodulecore($dir . "/" . $file, $file, $next))
+                    $modulecores[] = $module;
 //                }
 
             }
         }
+//        dv_dump($modulecores);
         $projectcore->listmodule = $modulecores;
 
         return $projectcore;
     }
 
-    public static function findmodulecore($dir, $file)
+    public static function findmodulecore($dir, $file, $next = null)
     {
         if (!file_exists($dir . "/" . strtolower($file) . "Core.json"))
             return [];
 
         $modulecore = json_decode(file_get_contents($dir . "/" . strtolower($file) . "Core.json"));
 
-        $entitycores = Core::findentitycore($dir . "/Core");
+        if (is_callable($next))
+            if (!$next($modulecore->name, 'module'))
+                return null;
+
+        $entitycores = Core::findentitycore($dir . "/Core", $next);
 
         $modulecore->listentity = $entitycores;
 
         return $modulecore;
     }
 
-    public static function findentitycore($dir)
+    public static function findentitycore($dir, $next = null)
     {
         if (!file_exists($dir))
             return [];
@@ -108,9 +119,12 @@ class Core extends stdClass
         $entitycores = [];
         $files = array_diff(scandir($dir), array('.', '..'));
         foreach ($files as $file) {
-
-            if (!is_dir($dir . "/" . $file)) {
-
+            if (is_callable($next)) {
+                if ($entity = $next(str_replace("Core.json", "", $file), 'entity'))
+                    $entitycores[] = $entity;
+//                else
+//                    continue;
+            }elseif (!is_dir($dir . "/" . $file)) {
                 $entitycores[] = json_decode(file_get_contents($dir . "/" . $file));
             }
         }
@@ -118,7 +132,7 @@ class Core extends stdClass
 
     }
 
-    public static function buildOriginCore()
+    public static function buildOriginCore($next = null)
     {
 
         $dir = __DIR__ . '/../../src';
@@ -128,7 +142,9 @@ class Core extends stdClass
 
             foreach ($files as $file) {
                 if ($file != "requires.php")
-                    $navigation[] = Core::findprojectcore($dir . "/" . $file, $file);
+                    if ($nav = Core::findprojectcore($dir . "/" . $file, $file, $next))
+                        $navigation[] = $nav;
+
             }
 
             return $navigation;
@@ -158,98 +174,73 @@ class Core extends stdClass
         $updated = false;
         $global_navigation = Core::buildOriginCore();
 
-        $lang_isos = Dvups_lang::getLangIso();
+        $dvups_configurations = [];
+        $comps = [];
+        $mods = [];
+        $ents = [];
+//        $lang_isos = Dvups_lang::getLangIso();
         foreach ($global_navigation as $key => $project) {
             if (is_object($project)) {
-
+                $comps[] = $project->name;
                 $projectname = ($project->name);
 
-                $qb = new QueryBuilder(new Dvups_component());
-                $dvcomponent = $qb->select()->where("name", '=', $projectname)
-                    ->firstOrNull();
-
-                if (is_null($dvcomponent)) {
-                    $dvcomponent = new Dvups_component();
-                    $dvcomponent->setName($projectname);
-
-//                    foreach ($lang_isos as $iso)
-//                        $dvcomponent->label[$iso] = $projectname;
-                    $dvcomponent->setLabel($projectname);
-                    $dvcomponent->__insert();
-
-                    $rolecomponent = new Dvups_role_dvups_component();
-                    $rolecomponent->setDvups_component($dvcomponent);
-                    $rolecomponent->setDvups_role(new Dvups_role(1));
-                    $rolecomponent->__insert();
-                } else {
-                    foreach ($lang_isos as $iso)
-                        $dvcomponent->label[$iso] = $projectname;
-                    //$dvcomponent->setLabel($projectname);
-                    $dvcomponent->__update();
-                }
-
                 foreach ($project->listmodule as $key => $module) {
-                //foreach ([] as $key => $module) {
+                    //foreach ([] as $key => $module) {
 
                     if (!is_object($module)) {
                         continue;
                     }
                     $modulename = ucfirst($module->name);
-                    $qb = new QueryBuilder(new Dvups_module());
-                    $dvmodule = $qb->select()->where("this.name", '=', $modulename)->first();
-
-                    $dvmodule->setProject($project->name);
-                    $dvmodule->setLabel($modulename);
-                    $dvmodule->dvups_component = $dvcomponent;
-                    if (!$dvmodule->getId()) {
-                        //var_dump("component_id name", $dvcomponent->id);
-                        $dvmodule->setName($modulename);
-                        $dvmodule->__insert();
-
-                        $rolemodule = new Dvups_role_dvups_module();
-                        $rolemodule->setDvups_module($dvmodule);
-                        $rolemodule->setDvups_role(new Dvups_role(1));
-                        $rolemodule->__insert();
-
-                        $updated = true;
-
-                    } else {
-                        $dvmodule->__update();
-                    }
-
+                    $mods[] = $modulename;
+                    $entities = [];
                     foreach ($module->listentity as $key => $entity) {
 
-                        $entityname = strtolower($entity->name);
-                        $qb = new QueryBuilder(new Dvups_entity());
-                        $dventity = $qb->select()->where("dvups_entity.name", '=', $entityname)->first();
+                        $entityname = ucfirst($entity->name);
+                        $ents[] = $entity->name;
 
-                        $dventity->setLabel($entityname);
-                        $dventity->setDvups_module($dvmodule);
-                        if (!$dventity->getId()) {
-                            //$dventity = new Dvups_entity();
-                            $dventity->setName($entityname);
-                            $dventity->setUrl($entityname);
-                            $dventity->dvups_module = $dvmodule;
-                            $dventity->__insert();
+                        $dvups_configurations["$projectname\\$modulename\\Entity\\" . $entityname] = [
+                            "path" => "$projectname/$modulename/",
+                            "module" => $modulename,
+                            "name" => $entityname,
+                            "namespace" => "$projectname\\$modulename\\Entity\\",
+                            "component" => $projectname,
+                        ];
+                        $dvups_configurations["\\" . $entityname] = [
+                            "path" => "$projectname/$modulename/",
+                            "module" => $modulename,
+                            "name" => $entityname,
+                            "namespace" => "$projectname\\$modulename\\Entity\\",
+                            "component" => $projectname,
+                        ];
 
-                            $roleentity = new Dvups_role_dvups_entity();
-                            $roleentity->setDvups_entity($dventity);
-                            $roleentity->setDvups_role(new Dvups_role(1));
-                            $roleentity->__insert();
+                        $entities[] = [
+                            "path" => "$projectname/$modulename/",
+                            "module" => $modulename,
+                            "name" => $entityname,
+                            "namespace" => "$projectname\\$modulename\\Entity\\",
+                            "component" => $projectname,
+                        ];
 
-                            $updated = true;
-
-                        } else {
-                            $dventity->dvups_module = $dvmodule;
-                            $dventity->__update();
-                        }
                     }
 
-                   // dv_dump($dvmodule);
+                    $module_configurations[$modulename] = [
+                        'name' => $modulename,
+                        'entities' => $entities,
+                    ];
 
                 }
             }
         }
+
+        \DClass\lib\Util::arrayToPhpFile($module_configurations, "module_configurations", 'config/');
+        \DClass\lib\Util::arrayToPhpFile($dvups_configurations, "dvups_configurations", 'config/');
+
+        $role = Dvups_role::find(1);
+        $role->setComponents($comps);
+        $role->setModules($mods);
+        $role->setEntities($ents);
+        $role->updateConfigs();
+        $role->__update();
 
         return $updated;
 

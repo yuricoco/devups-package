@@ -168,6 +168,7 @@ class Reportingmodel extends Model implements JsonSerializable, DatatableOverwri
     public function setObject($object)
     {
         $this->object = $object;
+        return $this;
     }
 
     /**
@@ -435,7 +436,7 @@ class Reportingmodel extends Model implements JsonSerializable, DatatableOverwri
         return $this;
     }
 
-    public function sendMail($datacustom)
+    public function sendMail($view, $datacustom)
     {
 
         if(!$this->content){
@@ -456,15 +457,16 @@ class Reportingmodel extends Model implements JsonSerializable, DatatableOverwri
 //                "style" => $this->getCss(),
 //            ] + $datacustom;
 
-        $message_html = $this->sanitizeContent($this->content, $datacustom);
+        /*$message_html = $this->sanitizeContent($this->content, $datacustom);
         $message_text = $this->sanitizeContent($this->contenttext, $datacustom);
         $object = $this->sanitizeContent($this->object, $datacustom);
-        $title = $this->sanitizeContent($this->title, $datacustom);
+        $title = $this->sanitizeContent($this->title, $datacustom);*/
 
         global $viewdir;
         $viewdir[] = Reportingmodel::classroot("Resource/views");
 
-        $message_html = str_replace("{yield}", $message_html, Genesis::getView("models.".$this->type));
+//        $message_html = str_replace("{yield}", $message_html, Genesis::getView("models.".$this->type));
+        $message_html = Genesis::getView($view, $datacustom);
 
         if (!__prod || !$this->id) {
             \DClass\lib\Util::log($message_html, date("Y_m_d-H_i_s")."_".$this->name.".html", ROOT."cache/", "w");

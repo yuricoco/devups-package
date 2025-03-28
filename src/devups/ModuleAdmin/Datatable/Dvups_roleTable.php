@@ -1,21 +1,22 @@
 <?php
 
 
-use dclass\devups\Datatable\Datatable;
+use dclass\devups\Datatable\Datatable as Datatable;
 
 class Dvups_roleTable extends Datatable
 {
 
-    public function __construct($lazyloading = null, $datatablemodel = [])
+
+    public function __construct($dvups_role = null, $datatablemodel = [])
     {
-        parent::__construct(new  Dvups_role(), $datatablemodel);
-        $this->entity = new  Dvups_role();
+        parent::__construct($dvups_role, $datatablemodel);
     }
 
-    public static function init(\Dvups_role $entity = null)
+    public static function init(\Dvups_role $dvups_role = null)
     {
-        $dt = new Dvups_roleTable();
-        // $dt->entity = $entity;
+
+        $dt = new Dvups_roleTable($dvups_role);
+        $dt->entity = $dvups_role;
 
         return $dt;
     }
@@ -23,26 +24,38 @@ class Dvups_roleTable extends Datatable
     public function buildindextable()
     {
 
+        $this->base_url = __env . "admin/";
         $this->datatablemodel = [
-            ['header' => "#", 'value' => 'id', "order"=>true],
-            ['header' => t( "dv_name", 'Name'), 'value' => 'name'],
-            ['header' => t("dv_alias", 'Alias'), 'value' => 'alias']
+            'id' => ['header' => t('#'),],
+            'name' => ['header' => t('Name'),],
+            'alias' => ['header' => t('Alias'),]
         ];
-        $this->topactions[] = Dvups_role::updateprivilegeAction();
 
         return $this;
     }
 
-    public function render()
+    public function builddetailtable()
     {
-        $this->lazyloading($this->entity);
-        return parent::render();
+        $this->datatablemodel = [
+            ['label' => t('name'), 'value' => 'name'],
+            ['label' => t('alias'), 'value' => 'alias']
+        ];
+        // TODO: overwrite datatable attribute for this view
+        return $this;
     }
 
-    public function getTableRest($datatablemodel = [])
+    public function router()
     {
-        $this->lazyloading($this->entity);
-        return parent::getTableRest();
+        $tablemodel = Request::get("tablemodel", null);
+        if ($tablemodel && method_exists($this, "build" . $tablemodel . "table") && $result = call_user_func(array($this, "build" . $tablemodel . "table"))) {
+            return $result;
+        } else
+            switch ($tablemodel) {
+                // case "": return this->
+                default:
+                    return $this->buildindextable();
+            }
+
     }
 
 }

@@ -280,7 +280,7 @@ EOF;
 
     static function dashboardView(){
         $admin = getadmin();
-        $modules = $admin->dvups_role->collectDvups_module();
+        $modules = []; //$admin->dvups_role->collectDvups_module();
 
         return compact("admin", "modules");
     }

@@ -26,21 +26,7 @@
         </div>
     </div>
 
-    @foreach($modules as $module)
-        <br>
-        <h3><i class="">
-                {!! $module->getPrinticon(35) !!}
-            </i>
-            {{$module->label[local()]}}</h3>
-        <hr>
-        <div class="row">
-            @foreach($admin->dvups_role->collectDvups_entityOfModule($module) as $entity)
-                @if($entity->exist())
-                    @include("default.entitywidget")
-                @endif
-            @endforeach
-        </div>
-    @endforeach
+
 @endsection
 
 @section("jsimport")

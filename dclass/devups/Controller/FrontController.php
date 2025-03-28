@@ -5,7 +5,7 @@ namespace dclass\devups\Controller;
 
 
 use Auth;
-use Dvups_entity;
+//use Dvups_entity;
 use Dvups_lang;
 use Exception;
 use ReflectionAnnotatedClass;
@@ -170,14 +170,20 @@ class FrontController extends Controller
     public function authorization($classname, $method)
     {
 
+        $Auth = new Auth();
+
         if (isset(Auth::$restrictions[$classname]) && !in_array($method, Auth::$restrictions[$classname])) {
-            $Auth = new Auth();
-            $result = $Auth->execute($this);
+            $result = $Auth->authorize($this);
             if (is_array($result) && $result['success'] == false) {
                 throw new Exception($result['detail']);
             }
 
             Request::$uri_get_param['user_id'] = $this->jwt->userId;
+
+        }else{
+            $result = $Auth->execute($this);
+            if (is_array($result) && $result['success'] == true)
+                Request::$uri_get_param['user_id'] = $this->jwt->userId;
 
         }
     }
@@ -365,16 +371,18 @@ class FrontController extends Controller
             throw $e;
         }
 
-        $entity = Dvups_entity::where("this.url", $classname)
+        /*$entity = Dvups_entity::where("this.url", $classname)
             ->orwhere("this.name", $classname)->firstOrNull();
 
-        $ctrl = ucfirst($entity->name) . "FrontController";
+        $ctrl = ucfirst($entity->name) . "FrontController";*/
+        $ctrl = ucfirst($classname) . "FrontController";
 
         if (!class_exists($ctrl))
             return ['success' => false, 'detail' => "the class $ctrl doesn't exist "];
 
         try {
-            return Request::Controller($route, Request::get('path'), $ctrl);
+            Request::$dv_entity = $classname;
+            return Request::FrontController($route, Request::get('path'), $ctrl);
         } catch (Exception $e) {
             return ['success' => false, 'detail' => $e->getMessage()];
         }

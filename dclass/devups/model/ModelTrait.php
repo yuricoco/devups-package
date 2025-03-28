@@ -17,6 +17,9 @@ trait ModelTrait
 
     public function __get($attribut)
     {
+        global $em; //$global_config;
+//        dv_dump($this);
+//        $config = $global_config[get_class($this)];
         if (!property_exists($this, $attribut)) {
 
             if ($this->dvtranslate && in_array($attribut, $this->dvtranslated_columns)) {
@@ -24,7 +27,10 @@ trait ModelTrait
                     return null;
 
                 $classlang = get_class($this) . "_lang";
-                $cnl = strtolower($classlang);
+
+                $metadata = $em->getClassMetadata("\\" . $classlang);
+                $cnl = $metadata->table['name'];
+//                $cnl = strtolower($classlang);
                 if (property_exists($classlang, $attribut)) {
                     $idlang = DBAL::$id_lang_static;
 
@@ -90,12 +96,15 @@ trait ModelTrait
                 if (!isset($this->id))
                     return $this->{$attribut};
 
-                global $em;
                 $classlang = get_class($this);
                 $metadata = $em->getClassMetadata("\\" . $classlang);
                 $fieldNames = $metadata->fieldNames;
                 $assiactions = array_keys($metadata->associationMappings);
-                $cn = strtolower($classlang);
+                /*if ($attribut === 'parent_id') {
+                $config = $global_config[get_class($this)];
+                    dv_dump($config, $metadata->table['name']);
+                }*/
+                $cn = $metadata->table['name'];
                 if (!$this->id)
                     return $this->{$attribut};
 
@@ -345,7 +354,9 @@ trait ModelTrait
         $entity = $reflection->newInstance();
 
         $qb = new QueryBuilder($entity);
-        $qb->custom_columns .= implode(", ", $columns);
+
+        $qb->custom_columns_array = [...$columns];
+//        $qb->custom_columns .= implode(", ", $columns);
         return $qb;// ->addColumns($columns)->getValue();
     }
 

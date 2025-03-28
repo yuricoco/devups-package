@@ -71,7 +71,7 @@ abstract class FormManager
         $this->name = strtolower(get_class($entity));
         $this->js = [];
         $this->css = [];
-        $this->dventity = Dvups_entity::getbyattribut("this.name", $this->classname);
+//        $this->dventity = Dvups_entity::getbyattribut("this.name", $this->classname);
 
     }
 
@@ -95,7 +95,8 @@ abstract class FormManager
 
     public function addCss($cssfile)
     {
-        $this->css[] = $this->dventity->dvups_module->route($cssfile);
+        $this->css[] = $cssfile;
+//        $this->css[] = $this->dventity->dvups_module->route($cssfile);
         return $this;
     }
 

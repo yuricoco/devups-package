@@ -56,7 +56,7 @@ font-size: 10px;
         </div>
     </div>
     <div class="content-body">
-        <div id="yield">{yield}</div>
+        @yield("content")
     </div>
     <div class="footer text-center">
         <div class=" text-center ">

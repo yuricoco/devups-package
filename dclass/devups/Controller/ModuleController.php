@@ -17,8 +17,10 @@ class ModuleController  extends Router
     {
         parent::__construct($default_url);
 
-        $reflector = new ReflectionClass(get_called_class());
-        self::initRenderer($reflector);
+        /*$calledclass = get_called_class();
+        $reflector = new ReflectionClass($calledclass);
+
+        self::initRenderer($reflector);*/
         $this->ctrl = new Controller();
     }
 
@@ -32,19 +34,21 @@ class ModuleController  extends Router
 
 //        $cn = $reflector->getName();
 //        $ns = $reflector->getNamespaceName();
-        $cn = str_replace($reflector->getNamespaceName()."\\", "", $reflector->getName());
-        $fn = str_replace("$cn.php", "", $reflector->getFileName());
-        $fdir = str_replace("\\", "/", $fn);
+//        $cn = str_replace($reflector->getNamespaceName()."\\", "", $reflector->getName());
+//        $fn = str_replace("$cn.php", "", $reflector->getFileName());
+//        $fdir = str_replace("\\", "/", $fn);
         // dv_dump($fn,$reflector->getName(), $reflector->getNamespaceName(), str_replace($ns, "", $cn));
-        $viewdir[] = $fdir . '/Resource/views';
-        $moduledata = \Dvups_module::init($cn);
+        /*$viewdir[] = $fdir . '/Resource/views';
+        $ms = require ROOT.'config/module_configurations.php';
+        $moduledata = $ms[$entity['module']];
+        $moduledata = \Dvups_module::init($cn);*/
 
     }
     public static function renderView($view, $data = [], $redirect = false)
     {
 
-        $reflector = new ReflectionClass(get_called_class());
-        self::initRenderer($reflector);
+//        $reflector = new ReflectionClass(get_called_class());
+//        self::initRenderer($reflector);
         \Genesis::renderView($view, $data, $redirect);
 
     }

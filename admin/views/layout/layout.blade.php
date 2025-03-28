@@ -48,7 +48,8 @@
     <div class="app-main">
 
         @if(\dclass\devups\Controller\Controller::$sidebar)
-            @include("layout.navbar")
+            @include("layout.sidebar", ['admin' => getadmin()])
+            {{--@ include("layout.navbar", ['admin' => getadmin()])--}}
         @endif
 
         <div class="{{\dclass\devups\Controller\Controller::$sidebar ? 'app-main__outer' : ""}}">

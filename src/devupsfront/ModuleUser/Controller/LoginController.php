@@ -81,7 +81,7 @@ class LoginController
 
         $user->is_activated = (false);
         //$user->setLocked(true);
-        $user->setResettingpassword(true);
+//        $user->setResettingpassword(true);
         $user->setActivationcode($activationcode);
         $user->__update();
 
@@ -91,19 +91,22 @@ class LoginController
 
         //updatesession($user);
 
-        if ($user->getEmail()) {
+        if ($user->email) {
             $data = [
                 "activation_link" => route('login') . '?vld=' . $activationcode . '&u_id=' . $user->getId(),
                 "activation_code" => $activationcode,
-                "username" => $user->getFirstname(),
+                "username" => $user->username,
             ];
-            Reportingmodel::init("otp", Dvups_lang::getByIsoCode($user->lang)->id)
-                ->addReceiver($user->getEmail(), $user->getUsername())
-                ->sendMail($data);
+
+            DMail::init("mails.otp",$data, $user->lang)
+                ->addReceiver($user->email, $user->username)
+                ->setObject('OYP')
+//                ->preview();
+                ->sendMail();
         }
 
-        Notification::on($user, "otp", -1)
-            ->send([$user], ["activationcode" => $activationcode]);
+//        Notification::on($user, "otp", -1)
+//            ->send([$user], ["activationcode" => $activationcode]);
 
         return array('success' => true, 'user' => $user, 'activationcode' => $activationcode, 'url' => "" . d_url("reset-password"));
 
@@ -118,13 +121,16 @@ class LoginController
         if ($code == $userapp->activationcode) {
             $userapp->setPassword((($_POST['password'])));
             $userapp->is_activated = (1);
-            $userapp->setResettingpassword(0);
+//            $userapp->setResettingpassword(0);
             $userapp->__update();
 
-            $_SESSION[USERAPP] = serialize($userapp);
+//            $_SESSION[USERAPP] = serialize($userapp);
             //updatesession($userapp);
 
-            return ["user" => $userapp, "success" => true,];
+            return ["user" => $userapp,
+                "success" => true,
+                "jwt" => Auth::getJWT($userapp)
+            ];
         } else {
             return ["success" => false, "error" => t("Code d'activation incorrect!")];
         }

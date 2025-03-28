@@ -43,6 +43,7 @@ class RegistrationController extends Controller {
             "activation_code" => $activationcode,
             "username" => $user->getFirstname(),
         ];
+
         Reportingmodel::init("change_email", Dvups_lang::getByIsoCode($user->lang)->id)
             ->addReceiver($email, $user->getUsername())
             ->sendMail($data);
@@ -94,24 +95,27 @@ class RegistrationController extends Controller {
         // $_SESSION[USER] = serialize($user);
 
         // send mail with activation code $codeactivation
-        if ($user->getEmail()) {
+        if ($user->email) {
             $data = [
-                "activation_link" => route('login') . '?vld=' . $activationcode . '&u_id=' . $user->getId(),
+                "activation_link" => route('login') . '?vld=' . $activationcode . '&u_id=' . $user->id,
                 "activation_code" => $activationcode,
-                "username" => $user->getFirstname(),
+                "username" => $user->username,
             ];
-            Reportingmodel::init("otp", Dvups_lang::getByIsoCode($user->lang)->id)
-                ->addReceiver($user->getEmail(), $user->getUsername())
-                ->sendMail($data);
+
+            DMail::init("mails.otp", $data, $user->lang)
+                ->addReceiver($user->email, $user->username)
+                ->setObject("")
+                ->sendMail();
+
         }
 
-        Notification::$send_sms = true;
-        Notification::on($user, "otp")
-            ->send($user, ["username"=>$user->getFirstname(), "code"=>$activationcode]);
+//        Notification::$send_sms = true;
+//        Notification::on($user, "otp")
+//            ->send($user, ["username"=>$user->getFirstname(), "code"=>$activationcode]);
 
         return [
             "success" => true,
-            //"activationcode" => $activationcode,
+            "activationcode" => $activationcode,
             "detail" => t("un nouveau code d'activation vous a été renvoyé.")
         ];
 

@@ -130,7 +130,7 @@ class Tree_item extends Model implements JsonSerializable
 
             $url = $dfile
                 ->hashname()
-                ->addresize([50 ], "50_")
+                ->addresize([50], "50_")
                 ->moveto($this->uploaddir);
 
             if (!$url['success']) {
@@ -139,7 +139,7 @@ class Tree_item extends Model implements JsonSerializable
             }
 
             if ($this->image) {
-                Dfile::deleteFile("50_".$this->image, $this->uploaddir);
+                Dfile::deleteFile("50_" . $this->image, $this->uploaddir);
                 Dfile::deleteFile($this->image, $this->uploaddir);
             }
             $this->image = $url['file']['hashname'];
@@ -150,19 +150,21 @@ class Tree_item extends Model implements JsonSerializable
     {
         return $this->image ? Dfile::show($prefix . $this->image, $this->uploaddir) : null;
     }
+
     public function showImage($prefix = "")
     {
-        if(is_array($prefix)) {
-            if($prefix)
+        if (is_array($prefix)) {
+            if ($prefix)
                 $prefix = $prefix[0];
             else
                 $prefix = "";
         }
-        $url = Dfile::show($prefix.$this->image, $this->uploaddir);
+        $url = Dfile::show($prefix . $this->image, $this->uploaddir);
         return Dfile::fileadapter($url, $this->image);
     }
 
-    public function jsonMini(){
+    public function jsonMini()
+    {
         return [
             'id' => $this->id,
             'src_image' => $this->srcImage(),
@@ -175,12 +177,14 @@ class Tree_item extends Model implements JsonSerializable
     {
 
         $children = [];
-        $countchildren = (int)self::where("parent_id", $this->id)->count();
-        if (!$this->parent_id  && $countchildren){
+        $countchildren = 0;
+        if ($this->id)
+            $countchildren = (int)self::where("parent_id", $this->id)->count();
+        if (!$this->parent_id && $countchildren && $this->id) {
             $children = self::where("parent_id", $this->id)->get();
         }
         $parent = [];
-        if($this->parent_id){
+        if ($this->parent_id) {
             $item = self::find($this->parent_id);
             $parent = [
                 'parent_slug' => $item->slug
@@ -188,22 +192,22 @@ class Tree_item extends Model implements JsonSerializable
         }
 
         return [
-            'id' => $this->id,
-            'src_image' => $this->srcImage(),
-            'name' => $this->name,
-            'slug' => $this->slug,
-            'position' => (int)$this->position,
-            'content' => $this->content,
-            'parent_id' => $this->parent_id,
-            'main' => $this->main,
-            'status' => $this->status,
-            'chain' => $this->chain,
-            'content_id' => $this->getCmstext()->getId(),
-            'count_children' => $countchildren,
-            'children' => $children,
-            'in_company' => $this->in_company,
-            // 'children' => (int)self::where("parent_id", $this->id)->count(),
-        ]+self::addAttributes($this);
+                'id' => $this->id,
+                'src_image' => $this->srcImage(),
+                'name' => $this->name,
+                'slug' => $this->slug,
+                'position' => (int)$this->position,
+                'content' => $this->content,
+                'parent_id' => $this->parent_id,
+                'main' => $this->main,
+                'status' => $this->status,
+                'chain' => $this->chain,
+                'content_id' => $this->getCmstext()->getId(),
+                'count_children' => $countchildren,
+                'children' => $children,
+                'in_company' => $this->in_company,
+                // 'children' => (int)self::where("parent_id", $this->id)->count(),
+            ] + self::addAttributes($this);
 
     }
 
@@ -346,6 +350,8 @@ class Tree_item extends Model implements JsonSerializable
 
     public static function children($id, $id_lang = null)
     {
+        if (!$id)
+            return [];
 
         return self::select()
             ->where("this.parent_id", $id)

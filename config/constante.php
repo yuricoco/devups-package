@@ -29,6 +29,9 @@ const __env = __server . __env_port . '/';
 const __vendor_folder = __DIR__ . '/../vendor';
 define("__front", __env . 'web/assets/');
 const __admin = __env . 'admin/assets/';
+
+
+const __csrf_origin = "http://localhost:5173,http://localhost:3000,https://domain.org";
 const __prod = false;
 const __route_cache = false;
 const __cache_version = '1.0.0';
@@ -83,13 +86,19 @@ const sm_smtpsecurity = 'ssl';
 const jwt_secret_Key = '68V0zWFrS72GbpPr...fj4v9m3Ti+DXc8OB0gcM=';
 const jwt_expire_time = false; //'+72 hours'
 
-/* FCM DEFINE */
+/**
+ * FCM DEFINE
+ */
 
-const fcm_server_key = 'AAAAZfYoMKg:APA91bGg5SPh1X5u...YlzhUZRIz2W';
-const fcm_pair_key = 'BG5ROP03CbHe_khfeFrR...GqR2jxs33VMDHaSs';
-const fcm_user_id = '4379...5928';
-const fcm_project_id  = 'xxx-000';
-const fcm_jwt_auth_file  = 'xxx-6faff3f88a.json';
+const fcm_pair_key  = 'BJTb**************NiW8EsD-XM0KTDS*****************************pQ5a8YzKQ';
+const fcm_user_id  = 100103111111111111117864;
+const fcm_project_id  = '*******-d18cb';
+const fcm_jwt_auth_file  = '********-d18cb-firebase-adminsdk-fbsvc-b7f7877399.json';
+
+// Google API configuration
+const GOOGLE_CLIENT_ID = '3760****246-4fekan*********************41n25.apps.googleusercontent.com';
+const GOOGLE_CLIENT_SECRET = 'G***PX-CTlHiuJW**********OLVrV2m6';
+const GOOGLE_REDIRECT_URL = 'https://backend.com/auth/google';
 
 const cron_token = 'da39a3ee5e6b4b0...fef95601890afd80709';
 

@@ -47,7 +47,6 @@ switch (Request::get('path')) {
         Genesis::renderView('admin.dvups_admin.index', $dvups_adminCtrl->resetcredential(Request::get("id")),  true);
         break;
     case 'dvups-admin/added':
-        Genesis::renderView('admin.dvups_admin.added');
         break;
     case 'dvups-admin/index':
         $dvups_adminCtrl->listView();

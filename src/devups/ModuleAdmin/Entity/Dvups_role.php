@@ -23,31 +23,39 @@ class Dvups_role extends Model implements JsonSerializable
      * @var string
      * */
     protected $alias;
+    /**
+     * @Column(name="configs", type="json" , nullable=true )
+     * @var string
+     * */
+    public $configs;
+    /**
+     * @Column(name="components", type="text" , nullable=true )
+     * @var string
+     * */
+    public $components;
+    /**
+     * @Column(name="modules", type="text" , nullable=true )
+     * @var string
+     * */
+    public $modules;
+    /**
+     * @Column(name="entities", type="text" , nullable=true )
+     * @var string
+     * */
+    public $entities;
 
     /**
      * @var \Dvups_right
      */
     public $dvups_right;
 
-    /**
-     * @var \Dvups_module
-     */
-    public $dvups_module;
-
-    /**
-     * @var \Dvups_entity
-     */
-    public $dvups_entity;
-
-    public $dv_collection = ["dvups_component","dvups_right", "dvups_module", "dvups_entity"];
+    public $dv_collection = [ "dvups_right",];
 
     public function array_rigth()
     {
         $array_rigth = [];
 
         foreach ($this->rigth as $rigth) {
-//                var_dump(EntityCollection::getCollection($rigth));
-//                var_dump($rigth);
             $array_rigth[] = strtolower($rigth->getNom());
         }
         return $array_rigth;
@@ -60,9 +68,7 @@ class Dvups_role extends Model implements JsonSerializable
             $this->id = $id;
 
         $this->dvups_right = [];
-        $this->dvups_component = [];
-        $this->dvups_module = [];
-        $this->dvups_entity = [];
+
     }
 
     function collectDvups_right()
@@ -71,81 +77,18 @@ class Dvups_role extends Model implements JsonSerializable
         return $this->dvups_right;
     }
 
-    function collectDvups_component()
-    {
-//        $this->dvups_component = Dvups_component::select()
-//            ->leftJoinOn('dvups_role_dvups_component', 'dcdr', 'dcdr.dvups_role_id = '.$this->id)
-//        ->get();
-        $this->dvups_component = $this->__hasmany('dvups_component', true, false );
-        //dv_dump($this->dvups_component);
-        return $this->dvups_component;
-    }
-
-    function collectDvups_moduleOfComponent(\Dvups_component $component)
-    {
-        $this->dvups_module = $this->__hasmany('dvups_module', false)
-            ->andwhere("dvups_module.dvups_component_id", $component->getId())
-            //->setLang(1)
-            ->get();
-
-        return $this->dvups_module;
-    }
-
-    function collectDvups_module()
-    {
-        $this->dvups_module = $this->__hasmany('dvups_module', true, false, 1);
-
-        return $this->dvups_module;
-    }
-
-    function collectDvups_entityOfModule(\Dvups_module $module)
-    {
-
-//        $this->dvups_entity = $this->__hasmany('dvups_entity', false)
-//            ->andwhere("dvups_entity.dvups_module_id", $module->getId())
-//            ->__getAll();
-        $this->dvups_entity = Dvups_entity::where("this.dvups_module_id", $module->getId())
-            ->leftjoinrecto(Dvups_role_dvups_entity::class)
-            ->where("dvups_role_dvups_entity.dvups_role_id", $this->id)
-            //->setLang(1)
-            ->get();
-
-        return $this->dvups_entity;
-    }
-    function collectDvups_entity()
-    {
-        $this->dvups_entity = $this->__hasmany('dvups_entity', true, false, 1);
-        return $this->dvups_entity;
-    }
-
     public function getId()
     {
         return $this->id;
     }
-
-    public function setId($id)
-    {
-        $this->id = $id;
-    }
-
     public function getName()
     {
         return $this->name;
     }
 
-    public function setName($name)
+    public function setId($id)
     {
-        $this->name = $name;
-    }
-
-    public function getAlias()
-    {
-        return $this->alias;
-    }
-
-    public function setAlias($alias)
-    {
-        $this->alias = $alias;
+        $this->id = $id;
     }
 
     /**
@@ -157,19 +100,54 @@ class Dvups_role extends Model implements JsonSerializable
         $this->dvups_right = $rigth;
     }
 
-    function setDvups_module($dvups_module)
+    function setModules($dvups_module)
     {
-        $this->dvups_module = $dvups_module;
+        $this->modules = implode(",", $dvups_module);;
     }
 
-    function setDvups_component($dvups_module)
+    function setComponents($dvups_module)
     {
-        $this->dvups_component = $dvups_module;
+        $this->components = implode(",", $dvups_module);
     }
 
-    function setDvups_entity($dvups_entity)
+    function setEntities($dvups_entity)
     {
-        $this->dvups_entity = $dvups_entity;
+        $this->entities = implode(",", $dvups_entity);
+    }
+
+    function getAttribute($attrib)
+    {
+        return explode(",", $this->{$attrib});
+    }
+
+    function updateConfigs()
+    {
+        $comps = $this->getAttribute('components');
+        $mods = $this->getAttribute('modules');
+        $ents = $this->getAttribute('entities');
+        $globalconfig = require ROOT.'config/dvups_configurations.php';
+//        dv_dump($globalconfig);
+        $global_navigation = Core::buildOriginCore(function ($core, $type) use ($globalconfig, $comps, $mods, $ents){
+            if ($type == 'component'){
+                return in_array($core, $comps);
+            }elseif ($type == 'module'){
+                return in_array($core, $mods);
+            }elseif ($type == 'entity'){
+//                dv_dump($core, $ents, in_array($core, $ents));
+                if(in_array(strtolower($core), $ents))
+                    return $globalconfig['\\'.ucfirst($core)];
+            }else
+                return false;
+        });
+
+//        dv_dump($global_navigation);
+        $this->configs = json_encode($global_navigation);
+        return $global_navigation;
+
+    }
+
+    function getConfigs(){
+        return json_decode($this->configs, true) ?? [];
     }
 
     /**
@@ -191,44 +169,6 @@ class Dvups_role extends Model implements JsonSerializable
         $this->dvups_right = EntityCollection::entity_collection('dvups_right');
     }
 
-    /**
-     *  manyToMany
-     * @return \Dvups_module
-     */
-    function getDvups_module()
-    {
-        return $this->dvups_module;
-    }
-
-    function addDvups_module(\Dvups_module $dvups_module)
-    {
-        $this->dvups_module[] = $dvups_module;
-    }
-
-    function dropDvups_moduleCollection()
-    {
-        $this->dvups_module = EntityCollection::entity_collection('dvups_module');
-    }
-
-    /**
-     *  manyToMany
-     * @return \Dvups_entity
-     */
-    function getDvups_entity()
-    {
-        return $this->dvups_entity;
-    }
-
-    function addDvups_entity(\Dvups_entity $dvups_entity)
-    {
-        $this->dvups_entity[] = $dvups_entity;
-    }
-
-    function dropDvups_entityCollection()
-    {
-        $this->dvups_entity = EntityCollection::entity_collection('dvups_entity');
-    }
-
     public function jsonSerialize()
     {
         return [
@@ -236,8 +176,6 @@ class Dvups_role extends Model implements JsonSerializable
             'name' => $this->name,
             'alias' => $this->alias,
             'dvups_right' => $this->dvups_right,
-            'dvups_module' => $this->dvups_module,
-            'dvups_entity' => $this->dvups_entity,
         ];
     }
 

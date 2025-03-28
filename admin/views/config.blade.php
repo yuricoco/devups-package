@@ -28,6 +28,95 @@
 
 
     <div class="row">
+        <div class="col-lg-6">
+            <div class="card mt-3">
+                <div class="card-title"><h3>Genders</h3></div>
+
+                {!! Tree_itemTable::init(new Tree_item())
+    ->Qb(Tree_item::where("tree.name", "department"))
+    ->addFilterParam('dfilters', "on")
+    ->addFilterParam('tree_id:eq', Tree::getbyattribut('name','department')->getId())
+    ->addFilterParam('tablemodel', 'dashboard')
+    ->setModel('dashboard')
+    ->builddashboardtable()->render() !!}
+
+            </div>
+
+        </div>
+        <div class="col-lg-6">
+            <div class="card mt-3">
+                <div class="card-title"><h3>Category Employes</h3></div>
+
+                {!! Tree_itemTable::init(new Tree_item())
+    ->Qb(Tree_item::where("tree.name", "category_employee"))
+    ->addFilterParam('dfilters', "on")
+    ->addFilterParam('tree_id:eq', Tree::getbyattribut('name','category_employee')->getId())
+    ->addFilterParam('tablemodel', 'dashboard')
+    ->setModel('dashboard')
+    ->builddashboardtable()->render() !!}
+
+            </div>
+
+        </div>
+        <div class="col-lg-6">
+            <div class="card mt-3">
+                <div class="card-title"><h3>Variables</h3></div>
+
+                {!! Tree_itemTable::init(new Tree_item())
+    ->Qb(Tree_item::where("tree.name", "fund_type"))
+    ->addFilterParam('dfilters', "on")
+    ->addFilterParam('tree_id:eq', Tree::getbyattribut('name','fund_type')->getId())
+    ->addFilterParam('tablemodel', 'dashboard')
+    ->setModel('dashboard')
+    ->builddashboardtable()->render() !!}
+
+            </div>
+
+        </div>
+        <div class="col-lg-6">
+            <div class="card mt-3">
+                <div class="card-title"><h3>Niveau detude</h3></div>
+
+                {!! Tree_itemTable::init(new Tree_item())
+    ->Qb(Tree_item::where("tree.name", "degree"))
+    ->addFilterParam('dfilters', "on")
+    ->addFilterParam('tree_id:eq', Tree::getbyattribut('name','degree')->getId())
+    ->addFilterParam('tablemodel', 'dashboard')
+    ->setModel('dashboard')
+    ->builddashboardtable()->render() !!}
+
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card mt-3">
+                <div class="card-title"><h3>Postes</h3></div>
+
+                {!! Tree_itemTable::init(new Tree_item())
+        ->Qb(Tree_item::where("tree.name", "post"))
+        ->addFilterParam('dfilters', "on")
+        ->addFilterParam('tree_id:eq', Tree::getbyattribut('name','post')->getId())
+        ->addFilterParam('tablemodel', 'dashboard')
+        ->setModel('dashboard')
+        ->builddashboardtable()->render() !!}
+
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card mt-3">
+                <div class="card-title"><h3>Contract</h3></div>
+
+                {!! Tree_itemTable::init(new Tree_item())
+    ->Qb(Tree_item::where("tree.name", "contract"))
+    ->addFilterParam('dfilters', "on")
+    ->addFilterParam('tree_id:eq', Tree::getbyattribut('name','contract')->getId())
+    ->addFilterParam('tablemodel', 'dashboard')
+    ->setModel('dashboard')
+    ->builddashboardtable()->render() !!}
+
+            </div>
+        </div>
 
     </div>
 

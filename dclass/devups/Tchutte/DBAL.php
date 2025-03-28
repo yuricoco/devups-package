@@ -16,6 +16,7 @@ class DBAL extends Database
 
     protected $defaultjoin = "";
     public $custom_columns = "";
+    public $custom_columns_array = [];
     public $custom_column_keys = [];
     protected $collect = [];
     public $_with = [];
@@ -853,7 +854,7 @@ class DBAL extends Database
      * @param \string $object
      * @return int l'id de l'entité persisté
      */
-    public static function _updateDbal($object, $keyvalue, $where)
+    public static function _updateDbal($object, $keyvalue, $where = '')
     {
 
         $parameterQuery = [];
@@ -861,7 +862,7 @@ class DBAL extends Database
         foreach ($objectvar as $v)
             $parameterQuery[] = '`'.$v.'` = :'.$v;
 
-        $sql = " UPDATE `" . strtolower($object) . "` SET " . strtolower(implode(', ', $parameterQuery)) . " WHERE 1  $where ";
+        $sql = " UPDATE `" . strtolower($object) . "` SET " . strtolower(implode(', ', $parameterQuery)) . " WHERE 1 $where ";
 
         $db = new DBAL();
         return $db->executeDbal($sql, $keyvalue, 1);
@@ -1098,7 +1099,8 @@ class DBAL extends Database
     {
 
         $req = $this->link->prepare($sql);
-        $req->execute($values) or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $req->errorInfo(), $sql, $values));
+        $req->execute($values)
+        or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $req->errorInfo(), $sql, $values));
 
         if (empty($this->entity_link_list) and empty($this->objectCollection)) {
             $flowBD = $req->fetchObject($this->objectName);
@@ -1493,7 +1495,8 @@ class DBAL extends Database
     public function setClassname($objectname)
     {
 
-        $this->objectName = $objectname;
+        $array = explode("\\", $objectname);
+        $this->objectName = $array[count($array) - 1];
         $this->table = strtolower($this->objectName);
         return $this;
     }

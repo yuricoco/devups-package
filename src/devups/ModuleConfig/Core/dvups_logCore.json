@@ -1,0 +1,1 @@
+{"name":"dvups_log","attribut":{"1":{"name":"object","visibility":"object","datatype":"string","size":255,"nullable":"not","formtype":"object"},"2":{"name":"log","visibility":"log","datatype":"text","size":"","nullable":"default","formtype":"log"}}}

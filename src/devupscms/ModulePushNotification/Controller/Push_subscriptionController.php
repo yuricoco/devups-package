@@ -14,6 +14,7 @@ class Push_subscriptionController extends Controller
 {
 
     public $token;
+
     public function listView()
     {
 
@@ -203,34 +204,43 @@ class Push_subscriptionController extends Controller
     public function cloudMessagingPush(\User $user = null, $message, $link = "", $icon = null)
     {
 
+        $config = ROOT . 'config/' . fcm_jwt_auth_file;
+        if (!file_exists($config))
+            return ['message' => 'config file not exist'];
 
-        if ($user)
+        if (!$user)
+            return null;
+
+        $subscriptions = Push_subscription::where(
+            [
+                'user_id' => $user->id,
+            ])->get();
+        /*else
             $subscriptions = Push_subscription::where(
                 [
                     'subscription_type' => 'user',
-                    'subscription_id' => $user->id,
-                ])->get();
-        else
-            $subscriptions = Push_subscription::where(
-                [
-                    'subscription_type' => 'user',
-                ])->get();
-
-        if (file_exists(ROOT . fcm_jwt_auth_file)) {
+                ])->get();*/
 
 // define the scopes for your API call
-            $scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
+        $scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
 
 // Créer des credentials à partir du fichier de compte de service
-            $credentials = new ServiceAccountCredentials($scopes, ROOT . fcm_jwt_auth_file);
+        $credentials = new ServiceAccountCredentials($scopes, $config);
 
 // Générer le token d'accès
-            $this->token = $credentials->fetchAuthToken()['access_token'];
-        }
+        Push_subscription::$access_token = $credentials->fetchAuthToken()['access_token'];
 
         foreach ($subscriptions as $subscription) {
-            $this->fcmPushNotification(
-                $subscription->auth_token, $message, $link, $icon);
+            $subscription->fcmPushNotification($message,
+                [
+                    'id' => '22',
+                    'entity' => '2',
+                    'action' => 'New chapter',
+                    'parent_id' => 'New chapter',
+                    'url' => 'reader3ag://home',
+                ], $icon);
+            /*$this->fcmPushNotification(
+                $subscription->auth_token, $message, $link, $icon);*/
             //$message->addRecipient(new sngrl\PhpFirebaseCloudMessaging\Recipient\Device($subscription->auth_token));
         }
 
@@ -253,7 +263,7 @@ class Push_subscriptionController extends Controller
         $data = array(
             // "to" => "$token",
             "message" => [
-                "token"=>$token,
+                "token" => $token,
                 "notification" => array(
                     "title" => PROJECT_NAME,
                     "body" => "$message",
@@ -328,7 +338,7 @@ class Push_subscriptionController extends Controller
     public function testPushNotif($id)
     {
         $sub = Push_subscription::find($id);
-        return $this->cloudMessagingPush(User::find($sub->subscription_id), 'test push notification');
+        return $this->cloudMessagingPush(User::find($sub->user_id), 'test push notification');
     }
 
 }

@@ -6,6 +6,7 @@ use Auth;
 use dclass;
 use Exception;
 use Genesis as g;
+use Google\Client;
 use Push_emailController;
 use Request;
 use Router;
@@ -25,9 +26,13 @@ class WebService extends Router
     public $public_access =
         [
             'user' => \User::class,
-            'dvups_entity' => \Dvups_entity::class,
             'notification' => \Notification::class,
+            'push_subscription' => \Push_subscription::class,
         ];
+
+    public $append_routes = [
+        '/auth/google' => 'googleAuth'
+    ];
     /*
      * PoC
      * can it be possible to set an instance of the front controller then while instanciate it, making control of restrication,
@@ -40,11 +45,12 @@ class WebService extends Router
 
         // this syntax allows restriction on all the methods in the userFrontController
         // if there is some method non affectec by the auth restriction, we can add them through the second parameter
-        Auth::addRestriction('user', ['registration',
-            'authentification', 'logout', 'changepassword', 'resentactivationcode',
+        Auth::addRestriction('user', ['registration','lazyloading','detail', 'deleteAccount',
+            'authenticate', 'logout', 'changepassword', 'resentactivationcode',
             'initresetpassword', 'activateaccount', 'resetpassword']);
 
-        //dv_dump($this->public_access);
+        Auth::addRestriction('push_subscription', []);
+
         $this->frontController = new dclass\devups\Controller\FrontController();
         parent::__construct($route);
 
@@ -126,6 +132,82 @@ class WebService extends Router
         g::json_encode([
             'success' => true,
         ]);
+    }
+
+
+    /**
+     * @POST(path='/auth/google')
+     * @return void
+     */
+    public function googleAuth()
+    {
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (!isset($input['idToken'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Token manquant']);
+            return;
+        }
+
+        $client = new Client(['client_id' => GOOGLE_CLIENT_ID]);
+        $payload = $client->verifyIdToken($input['idToken']);
+
+        if (!$payload) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Token invalide']);
+            return;
+        }
+
+        $oauth = Oauth_client::where([
+            'client' => 'google',
+            'user_ext_id' => $payload['sub'],
+        ])->firstOrNull();
+        if ($oauth) {
+
+            $newuser = \User::find($oauth->user_id);
+            $newuser->last_login = date('Y-m-d');
+
+        } else {
+
+            $existed = \User::where('this.email', $payload['email'])->firstOrNull();
+            // Infos de l'utilisateur Google
+            if ($existed){
+                $newuser = $existed;
+                $newuser->username = $payload['name'];
+                $newuser->email = $payload['email'];
+                $newuser->profile = $payload['picture'];
+                $newuser->is_activated = 1;
+                $newuser->last_login = date('Y-m-d');
+
+                $newuser->__update();
+            }else{
+                $newuser = new \User();
+                $newuser->username = $payload['name'];
+                $newuser->email = $payload['email'];
+                $newuser->profile = $payload['picture'];
+                $newuser->is_activated = 1;
+
+                $newuser->__insert();
+            }
+
+        }
+
+        // Enregistrer l'utilisateur en session ou en base
+
+        g::json_encode(array('success' => true,
+            'user' => $newuser,
+            "jwt" => Auth::getJWT($newuser),
+            'detail' => ''));
+
+    }
+
+    public function shareServe($path, $id){
+
+        switch ($path){
+
+            default:
+                return null;
+        }
+
     }
 
 

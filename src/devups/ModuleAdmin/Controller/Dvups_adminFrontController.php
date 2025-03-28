@@ -127,7 +127,7 @@ class Dvups_adminFrontController extends \Dvups_adminController
 
     }
 
-    public static function changePassword()
+    /*public static function changePassword()
     {
         extract($_POST);
         $user = Dvups_admin::find($id, false);
@@ -144,7 +144,7 @@ class Dvups_adminFrontController extends \Dvups_adminController
             return array('success' => false, // pour le restservice
                 'detail' => 'mot de passe incorrect');
         }
-    }
+    }*/
 
     public function resetcredential($id = null)
     {

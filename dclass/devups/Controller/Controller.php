@@ -9,6 +9,7 @@ use Exception;
 use Genesis as g;
 use Philo\Blade\Blade;
 use phpDocumentor\Reflection\Types\Self_;
+use QueryBuilder;
 use ReflectionAnnotatedClass;
 use ReflectionClass;
 use Request;
@@ -16,6 +17,7 @@ use Request;
 /**
  * class Controller 1.0
  *
+ * @OA\Info(title="DEVUPS API", version="1.0")
  * @author yuri coco
  */
 class Controller
@@ -42,15 +44,16 @@ class Controller
      * this method is used by devups from the admin/services.php file to manage router as we use to do at the front App.php
      * @return false|int|mixed
      */
-    public static function serve($route, \Dvups_entity $entity)
+    public static function serve($route, $entity)
     {
 
         global $viewdir;
 
-        $viewdir[] = $entity->dvups_module->hydrate()->moduleRoot() . 'Resource/views';
+        $viewdir[] = ROOT.'src/'.$entity['path'] . 'Resource/views';
+        ///$viewdir[] = $entity->dvups_module->hydrate()->moduleRoot() . 'Resource/views';
 
         //dv_dump($viewdir);
-        $ctrl = $entity->name . "Controller";
+        $ctrl = ucfirst($entity['name']) . "Controller";
         return Request::Controller($route, Request::get('path'), $ctrl);
     }
 
@@ -58,18 +61,21 @@ class Controller
      * this method is used by devups from the admin/services.php file to manage router as we use to do at the front App.php
      * @return false|int|mixed
      */
-    public static function views($route, \Dvups_entity $entity)
+    public static function views($route, $entity)
     {
 
         global $viewdir, $moduledata;
 
-        $viewdir[] = $entity->dvups_module->hydrate()->moduleRoot() . 'Resource/views';
-        $moduledata = $entity->dvups_module;
-        $admin = getadmin();
-        $moduledata->dvups_entity = $admin->dvups_role->collectDvups_entityOfModule($moduledata);
+        $viewdir[] = ROOT.'src/'.$entity['path'] . 'Resource/views';
+        //$moduledata = $entity->dvups_module;
+        $ms = require ROOT.'config/module_configurations.php';
+        $moduledata = $ms[$entity['module']];
+
+//        $admin = getadmin();
+//        $moduledata->dvups_entity = $admin->dvups_role->collectDvups_entityOfModule($moduledata);
 
         //dv_dump($viewdir);
-        $ctrl = ucfirst($entity->name) . "Controller";
+        $ctrl = ucfirst($entity['name']) . "Controller";
         return Request::Controller( $route , Request::get('path'), $ctrl);
 
     }
@@ -138,8 +144,10 @@ class Controller
             throw new Exception("entity " . $classname . " has no public access or has not been found", 22 );
         }
         // if the entity is available for webservice we check if it is stored in the database
-        $exist = \Dvups_entity::where("this.name", $classname)->count();
-        if (!$exist) {
+//        $exist = \Dvups_entity::where("this.name", $classname)->count();
+
+        $global_config = require ROOT.'config/dvups_configurations.php';
+        if (!isset($global_config["\\".ucfirst($classname)])) {
             /*echo json_encode([
                 "success" => false,
                 "message" => "entity " . $classname . " not found",
@@ -148,7 +156,8 @@ class Controller
                     : \Dvups_entity::all(),
             ]);
             die;*/
-            throw new Exception("entity " . $classname . " not found", 22 );
+            header('HTTP/1.0 500 Server error');
+            throw new Exception("entity " . $classname . " not found in \$global_config", 22 );
         }
 
         // if everything is OK we set the classname and start the next process.
@@ -692,6 +701,13 @@ class Controller
 
     }
 
+    public function lazyloading($entity, $qb, $sort = ''){
+
+        $ll = new \dclass\devups\Datatable\Lazyloading($entity);
+        $ll->start(new QueryBuilder($entity));
+
+        return $ll->lazyloading($entity, $qb, $sort);
+    }
 
     public static $classname;
 

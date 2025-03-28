@@ -286,6 +286,8 @@ Usage:
     public static function core($namespace, $sync = false) {
 
         $ns = explode("\\", $namespace);
+        self::$projectcore = $ns[0];
+        self::$modulecore = $ns[1];
         //__Generator::findentity($project, $ns[1], $ns[2]);
         __Generator::__core($ns[2], $ns[1], $sync);
 
@@ -433,7 +435,7 @@ Usage:
         //$repertoire = ucfirst(__Generator::$modulecore->name);
         chdir($repertoire);
 
-        $backend->coreGenerator($entity, $sync);
+        $backend->coreGenerator(self::$projectcore."\\".self::$modulecore."\\Entity\\".ucfirst($entity), $sync);
 
         chdir('../');
     }

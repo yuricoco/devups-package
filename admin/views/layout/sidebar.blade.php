@@ -1,8 +1,7 @@
-<?php $dvups_navigation = unserialize($_SESSION[dv_role_navigation]);
 
-//dv_dump($dvups_navigation);
-?>
-
+@php
+    $dvups_navigation = $admin->_dvups_role->getConfigs();
+@endphp
 <div class="app-sidebar sidebar-shadow">
     <div class="app-header__logo">
         <div class="logo-src"></div>
@@ -27,14 +26,14 @@
         </div>
     </div>
     <div class="app-header__menu">
-                        <span>
-                            <button type="button"
-                                    class="btn-icon btn-icon-only btn btn-primary btn-sm mobile-toggle-header-nav">
-                                <span class="btn-icon-wrapper">
-                                    <i class="fa fa-ellipsis-v fa-w-6"></i>
-                                </span>
-                            </button>
-                        </span>
+        <span>
+            <button type="button"
+                    class="btn-icon btn-icon-only btn btn-primary btn-sm mobile-toggle-header-nav">
+                <span class="btn-icon-wrapper">
+                    <i class="fa fa-ellipsis-v fa-w-6"></i>
+                </span>
+            </button>
+        </span>
     </div>
     <div class="scrollbar-sidebar">
         <div class="app-sidebar__inner">
@@ -47,32 +46,32 @@
                     </a>
                 </li>
                 @foreach ($dvups_navigation as $key => $component)
-                    <li class="app-sidebar__heading">{{$component["component"]->label[local()] }}</li>
+                    <li class="app-sidebar__heading">{{$component['name'] }}</li>
 
-                    @foreach ($component["modules"] as $key => $module)
+                    @foreach ($component["listmodule"] as $key => $module)
                         <li>
                             <a aria-expanded="true" href="#">
                                 <i class="metismenu-icon ">
-                                    {!! $module["module"]->getPrinticon() !!}
+                                    <i class="fas fa-fw fa-cog"></i>
                                 </i>
 
 {{--<i class="{{$module["module"]->getFavicon()}}"></i>--}}
-                                <span class="menu-title">{{$module["module"]->label[local()] }}</span>
+                                <span class="menu-title">{{$module['name'] }}</span>
                                 <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
                             </a>
                             <ul class="mm-collapse">
                                 <li>
-                                    <a href="{{ $module["module"]->route() }}">
+                                    <a href="/admin/{{$component['name'] }}/{{ $module['name'] }}/">
                                         <i class="metismenu-icon"></i> {{t("Dashboard")}}
                                     </a>
                                 </li>
-                                @foreach ($module["entities"] as $entity)
+                                @foreach ($module["listentity"] as $entity)
                                     <li>
-                                        <a href="{{ $entity->route() }}">
-                                            <i class="metismenu-icon"></i> {{$entity->label[local()] }}
-                                            @if($nb = $entity->alert())
-                                              (  {{$nb}} )
-                                            @endif
+                                        <a href="/admin/{{ $entity['path'] }}{{strtolower($entity['name']) }}/list">
+                                            <i class="metismenu-icon"></i> {{$entity['name'] }}
+                                           {{-- @ if($nb = $entity->alert())
+                                              (  {$nb}} )
+                                            @ endif--}}
                                         </a>
                                     </li>
                                 @endforeach
