@@ -42,12 +42,12 @@ class CmstextController extends Controller{
                 ->renderForm(),
         ];
     }
-    public function editView($id = null)
+    public function edit($id = null)
     {
         $cmstext = new Cmstext();
-        $action = Cmstext::classpath("services.php?path=cmstext.create");
+        $action = __env.("admin/api/cmstext/create");
         if ($id) {
-            $action = Cmstext::classpath("services.php?path=cmstext.update&id=" . $id);
+            $action = __env.("admin/api/cmstext/update?id=" . $id);
             $cmstext = Cmstext::find($id);
         }
         $langs = Dvups_lang::all();

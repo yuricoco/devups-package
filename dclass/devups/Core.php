@@ -203,13 +203,15 @@ class Core extends stdClass
                             "module" => $modulename,
                             "name" => $entityname,
                             "namespace" => "$projectname\\$modulename\\Entity\\",
+                            "namespace_name" => "$projectname\\$modulename\\Entity\\$entityname",
                             "component" => $projectname,
                         ];
-                        $dvups_configurations["\\" . $entityname] = [
+                        $dvups_configurations["" . $entityname] = [
                             "path" => "$projectname/$modulename/",
                             "module" => $modulename,
                             "name" => $entityname,
                             "namespace" => "$projectname\\$modulename\\Entity\\",
+                            "namespace_name" => "$projectname\\$modulename\\Entity\\$entityname",
                             "component" => $projectname,
                         ];
 

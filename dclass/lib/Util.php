@@ -241,4 +241,193 @@ class Util
         return lcfirst(str_replace(' ', '', ucwords(strtolower($string))));
     }
 
+    public static function getIdentifier($iso = "")
+    {
+        $fuseauxHorairesParPays = [
+            'AF' => ['Asia/Kabul'],
+            'AL' => ['Europe/Tirane'],
+            'DZ' => ['Africa/Algiers'],
+            'AS' => ['Pacific/Pago_Pago'],
+            'AD' => ['Europe/Andorra'],
+            'AO' => ['Africa/Luanda'],
+            'AR' => [
+                'America/Argentina/Buenos_Aires',
+                'America/Argentina/Cordoba',
+                'America/Argentina/Salta',
+                'America/Argentina/Jujuy',
+                'America/Argentina/Tucuman',
+                'America/Argentina/Catamarca',
+                'America/Argentina/La_Rioja',
+                'America/Argentina/San_Juan',
+                'America/Argentina/Mendoza',
+                'America/Argentina/San_Luis',
+                'America/Argentina/Rio_Gallegos',
+                'America/Argentina/Ushuaia'
+            ],
+            'AM' => ['Asia/Yerevan'],
+            'AU' => [
+                'Australia/Sydney',
+                'Australia/Melbourne',
+                'Australia/Brisbane',
+                'Australia/Perth',
+                'Australia/Adelaide',
+                'Australia/Hobart',
+                'Australia/Darwin',
+                'Australia/Broken_Hill',
+                'Australia/Lord_Howe'
+            ],
+            'AT' => ['Europe/Vienna'],
+            'AZ' => ['Asia/Baku'],
+            'BS' => ['America/Nassau'],
+            'BH' => ['Asia/Bahrain'],
+            'BD' => ['Asia/Dhaka'],
+            'BY' => ['Europe/Minsk'],
+            'BE' => ['Europe/Brussels'],
+            'BZ' => ['America/Belize'],
+            'BJ' => ['Africa/Porto-Novo'],
+            'BM' => ['Atlantic/Bermuda'],
+            'BT' => ['Asia/Thimphu'],
+            'BO' => ['America/La_Paz'],
+            'BA' => ['Europe/Sarajevo'],
+            'BW' => ['Africa/Gaborone'],
+            'BR' => [
+                'America/Sao_Paulo',
+                'America/Rio_Branco',
+                'America/Manaus',
+                'America/Boa_Vista',
+                'America/Campo_Grande',
+                'America/Cuiaba',
+                'America/Porto_Velho',
+                'America/Recife',
+                'America/Fortaleza',
+                'America/Bahia',
+                'America/Noronha'
+            ],
+            'BN' => ['Asia/Brunei'],
+            'BG' => ['Europe/Sofia'],
+            'BF' => ['Africa/Ouagadougou'],
+            'BI' => ['Africa/Bujumbura'],
+            'KH' => ['Asia/Phnom_Penh'],
+            'CM' => ['Africa/Douala'],
+            'CA' => [
+                'America/Toronto',
+                'America/Vancouver',
+                'America/Montreal',
+                'America/Edmonton',
+                'America/Winnipeg',
+                'America/Halifax',
+                'America/St_Johns',
+                'America/Whitehorse',
+                'America/Yellowknife',
+                'America/Iqaluit'
+            ],
+            'CV' => ['Atlantic/Cape_Verde'],
+            'CF' => ['Africa/Bangui'],
+            'TD' => ['Africa/Ndjamena'],
+            'CL' => [
+                'America/Santiago',
+                'Pacific/Easter'
+            ],
+            'CN' => ['Asia/Shanghai', 'Asia/Urumqi'],
+            'CO' => ['America/Bogota'],
+            'KM' => ['Indian/Comoro'],
+            'CG' => ['Africa/Brazzaville'],
+            'CI' => ['Africa/Abidjan'],
+            'CD' => [
+                'Africa/Kinshasa',
+                'Africa/Lubumbashi'
+            ],
+            'CR' => ['America/Costa_Rica'],
+            'HR' => ['Europe/Zagreb'],
+            'CU' => ['America/Havana'],
+            'CY' => ['Asia/Nicosia'],
+            'CZ' => ['Europe/Prague'],
+            'DK' => ['Europe/Copenhagen'],
+            'DJ' => ['Africa/Djibouti'],
+            'DM' => ['America/Dominica'],
+            'DO' => ['America/Santo_Domingo'],
+            'EC' => ['America/Guayaquil', 'Pacific/Galapagos'],
+            'EG' => ['Africa/Cairo'],
+            'SV' => ['America/El_Salvador'],
+            'GQ' => ['Africa/Malabo'],
+            'ER' => ['Africa/Asmara'],
+            'EE' => ['Europe/Tallinn'],
+            'ET' => ['Africa/Addis_Ababa'],
+            'FI' => ['Europe/Helsinki'],
+            'FR' => ['Europe/Paris'],
+            'GA' => ['Africa/Libreville'],
+            'GM' => ['Africa/Banjul'],
+            'GE' => ['Asia/Tbilisi'],
+            'DE' => ['Europe/Berlin', 'Europe/Busingen'],
+            'GH' => ['Africa/Accra'],
+            'GR' => ['Europe/Athens'],
+            'GT' => ['America/Guatemala'],
+            'GN' => ['Africa/Conakry'],
+            'GW' => ['Africa/Bissau'],
+            'GY' => ['America/Guyana'],
+            'HT' => ['America/Port-au-Prince'],
+            'HN' => ['America/Tegucigalpa'],
+            'HU' => ['Europe/Budapest'],
+            'IS' => ['Atlantic/Reykjavik'],
+            'IN' => ['Asia/Kolkata'],
+            'ID' => [
+                'Asia/Jakarta',
+                'Asia/Pontianak',
+                'Asia/Makassar',
+                'Asia/Jayapura'
+            ],
+            'IR' => ['Asia/Tehran'],
+            'IQ' => ['Asia/Baghdad'],
+            'IE' => ['Europe/Dublin'],
+            'IL' => ['Asia/Jerusalem'],
+            'IT' => ['Europe/Rome'],
+            'JM' => ['America/Jamaica'],
+            'JP' => ['Asia/Tokyo'],
+            'KE' => ['Africa/Nairobi'],
+            'KR' => ['Asia/Seoul'],
+            'MX' => [
+                'America/Mexico_City',
+                'America/Cancun',
+                'America/Monterrey',
+                'America/Mazatlan',
+                'America/Tijuana'
+            ],
+            'US' => [
+                'America/New_York',
+                'America/Chicago',
+                'America/Denver',
+                'America/Los_Angeles',
+                'America/Anchorage',
+                'Pacific/Honolulu'
+            ],
+            'ZA' => ['Africa/Johannesburg']
+        ];
+
+//        print_r($fuseauxHorairesParPays);
+
+        if ($iso)
+            if (array_key_exists($iso, $fuseauxHorairesParPays))
+                return $fuseauxHorairesParPays[$iso];
+            else
+                return [];
+
+        return $fuseauxHorairesParPays;
+
+    }
+
+    public static function getTimezone()
+    {
+
+        $adresseIP = $_SERVER['REMOTE_ADDR']; // Remplacez par l'adresse IP de l'utilisateur '104.26.3.192'; //
+        $apiKey = "8f67b514f5b0437882f3dff272373e2d"; // Remplacez par votre clé d'API réelle
+        // 8f67b514f5b0437882f3dff272373e2d
+
+        $url = "https://api.ipgeolocation.io/timezone?apiKey=$apiKey&ip=$adresseIP";
+
+        $response = file_get_contents($url);
+        $data = json_decode($response, true);
+
+        return $data['timezone'] ?? 'UTC';
+
+    }
 }

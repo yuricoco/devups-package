@@ -104,6 +104,9 @@ class Lazyloading implements \JsonSerializable
             case "in":
                 $this->currentqb->andwhere($attr)->in($value);
                 break;
+            case "rein":
+                $this->currentqb->where_str(" $value IN ( $attr )");
+                break;
             case "notin":
                 $this->currentqb->andwhere($attr)->notIn($value);
                 break;
@@ -181,6 +184,14 @@ class Lazyloading implements \JsonSerializable
 //                $this->filterswicher("", $join[0], $value);
 
         }
+
+        $headerparam = Request::$uri_header_param;
+
+        foreach ($headerparam as $key => $value) {
+            if ($value)
+                $this->currentqb->with($key, $value);
+        }
+
         return $this->currentqb;
     }
 
@@ -305,7 +316,12 @@ class Lazyloading implements \JsonSerializable
 
         $remain = true;
         $nb_element = $this->nb_element;
-        if ($this->per_page != "all") {
+        if ($nb_element === 0) {
+            $this->next = 0;
+            $remain = false;
+            $pagination = 0;
+            $page = 1;
+        }elseif ($this->per_page != "all") {
             if (!($nb_element % $this->per_page)) {
                 $pagination = $nb_element / $this->per_page;
             } else {

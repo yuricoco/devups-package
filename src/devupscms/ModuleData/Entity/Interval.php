@@ -39,9 +39,9 @@ class Interval extends Model implements JsonSerializable
     protected $description;
 
     /**
-     * @ManyToOne(targetEntity="\Dvups_entity")
-     * @var \Dvups_entity
-     */
+     * @Column(name="entity", type="string", length=55  )
+     * @var integer
+     **/
     public $entity;
 
     public function __construct($id = null)
@@ -50,8 +50,6 @@ class Interval extends Model implements JsonSerializable
         if ($id) {
             $this->id = $id;
         }
-
-        $this->entity = new Dvups_entity();
 
     }
 

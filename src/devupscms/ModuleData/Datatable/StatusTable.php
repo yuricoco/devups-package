@@ -29,7 +29,7 @@ class StatusTable extends Datatable
         $this->topactions[] = '<button type="button" class="btn btn-info" onclick="model.status.sortlist(this)"><i class="fa fa-exchange"></i> Ordonner </button>';;
         $this->datatablemodel = [
             ['header' => t('status.id', '#'), 'value' => 'id'],
-            ['header' => t('Entity'), 'value' => 'entity.name'],
+            ['header' => t('Entity'), 'value' => 'entity'],
             ['header' => t('status.color', 'Color'), 'value' => 'colortab'],
             ['header' => t('status.position', 'Position'), 'value' => 'positionLabel'],
             ['header' => t('status.key', 'Key'), 'value' => '_key'],

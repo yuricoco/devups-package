@@ -122,7 +122,7 @@ var cmstext = {
         form.append("cmstext_form[content][en]", $("#dv-editable-en").html())
 
         model.addLoader($(el))
-        Drequest.init(__env + "admin/api/cmstext.update?id=" + cmstextid)
+        Drequest.init(__env + "admin/api/cmstext/update?id=" + cmstextid)
             .data(form)
             .post((response) => {
                 console.log(response);

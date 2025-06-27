@@ -26,31 +26,15 @@ class Notification extends Model implements JsonSerializable
 
     /**
      * specify if the notification has been seen in the list of notification (either on top widget or list view)
-     * 0 : not yet read
-     * 1 : already read
-     * @Column(name="read", type="integer" , length=1 )
-     * @var string
-     **/
-    protected $read = 0;
-    /**
-     * specify if the notification has been seen in the list of notification (either on top widget or list view)
-     * 0 : not yet seen
-     * 1 : already seen
+     * -1 : ping => the initial request will take all the notification less than the date of the device and where status=-1
+     *  then the timers request will take by the latest notification date and ping = 1
+     * 0 : unread => specify if the notification has been seen in the list of notification (either on top widget or list view)
+     * 1 : read
      * @Column(name="status", type="integer" , length=1 )
      * @var string
      **/
-    protected $status = 0;
-    /**
-     * 0 : has already been taken by the broadcaster system
-     * 1 : has not yet been taken by the broadcaster system
-     *
-     * the initial request will take all the notification least than the date of the device and where ping=1
-     * then the timers request will take by the latest notification date and ping = 1
-     *
-     * @Column(name="ping", type="integer" , length=1 )
-     * @var string
-     **/
-    protected $ping = 1;
+    protected $status = -1;
+
     /**
      * @Column(name="entity", type="string" , length=55 )
      * @var string
@@ -147,8 +131,8 @@ class Notification extends Model implements JsonSerializable
         $notifcount = self::where("admin_id", $user->getId())->andwhere("this.status", "=", 0)->count();
 
         // once php load data it sets the ping value to 0 so that timer escape it
-        self::where("admin_id", $user->getId())->andwhere("this.ping", "=", 1)->update([
-            "this.ping" => 0
+        self::where("admin_id", $user->getId())->andwhere("this.status", "=", -1)->update([
+            "this.status" => 0
         ]);
         return compact("notifcount", "notifs");
     }
@@ -232,9 +216,11 @@ class Notification extends Model implements JsonSerializable
     public static function on($entity, $event, $sendsms = false, $session = "user")
     {
 
+        global $global_config;
         self::$send_sms = $sendsms;
-        $classname = strtolower(get_class($entity));
-        $type = Notificationtype::where(["dvups_entity.name" => $classname, "_key" => $event])
+        $class = $global_config[get_class($entity)];
+        $classname = strtolower($class['name']);
+        $type = Notificationtype::where(["entity" => $classname, "_key" => $event])
             ->where("this.session", $session)
             //->getSqlQuery();
             ->firstOrNull();
@@ -247,7 +233,7 @@ class Notification extends Model implements JsonSerializable
                 $content[$lang->iso_code] = "no content";
             }
             $id = Notificationtype::create([
-                "dvups_entity_id" => Dvups_entity::getbyattribut("this.name", $classname)->getId(),
+                "entity" => $classname,
                 "_key" => $event,
                 "session" => $session,
                 "content" => $content,
@@ -269,6 +255,9 @@ class Notification extends Model implements JsonSerializable
             return $this;
 
 //        self::$send_push = $push;
+        if ($push)
+            self::$send_push = true;
+
         self::braodcast($this, $mb, $params, $push);
 
         return $this;
@@ -384,33 +373,34 @@ class Notification extends Model implements JsonSerializable
 
     public function jsonSerialize()
     {
-        $entity = ucfirst($this->entity);
+//        $entity = ucfirst($this->entity);
         if (Request::get("jsonmodel") == "html") {
             global $viewdir;
             $viewdir[] = ROOT . "admin/views";
             return [
                 'id' => $this->id,
                 'viewedat' => $this->viewedat,
-                'read' => $this->read,
+                'read' => $this->status > 0,
                 'notificationtype' => $this->notificationtype->_key,
                 'html' => Genesis::getView("default.notification_item", ["notification" => $this]),
                 'status' => $this->status,
                 'created_at' => $this->getTimeStamp(),
-                'target' => $entity::find($this->entityid),
+//                'target' => $entity::find($this->entityid),
             ];
         }
 
         return [
             'id' => $this->id,
             'viewedat' => $this->viewedat,
-            'read' => $this->read,
             'notificationtype' => $this->notificationtype->_key,
             'status' => $this->status,
             'content' => $this->content,
             'entity' => $this->entity,
-            'created_at' => $this->getTimeStamp(),
+            'entityid' => $this->entityid,
+            'created_at' => $this->created_at,
+            'redirect' => $this->redirect,
             //'user' => $this->user,
-            'target' => $entity::find($this->entityid),
+//            'target' => $entity::find($this->entityid),
         ];
     }
 
@@ -431,7 +421,7 @@ class Notification extends Model implements JsonSerializable
     public function getRedirect()
     {
         $entity = ucfirst($this->entity);
-        if ($this->read == 0) {
+        if ($this->status == 0) {
             if ($this->_notificationtype->getSession() == "admin") {
                 //$entity = Dvups_entity::getbyattribut("name", $this->_notification->entity);
                 //return __env.('admin/' .strtolower($entity->dvups_module->project) . '/' . $entity->dvups_module->name . '/' . $entity->url . "/detail?id=".$this->notification->entityid);
@@ -460,7 +450,7 @@ class Notification extends Model implements JsonSerializable
     {
         (new Notification($id))->__update([
             "viewedat" => date('Y-m-d'),
-            "read" => 1,
+            "status" => 1,
         ]);
         return Notification::find($id);
     }
@@ -488,7 +478,7 @@ class Notification extends Model implements JsonSerializable
             $receivers = [$receivers];
 
         $type = $notification->notificationtype;
-        if (self::$send_push) {
+        if (self::$send_push && __prod) {
             Push_subscription::initPusher();
         }
 
@@ -496,9 +486,7 @@ class Notification extends Model implements JsonSerializable
 
             $nb = clone $notification;
             // $nb->notification = $notification;
-            $nb->status = 0;
-            $nb->ping = 1;
-            $nb->read = 0;
+            $nb->status = -1;
             $local = $receiver->lang;
 
             // issue on admin notification as the lang attribut is not yet setted by default
@@ -528,9 +516,45 @@ class Notification extends Model implements JsonSerializable
             if (self::$send_sms)
                 self::sendSMS($nb, $receiver);
 
-            if (is_callable($next))
-                $next($notification, $receiver);
-//                $nb->cloudMessagingPush( $receiver, $msg);
+            if ($next) {
+                $pushers = Push_subscription::where([
+                    'status' => 1,
+                    'user_id' => $receiver->id,
+                ])->get();
+
+                if (is_callable($next))
+                    foreach ($pushers as $pusher)
+                        $next($pusher, $notification, $receiver);
+                else if (is_array($next))
+                    foreach ($pushers as $pusher)
+                        Workers::create([
+                            'type' => 'push_notification',
+                            'queue' => $pusher->id,
+                            'payload' => json_encode([
+                                'message' => $msg,
+                                'data' => [
+                                    "entity_id" => $notification->entityid,
+                                    "entity" => $notification->entity,
+                                    ...$next
+                                ],
+                            ]),
+                        ]); //->fromSelect();
+               /* DB::insert("
+INSERT INTO mail_queues (mail_campaign_id, client_id, email, send)
+    SELECT {$MailCampaign->id}, client_id, c.email, 0 FROM bookings
+        LEFT JOIN clients c ON c.id = bookings.client_id
+                               WHERE level = 'booked' AND status = 1 AND stay_id = {$MailCampaign->stay_id}
+                                 -- AND staff = 0
+                                 -- AND c.email = 'azankang.developer@gmail.com'
+                               GROUP BY client_id, c.email
+", []);*/
+//                    $pusher->fcmPushNotification($notification->content, [
+//                        "entity_id" => $notification->entityid,
+//                        "entity" => $notification->entity,
+//                        ...$next]);
+//                    $nb->cloudMessagingPush( $receiver, $notification->content, $next);
+
+            }
 
         }
 
@@ -543,7 +567,7 @@ class Notification extends Model implements JsonSerializable
      * @param $icon
      * @return array
      */
-    public function cloudMessagingPush(\User $user, $message, $link = "", $icon = null)
+    public function cloudMessagingPush(\User $user, $message, $payload, $icon = null)
     {
 
         if (!__prod)

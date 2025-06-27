@@ -54,7 +54,7 @@
                                                             <span v-if="role =='admin'" @click="_delete(treeselected.id, $index)" class="input-group-text btn-danger" >
                                                                 <i class="fa fa-times"></i>
                                                             </span>
-                                                            <span v-if="role =='admin'" @click="update(cat)" class="input-group-text" >
+                                                            <span v-if="role =='admin'" @click="update(treeselected)" class="input-group-text" >
                                                                 <i class="fa fa-edit"></i></span>
                                                                     <span @click="init(treeselected, $index)" class="input-group-text" >
                                                                 <i class="fa fa-eye"></i></span>

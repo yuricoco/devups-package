@@ -135,7 +135,7 @@ class Dvups_role extends Model implements JsonSerializable
             }elseif ($type == 'entity'){
 //                dv_dump($core, $ents, in_array($core, $ents));
                 if(in_array(strtolower($core), $ents))
-                    return $globalconfig['\\'.ucfirst($core)];
+                    return $globalconfig[''.ucfirst($core)];
             }else
                 return false;
         });

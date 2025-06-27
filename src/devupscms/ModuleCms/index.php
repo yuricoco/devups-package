@@ -11,7 +11,7 @@ if (!isset($_SESSION[ADMIN]) and $_GET['path'] != 'connexion') {
 global $viewdir, $moduledata;
 $viewdir[] = __DIR__ . '/Resource/views';
 
-$moduledata = Dvups_module::init('ModuleCms');
+//$moduledata = Dvups_module::init('ModuleCms');
 
 $cmstextCtrl = new CmstextController();
 $imagecmsCtrl = new ImagecmsController();

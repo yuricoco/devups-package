@@ -16,6 +16,7 @@ class Model extends \stdClass
 {
 
     use ModelTrait;
+//    use BaseModel;
 
     public static $jsonmodel;
 
@@ -138,9 +139,9 @@ class Model extends \stdClass
      */
     public static function Dfile($fileparam)
     {
-
-        $reflection = new ReflectionClass(get_called_class());
-        $entity = $reflection->newInstance();
+//        $reflection = new ReflectionClass(get_called_class());
+//        $entity = $reflection->newInstance();
+        $entity = get_called_class();
         $dfile = new Dfile($fileparam, $entity);
         return $dfile;
     }
@@ -391,6 +392,41 @@ class Model extends \stdClass
         }
         $this->dvfetched = true;
         $this->dvold = $this;
+
+        return $this;
+    }
+
+    public function hydrateData(
+        $flowBD, $id_lang, $table, $custom_column_keys, $with){
+
+        foreach ($this->dvtranslated_columns as $append)
+            if (isset($flowBD[$append]))
+                $this->{$append} = $flowBD[$append];
+
+        foreach ($custom_column_keys as $custom) {
+            $this->{$custom} = $flowBD[$custom];
+        }
+
+        foreach ($this as $key => $value) {
+
+
+            if (array_key_exists($key."_id", $flowBD)) {
+
+                $this->{$key . "_id"} = $flowBD[$key."_id"];
+                if (!$flowBD[$key."_id"] || !$value)
+                    continue;
+
+                $value->setId($flowBD[$key."_id"]);
+                $value->dvid_lang = $id_lang;
+                $value->hydrateMatch($flowBD, $key);
+                $this->{$key} = $value;
+
+            }
+
+            elseif (isset($flowBD[$key]))
+                $this->{$key} = $flowBD[$key];
+
+        }
 
         return $this;
     }
@@ -662,6 +698,26 @@ class Model extends \stdClass
     public static function getStatusWhereKey($key){
         $classname = get_called_class();
         return Status::getStatus($key, strtolower($classname));
+    }
+
+    public static function groupKeysByPrefix(array $data, array $prefixes): array {
+        $result = [];
+
+        foreach ($data as $key => $value) {
+            foreach ($prefixes as $prefix) {
+                $prefixWithUnderscore = $prefix . '_';
+                if (str_starts_with($key, $prefixWithUnderscore)) {
+                    $subKey = substr($key, strlen($prefixWithUnderscore));
+                    $result[$prefix][$subKey] = $value;
+                    continue 2; // on passe à la prochaine clé du tableau
+                }
+            }
+
+            // Si aucun des préfixes ne match, on garde la clé dans le tableau principal
+            $result[$key] = $value;
+        }
+
+        return $result;
     }
 
 }

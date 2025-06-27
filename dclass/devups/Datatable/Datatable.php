@@ -33,6 +33,7 @@ class Datatable extends Lazyloading
 
     protected $html = "";
     protected $lazyloading = "";
+    protected $noidentity = false;
     protected $tablefilter = "";
     public $pagination = 0;
     public $paginationcustom = [];
@@ -78,7 +79,7 @@ class Datatable extends Lazyloading
             $this->class = strtolower(get_class($this->entity));
 
             $global_config = require ROOT.'config/dvups_configurations.php';
-            $dentity = $global_config["\\".ucfirst($this->class)];
+            $dentity = $global_config["".ucfirst($this->class)];
 //            $dentity = \Dvups_entity::getbyattribut("this.name", $this->class);
             $this->base_url = '/admin/'.$dentity['path'].'';
 
@@ -693,7 +694,7 @@ EOF;
             $thf[] = '<th >' . $thfvalue . '</th>';
 
             if ($valuetd["order"])
-                $th[] = '<th  onclick="ddatatable.toggleorder(\'' . $this->class . '\', \'' . $thforder . '\')" >' . $valuetd['header'] . ' <i class="mdi mdi-debug-step-out" ></i><i class="mdi mdi-debug-step-into" ></i></th>';
+                $th[] = '<th style="cursor: pointer;" onclick="ddatatable.toggleorder(\'' . $this->class . '\', \'' . $thforder . '\')" ><div style=" display: flex; align-content: center">' . $valuetd['header'] . ' <i class="fa fa-arrow-down" ></i><i class="fa fa-arrow-up" ></i></div></th>';
             else
                 $th[] = '<th >' . $valuetd['header'] . ' </th>';
 
@@ -1100,7 +1101,10 @@ EOF;
                 $trattr = "";
 
             // onclick="ddatatable.rowselect(this, ' . $entity->getId() . ')"
-            $tb[] = '<tr id="' . $entity->getId() . '" title="' . $this->classname.'#'.$entity->getId() . '" ' . $trattr . ' >' . implode(" ", $tr) . '</tr>';
+            if ($this->noidentity)
+                $tb[] = '<tr  title="' . $this->classname.'#" ' . $trattr . ' >' . implode(" ", $tr) . '</tr>';
+            else
+                $tb[] = '<tr id="' . $entity->getId() . '" title="' . $this->classname.'#'.$entity->getId() . '" ' . $trattr . ' >' . implode(" ", $tr) . '</tr>';
 
         }
 

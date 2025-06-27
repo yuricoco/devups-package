@@ -14,7 +14,7 @@ class POST extends \Api
 
         if ($routeParams === null) {
             http_response_code(404);
-            throw new Exception("Route method {$this->path} not found");
+            throw new Exception("Route method {$this->path} not found. Verify your request. either set /{$this->name} or add the path parameter explicitly within the annotation.");
         }
 //        dv_dump($routeParams,$this->name . $this->path, str_replace('/api','',Request::geturi()));
         Request::$uri_get_param += $routeParams;

@@ -103,7 +103,7 @@
         </div>
 
         <div class="col-lg-3">
-            {!! Dv_imageTable::init(new Dv_image())
+            ! Dv_imageTable::init(new Dv_image())
 ->buildcontenttable()
 ->setModel("content")
 ->render() !!}

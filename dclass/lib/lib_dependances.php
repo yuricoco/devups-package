@@ -20,5 +20,5 @@ require __DIR__ . '/annotation/PUT.php';
 require __DIR__ . '/annotation/DELETE.php';
 require __DIR__ . '/DMail.php';
 
-//require __DIR__ . '/php-qrcode/qrcode.php';
+require __DIR__ . '/php-qrcode/qrcode.php';
 

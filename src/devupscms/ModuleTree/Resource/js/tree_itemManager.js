@@ -756,6 +756,9 @@ var tree_itemview = new Vue({
             console.log("tree_item.getdata client");
         },
         fillData(tree) {
+            if (!confirm('Cette action supprimera toutes les donnees dans la table tree et tree_item pour les recreer!'))
+                return
+
             Drequest.adminApi("tree/fillData").get((response) => {
                 console.log(response);
             });

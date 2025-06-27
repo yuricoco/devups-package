@@ -1,7 +1,7 @@
 <?php
 
 const status_entities = [
-    'purchase','cart', 'orders'
+    'task','project',
 ];
 
     require 'Entity/Status.php';

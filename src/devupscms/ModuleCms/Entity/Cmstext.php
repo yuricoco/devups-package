@@ -208,7 +208,7 @@ class Cmstext extends Model implements JsonSerializable, DatatableOverwrite, Dvu
      */
     public function editcontentAction()
     {
-        return '<a class="btn btn-warning"  href="'.self::classpath("cmstext/edit?id=").$this->id.'"> edit content</a>';
+        return '<a class="btn btn-warning"  href="'.("/admin/devupscms/ModuleCms/cmstext/edit?id=").$this->id.'"> edit content</a>';
     }
     /**
      * @inheritDoc

@@ -5,7 +5,8 @@ use PHPMailer\PHPMailer\PHPMailer;
 class DMail
 {
 
-    public $title;
+    public $title = 'Reader3ag : ';
+    public $view;
     public $object;
     public $content;
     public $lang;
@@ -16,24 +17,29 @@ class DMail
      * @param $model
      * @return DMail
      */
-    public static function init($view, $data = [], $lang = 'fr')
+    public static function init($view, $lang = 'fr')
     {
 
         $dm = new DMail();
-        $data['lang'] = $lang;
-        $dm->content = Genesis::getView($view, $data);
+        $dm->view = $view;
+        $dm->lang = $lang;
         return $dm;
 
     }
 
-    public function preview(){
-        echo $this->content;
-        die;
+    public function preview($data, $show = true){
+        $data['mail_title'] = $this->title;
+        $data['lang'] = $this->lang;
+        if ($show) {
+            echo Genesis::getView($this->view, $data);
+            die;
+        }
+        return Genesis::getView($this->view, $data);
     }
 
     public function setTitle($object)
     {
-        $this->title = $object;
+        $this->title .= $object;
         return $this;
     }
 
@@ -84,9 +90,10 @@ class DMail
         return $this;
     }
 
-    public function sendMail()
+    public function sendMail($data)
     {
 
+        $this->content = $this->preview($data, false);
         if (!__prod ) {
             \DClass\lib\Util::log($this->content, date("Y_m_d-H_i_s")."_".$this->object.".html", ROOT."cache/", "w");
             return 0;
@@ -133,7 +140,7 @@ class DMail
             //echo 'Message has been sent';
             $result = $mail->send();
             Emaillog::create([
-                "object" => $this->object . " - object : " . $this->object . ' to ' . json_encode($this->attachments),
+                "object" => $this->object . " - object : " . $this->object . ' to ' . json_encode($this->receivers),
                 "log" => json_encode($result),
             ]);
 
@@ -145,7 +152,7 @@ class DMail
         } catch (Exception $e) {
             //echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
             Emaillog::create([
-                "object" => $this->object  . " - object : " . $this->object . ' to ' . json_encode($this->attachments),
+                "object" => $this->object  . " - object : " . $this->object . ' to ' . json_encode($this->receivers),
                 "log" => "Message could not be sent. Error detail: {$mail->ErrorInfo}",
             ]);
 

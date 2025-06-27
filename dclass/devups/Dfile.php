@@ -183,7 +183,10 @@ class Dfile
 
 
         if ($entity) {
-            $this->uploaddir = strtolower(get_class($entity));
+
+            global $global_config;
+//            $this->uploaddir = strtolower(get_class($entity));
+            $this->uploaddir = strtolower($global_config[$entity]['name']);
             $entityname = $this->uploaddir;
         }
 
@@ -544,6 +547,8 @@ class Dfile
         $destination = $dir . DIRECTORY_SEPARATOR . $filename;
         $info = getimagesize($source);
         $isAlpha = false;
+        try {
+
         if ($info['mime'] == 'image/jpeg')
             $image = imagecreatefromjpeg($source);
         elseif ($isAlpha = $info['mime'] == 'image/gif') {
@@ -559,6 +564,10 @@ class Dfile
             imagesavealpha($image, true);
         }
         imagewebp($image, $destination, $quality);
+
+        }catch (Exception $exception){
+            throw $exception;
+        }
 
         if ($removeOld)
             unlink($source);
@@ -756,7 +765,7 @@ class Dfile
             return array("success" => true,
                 "file" => [
                     'name' => $this->name,
-                    'size' => $this->size,
+                    'size' => filesize(UPLOAD_DIR . $this->uploaddir . '/' .$this->file_name),
                     'type' => $this->type,
                     'path' => $path,
                     'uploaddir' => $this->uploaddir,
@@ -861,6 +870,13 @@ class Dfile
         } else {
             return $dir;
         }
+    }
+
+    public static function filesize($filename, $decimals = 2) {
+        $bytes = filesize($filename);
+        $factor = floor((strlen($bytes) - 1) / 3);
+        if ($factor > 0) $sz = 'KMGT';
+        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . @$sz[$factor - 1] . 'B';
     }
 
 }

@@ -1,33 +1,32 @@
 <?php
 
 
-namespace devupscms\ModuleTree;
+//namespace devupscms\ModuleTree;
 
 use dclass\devups\Controller\Controller;
 use dclass\devups\Controller\ModuleController;
-use Dv_image;
+//use Dv_image;
 use Genesis as g;
 use Request as R;
-use Dvups_module;
-use Genesis;
+/*use Genesis;
 use Request;
 use Tree;
 use Tree_item;
 use Tree_item_imageController;
 use Tree_itemController;
 use Tree_itemTable;
-use TreeController;
+use TreeController;*/
 
 class ModuleTree extends ModuleController
 {
 
-    public function __construct($route)
+    public function __construct($route = 'dashbaord')
     {
 
         parent::__construct($route);
     }
 
-    public function layoutView()
+    public function dashboardView()
     {
         Controller::$jsfiles[] = __admin.'plugins/vue.min.js';
         Controller::$cssfiles[] = Dv_image::classpath('Resource/css/image.css');

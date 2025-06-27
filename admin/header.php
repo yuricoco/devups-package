@@ -29,15 +29,17 @@ define('__env_lang', 'admin/');
 
 Dvups_adminController::restartsessionAction();
 
-global $global_navigation, $viewdir;
+global $global_navigation, $viewdir, $global_config;
 
 $viewdir = [admin_dir . "views"];
 $dvups_navigation = [];
+$global_config = require ROOT.'config/dvups_configurations.php';
 if (isset($_SESSION[__project_id . "_navigation"])) {
+//    $dvups_navigation = unserialize($_SESSION[__project_id . "_navigation"]);
 
     if (isset($_GET["notified"]) && $idnb = $_GET["notified"]) {
         Notification::readed($idnb);
     }
 }
-
+//$global_navigation = Core::buildOriginCore();
 

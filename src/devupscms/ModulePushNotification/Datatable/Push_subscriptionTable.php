@@ -30,7 +30,7 @@ class Push_subscriptionTable extends Datatable
         $this->datatablemodel = [
             'id' => ['header' => t('#'),],
 // 'subscription_type' => ['header' => t('Subscription_type'),],
-            'user_id' => ['header' => t('Subscription_id'),],
+            'user_id' => ['header' => t('user_id'),],
             'status' => ['header' => t('Status'),],
 //'public_key' => ['header' => t('Public_key'),],
             'auth_token' => ['header' => t('Auth_token'),],

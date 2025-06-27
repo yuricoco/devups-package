@@ -79,6 +79,22 @@ class Controller
         return Request::Controller( $route , Request::get('path'), $ctrl);
 
     }
+    /**
+     * this method is used by devups from the admin/services.php file to manage router as we use to do at the front App.php
+     * @return false|int|mixed
+     */
+    public static function viewsModule($route, $module)
+    {
+
+        global $viewdir, $moduledata;
+
+        $viewdir[] = ROOT.'src/'.$module['path'] . 'Resource/views';
+        $moduledata = $module;
+
+        $ctrl = ucfirst($module['name']) . "";
+        return Request::Module( $route , Request::get('path'), $ctrl);
+
+    }
 
     public function __construct()
     {
@@ -147,7 +163,7 @@ class Controller
 //        $exist = \Dvups_entity::where("this.name", $classname)->count();
 
         $global_config = require ROOT.'config/dvups_configurations.php';
-        if (!isset($global_config["\\".ucfirst($classname)])) {
+        if (!isset($global_config["".ucfirst($classname)])) {
             /*echo json_encode([
                 "success" => false,
                 "message" => "entity " . $classname . " not found",
@@ -224,14 +240,9 @@ class Controller
         if (!is_object($object))
             throw new \InvalidArgumentException('$object must be an object.');
 
-        $classname = strtolower(get_class($object));
+        $classname = self::$entityname;
         if (isset($_FILES[$classname . '_form'])) {
-            //self::addEventListenerAfterCreate(strtolower(get_class($object)), "");
-            //$data = $_FILES[strtolower(get_class($object)) . '_form'];
             if ($object->getId()) {
-//                if($object->dvtranslate)
-//                    $object = $object->__show($deeper, \Dvups_lang::defaultLang()->getId());
-//                else
                 $object = $object->hydrate();
             }
             foreach ($_FILES[$classname . "_form"]['name'] as $key_form => $value_form) {
@@ -301,11 +312,43 @@ class Controller
         //$entitycore->field = json_decode($_POST["dvups_form"][strtolower(get_class($object))], true);
         //$entitycore->field = $object->entityKeyForm();
 
-        global $em;
+        global $em, $global_config;
         $classlang = get_class($object);
         $metadata = $em->getClassMetadata("\\" . $classlang);
         $fieldNames = array_keys($metadata->fieldNames);
         $fieldNames = array_merge($fieldNames, $object->dvtranslated_columns);
+        $associationMappings = $metadata->associationMappings;
+
+        foreach ($associationMappings as $key => $association){
+            $key_form = $key.'.id';
+            $ent = $global_config[$association['targetEntity']];
+            if (ucfirst($association['fieldName']) != $ent['name']) {
+                $key_form = strtolower($ent['name'].'\\'.$key . '.id');
+            }
+
+            if (!array_key_exists($key_form, $_ENTITY_FORM))
+                continue;
+
+            if (!class_exists($association['targetEntity']))
+                continue;
+
+            $value_form = $_ENTITY_FORM[$key_form];
+            $currentfieldsetter = 'set' . ucfirst($association['fieldName']);
+            if (!is_numeric($value_form)) {
+                continue;
+            }
+
+            $value2 = new $association['targetEntity'];
+
+            $value2->setId($value_form);
+
+            if (!method_exists($object, $currentfieldsetter)) {
+                $object->{$key} = $value2;
+            } elseif ($error = call_user_func(array($object, $currentfieldsetter), $value2)) //$value2->__show(false)
+                $this->error[$key] = $error;
+
+            unset($_ENTITY_FORM[$key_form]);
+        }
 
         foreach ($_ENTITY_FORM as $key_form => $value_form) {
             $result = explode(":", $key_form);
@@ -355,16 +398,12 @@ class Controller
                 if ($object->getId()) {
                     $values = $object->inCollectionOf($classtype);
 
-//                $toadd = array_diff($_ENTITY_FORM[$key], $value["values"]);
-//                $todrop = array_diff($value["values"], $_ENTITY_FORM[$key]);
-
                     $toadd = array_diff($value_form, $values);
                     $todrop = array_diff($values, $value_form);
                 } else {
                     $toadd = $value_form;
                     $todrop = [];
                 }
-                //dv_dump($toadd, $todrop);
 
                 $_ENTITY_COLLECTION[] = [
                     'owner' => $object->getId()
@@ -411,9 +450,10 @@ class Controller
                 } elseif ($error = call_user_func(array($object, $currentfieldsetter), $collection))
                     $this->error[$key] = $error;
 
-            } else {
+            }
+            else {
 
-                if (strpos($key_form, ".id")) {
+                /*if (strpos($key_form, ".id")) {
                     // && is_object ($value['options'][0])
 
                     $entitname = str_replace(".id", "", $key_form);
@@ -424,35 +464,8 @@ class Controller
                     } else
                         $classtype = $entitname;
 
-                    $currentfieldsetter = 'set' . ucfirst($entitname);
-                    if (!class_exists(ucfirst($classtype)))
-                        continue;
 
-                    if (!is_numeric($value_form)) {
-                        continue;
-                    }
-                    $reflect = new \ReflectionClass($classtype);
-                    $value2 = $reflect->newInstance();
-
-                    $value2->setId($value_form);
-
-                    if (!method_exists($object, $currentfieldsetter)) {
-//                        dv_dump($fieldNames);
-                        //if (in_array($entitname, $fieldNames))
-                        $object->{$entitname} = $value2;
-//                        else
-//                            $this->error[$key] = " You may create method " . $currentfieldsetter . " in entity ";
-                    } elseif ($error = call_user_func(array($object, $currentfieldsetter), $value2)) //$value2->__show(false)
-                        $this->error[$key] = $error;
-
-                } else {
-
-                    //if (isset($_ENTITY_FORM[$key])) {
-//                        if (isset($value["type"]) && $value["type"] == "injection") {
-//                                $result = call_user_func(array($key."Controller", "createAction"));
-//                                if($error = call_user_func(array($object, $currentfieldsetter), $result[$key]))
-//                                    $this->error[$key] = $error;
-//                        } else
+                } else { */
                     if (!method_exists($object, $currentfieldsetter)) {
                         if (in_array($key, $fieldNames))
                             $object->{$key} = $_ENTITY_FORM[$key];
@@ -462,7 +475,7 @@ class Controller
                         $this->error[$key] = $error;
                     //}
 
-                }
+//                }
             }
 
         }
@@ -499,58 +512,21 @@ class Controller
 
             $imbricate = explode(".", $meta[0]);
 
-            //$this->hydrateEntity($field, $value, $meta, $imbricate);
             if (isset($meta[1])) {
-                if ($meta[1] == "upload") {
-                    self::addEventListenerAfterCreate(get_class($this->entity), 'upload' . ucfirst($meta[1]));
-                    //self::$eventListners['after']['create'] = 'upload'.ucfirst($meta[1]);
-                    continue;
-                }
                 $setter = "set" . ucfirst($meta[1]);
             } else
                 $setter = "set" . ucfirst($meta[0]);
 
-            /*if (is_array($value)) {
-                dv_dump($value);
-                $setter = "add" . ucfirst($meta[0]);
-                if (!method_exists($this->entity, $setter)) {
-                    $this->error[$field] = " You may create method " . $setter . " in entity. ";
-                } elseif ($error = call_user_func(array($this->entity, $setter), $value))
-                    $this->error[$field] = $error;
-            }*/
-
-            // $imbricate[0]: represent the name of the attribute of the imbricated entity in its owner
-            // $imbricate[1]: represent the name of the attribute of the imbricated entity. by default it's id
-            //else
             if (isset($imbricate[1])) {
-
-                /*$classtype = explode("\\", $imbricate[0]);
-                if (count($classtype) > 1)
-                    $imbricate[0] = $classtype[1];
-
-                if ($imbricate[1] !== "id") { // if the default value have changed to may be other_name, then it will call a method as setOther_name() in the owner class
-                    $setter = "set" . ucfirst($imbricate[1]);
-                    $classtype = ucfirst($imbricate[1]);
-                    $entitname = $imbricate[1];
-                }else { // if the default value is still id, then it will call a method setAttributename() in the owner class
-                    $setter = "set" . ucfirst($imbricate[0]);
-                    $classtype = ucfirst($imbricate[0]);
-                    $entitname = $imbricate[0];
-                }
-                $reflect = new \ReflectionClass($classtype);
-                $entityimbricate = $reflect->newInstance();
-                if (!is_numeric($value)) {
-                    $entityimbricate->setId(null);
-                    continue;
-                }
-
-                $entityimbricate->setId($value);*/
 
                 $entitname = str_replace(".id", "", $meta[0]);
                 if (strpos($entitname, "\\")) {
                     $classtyperst = explode("\\", $entitname);
                     $classtype = $classtyperst[0];
                     $entitname = $classtyperst[1];
+                    if (!isset($associationMappings[$entitname]))
+                        continue;
+                    $classtype = $associationMappings[$entitname]["targetEntity"];
                 } else {
                     $classtype = $entitname;
 
@@ -576,7 +552,8 @@ class Controller
                 } elseif ($error = call_user_func(array($this->entity, $currentfieldsetter), $value2->hydrate(false)))
                     $this->error[$field] = $error;
 
-            } else {
+            }
+            else {
                 if (!method_exists($this->entity, $setter)) {
                     if (in_array($field, $fieldNames))
                         $this->entity->{$field} = $value;

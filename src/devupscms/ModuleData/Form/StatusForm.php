@@ -22,10 +22,8 @@ class StatusForm extends FormManager
         $this->fields['entityid'] = [
             "label" => t('Entity'),
             "type" => FORMTYPE_SELECT,
-            "value" => $this->status->entity->getId(),
-            "options" => status_entities ?
-                FormManager::Options_Helper("name", Dvups_entity::whereIn("this.name", status_entities)
-                ->orderBy("this.name asc")->get()) : [],
+            "value" => $this->status->entity,
+            "options" => FormManager::key_as_value(status_entities),
         ];
 
         $this->fields['color'] = [

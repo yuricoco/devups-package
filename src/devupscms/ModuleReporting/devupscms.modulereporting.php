@@ -1,19 +1,5 @@
 <?php
 
-function langt($fr, $en, $local = "fr", $matcher = [])
-{
-    if ($local == "fr") {
-        foreach ($matcher as $search => $value)
-            $fr = str_replace(":" . $search, $value, $fr);
-
-        return $fr;
-    }
-    foreach ($matcher as $search => $value)
-        $en = str_replace(":" . $search, $value, $en);
-
-    return $en;
-}
-
 require 'Entity/Emaillog.php';
 require 'Form/EmaillogForm.php';
 require 'Datatable/EmaillogTable.php';

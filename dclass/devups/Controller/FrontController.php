@@ -133,7 +133,7 @@ class FrontController extends Controller
         }
 
         return array('success' => true,
-            $classname => $entity,
+            $classname => $newclass::find($id),
             'detail' => '');
 
     }
@@ -141,10 +141,10 @@ class FrontController extends Controller
     public function uploadCore($id)
     {
 
-        //$classname = self::getclassname();
         $classname = self::$entityname;
+        // $newclass = ucfirst($classname);
+        $newclass = self::$classMagic;
 
-        $newclass = ucfirst($classname);
         $entity = $newclass::find($id, false);
 
         if (isset($_FILES[$classname . "_form"])) {
@@ -194,10 +194,10 @@ class FrontController extends Controller
     public function updateCore($id)
     {
 
-        //$classname = self::getclassname();
         $classname = self::$entityname;
+        // $newclass = ucfirst($classname);
+        $newclass = self::$classMagic;
 
-        $newclass = ucfirst($classname);
         $entity = new $newclass($id);
 
         $rawdata = \Request::raw();

@@ -2,6 +2,8 @@
 
 //require __DIR__ . '/../../config/constante.php';
 
+use dclass\devups\Tchutte\DB_dumper;
+
 define('__debug', false);
 
 require __DIR__ . '/../../config/dependanceInjection.php';
@@ -268,7 +270,7 @@ if ($argv[1] === 'transaction:rollback') {
         die;
     }
 
-    $db_dump = new \dclass\devups\DB_dumper();
+    $db_dump = new DB_dumper();
     $db_dump->dump(true);
     echo " > current version of .\n\n" . dbname . " has been dumped successfully ...\n";
 
@@ -393,8 +395,8 @@ if (isset($argv[2])) {
 
         case 'core:g:module':
             __Generator::module($project, $argv[2]); //,
-            Core::updateDvupsTable();
             echo $argv[2] . ": Module generated with success";
+            Core::updateDvupsTable();
             break;
 
         case 'core:g:moduleendless':
@@ -424,9 +426,8 @@ if (isset($argv[2])) {
 
         case 'core:g:component':
             __Generator::component(Core::getComponentCore($argv[2])); //,
-
-            Core::updateDvupsTable();
             echo $project->name . ": component generated with success";
+            Core::updateDvupsTable();
             break;
 
         default :
@@ -455,6 +456,15 @@ if (isset($argv[2])) {
                 mkdir('cache/local/admin', 0777);
                 mkdir('cache/local/front', 0777);
             }
+            if (!file_exists("database")) {
+                echo " > /database folders created with success ...\n";
+                mkdir('database', 0777);
+                mkdir('database/dump', 0777);
+                mkdir('database/log', 0777);
+                mkdir('database/migration', 0777);
+                mkdir('database/transaction', 0777);
+            }
+
             break;
         case 'build':
 
@@ -512,17 +522,18 @@ if (isset($argv[2])) {
                 mkdir('database/transaction', 0777);
             }
 
-            RequestGenerator::databasecreate(dbname); //,
-            echo " > Creating Database.\n\n" . dbname . ": created with success ...\n";
-            $result = [];
-            exec("bin\doctrine orm:schema:create", $result);
+            if (!__prod) {
+                RequestGenerator::databasecreate(dbname); //,
+                echo " > Creating Database.\n\n" . dbname . ": created with success ...\n";
+                $result = [];
+                exec("bin\doctrine orm:schema:create", $result);
 
-            echo "\n > Update database schema (DOCTRINE ORM).\n\n" . implode("\n", $result);
+                echo "\n > Update database schema (DOCTRINE ORM).\n\n" . implode("\n", $result);
 
-            $rqg = new Database();
-            $path = __DIR__ . '/config_data.sql';
-            $dvupsadminsql = file_get_contents($path);
-            $dvupsadminsql .= "
+                $rqg = new Database();
+                $path = __DIR__ . '/config_data.sql';
+                $dvupsadminsql = file_get_contents($path);
+                $dvupsadminsql .= "
             TRUNCATE `configuration`;
             INSERT INTO `configuration` ( `_key`, `_value`, `_type`) VALUES
                     (\"PROJECT_NAME\", \"" . PROJECT_NAME . "\", 'string'),
@@ -531,18 +542,19 @@ if (isset($argv[2])) {
                     (\"JSON_ENCODE_DEPTH\", 512, 'integer');
             ";
 
-            try {
-                $rqg->link()->prepare($dvupsadminsql)->execute();
-            }catch (Exception $e){
-                dv_dump($e->getMessage());
+                try {
+                    $rqg->link()->prepare($dvupsadminsql)->execute();
+                } catch (Exception $e) {
+                    dv_dump($e->getMessage());
+                }
+            }else{
+                echo "\nEscape Database creation in production\n ";
             }
 
             Dvups_lang::cacheData();
             Core::updateDvupsTable();
 
-            echo "\n\n > Set the master admin.
-            \nData master admin initialized with success.
-            \ncredential\nlogin: dv_admin\npassword: admin
+            echo "\n\n > Set the master admin.\n\nData master admin initialized with success.\ncredential\nlogin: dv_admin\npassword: admin
             \nYour project is ready to use. Do your best :)
             \n>php devups serve";
             break;

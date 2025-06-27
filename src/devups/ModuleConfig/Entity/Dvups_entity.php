@@ -63,16 +63,6 @@ class Dvups_entity extends Dvups_config_item implements JsonSerializable
         ];
     }
 
-
-    public function truncate()
-    {
-
-        $sql = "TRUNCATE `".$this->name."` ";
-        $dbal = new DBAL();
-        $dbal->executeDbal($sql);
-
-    }
-
     public function countRow()
     {
         if(!$this->exist())

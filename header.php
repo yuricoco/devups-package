@@ -20,9 +20,11 @@ const webapp = __env . 'web/app/';
 const __env_lang = 'front/';
 
 
-global $viewdir, $dvlangs, $dlangs;
+global $viewdir, $dvlangs, $dlangs, $global_config;
 $dvlangs = Dvups_lang::all();
 $viewdir = [web_dir . "views"];
+$global_config = require ROOT.'config/dvups_configurations.php';
+
 foreach($dvlangs as $lang){
     $dlangs[$lang->iso_code] = $lang->id;
     $dlangs[$lang->iso_code.'/'] = $lang->id;

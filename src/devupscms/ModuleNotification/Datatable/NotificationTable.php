@@ -26,13 +26,15 @@ class NotificationTable extends Datatable
 
         $this->base_url = __env . "admin/";
         $this->order_by = "this.id desc";
+        $this->qbcustom->with('user', ['username']);
         $this->datatablemodel = [
             ['header' => t('notification.id', '#'), 'value' => 'id'],
             ['header' => "sent to", 'value' => function ($item) {
+                $note = " || status : {$item->status} ";
                 if ($item->user_id) {
-                    return User::find($item->user_id)->firstname;
+                    return $item->user->username.$note ;
                 }
-                return Dvups_admin::find($item->admin_id)->name;
+                return $item->entity.$note;
             }],
             ['header' => t('Entityid'), 'value' => function ($item) {
                 return $item->entity . " / " . $item->entityid;
@@ -48,10 +50,12 @@ class NotificationTable extends Datatable
         $this->base_url = __env . "admin/";
         $this->order_by = "this.id desc";
         $this->enabletopaction = false;
+//        $this->qbcustom->with('user', ['username']);
         $this->datatablemodel = [
             //['header' => t('notification.id', '#'), 'value' => 'id'],
             ['header' => t('notification.entity', 'Entity'), 'value' => function($item){
-                return $item->entity. " #". $item->entityid;
+                $note = " || user_id : {$item->user_id} / status : {$item->status} ";
+                return $item->entity. " #". $item->entityid.$note;
             }],
             ['header' => t('notification.content', 'Content'), 'value' => function ($item) {
                 return $item->content . '<br><small><i>' . $item->created_at . '</i></small>';

@@ -34,11 +34,10 @@ class Notificationtype extends Model implements JsonSerializable
     protected $emailmodel;
 
     /**
-     * @ManyToOne(targetEntity="\Dvups_entity")
-     * @var \Dvups_entity
-     */
-    public $dvups_entity;
-
+     * @Column(name="entity", type="string", length=55  )
+     * @var integer
+     **/
+    public $entity;
 
     public function __construct($id = null)
     {
@@ -49,7 +48,6 @@ class Notificationtype extends Model implements JsonSerializable
             $this->id = $id;
         }
 
-        $this->dvups_entity = new Dvups_entity();
     }
 
     public function getId()
@@ -132,22 +130,6 @@ class Notificationtype extends Model implements JsonSerializable
         $this->content = $content;
     }
 
-    /**
-     *  manyToOne
-     * @return \Dvups_entity
-     */
-    function getDvups_entity()
-    {
-        $this->dvups_entity = $this->dvups_entity->__show();
-        return $this->dvups_entity;
-    }
-
-    function setDvups_entity(\Dvups_entity $dvups_entity)
-    {
-        $this->dvups_entity = $dvups_entity;
-    }
-
-
     public function jsonSerialize()
     {
         return [
@@ -155,7 +137,7 @@ class Notificationtype extends Model implements JsonSerializable
             '_key' => $this->_key,
             'content' => $this->content,
             'redirect' => $this->redirect,
-            'dvups_entity' => $this->dvups_entity,
+            'entity' => $this->entity,
         ];
     }
 

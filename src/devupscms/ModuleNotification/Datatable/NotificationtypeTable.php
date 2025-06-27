@@ -25,16 +25,16 @@ class NotificationtypeTable extends Datatable
     {
 
         $this->enabletopaction = false;
-        $this->base_url = __env."admin/";
+        $this->base_url = __env . "admin/";
         $this->datatablemodel = [
-            ['header' => t('notificationtype.id', '#'), 'value' => 'id'],
-            ['header' => t('Entity'), 'value' => 'dvups_entity.name'],
-            ['header' => t('notificationtype._key', '_key'), 'value' => '_key'],
-            ['header' => t('notificationtype.content', 'Content'), 'value' => 'content'],
-            ['header' => 'Test', 'value' => 'test']
+            'id' => ['header' => t( '#'), 'search'=>false],
+            'entity' => ['header' => t('Entity'),],
+            '_key' => ['header' => t( '_key'),],
+            'content' => ['header' => t( 'Content'),],
+//            ['header' => 'Test', 'value' => 'test']
         ];
-        $this->addcustomaction(function ($item){
-            return "<button class='btn btn-default btn-block' onclick='model.clonerow(".$item->getId().", \"notificationtype\")'>duplicate</button>";
+        $this->addcustomaction(function ($item) {
+            return "<button class='btn btn-default btn-block' onclick='model.clonerow(" . $item->getId() . ", \"notificationtype\")'>duplicate</button>";
         });
 
         return $this;
@@ -43,7 +43,7 @@ class NotificationtypeTable extends Datatable
     public function buildpushmailtable()
     {
 
-        $this->base_url = __env."admin/";
+        $this->base_url = __env . "admin/";
         $this->datatablemodel = [
             ['header' => t('notificationtype.id', '#'), 'value' => 'id'],
             ['header' => t('notificationtype._key', '_key'), 'value' => '_key'],

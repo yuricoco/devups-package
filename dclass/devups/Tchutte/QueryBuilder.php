@@ -117,6 +117,11 @@ class QueryBuilder extends \DBAL
      */
     public function select($columns = '*', $object = null, $defaultjoin = true)
     {
+
+        // it means the select has been called to initialize the querybuilder
+        if ($this->_select_option != "*")
+            return $this;
+
         $this->softdeletehandled = false;
         $this->defaultjoin = "";
         if (is_object($columns)):
@@ -129,19 +134,23 @@ class QueryBuilder extends \DBAL
         endif;
 
         if ($columns == '*') {
+//            $columns = "1 as dd";
             $columns = "this.`" . implode("`, this.`", $this->objectVar) . "`";
-            if ($this->object->dvtranslate && DBAL::$id_lang_static) {
+//            foreach ($this->objectVar as $var)
+//                $columns .= ", this.$var as this_$var";
 
-                $thislang = $this->table . "_lang";
-                $columns .= ", " . $thislang . ".`" . implode("`, $thislang.`", $this->object->dvtranslated_columns) . "`";
-            }
+        }
+        /*if ($this->object->dvtranslate && DBAL::$id_lang_static) {
+
+            $thislang = $this->table . "_lang";
+            $columns .= ", " . $thislang . ".`" . implode("`, $thislang.`", $this->object->dvtranslated_columns) . "`";
         }
         if ($this->object->dvtranslate && !in_array($this->table . "_lang", $this->joincollection) && DBAL::$id_lang_static) {
             $this->joincollection[] = $this->table . "_lang";
             $this->leftjoinrecto($this->table . "_lang")
                 ->where($this->table . "_lang.lang_id", "=", $this->id_lang);
 
-        }
+        }*/
         $this->columns = $columns;
         $this->_select_option = $columns;
         $this->query = " ";
@@ -151,12 +160,12 @@ class QueryBuilder extends \DBAL
 
     public function addColumns(...$columns)
     {
-        $this->custom_columns_array = [...$this->custom_columns_array,...$columns];
+        $this->custom_columns_array = [...$this->custom_columns_array, ...$columns];
 //        $this->custom_columns .= implode(", ", $columns);
         return $this;
     }
 
-    public function addColumn($column, $as)
+    public function addColumn($column, $as, $_with = false)
     {
 //        if ($this->custom_columns)
 //            $this->custom_columns .= ", ";
@@ -165,7 +174,8 @@ class QueryBuilder extends \DBAL
             unset($this->objectVar[array_search($as, $this->objectVar)]);
 
         }
-        $this->custom_column_keys[] = $as;
+        if (!$_with)
+            $this->custom_column_keys[] = $as;
         if (is_object($column))
             $columns = "( " . $column->getSqlQuery()['query'] . " ) AS $as ";
         else
@@ -195,11 +205,14 @@ class QueryBuilder extends \DBAL
         return $this;
     }
 
-    public function with($entity, $columns)
+    /**
+     * @param $entity
+     * @param $columns Array
+     * @return $this
+     */
+    public function with($entity, $columns = [])
     {
-        foreach ($columns as $column)
-            $this->addColumn($entity . "." . $column, $entity . "_" . $column);
-
+        $this->_with[$entity] = $columns;
         return $this;
     }
 
@@ -675,14 +688,15 @@ class QueryBuilder extends \DBAL
     public function whereDate($column, $value, $link = 'AND')
     {
 
-        $this->_where .= " $link DATE_FORMAT($column, '%Y-%m-%d') = " . $value;
+        $this->_where .= " $link DATE_FORMAT($column, '%Y-%m-%d') = '$value' ";
         return $this;
     }
 
     public function whereHour($column, $value, $link = 'AND')
     {
 
-        $this->_where .= " $link DATE_FORMAT($column, '%H:%i:%s') = " . $value;
+        $this->_where .= " $link DATE_FORMAT($column, '%H') = '$value'  ";
+//        $this->_where .= " $link DATE_FORMAT($column, '%H:%i:%s') = '$value'  ";
         return $this;
     }
 
@@ -1013,6 +1027,7 @@ class QueryBuilder extends \DBAL
             $this->sequensization();
         }
         $query = $this->query;
+
         foreach ($this->parameters as $search => $value) {
             $query = str_replace(":" . $search . "", $value, $query);
         }
@@ -1261,8 +1276,29 @@ class QueryBuilder extends \DBAL
         return $this->get();
     }
 
-    private function initSelect($aggregation = false)
+    protected function initBulk($aggregation = false)
     {
+
+        return $this;
+    }
+
+    protected function initSelect($aggregation = false)
+    {
+
+        if ($this->_with) {
+            foreach ($this->_with as $entity => $columns)
+                foreach ($columns as $column) {
+                    if (is_array($column)) {
+                        $col_entity = array_keys($column)[0];
+                        $alias = $entity.'_'.$col_entity;
+                        $columns = $column[$col_entity];
+                        $this->leftJoinOn($col_entity, $alias, " $alias.id = $entity.$col_entity"."_id ");
+                        foreach ($columns as $column)
+                            $this->addColumn($alias . "." . $column, $entity . "_".$col_entity . "_" . $column, true);
+                    }else
+                        $this->addColumn($entity . "." . $column, $entity . "_" . $column, true);
+                }
+        }
 
         if ($this->custom_columns_array)
             $this->custom_columns = implode(", ", $this->custom_columns_array);
@@ -1270,6 +1306,18 @@ class QueryBuilder extends \DBAL
         $this->query = " SELECT {$this->_select_option} ";
         if ($this->custom_columns != "" && !$aggregation)
             $this->query .= ", {$this->custom_columns}";
+
+        if ($this->object->dvtranslate && $this->id_lang) {
+            $this->custom_columns_array = [
+                ...$this->custom_columns_array,
+                ...$this->object->dvtranslated_columns
+            ];
+            $thislang = $this->table . "_lang";
+            $this->query .= ", `" . $thislang . "`.`" . implode("`, $thislang.`", $this->object->dvtranslated_columns) . "`";
+            $this->_join .= " left join $thislang on ($thislang.{$this->table}_id = `{$this->table}`.id  and $thislang.lang_id = {$this->id_lang}) ";
+
+        }
+
         $this->query .= " FROM " . $this->_from;
 
         if ($this->_join)
@@ -1280,7 +1328,6 @@ class QueryBuilder extends \DBAL
         //todo : directly add the query to get the additional attribute here
 
     }
-
 
     public function getInstanceAtIndex($index, $recursif = true, $collect = [])
     {
@@ -1456,16 +1503,19 @@ class QueryBuilder extends \DBAL
      * @param string $order
      * @return \dclass\devups\Datatable\Lazyloading | $this
      */
-    public function lazyloading($order = "", $debug = false, $qbinstance = false, $limit = null)
+    public function lazyloading($callback = null, $debug = false)
     {
 
         $ll = new \dclass\devups\Datatable\Lazyloading($this->object);
         $ll->debug = $debug;
         //$ll->start($this->object);
 
-        if ($limit)
-            $ll->setPerPage($limit);
-        return $ll->lazyloading($this->object, $this, $order, null, $qbinstance);
+        if (is_callable($callback))
+            $callback($ll);
+
+//        if ($limit)
+//            $ll->setPerPage($limit);
+        return $ll->lazyloading($this->object, $this);
 
     }
 
@@ -1593,7 +1643,7 @@ class QueryBuilder extends \DBAL
     public function getRows($column = "*", $callback = null)
     {
         $this->select($column);
-        $this->initSelect($column);
+        $this->initSelect();
         $this->sequensization();
 
         if (self::$debug)

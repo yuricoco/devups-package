@@ -308,11 +308,12 @@ class Tree_item extends Model implements JsonSerializable
      */
     public static function mainmenu($tree = "menu", $id_lang = null)
     {
-        return self::select("*", Dvups_lang::defaultLang()->id)
+        return self::initQb()
             //->leftjoin(Tree::class)
             //->leftjoinrecto(Tree_lang::class, Tree::class)
             ->where("tree.name", $tree)
-            ->where("this.main", 1)->setLang($id_lang);
+            ->where("this.main", 1)
+            ->setLang($id_lang);
     }
 
     /**

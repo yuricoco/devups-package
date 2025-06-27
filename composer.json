@@ -20,10 +20,7 @@
         "mpdf/mpdf": "^8.0",
         "guzzlehttp/guzzle": "^7.5",
         "maslosoft/addendum": "*",
-        "firebase/php-jwt": "^6.9",
-        "barcode-bakery/barcode-1d": "^7.0",
-        "zircote/swagger-php": "^4.11",
-        "google/apiclient": "^2.18"
+        "firebase/php-jwt": "^6.9"
     },
     "autoload": {
         "classmap": [

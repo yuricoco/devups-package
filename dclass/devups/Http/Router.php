@@ -326,12 +326,18 @@ class Router // extends Request
 
 // 🔥 Ajouter les headers autorisés ici
         header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-        header("Access-Control-Allow-Headers: Authorization, Auth, common, Content-Type, X-Requested-With");
+        header("Access-Control-Allow-Headers: Authorization, Auth, Columns, common, Content-Type, X-Requested-With");
 
         // Gérer les requêtes OPTIONS (préflight)
         if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
             http_response_code(200);
             exit();
+        }
+
+        if (isset($_SERVER['HTTP_COLUMNS'])) {
+
+            Request::$uri_header_param = json_decode($_SERVER['HTTP_COLUMNS'], true);
+
         }
 
         //we initialize the session_user for the life cycle
@@ -343,21 +349,6 @@ class Router // extends Request
         }
         // require_once ROOT.'cache/routes.php';
         self::$api_route = true;
-        //dv_dump('dsdsds');
-        /*if (self::$path_info) {
-            $this->url = trim(self::$path_info, '/');
-            $lang = substr($this->url, 0, 2);
-
-            if (isset($dlangs[$lang])) {
-                self::$lang = $lang;
-                $this->url = substr($this->url, 3, strlen($this->url));
-            }
-            $this->runCache($this->url);
-            self::$path = $this->url == "" ? $this->default_url : explode('/', $this->url)[0];
-        } else {
-            $this->url = $this->default_url;
-            self::$path = $this->default_url;
-        }*/
 
         self::$path = Request::getpath();
         $path = explode("/", trim(self::$path, '/'));
@@ -386,10 +377,6 @@ class Router // extends Request
             }
         } else {
             self::$path = $path[0];
-            /*$function = implode('',
-                array_map('ucfirst',
-                    explode('-',
-                        str_replace('_', '-', $path[0]))));*/
             $function = \DClass\lib\Util::toPascalCase(self::$path) . "Serve";
         }
 
@@ -426,9 +413,19 @@ class Router // extends Request
     {
 
         self::$admin_route = true;
-        self::getPathInfo();
+//        self::getPathInfo();
 // move comment scope to enable authentication
-        if (!isset($_SESSION[ADMIN]) and self::$path != 'connexion') {
+
+        $this->url = self::$path_info;
+        if (!strpos(self::$path_info, '/admin/'))
+            $routmap = explode("/", (self::$path_info));
+        else
+            $routmap = explode("/", trim(self::$path_info, "/"));
+        $nbmap = count($routmap);
+        self::$path = $routmap[$nbmap - 1];
+
+//        dv_dump(self::$path_info, self::$path);
+        if (!isset($_SESSION[ADMIN]) && ( self::$path != 'connexion' || self::$path != 'connexion-action')) {
             //$token = sha1(\DClass\lib\Util::randomcode());
             header("location: " . __env . 'admin/login.php');
 
@@ -441,25 +438,20 @@ class Router // extends Request
 
             $this->runCache(self::$path_info ?? $this->default_url);
 
-            $this->url = self::$path_info;
-            $routmap = explode("/", self::$path_info);
-            self::$path = $routmap[count($routmap) - 1];
-
-            Request::$uri_get_param['path'] = self::$path;
-
             /*dv_dump($routmap);
             if (count($routmap) == 3) {
 
             }else*/
-            if (count($routmap) >= 5) {
+            if ($nbmap >= 5) {
 
+                Request::$uri_get_param['path'] = self::$path;
                 Request::$uri_get_param['dclass'] = str_replace("-", '_', ucfirst($routmap[3]));
                 Request::$uri_get_param['dmod'] = $routmap[2];
                 Request::$uri_get_param['dcomp'] = $routmap[1];
 
                 $global_config = require ROOT . 'config/dvups_configurations.php';
-                $entity = $global_config['\\' . Request::$uri_get_param['dclass']];
-//                dv_dump($entity);
+                $entity = $global_config['' . Request::$uri_get_param['dclass']];
+//                dv_dump($entity, Request::$uri_get_param['dclass']);
 //                $entity = Dvups_entity::where("this.url", Request::get("dclass"))->firstOrNull();
 
                 if ($entity) {
@@ -468,8 +460,35 @@ class Router // extends Request
                     die();
                 }
             }
+            else if ($nbmap >= 3) {
+                if ($nbmap === 3 )
+                    self::$path = 'dashbaord';
+                else
+                    self::$path = $routmap[$nbmap - 1];
 
-        }
+                Request::$uri_get_param['path'] = self::$path;
+                Request::$uri_get_param['dmod'] = $routmap[2];
+                Request::$uri_get_param['dcomp'] = $routmap[1];
+
+                $global_config = require ROOT . 'config/module_configurations.php';
+                if (isset($global_config[$routmap[2]])) {
+                    $module = $global_config[$routmap[2]];
+                    $module['path'] = $routmap[1] . '/' . $routmap[2]."/";
+
+                    \dclass\devups\Controller\Controller::viewsModule($this, $module);
+                    die();
+
+                }
+            }
+            else {
+                self::$path = $routmap[$nbmap - 1];
+                Request::$uri_get_param['path'] = self::$path;
+            }
+
+            /*header('HTTP/1.0 400 Bad Request path not correct');
+            die;*/
+
+        }/**/
 
         $function = implode('', array_map('ucfirst', explode('-', str_replace('_', '-', self::$path))));
         $function .= "View";
@@ -532,7 +551,7 @@ class Router // extends Request
                 Request::$uri_get_param["dclass"] = ucfirst(self::$class_name);
 
                 $global_config = require ROOT . 'config/dvups_configurations.php';
-                $entity = $global_config["\\" . Request::$uri_get_param["dclass"]];
+                $entity = $global_config["" . Request::$uri_get_param["dclass"]];
 //                $entity = Dvups_entity::where("this.url", $path[0])
 //                    ->orwhere("this.name", $path[0])->firstOrNull();
 
@@ -636,7 +655,7 @@ class Router // extends Request
         }
         self::$route_builder['request_method'] = $this->request_method;
 
-        self::cacheRoute($this->url, $classname . '@' . $function, array_keys($methoparams), self::$route_builder['auth'], self::$route_builder['request_method']);
+//        self::cacheRoute($this->url, $classname . '@' . $function, array_keys($methoparams), self::$route_builder['auth'], self::$route_builder['request_method']);
 
         if (!$mparams) {
 
@@ -654,7 +673,7 @@ class Router // extends Request
 
 //
 
-        if (__prod)
+//        if (__prod)
             return null;
 
         $route = [

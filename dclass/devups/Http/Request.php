@@ -16,6 +16,7 @@ class Request
 
 
     public static $uri_get_param = [];
+    public static $uri_header_param = [];
     public static $uri_get_route_param = [];
     public static $uri_post_param = [];
     public static $uri_raw_param = [];
@@ -141,6 +142,16 @@ class Request
             return false;
     }
 
+    public static function header($key, $default = null)
+    {
+
+        if (isset(Request::$uri_header_param[$key]))
+            return Request::$uri_header_param[$key];
+        else
+            return $default;
+
+    }
+
     public static function raw($key = null, $default = null, $format = "json")
     {
         $rawdata = file_get_contents("php://input");
@@ -225,6 +236,39 @@ class Request
     /**
      * @throws Exception
      */
+    public static function Module(\Router $route, $path, $ctrl = null)
+    {
+
+        $function = \DClass\lib\Util::toPascalCase($path) . "View";
+
+        $app = new $ctrl();
+
+        if (!method_exists($app, $function)) {
+            var_dump(" You may create method " . " " . $function . " in $ctrl. ");
+            die;
+        }
+
+        $paramvalues = self::getMethodParamValues(get_class($app), $function);
+
+        if ($paramvalues) {
+
+            Router::cacheRoute($route->url, $ctrl . '@' . $function, array_keys($paramvalues), Router::$route_builder['auth']);
+
+            //$app->{$function}(...$paramvalues);
+            return call_user_func_array(array($app, $function), $paramvalues);
+            //Genesis::json_encode(call_user_func_array(array($app, $function), $paramvalues));
+        } else {
+
+//            Router::cacheRoute($route->url, $ctrl . '@' . $function, [], Router::$route_builder['auth']);
+
+            return $app->{$function}();
+        }
+//call_user_func(array($app, $function));
+    }
+
+    /**
+     * @throws Exception
+     */
     public static function Controller(\Router $route, $path, $ctrl = null)
     {
 
@@ -275,12 +319,13 @@ class Request
          */
 
         if (isset(Auth::$restrictions[Request::$uri_get_param["dclass"]])) {
-            if (!in_array($function, Auth::$restrictions[Request::$uri_get_param["dclass"]])) {
+            // todo: fix the issue of default empty function
+            if ($function && !in_array($function, Auth::$restrictions[Request::$uri_get_param["dclass"]])) {
 //                $Auth = new Auth();
 //                $result = $Auth->authorize();
                 if (!Auth::$user_id) {
 //                if (is_array($result) && $result['success'] == false) {
-                    header('HTTP/1.0 400 Bad Request AUTHORIZATION not found');
+                    header('HTTP/1.0 401 Bad Request AUTHORIZATION not found');
                     $result = ([
                         'success' => false,
                         'detail' => "Bad Request AUTHORIZATION or AUTH not found",
@@ -317,6 +362,7 @@ class Request
             header('HTTP/1.0 500 Server error');
             throw new Exception("Controller name " . $ctrlApi->name . " no match with entity name in \$global_config", 22);
         }
+
         if (!method_exists($app, $function)) {
 
             $path = explode("/", trim(Router::$path, '/'));
@@ -346,7 +392,7 @@ class Request
             }
             $function = Router::$path;
         }
-//        dv_dump($path, $function);
+
         $method = $reflection->getMethod($function);//
         $mparams = $method->getParameters();
 
@@ -375,6 +421,7 @@ class Request
 
         if ($methodView) {
             $methodView->name = $ctrlApi->name;
+
             try {
                 $url = $methodView->execute($route);
             } catch (Exception $e) {

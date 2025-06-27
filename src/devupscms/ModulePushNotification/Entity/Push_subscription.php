@@ -158,11 +158,9 @@ class Push_subscription extends Model implements JsonSerializable //, Subscripti
             "object" => "push notification id:" . $this->id,
             "log" => "Message [ " . $message . " ] => " . $result." - ".json_encode($payload),
         ]);
-        // dv_dump($result, $data);
+
         try {
             $json = json_decode($result);
-//        if (isset($json->error))
-//            return null;
 
             if (isset($json->error)) {
                 if ($json->error->code == 404)
@@ -170,15 +168,23 @@ class Push_subscription extends Model implements JsonSerializable //, Subscripti
                         ->update([
                             "status"=>0
                         ]);
+
+                Emaillog::create([
+                    "object" => "push notification UNSENT",
+                    "log" => $result,
+                ]);
+                return false;
             }
         }catch (Exception $exception){
             Emaillog::create([
                 "object" => "push notification Exception id:" . $this->id,
                 "log" => "Message => " . $exception->getMessage(),
             ]);
+            return false;
         }
 
 
+        return true;
         // return $result;
 
     }

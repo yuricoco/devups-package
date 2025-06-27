@@ -1,31 +1,31 @@
 <?php
 
 
-namespace devupscms\ModuleNotification;
+//namespace devupscms\ModuleNotification;
 
 use dclass\devups\Controller\ModuleController;
 use Genesis as g;
-use Notification;
-use NotificationTable;
-use Notificationtype;
-use NotificationtypeTable;
+//use Notification;
+//use NotificationTable;
+//use Notificationtype;
+//use NotificationtypeTable;
 use Request as R;
-use Dvups_module;
-use Genesis;
-use Request;
-use Tree_item;
-use Tree_item_imageController;
-use Tree_itemFrontController;
+//use Dvups_module;
+//use Genesis;
+//use Request;
+//use Tree_item;
+//use Tree_item_imageController;
+//use Tree_itemFrontController;
 
 class ModuleNotification extends ModuleController
 {
 
-    public function __construct($route)
+    public function __construct($route = 'dashbaord')
     {
         parent::__construct($route);
     }
 
-    public function layoutView()
+    public function dashboardView()
     {
         \dclass\devups\Controller\Controller::$jsfiles[] = Notification::classpath("Resource/js/notificationCtrl.js");
         $notificationtable = NotificationTable::init(new Notification());

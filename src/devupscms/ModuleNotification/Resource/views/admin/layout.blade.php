@@ -3,13 +3,17 @@
 
 <?php function style(){ ?>
 
-<?php foreach (dclass\devups\Controller\Controller::$cssfiles as $cssfile){ ?>
+    <?php foreach (dclass\devups\Controller\Controller::$cssfiles as $cssfile){ ?>
 <link href="<?= $cssfile ?>" rel="stylesheet">
 <?php } ?>
 
 <?php } ?>
 
 @section('content')
+
+    @include("default.moduleheaderwidget")
+    <hr>
+
     @if(false)
         <div class="row">
             <div class="col-lg-12 col-md-12  stretch-card">
@@ -42,9 +46,8 @@
             </div>
         </div>
     @endif
-    @include("default.moduleheaderwidget")
-
     @yield('layout_content')
+
     <hr>
 
     <div class='col-lg-12'>
@@ -104,6 +107,7 @@
             </div>
         </div>
     </div>
+
 @endsection
 
 <?php function script(){ ?>
@@ -111,9 +115,12 @@
 <script src="<?= CLASSJS ?>devups.js"></script>
 <script src="<?= CLASSJS ?>model.js"></script>
 <script src="<?= CLASSJS ?>ddatatable.js"></script>
-<?php foreach (dclass\devups\Controller\Controller::$jsfiles as $jsfile){ ?>
+    <?php foreach (dclass\devups\Controller\Controller::$jsfiles as $jsfile){ ?>
 <script src="<?= $jsfile ?>"></script>
 <?php } ?>
 
 <?php } ?>
+
+
+
 

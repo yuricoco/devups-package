@@ -34,9 +34,9 @@ class Status extends Model implements JsonSerializable
     protected $description;
 
     /**
-     * @ManyToOne(targetEntity="\Dvups_entity")
-     * @var \Dvups_entity
-     */
+     * @Column(name="entity", type="string", length=55  )
+     * @var integer
+     **/
     public $entity;
 
     public function __construct($id = null)
@@ -48,36 +48,11 @@ class Status extends Model implements JsonSerializable
             $this->id = $id;
         }
 
-        $this->entity = new Dvups_entity();
     }
 
     public function getId()
     {
         return $this->id;
-    }
-
-    /**
-     * @return Dvups_entity
-     */
-    public function getEntity()
-    {
-        return $this->entity;
-    }
-
-    /**
-     * @param Dvups_entity $entity
-     */
-    public function setEntity(Dvups_entity $entity)
-    {
-        $this->entity = $entity;
-    }
-
-    /**
-     * @param Dvups_entity $entity
-     */
-    public function setEntityid($entityid)
-    {
-        $this->entity = Dvups_entity::find($entityid);
     }
 
     /**

@@ -125,6 +125,18 @@ class Auth extends Annotation
 
     }
 
+    public static function decodeJWT($jwt){
+        try {
+            return JWT::decode($jwt, new \Firebase\JWT\Key(jwt_secret_Key, 'HS512'), $headers);
+        } catch (Exception $e) {
+            //echo $e->getMessage();
+            return ([
+                'success' => false,
+                'detail' => $e->getMessage(),
+            ]);
+        }
+    }
+
     public static function getJWT(\User $user){
         $domainName = __server;
 
@@ -147,6 +159,33 @@ class Auth extends Annotation
 //                'exp' => null,                           // Expire
                 'userId' => $user->getId(),                     // User name
             ];
+
+        return JWT::encode(
+            $request_data,
+            jwt_secret_Key,
+            'HS512'
+        );
+
+    }
+
+    public static function getAnyJWT($data){
+        $domainName = __server;
+
+        if (jwt_expire_time) {
+            $date = new DateTimeImmutable();
+            $expire_at = $date->modify(jwt_expire_time)->getTimestamp();      // Add 60 seconds
+            // Retrieved from filtered POST data
+            $request_data = [
+                'iat' => $date->getTimestamp(),         // Issued at: time when the token was generated
+                'iss' => $domainName,                       // Issuer
+                'nbf' => $date->getTimestamp(),         // Not before
+                'exp' => $expire_at,                    // User name
+            ]+$data;
+        } else                                    // Retrieved from filtered POST data
+            $request_data = [
+//                'iat' => null,         // Issued at: time when the token was generated
+                'iss' => $domainName,                  // User name
+            ]+$data;
 
         return JWT::encode(
             $request_data,

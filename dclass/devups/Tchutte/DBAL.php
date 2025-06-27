@@ -782,10 +782,15 @@ class DBAL extends Database
 
             $sql = " UPDATE `" . $this->table . "` SET " . strtolower($parameterQuery) . " WHERE id = :id ";
         }
-        $query = $this->link->prepare($sql);
+        try {
 
-        $result = $query->execute($this->objectKeyValue) or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values));
+            $query = $this->link->prepare($sql);
+            $result = $query->execute($this->objectKeyValue);
 
+        }catch (Exception $e){
+            dv_dump( $sql, $values, $query->errorInfo());
+//            (Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values))
+        }
         if (dbtransaction) {
             $bd_dump = new DB_dumper();
             $bd_dump->transaction($this->table, $sql, $values);
@@ -933,10 +938,6 @@ class DBAL extends Database
             $this->id_lang = $id_lang;
         if ($object->dvtranslate && $this->id_lang) {
 
-            /*
-            if(!$this->id_lang)
-                $this->id_lang = Dvups_lang::defaultLang()->getId();
-            */
             $thislang = $this->table . "_lang";
             $columns .= ", `" . $thislang . "`.`" . implode("`, $thislang.`", $object->dvtranslated_columns) . "`";
             $join .= " left join $thislang on $thislang.{$this->table}_id = `{$this->table}`.id ";
@@ -991,79 +992,56 @@ class DBAL extends Database
         return $query->fetchColumn();
     }
 
+
+    private function extractNestedData(string $className, array $data): array {
+        $prefix = strtolower($className) . '_';
+        $filteredData = [];
+
+        foreach ($data as $key => $value) {
+            if (strpos($key, $prefix) === 0) {
+                $filteredData[substr($key, strlen($prefix))] = $value;
+            }
+        }
+
+        return $filteredData;
+    }
+
     private function dbrow($flowBD)
     {
 
-        if ($this->object->dvtranslate) {
+        if ($this->object->dvtranslate && !$this->id_lang) {
             $flowBD = (object)$flowBD;
             $this->getLangValues($flowBD, $this->object->dvtranslated_columns);
             $flowBD = (array)$flowBD;
         }
 
-
-        $object_array = (array)$this->object;
-        if ($this->object->dvtranslated_columns) {
-            $object_array += array_combine($this->object->dvtranslated_columns, $this->object->dvtranslated_columns);
-        }
-        //$object_array = $this->objectKeyValue;
-        $callables = [];
-        //$this->objectKeyValue
-        foreach ($object_array as $key => $value) {
-
-            $k = str_replace(get_class($this->object), '', $key);
-            $k = str_replace('*', '', $k);
-            $k2 = substr($k, 2);
-            //$k2 = $key;
-
-            foreach ($flowBD as $key2 => $value2) {
-
-                if (is_object($value)) {
-                    $cn = get_class($value);
-                    $classname = strtolower($cn);
-                    //$cnk = $this->entity_link_map_list[$classname];
-                    //if ($cnk . '_id' == $key2) {
-                    if ($key . '_id' == $key2) {
-
-                        if (is_array($flowBD[$key2])) {
-                            $object_array[$key] = null;//$classname;
-                            $object_array[$key . "_id"] = $flowBD[$key2][0];
-                        } else {
-
-                            $value->setId($flowBD[$key2]);
-                            $value->dvid_lang = $this->id_lang;
-                            //$callables[$cn] = $flowBD[$key2];
-                            $value->hydrateMatch($flowBD, $classname);
-                            $object_array[$key] = $value;
-                            $object_array[$key . "_id"] = $flowBD[$key2];
-                        }
-                        break;
-                    }
-                } elseif (is_array($value)) {
-                    $object_array[$key] = [];
-                    break;
-                } else {
-                    if ($k2 == $key2 || $key == $key2) {
-                        if (is_array($flowBD[$key2])) {
-                            //dv_dump($flowBD[$key2]);
-                            $object_array[$key] = $flowBD[$key2];
-                        } else {
-                            $object_array[$key] = $flowBD[$key2];
-                        }
-                        break;
-
-                    } else if (!isset($object_array[$key2]) && $this->custom_columns != "") { // for custom
-                        //var_dump( $k2);
-                        $object_array[$key2] = $flowBD[$key2];
-
-                    }
-                }
-            }
-        }
-
-        $flowBD = Bugmanager::cast((object)$object_array, get_class($this->object));
-
+       /* $classname = get_class($this->object);
+        $instance = new $classname;
+        $instance->loadData($flowBD);
+        dv_dump($this->_with);
         foreach ($this->_with as $entity){
-            $flowBD->{"$entity"} = ucfirst($entity)::find($flowBD->{$entity."_id"}, $this->id_lang);
+            $classname = ucfirst($entity);
+            $imbric = new $classname;
+            dv_dump($this->extractNestedData($entity, $flowBD));
+            $instance->{"$entity"} = $imbric->loadData($this->extractNestedData($entity, $flowBD));
+            ///$flowBD->{"$entity"}->hydrate($this->id_lang);
+        }
+
+        dv_dump($instance, $classname, $flowBD);*/
+
+//        $object_array = (array)$this->object;
+        /*if ($this->object->dvtranslated_columns) {
+            $object_array += array_combine($this->object->dvtranslated_columns, $this->object->dvtranslated_columns);
+        }*/
+
+        $classname = get_class($this->object);
+        $instance = new $classname;
+        $flowBD = $instance->hydrateData($flowBD, $this->id_lang,
+            $this->table, $this->custom_column_keys, $this->_with);
+
+        foreach ($this->_with as $entity => $columns){
+            if (!$columns || $columns === '*')
+                $flowBD->{"$entity"} = ucfirst($entity)::find($flowBD->{$entity."_id"}, $this->id_lang);
             ///$flowBD->{"$entity"}->hydrate($this->id_lang);
         }
 
@@ -1098,9 +1076,18 @@ class DBAL extends Database
     protected function __findOneRow($sql, $values = [])
     {
 
-        $req = $this->link->prepare($sql);
-        $req->execute($values)
-        or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $req->errorInfo(), $sql, $values));
+        try {
+            $req = $this->link->prepare($sql);
+            $req->execute($values);
+        }catch (Exception $e){
+            if (__prod) {
+                return [
+                    'success' => false,
+                    'detail' => $e->getMessage(),
+                ];
+            }
+            dv_dump(__CLASS__, __METHOD__, __LINE__, $e->getMessage(), $sql, $values);
+        }
 
         if (empty($this->entity_link_list) and empty($this->objectCollection)) {
             $flowBD = $req->fetchObject($this->objectName);
@@ -1140,8 +1127,8 @@ class DBAL extends Database
 
         $values = (new DBAL())->executeDbal($sql, [], DBAL::$FETCHALL);
 
-        $sql = " SELECT * FROM dvups_lang  ";
-        $langs = (new DBAL())->executeDbal($sql, [], DBAL::$FETCHALL);
+        /*$sql = " SELECT * FROM dvups_lang  ";
+        $langs = (new DBAL())->executeDbal($sql, [], DBAL::$FETCHALL);*/
 
         foreach ($columns as $item) {
             $flowBD->{$item} = [];
@@ -1151,9 +1138,11 @@ class DBAL extends Database
                     $flowBD->{$item}[$value['iso_code']] = $value[$item];
                 }
             else
-                foreach ($langs as $value) {
+                foreach (['fr', 'en'] as $value) {
+                    $flowBD->{$item}[$value] = "";
+                }/*foreach ($langs as $value) {
                     $flowBD->{$item}[$value['iso_code']] = "";
-                }
+                }*/
         }
     }
 
@@ -1213,8 +1202,8 @@ class DBAL extends Database
                 return true;
             }
 
-            if (empty($this->entity_link_list) and empty($this->objectCollection))
-                return $query->fetchAll(PDO::FETCH_CLASS, $this->objectName);
+//            if (empty($this->entity_link_list) and empty($this->objectCollection))
+//                return $query->fetchAll(PDO::FETCH_CLASS, $this->objectName);
 
             $rows = $query->fetchAll(PDO::FETCH_NAMED);
 
@@ -1239,7 +1228,7 @@ class DBAL extends Database
         $result = [];
         $query = $this->link->prepare($sql);
         try {
-            $query->execute($values) or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values));
+            $query->execute($values);// or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values));
         }catch (Exception $exception){
             dump($sql, $values,
                 $exception->getMessage()
@@ -1260,6 +1249,8 @@ class DBAL extends Database
         if (empty($this->entity_link_list) and empty($this->objectCollection) && !$this->object->dvtranslate)
             return $query->fetchAll(PDO::FETCH_CLASS, $this->objectName);
 
+//        $rows = $query->fetchAll(PDO::FETCH_GROUP);
+//        dv_dump($rows);
         $rows = $query->fetchAll(PDO::FETCH_NAMED);
 
         foreach ($rows as $row) {

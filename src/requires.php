@@ -23,9 +23,6 @@ require 'devupscms/ModuleLocation/marketplace.modulelocation.php';
 require 'devupsfront/ModuleUser/devupsfront.moduleuser.php';
 
 //require 'devupstuto/ModuleStock/devupstuto.modulestock.php';
-//require 'devupstuto/ModuleProduct/devupstuto.moduleproduct.php';
-
-//require 'devupscms/ModuleSlide/devupscms.moduleslide.php';
 
 
 
