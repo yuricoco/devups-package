@@ -118,5 +118,18 @@ define('GOOGLE_REDIRECT_URL', dv_env('GOOGLE_REDIRECT_URL', ''));
 define('LOG_MIN_LEVEL', dv_env('LOG_MIN_LEVEL', 'warning'));
 define('LOG_RETENTION_DAYS', dv_env('LOG_RETENTION_DAYS', 90));
 
+/**
+ * Langues (lang.php) : LANG_DIR permet de pointer ailleurs que lang/ (la
+ * suite de tests utilise un dossier temporaire recree par tests/bootstrap.php
+ * pour ne jamais ecrire dans les fichiers versionnes). LANG_COLLECT coupe
+ * la collecte automatique des cles manquantes independamment de __prod.
+ */
+$__lang_dir = dv_env('LANG_DIR', 'lang');
+if (!preg_match('#^([a-zA-Z]:[\\\\/]|/)#', $__lang_dir))
+    $__lang_dir = ROOT . $__lang_dir;
+define('LANG_DIR', rtrim($__lang_dir, '/\\') . '/');
+unset($__lang_dir);
+define('LANG_COLLECT', dv_env('LANG_COLLECT', !__prod));
+
 global $devups_cache;
 $devups_cache = [];

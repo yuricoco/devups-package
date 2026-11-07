@@ -27,6 +27,26 @@ function dv_test_needs_db(): bool
     return !preg_match('/--testsuite[= ]+unit\b/', $argv);
 }
 
+// LANG_DIR (traductions) : jamais les fichiers versionnes lang/*.php -
+// dossier temporaire, recree a chaque run, partage avec le serveur e2e
+// (HttpServer::start() transmet getenv() au process php -S qu'il demarre).
+$dv_test_lang_dir = sys_get_temp_dir() . '/devups-phpunit-lang-' . getmypid() . '/';
+if (is_dir($dv_test_lang_dir)) {
+    foreach (glob($dv_test_lang_dir . '*') ?: [] as $stale)
+        @unlink($stale);
+    @rmdir($dv_test_lang_dir);
+}
+mkdir($dv_test_lang_dir, 0777, true);
+foreach (['fr', 'en'] as $iso)
+    file_put_contents($dv_test_lang_dir . $iso . '.php', "<?php\n\nreturn [];\n");
+putenv('LANG_DIR=' . $dv_test_lang_dir);
+register_shutdown_function(function () use ($dv_test_lang_dir) {
+    foreach (glob($dv_test_lang_dir . '*') ?: [] as $f)
+        @unlink($f);
+    @rmdir($dv_test_lang_dir);
+});
+unset($dv_test_lang_dir);
+
 require __DIR__ . '/../config/load_constants.php';
 
 if (dv_test_needs_db()) {

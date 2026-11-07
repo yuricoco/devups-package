@@ -11,6 +11,11 @@
     recreee a chaque execution. Ne jamais y pointer une base reelle.
     Surcharger ces valeurs dans un phpunit.xml local (ignore par git) ou via
     des variables d'environnement.
+
+    LANG_DIR (traductions, lang.php) est defini par tests/bootstrap.php, pas
+    ici : un dossier TEMPORAIRE (hors du depot), recree a chaque execution,
+    jamais les fichiers versionnes lang/*.php. getenv() (donc LANG_DIR) est
+    transmis au serveur e2e (tests/Support/HttpServer.php).
 -->
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"

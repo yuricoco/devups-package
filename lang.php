@@ -10,14 +10,15 @@
 global $dv_translations;
 $dv_translations = [];
 
-$dv_lang_file = __DIR__ . '/lang/' . local() . '.php';
+$dv_lang_file = LANG_DIR . local() . '.php';
 if (file_exists($dv_lang_file))
     $dv_translations = require $dv_lang_file;
 
 /**
  * t($cle, $params = []) : traduction de $cle dans la langue courante, ou
  * $cle elle-meme si elle est absente (avec substitution :param dans les
- * deux cas). En dev uniquement (jamais en prod), une cle absente est
+ * deux cas). Quand LANG_COLLECT est actif (par defaut : dev uniquement,
+ * jamais en prod - cf. config/constante.example.php), une cle absente est
  * ajoutee a tous les fichiers lang/*.php (valeur = la cle elle-meme) pour
  * que le traducteur n'ait plus qu'a les remplir.
  */
@@ -28,7 +29,7 @@ function t($cle, $params = [])
     if (array_key_exists($cle, $dv_translations)) {
         $translation = $dv_translations[$cle];
     } else {
-        if (!defined('__prod') || !__prod)
+        if (!defined('LANG_COLLECT') || LANG_COLLECT)
             dv_lang_collect_missing_key($cle);
         $translation = $cle;
     }
@@ -53,6 +54,36 @@ function tt($cle)
     return t($cle);
 }
 
+/**
+ * Variante de t() pour une langue EXPLICITE, independante de la session/
+ * l'URL courante (local()) : un email envoye a un destinataire dont la
+ * langue differe de celle de l'admin/l'utilisateur qui declenche l'envoi.
+ * Mise en cache par langue (un seul require par iso et par requete).
+ * Jamais de collecte automatique : une cle absente retourne simplement la
+ * cle (la collecte dev reste le role de t(), dans la langue de la requete
+ * courante).
+ */
+function t_lang($cle, string $iso, $params = [])
+{
+    global $dv_translations_by_lang;
+    if (!isset($dv_translations_by_lang))
+        $dv_translations_by_lang = [];
+
+    if (!array_key_exists($iso, $dv_translations_by_lang)) {
+        $file = LANG_DIR . $iso . '.php';
+        $dv_translations_by_lang[$iso] = file_exists($file) ? require $file : [];
+    }
+
+    $translation = $dv_translations_by_lang[$iso][$cle] ?? $cle;
+
+    if (is_array($params)) {
+        foreach ($params as $search => $value)
+            $translation = str_replace(':' . $search, $value, $translation);
+    }
+
+    return $translation;
+}
+
 function p($ref, $default = "no_image")
 {
     return "";
@@ -60,12 +91,19 @@ function p($ref, $default = "no_image")
 
 /**
  * Ajoute $cle (valeur = $cle elle-meme) a tous les fichiers lang/*.php ou
- * elle manque encore. Jamais appelee en prod (cf. t()).
+ * elle manque encore (sauf si LANG_COLLECT est coupe - cf. t()). Met
+ * aussi a jour $dv_translations en memoire : un appel ulterieur a t() avec
+ * la meme cle, dans la MEME requete, ne redeclenche pas un verrou/require
+ * par fichier - il la trouve deja dans le tableau charge en memoire.
  */
 function dv_lang_collect_missing_key(string $cle): void
 {
-    foreach (glob(__DIR__ . '/lang/*.php') ?: [] as $file)
+    global $dv_translations;
+
+    foreach (glob(LANG_DIR . '*.php') ?: [] as $file)
         dv_lang_write_missing_key($file, $cle);
+
+    $dv_translations[$cle] = $cle;
 }
 
 /**

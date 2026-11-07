@@ -214,16 +214,6 @@ function get_string_between($string, $start, $end){
     return substr($string, $ini, $len);
 }
 
-function langt($fr, $en, $local = "fr", $matcher = [])
-{
-    if ($local == "fr") {
-        foreach ($matcher as $search => $value)
-            $fr = str_replace(":" . $search, $value, $fr);
-
-        return $fr;
-    }
-    foreach ($matcher as $search => $value)
-        $en = str_replace(":" . $search, $value, $en);
-
-    return $en;
-}
+// langt() retiree (Phase 3, Langues) : remplacee par t_lang($cle, $iso, $params)
+// (lang.php), qui lit lang/<iso>.php au lieu de paires fr/en codees en dur.
+// Voir web/views/mails/{invitation,otp,welcome}.blade.php.

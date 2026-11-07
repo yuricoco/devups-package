@@ -2,14 +2,19 @@
 
 if (!function_exists('dv_lang_scan_keys')) {
     /**
-     * Parcourt src/, dclass/ et web/ a la recherche des appels t('...')/
-     * t("...") a cle litterale (lang:scan/lang:missing). Ignore
-     * volontairement les cles dynamiques (variable, concatenation) :
-     * elles ne peuvent pas etre pre-remplies sans executer le code.
+     * Parcourt src/, dclass/, admin/ et web/ a la recherche des appels
+     * t('...')/tt('...') a cle LITTERALE (lang:scan/lang:missing), via le
+     * tokenizer PHP (token_get_all()) plutot qu'une regex : un appel dont
+     * la cle est construite (concatenation, variable - ex. t("prefix" .
+     * $var)) est repere mais volontairement IGNORE (ne peut pas etre
+     * pre-rempli sans executer le code) ; la liste de ces appels ignores
+     * est deposee dans $GLOBALS['__dv_lang_scan_ignored'] pour affichage
+     * (cf. case 'lang:scan' ci-dessous).
      */
     function dv_lang_scan_keys(): array
     {
         $keys = [];
+        $ignored = [];
         $dirs = [ROOT . 'src', ROOT . 'dclass', ROOT . 'admin', ROOT . 'web'];
         foreach ($dirs as $dir) {
             if (!is_dir($dir))
@@ -19,16 +24,80 @@ if (!function_exists('dv_lang_scan_keys')) {
                 if (!preg_match('/\.(php|blade\.php)$/', $file->getFilename()))
                     continue;
 
-                $content = file_get_contents($file->getPathname());
-                if (preg_match_all('/\bt\(\s*([\'"])((?:(?!\1).)*)\1/', $content, $matches))
-                    foreach ($matches[2] as $cle)
-                        $keys[stripcslashes($cle)] = true;
+                dv_lang_scan_tokens(file_get_contents($file->getPathname()), $file->getPathname(), $keys, $ignored);
             }
         }
 
         $keys = array_keys($keys);
         sort($keys);
+        $GLOBALS['__dv_lang_scan_ignored'] = $ignored;
         return $keys;
+    }
+
+    /** Premier index >= 0, a partir de $i en avancant de $step, qui n'est pas un espace/commentaire ; null si fin de flux. */
+    function dv_lang_skip_trivia(array $tokens, int $i, int $step): ?int
+    {
+        $count = count($tokens);
+        while ($i >= 0 && $i < $count) {
+            $token = $tokens[$i];
+            if (is_array($token) && in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                $i += $step;
+                continue;
+            }
+            return $i;
+        }
+        return null;
+    }
+
+    function dv_lang_unquote(string $raw): string
+    {
+        $quote = $raw[0];
+        $inner = substr($raw, 1, -1);
+        return $quote === "'"
+            ? str_replace(["\\'", '\\\\'], ["'", '\\'], $inner)
+            : stripcslashes($inner);
+    }
+
+    /** Tokenize $content et accumule dans $keys (cle litterale simple) / $ignored (cle construite, rapportee pas remplie). */
+    function dv_lang_scan_tokens(string $content, string $path, array &$keys, array &$ignored): void
+    {
+        $tokens = @token_get_all($content);
+        if (!$tokens)
+            return;
+        $count = count($tokens);
+
+        for ($i = 0; $i < $count; $i++) {
+            $token = $tokens[$i];
+            if (!is_array($token) || $token[0] !== T_STRING || !in_array($token[1], ['t', 'tt'], true))
+                continue;
+
+            // ignore $obj->t(...), Classe::t(...) (methode, pas la fonction globale)
+            $prev = dv_lang_skip_trivia($tokens, $i - 1, -1);
+            if ($prev !== null && is_array($tokens[$prev]) && in_array($tokens[$prev][0], [T_OBJECT_OPERATOR, T_DOUBLE_COLON], true))
+                continue;
+
+            $open = dv_lang_skip_trivia($tokens, $i + 1, 1);
+            if ($open === null || $tokens[$open] !== '(')
+                continue;
+
+            $arg = dv_lang_skip_trivia($tokens, $open + 1, 1);
+            if ($arg === null || !is_array($tokens[$arg]) || $tokens[$arg][0] !== T_CONSTANT_ENCAPSED_STRING)
+                continue;
+
+            $cle = dv_lang_unquote($tokens[$arg][1]);
+
+            $after = dv_lang_skip_trivia($tokens, $arg + 1, 1);
+            $isSimpleCall = $after !== null && ($tokens[$after] === ')' || $tokens[$after] === ',');
+
+            if ($isSimpleCall) {
+                $keys[$cle] = true;
+            } else {
+                // ex. t("prefix" . $var) : cle construite, pas litterale -
+                // signalee en sortie de lang:scan, jamais ajoutee automatiquement.
+                $line = is_array($token) ? $token[2] : 0;
+                $ignored[] = $path . ':' . $line . ' - "' . mb_substr($cle, 0, 40) . '..."';
+            }
+        }
     }
 }
 
@@ -666,7 +735,7 @@ if (isset($argv[2])) {
         case 'lang:scan':
             $keys = dv_lang_scan_keys();
             $added = 0;
-            foreach (glob(ROOT . 'lang/*.php') ?: [] as $file) {
+            foreach (glob(LANG_DIR . '*.php') ?: [] as $file) {
                 $translations = require $file;
                 foreach ($keys as $cle) {
                     if (array_key_exists($cle, $translations))
@@ -675,12 +744,18 @@ if (isset($argv[2])) {
                     $added++;
                 }
             }
-            echo count($keys) . " cle(s) trouvee(s) dans le code, " . $added . " ajout(s) dans les fichiers lang/*.php.";
+            echo count($keys) . " cle(s) trouvee(s) dans le code, " . $added . " ajout(s) dans les fichiers lang/*.php.\n";
+            $ignored = $GLOBALS['__dv_lang_scan_ignored'] ?? [];
+            if ($ignored) {
+                echo count($ignored) . " appel(s) ignore(s) (cle construite par concatenation, a traiter a la main si besoin) :\n";
+                foreach ($ignored as $line)
+                    echo "  - " . $line . "\n";
+            }
             break;
 
         case 'lang:missing':
             $keys = dv_lang_scan_keys();
-            foreach (glob(ROOT . 'lang/*.php') ?: [] as $file) {
+            foreach (glob(LANG_DIR . '*.php') ?: [] as $file) {
                 $translations = require $file;
                 $missing = [];
                 foreach ($keys as $cle) {

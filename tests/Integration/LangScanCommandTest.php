@@ -24,7 +24,7 @@ final class LangScanCommandTest extends DatabaseTestCase
         if ($this->probeFile && file_exists($this->probeFile))
             unlink($this->probeFile);
 
-        foreach (glob(ROOT . 'lang/*.php') ?: [] as $file) {
+        foreach (glob(LANG_DIR . '*.php') ?: [] as $file) {
             $translations = require $file;
             if (!array_key_exists($this->cle, $translations))
                 continue;
@@ -46,9 +46,31 @@ final class LangScanCommandTest extends DatabaseTestCase
 
         $this->assertStringContainsString('cle(s) trouvee(s)', (string)$output);
 
-        foreach (glob(ROOT . 'lang/*.php') ?: [] as $file) {
+        foreach (glob(LANG_DIR . '*.php') ?: [] as $file) {
             $translations = require $file;
             $this->assertSame($this->cle, $translations[$this->cle] ?? null, "lang:scan doit ajouter la cle dans $file");
+        }
+    }
+
+    /**
+     * E.4 : une cle CONSTRUITE (concatenation) n'est jamais ajoutee
+     * automatiquement - juste signalee en sortie, puisque le tokenizer ne
+     * peut pas en connaitre la valeur sans executer le code.
+     */
+    public function testScanIgnoresAConcatenatedKeyAndReportsIt(): void
+    {
+        $fragment = 'fragment_concat_' . uniqid();
+        $this->probeFile = ROOT . 'web/views/_lang_scan_probe_' . uniqid() . '.blade.php';
+        file_put_contents($this->probeFile, "<?php echo t('" . $fragment . "' . \$suffix); ?>");
+
+        $output = (string)shell_exec('cd ' . escapeshellarg(ROOT) . ' && ' . escapeshellarg(PHP_BINARY) . ' devups lang:scan 2>&1');
+
+        $this->assertStringContainsString('appel(s) ignore(s)', $output);
+        $this->assertStringContainsString($fragment, $output);
+
+        foreach (glob(LANG_DIR . '*.php') ?: [] as $file) {
+            $translations = require $file;
+            $this->assertArrayNotHasKey($fragment, $translations, "une cle construite ne doit jamais etre ajoutee ($file)");
         }
     }
 }
