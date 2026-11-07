@@ -93,6 +93,39 @@ cache) plutot que de se fier a `$_SESSION[ADMIN]` (snapshot serialise a la
 connexion) : un changement de role est pris en compte des la requete
 suivante, sans reconnexion.
 
+## Logs
+
+API unique, utilisable partout (noyau, front, admin) : `Log::error($messageOuThrowable, $context = [])`,
+`Log::warning(...)`, `Log::info(...)`. N'interrompt jamais l'appelant : une
+erreur d'ecriture du journal (base ou fichier) est elle-meme avalee.
+
+Les occurrences identiques sont regroupees sous une seule ligne
+`dvups_log` par empreinte (hash de la classe + fichier + ligne + message
+normalise - les nombres variables comme un id sont fusionnes). La ligne
+garde un compteur d'occurrences et les dates de premiere/derniere
+occurrence. Un message ou une trace trop longs (> `Log::INLINE_MAX_LENGTH`,
+1000 caracteres) debordent vers `cache/log/<AAAA-MM>/<empreinte>.log` (non
+versionne, ecrase a chaque nouvelle occurrence) ; la base ne garde que le
+chemin et un apercu tronque. `Log::purge()` supprime les lignes (et leurs
+fichiers) plus anciennes que `LOG_RETENTION_DAYS` (defaut 90) - a appeler
+depuis une tache planifiee, jamais automatiquement.
+
+Les gardes PHP globales (`set_exception_handler`, `set_error_handler`,
+`register_shutdown_function` pour les erreurs fatales) sont installees une
+seule fois dans `header.php` (front) et `admin/header.php` (admin), jamais
+dans `config/dependanceInjection.php` (partage par les tests et la CLI, ou
+installer ces gardes perturberait la gestion d'erreurs de PHPUnit). En
+production, la reponse est generique (page ou JSON selon le contexte) ; en
+developpement, le detail de l'erreur est affiche.
+
+Ecran back-office "Logs" en lecture seule (liste, filtres niveau/date,
+detail), protege par `can('read', Dvups_log::class)`.
+
+`Emaillog` reste reserve aux emails reellement envoyes (voir
+`dclass/lib/DMail.php`, `Reportingmodel::sendMail`) : ne pas s'en servir
+pour journaliser des erreurs ou d'autres evenements, utiliser `Log::` a la
+place.
+
 ## Sécurité
 
 - Les points d'entrée historiques `src/<composant>/<Module>/services.php` exigent une
