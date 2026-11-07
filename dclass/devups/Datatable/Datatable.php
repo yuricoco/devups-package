@@ -264,13 +264,15 @@ class Datatable extends Lazyloading
             return 1;
         }
 
-//        if (!isset($_SESSION[dv_role_permission]))
-//            return false;
+        // can('action', $this->class) : API unique d'autorisation
+        // (dclass/dvups_functions.php), compilee par role depuis
+        // dvups_privilege/dvups_action. Le role "admin" voit toujours tous
+        // les boutons (bypass maitre, voir can()).
+        $entityrigths = array_values(array_filter(
+            ['read', 'update', 'delete'],
+            fn($action) => can($action, $this->class)
+        ));
 
-        //$rigths = getadmin()->availableentityright($path);
-        $entityrigths = ['update', 'delete'];
-
-//        $entityrigths = \Dvups_entity::getRigthOf($this->class);
         if ($entityrigths) {
             $this->rowaction[] = $this->getaction($entity, "edit", 'update', $entityrigths);
 
