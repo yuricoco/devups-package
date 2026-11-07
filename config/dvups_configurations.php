@@ -101,26 +101,6 @@ return array (
     'namespace_name' => 'Configuration',
     'component' => 'devups',
   ),
-  'devups\\ModuleConfig\\Entity\\Dvups_log' => 
-  array (
-    'path' => 'devups/ModuleConfig/',
-    'module' => 'ModuleConfig',
-    'name' => 'Dvups_log',
-    'label' => 'Dvups_log',
-    'namespace' => 'devups\\ModuleConfig\\Entity\\',
-    'namespace_name' => 'Dvups_log',
-    'component' => 'devups',
-  ),
-  'Dvups_log' => 
-  array (
-    'path' => 'devups/ModuleConfig/',
-    'module' => 'ModuleConfig',
-    'name' => 'Dvups_log',
-    'label' => 'Dvups_log',
-    'namespace' => 'devups\\ModuleConfig\\Entity\\',
-    'namespace_name' => 'Dvups_log',
-    'component' => 'devups',
-  ),
   'devups\\ModuleDatabase\\Entity\\Request_history' => 
   array (
     'path' => 'devups/ModuleDatabase/',
@@ -219,6 +199,26 @@ return array (
     'label' => 'Page_mapped',
     'namespace' => 'devups\\ModuleLang\\Entity\\',
     'namespace_name' => 'Page_mapped',
+    'component' => 'devups',
+  ),
+  'devups\\ModuleLog\\Entity\\Dvups_log' => 
+  array (
+    'path' => 'devups/ModuleLog/',
+    'module' => 'ModuleLog',
+    'name' => 'Dvups_log',
+    'label' => 'Dvups_log',
+    'namespace' => 'devups\\ModuleLog\\Entity\\',
+    'namespace_name' => 'Dvups_log',
+    'component' => 'devups',
+  ),
+  'Dvups_log' => 
+  array (
+    'path' => 'devups/ModuleLog/',
+    'module' => 'ModuleLog',
+    'name' => 'Dvups_log',
+    'label' => 'Dvups_log',
+    'namespace' => 'devups\\ModuleLog\\Entity\\',
+    'namespace_name' => 'Dvups_log',
     'component' => 'devups',
   ),
   'devupscms\\ModuleCms\\Entity\\Cmstext' => 

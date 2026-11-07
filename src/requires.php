@@ -10,6 +10,7 @@
 require 'devups/ModuleConfig/devups.moduleconfig.php';
 require 'devups/ModuleAdmin/devups.moduleadmin.php';
 require 'devups/ModuleLang/devups.modulelang.php';
+require 'devups/ModuleLog/devups.modulelog.php';
 //require 'devups/ModuleWebservice/devups.modulewebservice.php';
 
 require 'devupscms/ModuleNotification/devupscms.modulenotification.php';

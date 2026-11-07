@@ -40,6 +40,7 @@ final class AdminScreensTest extends HttpTestCase
         'devups/ModuleLang/page-mapped/form' => 'module Lang a refondre (traductions en fichiers)',
         'devupscms/ModuleCms/comment/form' => 'entite Comment jamais generee (futur cmscomment)',
         'devupscms/ModuleNotification/notificationbroadcasted/form' => 'entite Notificationbroadcasted absente (refonte notifications)',
+        'devups/ModuleLog/dvups-log/form' => 'module Log : ecran lecture seule par design, aucun formulaire de creation/edition',
     ];
 
     private static bool $logged = false;

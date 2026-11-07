@@ -1,0 +1,99 @@
+{
+    "id": 9010,
+    "name": "dvups_log",
+    "module": {
+        "id": 10
+    },
+    "ref": null,
+    "attribut": {
+        "1": {
+            "name": "fingerprint",
+            "visibility": "",
+            "datatype": "string",
+            "size": "64",
+            "nullable": "not",
+            "formtype": "text"
+        },
+        "2": {
+            "name": "level",
+            "visibility": "",
+            "datatype": "string",
+            "size": "20",
+            "nullable": "not",
+            "formtype": "text"
+        },
+        "3": {
+            "name": "entity_class",
+            "visibility": "",
+            "datatype": "string",
+            "size": "255",
+            "nullable": "default",
+            "formtype": "text"
+        },
+        "4": {
+            "name": "file",
+            "visibility": "",
+            "datatype": "string",
+            "size": "500",
+            "nullable": "default",
+            "formtype": "text"
+        },
+        "5": {
+            "name": "line",
+            "visibility": "",
+            "datatype": "integer",
+            "size": "",
+            "nullable": "default",
+            "formtype": "text"
+        },
+        "6": {
+            "name": "message",
+            "visibility": "",
+            "datatype": "string",
+            "size": "1000",
+            "nullable": "default",
+            "formtype": "text"
+        },
+        "7": {
+            "name": "occurrences",
+            "visibility": "",
+            "datatype": "integer",
+            "size": "",
+            "nullable": "not",
+            "formtype": "text"
+        },
+        "8": {
+            "name": "first_at",
+            "visibility": "",
+            "datatype": "datetime",
+            "size": "",
+            "nullable": "default",
+            "formtype": "text"
+        },
+        "9": {
+            "name": "last_at",
+            "visibility": "",
+            "datatype": "datetime",
+            "size": "",
+            "nullable": "default",
+            "formtype": "text"
+        },
+        "10": {
+            "name": "context",
+            "visibility": "",
+            "datatype": "text",
+            "size": "",
+            "nullable": "default",
+            "formtype": "text"
+        },
+        "11": {
+            "name": "log_file",
+            "visibility": "",
+            "datatype": "string",
+            "size": "500",
+            "nullable": "default",
+            "formtype": "text"
+        }
+    },
+    "relation": []
+}

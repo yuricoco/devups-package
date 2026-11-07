@@ -17,6 +17,7 @@ session_start();
 require __DIR__ . '/../config/dependanceInjection.php';
 require __DIR__ . '/../lang.php';
 require __DIR__ . '/../src/requires.php';
+Log::installGlobalHandler();
 
 Request::$system = "admin";
 

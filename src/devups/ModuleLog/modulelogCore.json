@@ -1,0 +1,9 @@
+{
+    "id": 10,
+    "name": "ModuleLog",
+    "label": "Journal",
+    "icon": "fas fa-file-alt",
+    "project": "admin",
+    "nbent": 1,
+    "listentity": []
+}

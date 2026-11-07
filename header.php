@@ -11,6 +11,7 @@ const __jsversion = '1';
 require __DIR__ . '/config/dependanceInjection.php';
 require __DIR__ . '/lang.php';
 require 'src/requires.php';
+Log::installGlobalHandler();
 require 'route/WebService.php';
 require 'route/App.php';
 //require 'tests/ProductTest.php';

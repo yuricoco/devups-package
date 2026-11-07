@@ -55,6 +55,7 @@ require __DIR__ . '/../dclass/devups/Interfaces/NotificationSerialize.php';
 
 require __DIR__ . '/../dclass/dvups_functions.php';
 require __DIR__ . '/../dclass/lib/lib_dependances.php';
+require __DIR__ . '/../dclass/devups/Log.php';
 
 
 require __DIR__ . '/../dclass/devups/Interfaces/WorkerCallback.php';

@@ -62,15 +62,6 @@ return array (
         'namespace' => 'devups\\ModuleConfig\\Entity\\',
         'component' => 'devups',
       ),
-      1 => 
-      array (
-        'path' => 'devups/ModuleConfig/',
-        'module' => 'ModuleConfig',
-        'name' => 'Dvups_log',
-        'label' => 'Dvups_log',
-        'namespace' => 'devups\\ModuleConfig\\Entity\\',
-        'component' => 'devups',
-      ),
     ),
   ),
   'ModuleDatabase' => 
@@ -132,6 +123,24 @@ return array (
         'name' => 'Page_mapped',
         'label' => 'Page_mapped',
         'namespace' => 'devups\\ModuleLang\\Entity\\',
+        'component' => 'devups',
+      ),
+    ),
+  ),
+  'ModuleLog' => 
+  array (
+    'name' => 'ModuleLog',
+    'label' => 'Journal',
+    'icon' => 'fas fa-file-alt',
+    'entities' => 
+    array (
+      0 => 
+      array (
+        'path' => 'devups/ModuleLog/',
+        'module' => 'ModuleLog',
+        'name' => 'Dvups_log',
+        'label' => 'Dvups_log',
+        'namespace' => 'devups\\ModuleLog\\Entity\\',
         'component' => 'devups',
       ),
     ),
