@@ -1,5 +1,37 @@
 <?php
 
+if (!function_exists('dv_lang_scan_keys')) {
+    /**
+     * Parcourt src/, dclass/ et web/ a la recherche des appels t('...')/
+     * t("...") a cle litterale (lang:scan/lang:missing). Ignore
+     * volontairement les cles dynamiques (variable, concatenation) :
+     * elles ne peuvent pas etre pre-remplies sans executer le code.
+     */
+    function dv_lang_scan_keys(): array
+    {
+        $keys = [];
+        $dirs = [ROOT . 'src', ROOT . 'dclass', ROOT . 'admin', ROOT . 'web'];
+        foreach ($dirs as $dir) {
+            if (!is_dir($dir))
+                continue;
+            $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS));
+            foreach ($iterator as $file) {
+                if (!preg_match('/\.(php|blade\.php)$/', $file->getFilename()))
+                    continue;
+
+                $content = file_get_contents($file->getPathname());
+                if (preg_match_all('/\bt\(\s*([\'"])((?:(?!\1).)*)\1/', $content, $matches))
+                    foreach ($matches[2] as $cle)
+                        $keys[stripcslashes($cle)] = true;
+            }
+        }
+
+        $keys = array_keys($keys);
+        sort($keys);
+        return $keys;
+    }
+}
+
 if (!function_exists('dv_doctrine_command')) {
     /**
      * Commande Doctrine portable (Windows, Linux, macOS) : appelle
@@ -22,6 +54,7 @@ use dclass\devups\Tchutte\DB_dumper;
 define('__debug', false);
 
 require __DIR__ . '/../../config/dependanceInjection.php';
+require __DIR__ . '/../../lang.php';
 
 require __DIR__ . '/GeneratorFileGuard.php';
 require __DIR__ . '/BackendGenerator.php';
@@ -628,6 +661,36 @@ if (isset($argv[2])) {
             $result = Dvups_action::sync();
             echo $result['created'] . "/" . $result['total'] . " action(s) synchronisee(s) ("
                 . $result['created'] . " creee(s), le reste deja en base).";
+            break;
+
+        case 'lang:scan':
+            $keys = dv_lang_scan_keys();
+            $added = 0;
+            foreach (glob(ROOT . 'lang/*.php') ?: [] as $file) {
+                $translations = require $file;
+                foreach ($keys as $cle) {
+                    if (array_key_exists($cle, $translations))
+                        continue;
+                    dv_lang_write_missing_key($file, $cle);
+                    $added++;
+                }
+            }
+            echo count($keys) . " cle(s) trouvee(s) dans le code, " . $added . " ajout(s) dans les fichiers lang/*.php.";
+            break;
+
+        case 'lang:missing':
+            $keys = dv_lang_scan_keys();
+            foreach (glob(ROOT . 'lang/*.php') ?: [] as $file) {
+                $translations = require $file;
+                $missing = [];
+                foreach ($keys as $cle) {
+                    if (!array_key_exists($cle, $translations) || $translations[$cle] === $cle)
+                        $missing[] = $cle;
+                }
+                echo basename($file) . " : " . count($missing) . " cle(s) non traduite(s)\n";
+                foreach ($missing as $cle)
+                    echo "  - " . $cle . "\n";
+            }
             break;
 
         default :
