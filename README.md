@@ -93,6 +93,30 @@ cache) plutot que de se fier a `$_SESSION[ADMIN]` (snapshot serialise a la
 connexion) : un changement de role est pris en compte des la requete
 suivante, sans reconnexion.
 
+## Langues
+
+Reference unique = le code iso2 (`fr`, `en`, ...), partout : session
+(`local()`), URL (`?lang=`), base (`dvups_lang.iso_code`) et fichiers.
+
+Les traductions vivent dans `lang/<iso2>.php`, qui retourne un tableau
+`cle => traduction`. `lang.php` (racine) charge le fichier de la langue
+courante une seule fois par requete - `t()` ne fait jamais de requete SQL.
+
+`t($cle, $params = [])` retourne la traduction de `$cle`, ou `$cle`
+elle-meme si elle est absente (avec substitution `:param` dans les deux
+cas : `t('bonjour :nom', ['nom' => 'Jean'])`). En developpement
+uniquement (jamais en production), une cle absente est automatiquement
+ajoutee a tous les fichiers `lang/*.php` (valeur = la cle), via une
+ecriture surete (verrou + fichier temporaire + renommage) : le
+traducteur n'a plus qu'a remplir les valeurs.
+
+`php devups lang:scan` parcourt le code a la recherche des appels
+`t('...')` a cle litterale et complete les fichiers de langue en une
+fois. `php devups lang:missing` liste, par langue, les cles encore non
+traduites (valeur egale a la cle).
+
+`tt($cle)` est un alias de `t($cle)` utilise dans les vues.
+
 ## Logs
 
 API unique, utilisable partout (noyau, front, admin) : `Log::error($messageOuThrowable, $context = [])`,
