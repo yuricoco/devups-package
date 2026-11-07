@@ -27,10 +27,11 @@ class EmaillogTable extends Datatable
         $this->base_url = __env."admin/";
         $this->order_by =" this.id desc ";
         $this->datatablemodel = [
-            ['header' => t('emaillog.id', '#'), 'value' => 'id'],
+            ['header' => t('#'), 'value' => 'id'],
             ['header' => t('Date'), 'value' => 'createdAt'],
-            ['header' => t('emaillog.object', 'Object'), 'value' => 'object'],
-            ['header' => t('emaillog.log', 'Log'), 'value' => 'logmessage']
+            ['header' => t('Statut'), 'value' => 'statut'],
+            ['header' => t('Destinataire'), 'value' => 'destinataire'],
+            ['header' => t('Sujet'), 'value' => 'sujet'],
         ];
 
         return $this;
@@ -39,10 +40,13 @@ class EmaillogTable extends Datatable
     public function builddetailtable()
     {
         $this->datatablemodel = [
-            ['label' => t('emaillog.object'), 'value' => 'object'],
-            ['label' => t('emaillog.log'), 'value' => 'log']
+            ['label' => t('Date'), 'value' => 'createdAt'],
+            ['label' => t('Statut'), 'value' => 'statut'],
+            ['label' => t('Destinataire'), 'value' => 'destinataire'],
+            ['label' => t('Sujet'), 'value' => 'sujet'],
+            ['label' => t('Modele'), 'value' => 'modele'],
+            ['label' => t('Erreur'), 'value' => 'erreur'],
         ];
-        // TODO: overwrite datatable attribute for this view
         return $this;
     }
 

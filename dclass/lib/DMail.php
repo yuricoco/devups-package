@@ -151,10 +151,7 @@ class DMail
 
             //echo 'Message has been sent';
             $result = $mail->send();
-            Emaillog::create([
-                "object" => $this->object . " - object : " . $this->object . ' to ' . json_encode($this->receivers),
-                "log" => json_encode($result),
-            ]);
+            Emaillog::logSuccess($this->object, $this->receivers, $this->view);
 
             return [
                 "success" => true,
@@ -163,10 +160,7 @@ class DMail
             ];
         } catch (Exception $e) {
             //echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
-            Emaillog::create([
-                "object" => $this->object . " - object : " . $this->object . ' to ' . json_encode($this->receivers),
-                "log" => "Message could not be sent. Error detail: {$mail->ErrorInfo}",
-            ]);
+            Emaillog::logFailure($this->object, $this->receivers, "Message could not be sent. Error detail: {$mail->ErrorInfo}", $this->view);
 
             return [
                 "success" => false,

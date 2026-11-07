@@ -37,6 +37,7 @@ final class AdminScreensTest extends HttpTestCase
         'devupscms/ModuleCms/comment/form' => 'entite Comment jamais generee (futur cmscomment)',
         'devupscms/ModuleNotification/notificationbroadcasted/form' => 'entite Notificationbroadcasted absente (refonte notifications)',
         'devups/ModuleLog/dvups-log/form' => 'module Log : ecran lecture seule par design, aucun formulaire de creation/edition',
+        'devupscms/ModuleReporting/emaillog/form' => 'Emaillog : ecran lecture seule par design, aucun formulaire de creation/edition',
     ];
 
     private static bool $logged = false;

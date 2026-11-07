@@ -442,10 +442,7 @@ class Reportingmodel extends Model implements JsonSerializable, DatatableOverwri
 
         if(!$this->content){
 
-            Emaillog::create([
-                "object" => self::$log_info . " - object : " . $this->object . ' to ' . json_encode(self::$emailreceiver),
-                "log" => "Message could not be sent. Error detail: Empty body",
-            ]);
+            Emaillog::logFailure($this->object, self::$emailreceiver, "Message could not be sent. Error detail: Empty body");
 
             return [
                 "success" => false,
@@ -516,10 +513,7 @@ class Reportingmodel extends Model implements JsonSerializable, DatatableOverwri
 
             //echo 'Message has been sent';
             $result = $mail->send();
-            Emaillog::create([
-                "object" => self::$log_info . " - object : " . $this->object . ' to ' . json_encode(self::$emailreceiver),
-                "log" => json_encode($result),
-            ]);
+            Emaillog::logSuccess($this->object, self::$emailreceiver);
 //            foreach (self::$attachments as $attachment) {
 //                unlink($attachment) ;        // Add attachments
 //            }
@@ -530,10 +524,7 @@ class Reportingmodel extends Model implements JsonSerializable, DatatableOverwri
             ];
         } catch (Exception $e) {
             //echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
-            Emaillog::create([
-                "object" => self::$log_info . " - object : " . $this->object . ' to ' . json_encode(self::$emailreceiver),
-                "log" => "Message could not be sent. Error detail: {$mail->ErrorInfo}",
-            ]);
+            Emaillog::logFailure($this->object, self::$emailreceiver, "Message could not be sent. Error detail: {$mail->ErrorInfo}");
 
 //            foreach (self::$attachments as $attachment) {
 //                unlink($attachment) ;        // Add attachments
