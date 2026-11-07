@@ -110,30 +110,39 @@ function can(string $action, string $entity): bool
 {
     // Une page back-office appelle can() une fois par ligne de datatable (3
     // actions) en plus de la garde de Request::Controller() : sans ce cache,
-    // chaque appel refaisait un hydrate() SQL du role. Cle sur
-    // $_SESSION[ADMIN] (identite de connexion) plutot que sur un flag "deja
-    // resolu" : reste correct si la session change pendant le process (vrai
-    // en tests, qui appellent can() avec plusieurs sessions successives dans
-    // le meme process PHP - jamais le cas en prod, une requete = un process).
+    // chaque appel refaisait un hydrate() SQL du role. Cle sur l'id de
+    // l'admin (stable) plutot que sur $_SESSION[ADMIN] (le blob serialise) :
+    // reste correct si la session change pendant le process (vrai en tests,
+    // qui appellent can() avec plusieurs sessions successives dans le meme
+    // process PHP - jamais le cas en prod, une requete = un process).
     static $roleOfSession = [];
     static $rightsByRole = [];
 
     if (empty($_SESSION[ADMIN]))
         return false;
 
-    $sessionKey = $_SESSION[ADMIN];
-    if (!isset($roleOfSession[$sessionKey])) {
-        $admin = getadmin();
+    $sessionAdmin = getadmin();
+    if (!$sessionAdmin || !$sessionAdmin->getId())
+        return false;
+
+    $adminId = $sessionAdmin->getId();
+    if (!isset($roleOfSession[$adminId])) {
+        // $_SESSION[ADMIN] est un snapshot serialise a la connexion : son
+        // dvups_role reste celui d'alors meme si le role de cet admin
+        // change ensuite en base. On relit l'admin courant (1 requete,
+        // mise en cache pour le reste du process) pour qu'un changement de
+        // role soit pris en compte sans reconnexion.
+        $admin = \Dvups_admin::find($adminId);
         $role = ($admin && $admin->getId()) ? $admin->dvups_role : null;
         $entry = ['id' => null, 'isAdmin' => false];
         if ($role && $role->getId()) {
             $role = $role->hydrate();
             $entry = ['id' => $role->getId(), 'isAdmin' => $role->is('admin')];
         }
-        $roleOfSession[$sessionKey] = $entry;
+        $roleOfSession[$adminId] = $entry;
     }
 
-    $role = $roleOfSession[$sessionKey];
+    $role = $roleOfSession[$adminId];
     if ($role['id'] === null)
         return false;
     if ($role['isAdmin'])

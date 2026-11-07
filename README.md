@@ -59,6 +59,40 @@ La suite e2e ouvre chaque écran liste et chaque formulaire du back-office pour
 toutes les entités déclarées : les écrans connus comme cassés sont listés dans
 `tests/E2E/AdminScreensTest.php` (`KNOWN_BROKEN`) et signalés comme incomplets.
 
+## Droits
+
+Chaque entité declare ses actions (`create`, `read`, `update`, `delete`, `export`,
+`import` par defaut, plus celles propres a son metier dans son datacore,
+cle `actions` du `Core.json`). `php devups rights:sync` synchronise ce
+catalogue en base (`dvups_action`) depuis `config/dvups_configurations.php` ;
+jamais destructif, une action retiree du datacore reste en base avec ses
+eventuels privileges.
+
+Un role recoit des privileges (`dvups_privilege`, couple role/action) via
+l'ecran back-office "Roles" (grille de cases a cocher par entite/action,
+sur le meme formulaire que l'edition du role). Compiles une seule fois par
+role dans `cache/rights/<id>.php` (invalide a chaque modification des
+privileges du role).
+
+API unique pour verifier un droit : `can('action', Entite::class)`. Branchee :
+- dans `Request::Controller()` (point de passage de toute action CRUD
+  generee, que le controleur utilise `CrudTrait` ou ses propres methodes) ;
+- a la main dans `Dvups_roleController`/`Dvups_adminController`, atteints
+  aussi par les routes historiques `services.php?path=...` qui ne passent
+  pas par `Request::Controller()` ;
+- dans les boutons des datatables (`Datatable::actionListView()`).
+
+Le role nomme `admin` est le role maitre : `can()` le laisse toujours
+passer, quels que soient les privileges attribues. Seul ce role peut
+modifier les privileges d'un role, ou le role d'un admin - meme si un
+autre role a recu `update` sur `Dvups_role`/`Dvups_admin` pour autre chose
+(renommer un role, modifier un profil).
+
+`can()` relit l'admin courant en base (1 requete par processus, mise en
+cache) plutot que de se fier a `$_SESSION[ADMIN]` (snapshot serialise a la
+connexion) : un changement de role est pris en compte des la requete
+suivante, sans reconnexion.
+
 ## Sécurité
 
 - Les points d'entrée historiques `src/<composant>/<Module>/services.php` exigent une
