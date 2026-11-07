@@ -10,6 +10,8 @@
 # Fichiers generes / donnees d'execution
 /uploads/
 /cache/
+/lang/*.lock
+/lang/*.tmp
 /admin/cache/
 /build/
 /database/*
