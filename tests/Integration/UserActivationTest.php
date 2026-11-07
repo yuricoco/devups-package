@@ -21,7 +21,7 @@ final class UserActivationTest extends DatabaseTestCase
         $user = $this->makeUser();
         $before = $user->activationcode;
 
-        $result = \RegistrationController::resendactivationcode($user);
+        $result = \UserFrontController::resendactivationcode($user);
 
         $this->assertTrue($result['success']);
         $this->assertMatchesRegularExpression('/^[0-9]{6}$/', $result['activationcode']);
@@ -32,7 +32,7 @@ final class UserActivationTest extends DatabaseTestCase
 
     public function testResendRefusesAnActivatedAccount(): void
     {
-        $result = \RegistrationController::resendactivationcode($this->makeUser(1));
+        $result = \UserFrontController::resendactivationcode($this->makeUser(1));
         $this->assertFalse($result['success']);
         $this->assertArrayNotHasKey('activationcode', $result);
     }

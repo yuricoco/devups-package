@@ -100,7 +100,7 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
             );
         }
 
-        $activationcode = RegistrationController::generatecode();
+        $activationcode = User::generatecode();
         $userhydrate->setActivationcode($activationcode);
 
         // todo: handle it better
@@ -491,6 +491,47 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
         );
     }
 
+    /**
+     * Regenere et envoie par mail un nouveau code d'activation a
+     * l'utilisateur authentifie (Auth::$user_id) ou a $user. Le code en
+     * clair ne quitte jamais le serveur : seul l'appelant PHP (envoi par
+     * mail/push) le recoit via la cle 'activationcode'.
+     *
+     * @return array ['success' => bool, 'detail' => string, 'activationcode' => string]
+     */
+    public static function resendactivationcode(\User $user = null): array
+    {
+        if (!$user)
+            $user = User::find(Auth::$user_id);
+
+        if (!$user || !$user->getId())
+            return ['success' => false, 'detail' => t("Utilisateur introuvable")];
+
+        if ($user->isActivated())
+            return ['success' => false, 'detail' => t("Ce compte est deja active")];
+
+        $activationcode = User::generatecode();
+        $user->setActivationcode($activationcode);
+        $user->__update();
+
+        if ($user->email) {
+            DMail::init("mails.otp", $user->lang ?: __default_lang)
+                ->addReceiver($user->email, $user->username)
+                ->setTitle(t("Verification du compte"))
+                ->setObject(t("Code d'activation"))
+                ->sendMail([
+                    "activation_code" => $activationcode,
+                    "username" => $user->username,
+                ]);
+        }
+
+        return [
+            'success' => true,
+            'detail' => t("Un nouveau code d'activation vous a ete envoye"),
+            'activationcode' => $activationcode,
+        ];
+    }
+
     public static function resetactivationcode()
     {
         extract($_POST);
@@ -681,7 +722,7 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
      */
     public function resentactivationcode()
     {
-        $result = RegistrationController::resendactivationcode();
+        $result = self::resendactivationcode();
         if (!$result['success'])
             return $result;
 
@@ -779,7 +820,7 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
 
         $userhydrate = User::find(Request::get("user_id"));
 
-        $activationcode = RegistrationController::generatecode();
+        $activationcode = User::generatecode();
         $userhydrate->setActivationcode($activationcode);
         $userhydrate->__update();
 

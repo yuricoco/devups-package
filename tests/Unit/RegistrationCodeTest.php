@@ -8,20 +8,20 @@ final class RegistrationCodeTest extends TestCase
 {
     public function testDefaultCodeIsSixDigits(): void
     {
-        $code = \RegistrationController::generatecode();
+        $code = \User::generatecode();
         $this->assertMatchesRegularExpression('/^[0-9]{6}$/', $code);
     }
 
     public function testCustomLength(): void
     {
-        $this->assertSame(10, strlen(\RegistrationController::generatecode(10)));
+        $this->assertSame(10, strlen(\User::generatecode(10)));
     }
 
     public function testCodesAreNotConstant(): void
     {
         $codes = [];
         for ($i = 0; $i < 50; $i++)
-            $codes[] = \RegistrationController::generatecode();
+            $codes[] = \User::generatecode();
         $this->assertGreaterThan(40, count(array_unique($codes)));
     }
 

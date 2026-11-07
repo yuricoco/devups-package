@@ -67,6 +67,20 @@ class User extends UserCore implements JsonSerializable, NotificationSerialize
         $this->activationcode_expired_at = date("Y-m-d H:i:s", strtotime("+3 hours", strtotime(date("Y-m-d H:i:s"))));
     }
 
+    /**
+     * Genere un code numerique (6 chiffres par defaut) pour l'activation
+     * de compte, avec un generateur cryptographiquement sur. Le code en
+     * clair n'est jamais stocke : setActivationcode() le hache.
+     */
+    public static function generatecode(int $length = 6): string
+    {
+        $code = '';
+        for ($i = 0; $i < $length; $i++) {
+            $code .= (string)random_int(0, 9);
+        }
+        return $code;
+    }
+
 
     public static function sanitizePhonenumber($phonenumber, $phone_code)
     {
