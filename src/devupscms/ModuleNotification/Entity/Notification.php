@@ -285,10 +285,7 @@ class Notification extends Model implements JsonSerializable
             ->send()
             ->json();
 
-        Emaillog::create([
-            "object" => " - object : " . $notification->notificationtype->_key . ' to ' . $receiver->country->phonecode . $receiver->phonenumber,
-            "log" => json_encode($response),
-        ]);
+        \Log::info("sms : " . $notification->notificationtype->_key . ' to ' . $receiver->country->phonecode . $receiver->phonenumber . ' => ' . json_encode($response));
     }
 
     public static function execSMS($destination, $sms, $event = "")
@@ -318,10 +315,7 @@ class Notification extends Model implements JsonSerializable
             ->json();
 
         if ($access->status_code != 200) {
-            Emaillog::create([
-                "object" => "sms exception" . " dest: " . $destination,
-                "log" => $access->errors[0]->message,
-            ]);
+            \Log::warning("sms exception dest: " . $destination . " : " . $access->errors[0]->message);
             return [
                 "success" => false,
                 "detail" => $access->errors[0]->message,
@@ -347,18 +341,12 @@ class Notification extends Model implements JsonSerializable
                 ->addHeader('Authorization', "Bearer " . $access->payload->access_token)
                 ->send();
 
-            Emaillog::create([
-                "object" => "sms sent" . $event . " dest: " . $destination,
-                "log" => $output->_response,
-            ]);
+            \Log::info("sms sent" . $event . " dest: " . $destination . " : " . $output->_response);
             //var_dump($output);
 
         } catch (Exception $exception) {
 
-            Emaillog::create([
-                "object" => "sms exception" . " dest: " . $destination,
-                "log" => $exception->getMessage(),
-            ]);
+            \Log::error($exception);
             //echo $exception->getMessage();
         }
     }

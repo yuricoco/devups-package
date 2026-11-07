@@ -214,10 +214,7 @@ class Push_subscriptionController extends Controller
             } else {
                 $data = ("[x] Impossible d'envoyer le message {$endpoint}: {$report->getReason()}");
             }
-            Emaillog::create([
-                "object" => "push notification",
-                "log" => $data,
-            ]);
+            \Log::info("push notification : " . $data);
         }
         return $data;
     }
@@ -342,10 +339,7 @@ class Push_subscriptionController extends Controller
         // Variable for Print the Result
         $result = curl_exec($ch);
 
-        Emaillog::create([
-            "object" => "push notification",
-            "log" => $result,
-        ]);
+        \Log::info("push notification : " . $result);
         // dv_dump($result, $data);
         $json = json_decode($result);
         //        if (isset($json->error))

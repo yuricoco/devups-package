@@ -155,10 +155,7 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
 
         } else {
 
-            Emaillog::create([
-                "object" => "User registration - No Token found",
-                "log" => "No token registered. check first on which device the request comes from",
-            ]);
+            \Log::warning('User registration - No Token found : no token registered. check first on which device the request comes from');
         }
 
 

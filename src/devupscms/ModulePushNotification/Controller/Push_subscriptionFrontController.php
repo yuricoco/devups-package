@@ -168,10 +168,7 @@ class Push_subscriptionFrontController extends \dclass\devups\Controller\FrontCo
             } else {
                 $data = ("[x] Impossible d'envoyer le message {$endpoint}=> [$report->getReason()}");
             }
-            Emaillog::create([
-                "object" => "push notification",
-                "log" => $data,
-            ]);
+            \Log::info("push notification : " . $data);
         }
         return $data;
     }

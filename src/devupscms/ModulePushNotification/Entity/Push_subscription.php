@@ -113,10 +113,7 @@ class Push_subscription extends Model implements JsonSerializable //, Subscripti
         $result = curl_exec($ch);
         curl_close($ch);
 
-        Emaillog::create([
-            "object" => "expo push notification id:" . $this->id,
-            "log" => "Message [ " . $message . " ] => " . $result . " - " . json_encode($payload),
-        ]);
+        \Log::info("expo push notification id:" . $this->id . " - Message [ " . $message . " ] => " . $result . " - " . json_encode($payload));
 
         try {
             $json = json_decode($result);
@@ -125,18 +122,15 @@ class Push_subscription extends Model implements JsonSerializable //, Subscripti
                 if (isset($errorDetail->details) && $errorDetail->details->error === 'DeviceNotRegistered') {
                     Push_subscription::where("auth_token", $this->auth_token)->update(["status" => 0]);
                 }
-                Emaillog::create(["object" => "expo push UNSENT", "log" => $result]);
+                \Log::warning("expo push UNSENT : " . $result);
                 return false;
             } elseif (isset($json->errors) && is_array($json->errors)) {
-                Emaillog::create(["object" => "expo push API_ERROR", "log" => $result]);
+                \Log::warning("expo push API_ERROR : " . $result);
                 return false;
             }
         }
         catch (Exception $exception) {
-            Emaillog::create([
-                "object" => "expo push Exception id:" . $this->id,
-                "log" => "Message => " . $exception->getMessage(),
-            ]);
+            \Log::error($exception);
             return false;
         }
 
@@ -209,10 +203,7 @@ class Push_subscription extends Model implements JsonSerializable //, Subscripti
 
         curl_close($ch);
 
-        Emaillog::create([
-            "object" => "push notification id:" . $this->id,
-            "log" => "Message [ " . $message . " ] => " . $result . " - " . json_encode($payload),
-        ]);
+        \Log::info("push notification id:" . $this->id . " - Message [ " . $message . " ] => " . $result . " - " . json_encode($payload));
 
         try {
             $json = json_decode($result);
@@ -224,18 +215,12 @@ class Push_subscription extends Model implements JsonSerializable //, Subscripti
                         "status" => 0
                     ]);
 
-                Emaillog::create([
-                    "object" => "push notification UNSENT",
-                    "log" => $result,
-                ]);
+                \Log::warning("push notification UNSENT : " . $result);
                 return false;
             }
         }
         catch (Exception $exception) {
-            Emaillog::create([
-                "object" => "push notification Exception id:" . $this->id,
-                "log" => "Message => " . $exception->getMessage(),
-            ]);
+            \Log::error($exception);
             return false;
         }
 
