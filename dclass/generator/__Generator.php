@@ -721,7 +721,16 @@ class $repertoire extends ModuleController
         $repertoire = ucfirst($module->name);
         chdir($repertoire);
 
-        $htaccess = "\n
+        $htaccess = "# Le code PHP du module n'est jamais execute directement : seuls index.php
+# et services.php restent joignables. Les ressources statiques (Resource/js,
+# css, images) restent servies normalement.
+<FilesMatch \"\\.php$\">
+    Require all denied
+</FilesMatch>
+<FilesMatch \"^(index|services)\\.php$\">
+    Require all granted
+</FilesMatch>
+
 RewriteEngine On
 
 RewriteCond %{REQUEST_FILENAME} !-d
