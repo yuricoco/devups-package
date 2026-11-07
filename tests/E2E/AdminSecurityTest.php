@@ -8,7 +8,11 @@ use PHPUnit\Framework\Attributes\DataProvider;
 /**
  * Aucune ecriture du back-office ne doit etre possible sans session
  * d'administration, ni par l'API d'administration, ni par les points
- * d'entree historiques src/<composant>/<Module>/services.php.
+ * d'entree historiques src/<composant>/<Module>/services.php, ni par les
+ * index.php des modules back-office (devups, devupscms). Le composant
+ * public devupsfront (inscription, connexion, OAuth) n'est pas concerne :
+ * son index.php reste joignable en anonyme, protege par sa propre
+ * authentification.
  */
 final class AdminSecurityTest extends HttpTestCase
 {
@@ -30,6 +34,22 @@ final class AdminSecurityTest extends HttpTestCase
         $res = $this->request('POST', $service . '?path=anything.create', ['x' => 'y']);
         $this->assertSame(401, $res['status'], "$service doit refuser un visiteur anonyme");
         $this->assertSame($before, $this->countAllRows(), "$service a ecrit en base sans authentification");
+    }
+
+    public function testBackofficeModuleIndexRequiresAnAdminSession(): void
+    {
+        $root = realpath(__DIR__ . '/../..');
+        $files = array_merge(glob($root . '/src/devups/*/index.php'), glob($root . '/src/devupscms/*/index.php'));
+        if (!$files)
+            $this->markTestSkipped('aucun index.php de module back-office a ce jour');
+
+        foreach ($files as $file) {
+            $rel = substr($file, strlen($root) + 1);
+            $res = $this->get($rel);
+            $this->assertSame(401, $res['status'], "$rel doit refuser un visiteur anonyme");
+            $res = $this->get($rel . '/api/hello');
+            $this->assertSame(401, $res['status'], "$rel (/api/) doit refuser un visiteur anonyme");
+        }
     }
 
     public function testAdminApiRequiresAnAdminSession(): void
