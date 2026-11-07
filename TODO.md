@@ -9,8 +9,6 @@ n'existe pas dans le depot au moment de cette session ; ce suivi se
 base sur l'historique de conversation (Phase 1 entierement committee
 avant cette session) et le code tel que trouve sur disque.
 
-(rempli au fur et a mesure)
-
 ## Phase 2 (Logs)
 
 ### B.2 - migration schema dvups_log (a executer manuellement)
@@ -216,3 +214,63 @@ avant cette session) et le code tel que trouve sur disque.
   code), mais a nettoyer/ameliorer (tokenizer PHP reel) si le besoin
   s'en fait sentir.
 - Fichiers : `dclass/generator/builder.php`.
+
+### C.1 - reference iso2 : deja en place, rien a faire
+
+- Phase : C.1
+- Constat : `local()` (`dclass/dvups_functions.php`) retourne deja le
+  code iso2 courant (session `$_SESSION[LANG]`, ou `Request::get('lang')`
+  pour l'URL), et `dvups_lang.iso_code` est deja la colonne de reference
+  en base. Les fichiers `lang/<iso2>.php` (nouveaux cette session)
+  suivent la meme convention. Rien a changer : la demande etait deja
+  satisfaite par le code existant.
+
+---
+
+## Resume phase par phase
+
+**Phase 1 (Droits)** : entierement terminee et committee AVANT cette
+session (6/6 points). Non retouchee ici (rien de nouveau a signaler).
+
+**Phase 2 (Logs)** : coeur fonctionnel complet et teste.
+- Fait : nouveau module `ModuleLog` (`dvups_log`, regroupement par
+  empreinte, debordement fichier) ; API `Log::error/warning/info` ;
+  gardes globales (exception/erreur fatale) installees dans
+  `header.php`/`admin/header.php` ; ecran back-office lecture seule ;
+  migration de schema ecrite (non executee) ; ancien `dvups_log` de
+  ModuleConfig retire ; usages non-email de `Emaillog::create()`
+  rediriges vers `Log::` ; section "Logs" du README ; tests
+  (regroupement, debordement, purge, gardes simulees en sous-processus).
+- Reporte (voir TODO ci-dessus, entrees B.5/B.6/B.7/B.8) : refonte du
+  schema `Emaillog` (destinataire/sujet/modele/statut/erreur) et le
+  test correspondant ; polish JS/vue de l'ecran Log ; suppression de
+  `request_history` (avis donne : a supprimer, non execute).
+
+**Phase 3 (Langues)** : socle fonctionnel complet et teste, nettoyage
+de l'ancien systeme reporte.
+- Fait : reference iso2 deja en place (rien a changer) ; traductions en
+  fichiers `lang/<iso2>.php` ; `t($cle, $params=[])` sans aucune requete
+  SQL, repli sur la cle, collecte automatique des cles manquantes en
+  dev uniquement (ecriture surete, jamais en prod) ; `tt()` simplifie ;
+  commandes CLI `lang:scan`/`lang:missing` ; section "Langues" du
+  README ; tests unitaires et d'integration couvrant tous les sous-
+  points demandes (traduction connue, parametres, repli, non-crash sur
+  ancien appel, collecte dev/jamais-prod, absence de SQL, lang:scan).
+- Reporte (voir TODO ci-dessus, entrees C.4/C.5/C.7) : suppression de
+  l'ancien systeme de traduction en base (`Local_content`,
+  `Local_content_key`, `Local_content_lang`, `Page_mapped`) - avis
+  donne (a supprimer), non execute car profondement cable dans le
+  routeur de `ModuleLang.php` et plusieurs vues ; retrait des entrees
+  `KNOWN_BROKEN` correspondantes, conditionne a cette suppression ;
+  retrait de `langt()` (templates d'email, bloque par un besoin de
+  langue explicite par appel que `t()` ne couvre pas encore).
+
+**Etat des tests** : `composer test` vert a chaque commit de cette
+session (169 tests, 0 echec, 18 "incomplete" assumes et documentes
+dans `AdminScreensTest::KNOWN_BROKEN`).
+
+**A reprendre en priorite dans une prochaine session** : B.5 (refonte
+Emaillog) et C.4/C.5/C.7 (suppression Local_content/Page_mapped) sont
+les deux chantiers les plus consequents laisses ouverts ; tout le
+reste de cette liste est soit fait, soit une decision/avis deja pris
+qui n'attend plus qu'une execution mecanique.
