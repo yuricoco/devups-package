@@ -101,27 +101,7 @@ return array (
     'namespace_name' => 'Configuration',
     'component' => 'devups',
   ),
-  'devups\\ModuleDatabase\\Entity\\Request_history' => 
-  array (
-    'path' => 'devups/ModuleDatabase/',
-    'module' => 'ModuleDatabase',
-    'name' => 'Request_history',
-    'label' => 'Request_history',
-    'namespace' => 'devups\\ModuleDatabase\\Entity\\',
-    'namespace_name' => 'Request_history',
-    'component' => 'devups',
-  ),
-  'Request_history' => 
-  array (
-    'path' => 'devups/ModuleDatabase/',
-    'module' => 'ModuleDatabase',
-    'name' => 'Request_history',
-    'label' => 'Request_history',
-    'namespace' => 'devups\\ModuleDatabase\\Entity\\',
-    'namespace_name' => 'Request_history',
-    'component' => 'devups',
-  ),
-  'devups\\ModuleLang\\Entity\\Dvups_lang' => 
+  'devups\\ModuleLang\\Entity\\Dvups_lang' =>
   array (
     'path' => 'devups/ModuleLang/',
     'module' => 'ModuleLang',

@@ -64,25 +64,7 @@ return array (
       ),
     ),
   ),
-  'ModuleDatabase' => 
-  array (
-    'name' => 'ModuleDatabase',
-    'label' => 'Base de donnees',
-    'icon' => 'fas fa-database',
-    'entities' => 
-    array (
-      0 => 
-      array (
-        'path' => 'devups/ModuleDatabase/',
-        'module' => 'ModuleDatabase',
-        'name' => 'Request_history',
-        'label' => 'Request_history',
-        'namespace' => 'devups\\ModuleDatabase\\Entity\\',
-        'component' => 'devups',
-      ),
-    ),
-  ),
-  'ModuleLang' => 
+  'ModuleLang' =>
   array (
     'name' => 'ModuleLang',
     'label' => 'Langues',
