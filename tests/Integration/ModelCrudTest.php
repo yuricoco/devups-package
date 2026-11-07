@@ -5,67 +5,70 @@ namespace Devups\Tests\Integration;
 use Devups\Tests\Support\DatabaseTestCase;
 
 /**
- * Cycle de vie complet d'une entite simple (Dvups_log) via l'ORM Tchutte.
+ * Cycle de vie complet d'une entite simple (Configuration) via l'ORM
+ * Tchutte. Dvups_log servait a cela avant sa refonte (Phase 2, regroupement
+ * par empreinte) : Configuration a deux colonnes libres (_key/_value) tout
+ * aussi pratiques pour exercer l'ORM sans dependre d'une entite metier.
  */
 final class ModelCrudTest extends DatabaseTestCase
 {
     public function testCreateFindUpdateDelete(): void
     {
-        $id = \Dvups_log::create(['object' => 'phpunit', 'log' => 'premier']);
+        $id = \Configuration::create(['_key' => 'phpunit', '_value' => 'premier']);
         $this->assertIsInt($id);
         $this->assertGreaterThan(0, $id);
 
-        $log = \Dvups_log::find($id);
-        $this->assertSame($id, (int)$log->getId());
-        $this->assertSame('phpunit', $log->object);
-        $this->assertSame('premier', $log->log);
+        $conf = \Configuration::find($id);
+        $this->assertSame($id, (int)$conf->getId());
+        $this->assertSame('phpunit', $conf->_key);
+        $this->assertSame('premier', $conf->_value);
 
-        $log->log = 'modifie';
-        $log->__update();
-        $this->assertSame('modifie', \Dvups_log::find($id)->log);
+        $conf->_value = 'modifie';
+        $conf->__update();
+        $this->assertSame('modifie', \Configuration::find($id)->_value);
 
-        \Dvups_log::find($id)->__delete();
-        $this->assertSame(0, $this->countRows('dvups_log', 'id = ?', [$id]));
+        \Configuration::find($id)->__delete();
+        $this->assertSame(0, $this->countRows('configuration', 'id = ?', [$id]));
     }
 
     public function testFindOnMissingIdGivesEmptyEntity(): void
     {
-        $log = \Dvups_log::find(999999);
-        $this->assertFalse((bool)$log->getId());
+        $conf = \Configuration::find(999999);
+        $this->assertFalse((bool)$conf->getId());
     }
 
     public function testCountAndWhere(): void
     {
-        \Dvups_log::create(['object' => 'phpunit-a', 'log' => '1']);
-        \Dvups_log::create(['object' => 'phpunit-a', 'log' => '2']);
-        \Dvups_log::create(['object' => 'phpunit-b', 'log' => '3']);
+        \Configuration::create(['_key' => 'phpunit-a', '_value' => '1']);
+        \Configuration::create(['_key' => 'phpunit-a', '_value' => '2']);
+        \Configuration::create(['_key' => 'phpunit-b', '_value' => '3']);
 
-        $this->assertSame(2, (int)\Dvups_log::where('this.object', 'phpunit-a')->count());
-        $this->assertSame(3, (int)\Dvups_log::where('this.object', 'like', 'phpunit-%')->count());
-        $this->assertCount(2, \Dvups_log::where('this.object', 'phpunit-a')->get());
+        $this->assertSame(2, (int)\Configuration::where('this._key', 'phpunit-a')->count());
+        $this->assertSame(3, (int)\Configuration::where('this._key', 'like', 'phpunit-%')->count());
+        $this->assertCount(2, \Configuration::where('this._key', 'phpunit-a')->get());
     }
 
     public function testFirstOrNull(): void
     {
-        $this->assertNull(\Dvups_log::where('this.object', 'phpunit-none')->firstOrNull());
-        \Dvups_log::create(['object' => 'phpunit-one', 'log' => 'x']);
-        $this->assertSame('x', \Dvups_log::where('this.object', 'phpunit-one')->firstOrNull()->log);
+        $this->assertNull(\Configuration::where('this._key', 'phpunit-none')->firstOrNull());
+        \Configuration::create(['_key' => 'phpunit-one', '_value' => 'x']);
+        $this->assertSame('x', \Configuration::where('this._key', 'phpunit-one')->firstOrNull()->_value);
     }
 
     public function testNestedTransactionRollsBackOnlyInnerLevel(): void
     {
         // le test tourne deja dans une transaction (niveau 1)
-        \Dvups_log::create(['object' => 'phpunit-tx', 'log' => 'outer']);
+        \Configuration::create(['_key' => 'phpunit-tx', '_value' => 'outer']);
         try {
             \Model::transaction(function () {
-                \Dvups_log::create(['object' => 'phpunit-tx', 'log' => 'inner']);
+                \Configuration::create(['_key' => 'phpunit-tx', '_value' => 'inner']);
                 throw new \RuntimeException('echec volontaire');
             });
             $this->fail('exception attendue');
         } catch (\RuntimeException $e) {
             $this->assertSame('echec volontaire', $e->getMessage());
         }
-        $this->assertSame(1, $this->countRows('dvups_log', 'object = ?', ['phpunit-tx']));
+        $this->assertSame(1, $this->countRows('configuration', '_key = ?', ['phpunit-tx']));
         $this->assertSame(1, \Model::transactionDepth());
     }
 
@@ -73,20 +76,20 @@ final class ModelCrudTest extends DatabaseTestCase
     {
         // regression : hydrate() gardait une REFERENCE dans dvold, donc
         // entityKeyUpdate() ne voyait jamais de difference
-        $id = \Dvups_log::create(['object' => 'phpunit-h', 'log' => 'avant']);
-        $log = (new \Dvups_log($id))->hydrate();
-        $log->log = 'apres';
-        $log->__update();
-        $this->assertSame('apres', \Dvups_log::find($id)->log);
+        $id = \Configuration::create(['_key' => 'phpunit-h', '_value' => 'avant']);
+        $conf = (new \Configuration($id))->hydrate();
+        $conf->_value = 'apres';
+        $conf->__update();
+        $this->assertSame('apres', \Configuration::find($id)->_value);
     }
 
     public function testUpdateOfANonHydratedEntityWritesItsValues(): void
     {
-        $id = \Dvups_log::create(['object' => 'phpunit-nh', 'log' => 'avant']);
-        $log = new \Dvups_log($id);
-        $log->object = 'phpunit-nh';
-        $log->log = 'apres';
-        $log->__update();
-        $this->assertSame('apres', \Dvups_log::find($id)->log);
+        $id = \Configuration::create(['_key' => 'phpunit-nh', '_value' => 'avant']);
+        $conf = new \Configuration($id);
+        $conf->_key = 'phpunit-nh';
+        $conf->_value = 'apres';
+        $conf->__update();
+        $this->assertSame('apres', \Configuration::find($id)->_value);
     }
 }
