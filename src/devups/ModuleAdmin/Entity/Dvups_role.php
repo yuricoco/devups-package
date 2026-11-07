@@ -44,37 +44,12 @@ class Dvups_role extends Model implements JsonSerializable
      * */
     public $entities;
 
-    /**
-     * @var \Dvups_right
-     */
-    public $dvups_right;
-
-    public $dv_collection = [ "dvups_right",];
-
-    public function array_rigth()
-    {
-        $array_rigth = [];
-
-        foreach ($this->rigth as $rigth) {
-            $array_rigth[] = strtolower($rigth->getNom());
-        }
-        return $array_rigth;
-    }
-
     public function __construct($id = null)
     {
 
         if ($id)
             $this->id = $id;
 
-        $this->dvups_right = [];
-
-    }
-
-    function collectDvups_right()
-    {
-        $this->dvups_right = $this->__hasmany('dvups_right', true, false, 1);
-        return $this->dvups_right;
     }
 
     public function getId()
@@ -89,15 +64,6 @@ class Dvups_role extends Model implements JsonSerializable
     public function setId($id)
     {
         $this->id = $id;
-    }
-
-    /**
-     *  manyToMany
-     * @return \Dvups_right
-     */
-    function setDvups_right($rigth)
-    {
-        $this->dvups_right = $rigth;
     }
 
     function setModules($dvups_module)
@@ -150,25 +116,6 @@ class Dvups_role extends Model implements JsonSerializable
         return json_decode($this->configs, true) ?? [];
     }
 
-    /**
-     *  manyToMany
-     * @return \Dvups_right
-     */
-    function getDvups_right()
-    {
-        return $this->dvups_right;
-    }
-
-    function addDvups_right(\Dvups_right $dvups_right)
-    {
-        $this->dvups_right[] = $dvups_right;
-    }
-
-    function dropDvups_rightCollection()
-    {
-        $this->dvups_right = EntityCollection::entity_collection('dvups_right');
-    }
-
     #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
@@ -176,7 +123,6 @@ class Dvups_role extends Model implements JsonSerializable
             'id' => $this->id,
             'name' => $this->name,
             'alias' => $this->alias,
-            'dvups_right' => $this->dvups_right,
         ];
     }
 

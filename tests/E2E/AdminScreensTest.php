@@ -38,8 +38,6 @@ final class AdminScreensTest extends HttpTestCase
         'devupscms/ModuleLocation/town/form' => 'Location : seul Country est conserve',
         'devups/ModuleLang/local-content/form' => 'module Lang a refondre (traductions en fichiers)',
         'devups/ModuleLang/page-mapped/form' => 'module Lang a refondre (traductions en fichiers)',
-        'devups/ModuleAdmin/dvups-right/list' => 'droits : a refondre (triplet role/entite/action)',
-        'devups/ModuleAdmin/dvups-right/form' => 'droits : a refondre (triplet role/entite/action)',
         'devupscms/ModuleCms/comment/form' => 'entite Comment jamais generee (futur cmscomment)',
         'devupscms/ModuleNotification/notificationbroadcasted/form' => 'entite Notificationbroadcasted absente (refonte notifications)',
     ];

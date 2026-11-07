@@ -10,11 +10,6 @@
         <label for='alias'>{{t('Alias for commun')}}</label>
         <?= Form::input('alias', $dvups_role->alias, ['class' => 'form-control']); ?>
     </div>
-    <div class='form-group'>
-        <label for='dvups_right'>Dvups_right</label>
-        <?= Form::checkbox('dvups_right::values', FormManager::Options_Helper('name', Dvups_right::allrows()),
-            $dvups_role->inCollectionOf("dvups_right"), ['class' => 'form-control']); ?>
-    </div>
     <label for='dvups_module'>Dvups_module</label>
     <table class='table'>
         <tr>

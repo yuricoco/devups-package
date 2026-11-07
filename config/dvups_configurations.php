@@ -61,26 +61,6 @@ return array (
     'namespace_name' => 'Dvups_privilege',
     'component' => 'devups',
   ),
-  'devups\\ModuleAdmin\\Entity\\Dvups_right' => 
-  array (
-    'path' => 'devups/ModuleAdmin/',
-    'module' => 'ModuleAdmin',
-    'name' => 'Dvups_right',
-    'label' => 'Dvups_right',
-    'namespace' => 'devups\\ModuleAdmin\\Entity\\',
-    'namespace_name' => 'Dvups_right',
-    'component' => 'devups',
-  ),
-  'Dvups_right' => 
-  array (
-    'path' => 'devups/ModuleAdmin/',
-    'module' => 'ModuleAdmin',
-    'name' => 'Dvups_right',
-    'label' => 'Dvups_right',
-    'namespace' => 'devups\\ModuleAdmin\\Entity\\',
-    'namespace_name' => 'Dvups_right',
-    'component' => 'devups',
-  ),
   'devups\\ModuleAdmin\\Entity\\Dvups_role' => 
   array (
     'path' => 'devups/ModuleAdmin/',

@@ -39,15 +39,6 @@ return array (
       array (
         'path' => 'devups/ModuleAdmin/',
         'module' => 'ModuleAdmin',
-        'name' => 'Dvups_right',
-        'label' => 'Dvups_right',
-        'namespace' => 'devups\\ModuleAdmin\\Entity\\',
-        'component' => 'devups',
-      ),
-      4 => 
-      array (
-        'path' => 'devups/ModuleAdmin/',
-        'module' => 'ModuleAdmin',
         'name' => 'Dvups_role',
         'label' => 'Dvups_role',
         'namespace' => 'devups\\ModuleAdmin\\Entity\\',

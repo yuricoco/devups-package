@@ -39,7 +39,6 @@ class Dvups_roleForm extends FormManager
     public static function renderWidget($dvups_role, $action = "create")
     {
         $data = compact("dvups_role", "action");
-        $data["rights"] = Dvups_right::all();
 
         $data["configs"] = Core::buildOriginCore();
         $data["components"] = $data["dvups_role"]->getAttribute("components");

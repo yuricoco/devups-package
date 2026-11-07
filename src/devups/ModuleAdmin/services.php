@@ -12,7 +12,6 @@ global $viewdir;
 $viewdir[] = __DIR__ . '/Resource/views';
 
 $dvups_adminCtrl = new Dvups_adminController();
-$dvups_rightCtrl = new Dvups_rightController();
 $dvups_roleCtrl = new Dvups_roleController();
 
 (new Request('hello'));
@@ -44,25 +43,6 @@ switch (Request::get('path')) {
         break;
     case 'dvups_admin.datatable':
         g::json_encode($dvups_adminCtrl->datatable(R::get('next'), R::get('per_page')));
-        break;
-
-    case 'dvups_right._new':
-        g::json_encode(Dvups_rightController::renderForm());
-        break;
-    case 'dvups_right.form':
-        g::json_encode(Dvups_rightController::renderForm(R::get("id")));
-        break;
-    case 'dvups_right._show':
-        g::json_encode(Dvups_rightController::renderDetail(R::get("id")));
-        break;
-    case 'dvups_right._delete':
-        g::json_encode($dvups_rightCtrl->deleteAction(R::get("id")));
-        break;
-    case 'dvups_right._deletegroup':
-        g::json_encode($dvups_rightCtrl->deletegroupAction(R::get("ids")));
-        break;
-    case 'dvups_right.datatable':
-        g::json_encode($dvups_rightCtrl->datatable(R::get('next'), R::get('per_page')));
         break;
 
     case 'dvups_role._new':
