@@ -97,22 +97,38 @@ suivante, sans reconnexion.
 
 Reference unique = le code iso2 (`fr`, `en`, ...), partout : session
 (`local()`), URL (`?lang=`), base (`dvups_lang.iso_code`) et fichiers.
+`header.php` compile une seule fois le mapping iso_code<->id des langues
+ACTIVES dans `cache/lang/active.php` (`Dvups_lang::cachedActiveDlangs()`,
+meme modele que le cache des droits), invalide automatiquement a chaque
+creation/modification/suppression d'une langue par le back-office.
 
-Les traductions vivent dans `lang/<iso2>.php`, qui retourne un tableau
+Les traductions vivent dans `lang/<iso2>.php` (constante `LANG_DIR`,
+defaut `lang/` - la suite de tests pointe vers un dossier temporaire,
+jamais les fichiers versionnes), qui retourne un tableau
 `cle => traduction`. `lang.php` (racine) charge le fichier de la langue
 courante une seule fois par requete - `t()` ne fait jamais de requete SQL.
 
-`t($cle, $params = [])` retourne la traduction de `$cle`, ou `$cle`
-elle-meme si elle est absente (avec substitution `:param` dans les deux
-cas : `t('bonjour :nom', ['nom' => 'Jean'])`). En developpement
-uniquement (jamais en production), une cle absente est automatiquement
-ajoutee a tous les fichiers `lang/*.php` (valeur = la cle), via une
-ecriture surete (verrou + fichier temporaire + renommage) : le
-traducteur n'a plus qu'a remplir les valeurs.
+`t($cle, $params = [])` retourne la traduction de `$cle` dans la langue
+COURANTE, ou `$cle` elle-meme si elle est absente (avec substitution
+`:param` dans les deux cas : `t('bonjour :nom', ['nom' => 'Jean'])`).
+Quand `LANG_COLLECT` est actif (defaut : developpement uniquement, jamais
+en production), une cle absente est automatiquement ajoutee a tous les
+fichiers `lang/*.php` (valeur = la cle) et a `$dv_translations` en
+memoire (pas de nouvelle ecriture pour la meme cle dans la meme requete),
+via une ecriture surete (verrou sur un fichier dedie + fichier temporaire
++ renommage) : le traducteur n'a plus qu'a remplir les valeurs.
 
-`php devups lang:scan` parcourt le code a la recherche des appels
-`t('...')` a cle litterale et complete les fichiers de langue en une
-fois. `php devups lang:missing` liste, par langue, les cles encore non
+`t_lang($cle, $iso, $params = [])` traduit dans une langue EXPLICITE,
+independamment de la session/l'URL courante (mise en cache par langue,
+un seul `require` par iso et par requete, jamais de collecte automatique)
+- utilisee par les emails envoyes a un destinataire dont la langue peut
+differer de celle de l'expediteur (`web/views/mails/*.blade.php`).
+
+`php devups lang:scan` parcourt le code (via `token_get_all()`, pas une
+regex) a la recherche des appels `t('...')`/`tt('...')` a cle LITTERALE
+et complete les fichiers de langue en une fois ; une cle construite
+(concatenation, variable) est ignoree et seulement signalee en sortie.
+`php devups lang:missing` liste, par langue, les cles encore non
 traduites (valeur egale a la cle).
 
 `tt($cle)` est un alias de `t($cle)` utilise dans les vues.
@@ -139,16 +155,25 @@ Les gardes PHP globales (`set_exception_handler`, `set_error_handler`,
 seule fois dans `header.php` (front) et `admin/header.php` (admin), jamais
 dans `config/dependanceInjection.php` (partage par les tests et la CLI, ou
 installer ces gardes perturberait la gestion d'erreurs de PHPUnit). En
-production, la reponse est generique (page ou JSON selon le contexte) ; en
-developpement, le detail de l'erreur est affiche.
+production, la reponse est generique (page, JSON selon le contexte, ou
+texte brut sur STDERR en CLI) ; en developpement, le detail de l'erreur
+est affiche. `error_reporting()` est toujours respecte (une erreur
+masquee par `@` n'est jamais journalisee), et seuls les niveaux >=
+`LOG_MIN_LEVEL` (defaut `warning`) sont enregistres - `E_NOTICE`/
+`E_DEPRECATED` sont donc ignores par defaut, sans empecher PHP de les
+traiter normalement par ailleurs (journal natif, `display_errors`...).
 
 Ecran back-office "Logs" en lecture seule (liste, filtres niveau/date,
-detail), protege par `can('read', Dvups_log::class)`.
+detail - y compris le contenu complet d'un fichier de debordement),
+protege par `can('read', Dvups_log::class)`.
 
-`Emaillog` reste reserve aux emails reellement envoyes (voir
-`dclass/lib/DMail.php`, `Reportingmodel::sendMail`) : ne pas s'en servir
-pour journaliser des erreurs ou d'autres evenements, utiliser `Log::` a la
-place.
+`Emaillog` reste reserve aux emails REELLEMENT envoyes (voir
+`dclass/lib/DMail.php`, `Reportingmodel::sendMail`) : destinataire, sujet,
+modele, statut (`envoye`/`echec`) et erreur eventuelle -
+`Emaillog::logSuccess()`/`logFailure()` centralisent l'ecriture. Ecran
+back-office en lecture seule, comme le module Log. Ne jamais s'en servir
+pour journaliser des erreurs ou d'autres evenements : utiliser `Log::` a
+la place.
 
 ## Sécurité
 
