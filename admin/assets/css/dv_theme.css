@@ -1,0 +1,49 @@
+/*
+ * dv_theme.css - vocabulaire, pas style.
+ *
+ * Un seul bloc :root, uniquement des declarations de jetons - aucune
+ * regle qui vise un selecteur. Chaque valeur est relevee dans main.css
+ * (le theme ArchitectUI achete, jamais modifie), pas inventee : la
+ * source de chaque jeton est commentee en regard. Charge APRES main.css
+ * et AVANT dv_style.css (layout.blade.php) - dv_style.css consommera ces
+ * jetons au point 2 du meme chantier, pas ici.
+ */
+:root {
+    /* geometrie - la cause de la contradiction du point 2 (dv_style.css) */
+    --dv-sidebar-width: 250px;   /* valeur affichee aujourd'hui : main.css fixe .app-sidebar a 280px, dv_style.css la surcharge a 250px (c'est CE 250 qui est a l'ecran) */
+    --dv-header-height: 60px;    /* main.css : .app-header{height:60px} */
+    --dv-radius: .25rem;         /* main.css : rayon le plus frequent (33 occurrences), celui de .card */
+    --dv-spacer: 1rem;           /* main.css : unite Bootstrap, .p-3/.m-3{margin|padding:1rem} */
+
+    /* couleurs - relevees dans main.css, pas choisies */
+    --dv-color-bg-app: #f1f4f6;      /* main.css : .app-container{background:#f1f4f6} */
+    --dv-color-bg-card: #fff;        /* main.css : .card{background-color:#fff} */
+    --dv-color-border: rgba(26, 54, 126, 0.125); /* main.css : .card{border:1px solid rgba(26,54,126,.125)} */
+    --dv-color-text: #495057;        /* main.css : body{color:#495057} */
+    --dv-color-text-muted: #6c757d;  /* main.css : .text-muted{color:#6c757d} */
+    --dv-color-primary: #3f6ad8;     /* main.css : :root{--primary: #3f6ad8} (Bootstrap genere par le theme) */
+    /* [datatable-point4] composantes RGB de --dv-color-primary ci-dessus,
+       pour rgba(var(--dv-color-primary-rgb), alpha) - CSS ne permet pas de
+       deriver un alpha depuis un hex directement ; meme source, pas une
+       couleur de plus. ATTENTION, A SYNCHRONISER A LA MAIN : si
+       --dv-color-primary change un jour, ces trois composantes doivent
+       changer avec - rien ne les lie automatiquement, un oubli ici rend
+       rgba(var(--dv-color-primary-rgb), ...) silencieusement incoherent
+       avec --dv-color-primary (pas invalide : juste une couleur differente
+       de celle qu'on croit utiliser). */
+    --dv-color-primary-rgb: 63, 106, 216;
+    --dv-color-success: #3ac47d;     /* main.css : :root{--success: #3ac47d} */
+    --dv-color-danger: #d92550;      /* main.css : :root{--danger: #d92550} */
+    --dv-color-warning: #f7b924;     /* main.css : :root{--warning: #f7b924} */
+
+    /* typographie - famille systeme du theme, echelle a 4 crans (frequence mesuree dans main.css) */
+    --dv-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --dv-font-size-sm: .875rem;   /* main.css : 10 occurrences */
+    --dv-font-size-base: .88rem;  /* main.css : body{font-size:.88rem}, 10 occurrences */
+    --dv-font-size-lg: 1.25rem;   /* main.css : 12 occurrences, titres de carte */
+    --dv-font-size-xl: 2rem;      /* main.css : grands titres */
+
+    /* elevation - deux niveaux parmi les trois deja fournis par le theme (.shadow-sm/.shadow/.shadow-lg) */
+    --dv-shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* main.css : .shadow-sm */
+    --dv-shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);       /* main.css : .shadow */
+}

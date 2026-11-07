@@ -1,0 +1,64 @@
+{
+    "name": "spacekola/devups",
+    "description": "a php framework",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Aurelien Atemkeng",
+            "email": "aurelienatemkeng@spacekola.com",
+            "role": "developer"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "php": ">=8.1",
+        "doctrine/orm": "^2.1.3",
+        "doctrine/cache": "1.11.3",
+        "philo/laravel-blade": "3.*",
+        "ifsnop/mysqldump-php": "^2.9",
+        "phpmailer/phpmailer": "^6.6",
+        "mpdf/mpdf": "^8.0",
+        "guzzlehttp/guzzle": "^7.5",
+        "maslosoft/addendum": "*",
+        "firebase/php-jwt": "^6.9",
+        "barcode-bakery/barcode-1d": "^7.0",
+        "zircote/swagger-php": "^4.11",
+        "google/apiclient": "^2.18"
+    },
+    "autoload": {
+        "classmap": [
+            "dclass/",
+            "src/"
+        ],
+        "psr-0": {
+            "": "src/"
+        }
+    },
+    "require-dev": {
+        "symfony/var-dumper": "^5.4",
+        "phpunit/phpunit": "^10.5"
+    },
+    "config": {
+        "allow-plugins": {
+            "kylekatarnls/update-helper": false
+        },
+        "audit": {
+            "ignore": [
+                "PKSA-y2cr-5h3j-g3ys",
+                "PKSA-h74q-2n9z-j6wq"
+            ]
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Devups\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test:unit": "phpunit --testsuite unit",
+        "test:integration": "phpunit --testsuite integration",
+        "test:e2e": "phpunit --testsuite e2e"
+    }
+}

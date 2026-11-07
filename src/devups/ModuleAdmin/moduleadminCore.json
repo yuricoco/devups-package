@@ -1,0 +1,9 @@
+{
+    "id": 1,
+    "name": "ModuleAdmin",
+    "label": "Administration",
+    "icon": "fas fa-user-shield",
+    "project": "admin",
+    "nbent": 10,
+    "listentity": []
+}

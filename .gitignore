@@ -1,0 +1,27 @@
+# Environnement local
+/.env
+/config/constante.php
+
+# Dependances
+/vendor/
+/node_modules/
+/composer.lock
+
+# Fichiers generes / donnees d'execution
+/uploads/
+/cache/
+/admin/cache/
+/build/
+/database/*
+!/database/migration/
+/*.log
+error_log
+
+# Archives et IDE
+/*.zip
+/src/*.zip
+/nbproject/
+/.idea/
+/.phpunit.cache/
+/.phpunit.result.cache
+/tests/_output/

@@ -1,0 +1,10 @@
+{
+    "id": 7,
+    "name": "ModuleReporting",
+    "label": "Rapports",
+    "icon": "fas fa-chart-bar",
+    "project": "cashdesk",
+    "nbent": 2,
+    "listentity": [],
+    "$$hashKey": "object:9223"
+}

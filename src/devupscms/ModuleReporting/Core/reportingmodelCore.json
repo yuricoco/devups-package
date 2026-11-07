@@ -1,0 +1,85 @@
+{
+  "name": "reportingmodel",
+  "attribut": [
+    {
+      "name": "id",
+      "visibility": "id",
+      "datatype": "integer",
+      "size": "",
+      "nullable": "not",
+      "formtype": "id"
+    },
+    {
+      "name": "name",
+      "visibility": "name",
+      "datatype": "string",
+      "size": 255,
+      "nullable": "not",
+      "formtype": "name"
+    },
+    {
+      "name": "type",
+      "visibility": "type",
+      "datatype": "string",
+      "size": 55,
+      "nullable": "not",
+      "formtype": "type"
+    },
+    {
+      "name": "styleressource",
+      "visibility": "styleressource",
+      "datatype": "string",
+      "size": 255,
+      "nullable": "default",
+      "formtype": "styleressource"
+    },
+    {
+      "name": "style",
+      "visibility": "style",
+      "datatype": "text",
+      "size": "",
+      "nullable": "default",
+      "formtype": "style"
+    },
+    {
+      "name": "title",
+      "visibility": "title",
+      "datatype": "string",
+      "size": 255,
+      "nullable": "default",
+      "formtype": "title"
+    },
+    {
+      "name": "object",
+      "visibility": "object",
+      "datatype": "string",
+      "size": 255,
+      "nullable": "default",
+      "formtype": "object"
+    },
+    {
+      "name": "subject",
+      "visibility": "subject",
+      "datatype": "string",
+      "size": 255,
+      "nullable": "default",
+      "formtype": "subject"
+    },
+    {
+      "name": "contenttext",
+      "visibility": "contenttext",
+      "datatype": "text",
+      "size": "",
+      "nullable": "default",
+      "formtype": "contenttext"
+    },
+    {
+      "name": "content",
+      "visibility": "content",
+      "datatype": "text",
+      "size": "",
+      "nullable": "default",
+      "formtype": "content"
+    }
+  ]
+}

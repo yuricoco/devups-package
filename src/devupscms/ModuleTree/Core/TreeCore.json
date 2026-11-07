@@ -1,0 +1,41 @@
+{
+  "attribut": {
+    "1": {
+      "name": "name",
+      "designation": "",
+      "visibility": "",
+      "datatype": "string",
+      "size": "123",
+      "nullable": "not",
+      "formtype": "",
+      "comment": ""
+    },
+    "2": {
+      "name": "description",
+      "designation": "",
+      "visibility": "",
+      "datatype": "text",
+      "size": "",
+      "nullable": "default",
+      "formtype": "",
+      "comment": "",
+      "nullablevalue": true
+    },
+    "3": {
+      "name": "branches",
+      "designation": "",
+      "visibility": "",
+      "datatype": "string",
+      "size": "120",
+      "nullable": "default",
+      "formtype": "",
+      "comment": "use to organise the data in the tree view",
+      "nullablevalue": true
+    }
+  },
+  "relation": [],
+  "methods": [],
+  "name": "tree",
+  "id": "171",
+  "visible": true
+}
