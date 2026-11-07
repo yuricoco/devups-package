@@ -1,276 +1,349 @@
 # TODO
 
-Suivi des points ouverts, decisions a prendre, et blocages rencontres
-pendant le chantier (droits / logs / langues). Chaque entree : phase,
-ce qui reste, pourquoi, fichiers concernes.
+Suivi des points ouverts, decisions prises, et blocages rencontres
+pendant le chantier (droits / logs / langues / cms). Chaque entree :
+phase, ce qui reste, pourquoi, fichiers concernes.
 
-Note : le "document d'etat du chantier" reference dans la demande
-n'existe pas dans le depot au moment de cette session ; ce suivi se
-base sur l'historique de conversation (Phase 1 entierement committee
-avant cette session) et le code tel que trouve sur disque.
+Ce fichier remplace entierement la version precedente : les points
+Phase 2 (B.2/B.5/B.6/B.7/B.8) et Phase 3 (C.1/C.4/C.5/C.6/C.7) qu'elle
+documentait comme ouverts ont ete traites dans cette session (voir
+"Resume phase par phase" plus bas). Seul le point Phase 4 (CMS) reste
+ouvert, voir ci-dessous.
 
-## Phase 2 (Logs)
+## Phase 4 (CMS) - ETAPE G
 
-### B.2 - migration schema dvups_log (a executer manuellement)
+### G.1 - plan (tables, colonnes, migration, routes impactees)
 
-- Phase : B.2
-- Ce qui reste : executer `database/migration/2026_11_07_dvups_log_schema.sql`
-  sur chaque environnement (dev/staging/prod) qui possede encore
-  l'ancienne table `dvups_log` (colonnes `object`/`log`, module Config).
-  Commande : `mysql -u <user> -p <dbname> < database/migration/2026_11_07_dvups_log_schema.sql`
-- Pourquoi : changement de schema reel (nouvelle structure avec
-  empreinte/compteur/dates) ; la consigne interdit toute suppression de
-  table/colonne/donnee hors base de test. Le fichier est ecrit, non
-  execute.
-- Fichiers : `database/migration/2026_11_07_dvups_log_schema.sql`,
-  `src/devups/ModuleLog/Entity/Dvups_log.php`.
+Issu d'une revue du code (`Cmstext`/`Cmstext_lang`, `Imagecms`,
+`CommentCore.json`, `ModuleGallery`, `ModuleTree`) - voir le detail des
+constats dans l'historique de session. Resume :
 
-### B.7 - avis sur request_history : a supprimer
+**Renommages prevus**
 
-- Phase : B.7
-- Avis argumente : **supprimer** `ModuleDatabase`/`Request_history`,
-  pas le garder en lecture seule. Constats :
-  - aucun code n'ecrit jamais dans `request_history` (`grep -rn
-    "Request_history::create"` ne trouve rien) : la table n'est
-    alimentee par aucun mecanisme (pas de middleware, pas de hook) ;
-  - le module n'a pas d'`index.php` et n'est PAS present dans
-    `src/requires.php`, contrairement a tous les autres modules : il
-    n'est meme pas charge, donc inaccessible en HTTP ;
-  - les seules references hors du module lui-meme sont son
-    enregistrement dans `config/dvups_configurations.php` et
-    `config/module_configurations.php` (metadonnees d'entite), pas des
-    usages reels.
-  C'est donc un module mort des l'origine (scaffolding genere jamais
-  branche), pas un historique a conserver pour audit. Le garder en
-  lecture seule donnerait l'illusion d'un historique des requetes qui
-  n'a jamais existe.
-- Ce qui reste (non fait dans cette session, faute de temps/portee) :
-  - ecrire la migration `DROP TABLE request_history` dans
-    `database/migration/` (non executee, comme pour toute suppression) ;
-  - retirer `ModuleDatabase` de `config/dvups_configurations.php` et
-    `config/module_configurations.php` ;
-  - supprimer `src/devups/ModuleDatabase/` entierement.
-- Fichiers concernes : `src/devups/ModuleDatabase/**`,
-  `config/dvups_configurations.php`, `config/module_configurations.php`.
+- Table `cmstext` -> `cmscontent`, table `cmstext_lang` ->
+  `cmscontent_lang` (colonne FK `cmstext_id` -> `cmscontent_id`) ;
+  classes `Cmstext`/`Cmstext_lang`/`CmstextController`/`CmstextForm`/
+  `CmstextTable` -> `Cmscontent*`. Le datacore `CmstextCore.json` est
+  perime (longueur de `reference` fausse - 25 au lieu de 125 -,
+  colonnes `lang`/`creationdate` fantomes qui n'existent pas sur
+  l'entite, relation `tree_item` et colonnes `slug`/`active`/
+  `position` absentes) : a corriger AVANT toute regeneration, pas a
+  suivre tel quel.
+- `imagecms` (table de jointure pure `id`/`image`/`cmstext`, sans
+  colonne de fichier propre) -> `cmsresource`, reconstruit comme une
+  entite qui etend `ImageCore` directement (meme modele que `Dv_image`)
+  plutot qu'une table de jointure : absorbe le stockage de fichier et
+  le lien vers `cmscontent`. `ImagecmsCore.json` est egalement perime
+  (attribut `width_size` fantome, aucune relation listee).
+- `comment` -> `cmscomment` : aucune entite n'existe aujourd'hui, seul
+  `CommentCore.json` (datacore) existe, avec `module.name` pointant
+  vers `ModuleComment` (module inexistant - reference orpheline). Les
+  deux fichiers de config (`config/dvups_configurations.php`,
+  `config/module_configurations.php`) enregistrent deja `Comment` sous
+  `ModuleCms`/`devupscms` : corriger `module.name` dans le datacore
+  vers `ModuleCms`, puis generer proprement via
+  `php devups core:g:crud Comment` (ou entite/controleur/formulaire/
+  table individuellement).
 
-### B.5 - schema Emaillog a refondre (destinataire/sujet/modele/statut/erreur)
+**Migration (ecrite, NON executee - voir regle framework)**
 
-- Phase : B.5
-- Fait : tous les usages de `Emaillog::create()` qui servaient en
-  realite a journaliser des erreurs/evenements NON lies a un email
-  reellement envoye (push notifications, SMS, avertissement front sans
-  token) ont ete retires et rediriges vers `Log::`. Voir le commit
-  "Log: route vers Log:: les usages non-email de Emaillog::create()".
-- Ce qui reste : le schema actuel d'`Emaillog` (`reference`, `object`,
-  `log`) ne correspond pas a la forme demandee (destinataire, sujet,
-  modele, statut, erreur). Les deux usages legitimes restants
-  (`dclass/lib/DMail.php`, `src/devupscms/ModuleReporting/Entity/
-  Reportingmodel.php::sendMail`) continuent donc a ecrire dans
-  l'ancien format.
-- Pourquoi bloquant/non fait : refondre le schema demande (1) de
-  changer l'entite + le formulaire/datatable/controleur back-office
-  d'Emaillog, (2) d'adapter DMail.php et Reportingmodel.php pour
-  remplir les nouveaux champs (destinataire = recepteurs reels,
-  sujet = objet du mail, modele = template utilise, statut =
-  envoye/echec, erreur = message d'exception le cas echeant), et (3)
-  d'ecrire la migration correspondante (comme pour dvups_log, non
-  executee hors base de test). C'est une portee plus large que le
-  reroutage mecanique deja fait, et le temps restant de la session a
-  ete priorise sur les autres points de la Phase 2 et la Phase 3.
-- Fichiers concernes : `src/devupscms/ModuleReporting/Entity/
-  Emaillog.php`, `src/devupscms/ModuleReporting/Controller/
-  EmaillogController.php`, `src/devupscms/ModuleReporting/Datatable/
-  EmaillogTable.php`, `src/devupscms/ModuleReporting/Form/
-  EmaillogForm.php`, `dclass/lib/DMail.php`,
-  `src/devupscms/ModuleReporting/Entity/Reportingmodel.php`,
-  `database/migration/` (nouvelle migration a ecrire).
+```sql
+RENAME TABLE cmstext TO cmscontent;
+RENAME TABLE cmstext_lang TO cmscontent_lang;
+ALTER TABLE cmscontent_lang CHANGE cmstext_id cmscontent_id INT;
+-- cmsresource : creer la nouvelle table (ImageCore + colonne
+-- cmscontent_id), recuperer les donnees de imagecms JOIN dv_image,
+-- puis seulement alors DROP imagecms (voir G.4 plus bas) - jamais
+-- avant la recuperation des donnees.
+```
 
-### B.6 - ecran Log : JS/vue a finaliser
+**Routes impactees**
 
-- Phase : B.6
-- Ce qui reste : `Resource/js/dvups_logCtrl.js` et
-  `Resource/js/dvups_logForm.js` du module Log sont restes tels que
-  generes par `core:g:crud`/`core:g:moduleendless` : ils referencent
-  encore des actions create/update qui n'existent plus dans
-  `Dvups_logController` (lecture seule par design). La vue detail ne
-  rend pas encore le contenu du fichier de debordement
-  (`cache/log/<AAAA-MM>/<empreinte>.log`) de maniere formatee dans le
-  back-office (seule la lecture brute via `file_exists`/
-  `file_get_contents` est codee cote controleur).
-- Pourquoi : priorise le coeur fonctionnel (regroupement, debordement
-  fichier, gardes globales, tests) plutot que le polish JS/vue dans le
-  temps disponible ; l'ecran liste/datatable fonctionne et est couvert
-  par `AdminScreensTest` (le formulaire est volontairement absent, cf.
-  entree KNOWN_BROKEN ajoutee).
-- Fichiers : `src/devups/ModuleLog/Resource/js/dvups_logCtrl.js`,
-  `src/devups/ModuleLog/Resource/js/dvups_logForm.js`,
-  `src/devups/ModuleLog/Controller/Dvups_logController.php`.
+- `services.php` : tous les cas `cmstext.*`/`cmstext/*` -> `cmscontent.*`.
+- Route generique admin `/admin/devupscms/ModuleCms/cmscontent/edit?id=1`
+  (et equivalent API `admin/api/cmscontent/update`) : doit fonctionner
+  une fois la vue corrigee (voir G.3).
+- `imagecms.*` -> `cmsresource.*` partout ou reference (services.php,
+  vues).
 
-### B.8 - test emaillog manquant
+### G.2/G.3 - implementation (renommages, migration, ecran edition) - REPORTEE
 
-- Phase : B.8
-- Ce qui reste : un test verifiant qu'`Emaillog` ne contient QUE des
-  emails reellement envoyes (et plus aucun usage push/SMS/evenement)
-  n'a pas ete ecrit.
-- Pourquoi : depend de la refonte du schema Emaillog (entree B.5
-  ci-dessus) pour avoir des champs stables a asserter (destinataire,
-  sujet, statut...) ; ecrire un test sur l'ancien schema (`object`/
-  `log`) serait a refaire integralement une fois B.5 traite.
-- Fichiers : `tests/Integration/` (fichier a creer, ex.
-  `EmaillogTest.php`), `src/devupscms/ModuleReporting/Entity/
-  Emaillog.php`.
+- Phase : G.2, G.3
+- Ce qui reste : executer les renommages de table/classe ci-dessus,
+  ecrire et verifier la migration de donnees `imagecms JOIN dv_image`
+  -> `cmsresource` (recuperation AVANT toute suppression), corriger le
+  Blade casse de `src/devupscms/ModuleCms/Resource/views/cmstext/
+  form.blade.php` (ligne ~105 : accolade d'ouverture `{!!` manquante
+  avant `Dv_imageTable::init(...)`, rendant le bloc totalement mort -
+  c'est la cause concrete pour laquelle l'edition d'un cmstext est
+  aujourd'hui cassee) et le repointer vers `cmsresource` au lieu de
+  `Dv_image`/`Dv_imageTable`, puis faire de meme pour
+  `admin/cmstext/form.blade.php` (widget `ImagecmsTable` embarque).
+- Pourquoi non fait dans cette session : contrairement aux suppressions
+  deja executees (ModuleDatabase, Local_content*, Page_mapped - mortes
+  des l'origine, aucune donnee reelle a preserver), ce chantier
+  renomme des tables qui contiennent potentiellement des donnees
+  reelles (contenus CMS existants) ET change leur forme (jointure ->
+  entite fichier), ce qui demande une verification manuelle des
+  donnees migrees (correspondance 1-a-1 image<->cmstext, fichiers
+  physiques toujours presents sur disque) avant d'executer quoi que ce
+  soit - une erreur ici est difficile a detecter par les tests seuls et
+  risque la perte silencieuse de contenu. Vu le temps restant de la
+  session, mieux valait livrer un plan solide et verifiable que
+  d'executer des renommages de schema non valides manuellement.
+- Fichiers concernes : `src/devupscms/ModuleCms/Entity/Cmstext.php`,
+  `Cmstext_lang.php`, `Controller/CmstextController.php`,
+  `Form/CmstextForm.php`, `Datatable/CmstextTable.php`,
+  `Resource/views/cmstext/form.blade.php`,
+  `Resource/views/admin/cmstext/form.blade.php`,
+  `src/devupscms/ModuleCms/Entity/Imagecms.php`, `CmstextCore.json`,
+  `ImagecmsCore.json`, `services.php`,
+  `database/migration/` (migration a ecrire une fois le mapping de
+  donnees verifie).
 
-## Phase 3 (Langues)
+### G.4 - suppression ModuleGallery - REPORTEE (depend de G.2/G.3)
 
-### C.4/C.5/C.7 - suppression Local_content/Local_content_key/Page_mapped reportee
-
-- Phase : C.4, C.5, C.7
-- Avis argumente : ces entites (ancien editeur de traduction en base,
-  colonnes `local_content`/`local_content_key`/`local_content_lang`,
-  plus `page_mapped` jamais utilise ailleurs) sont mortes au sens
-  fonctionnel - l'ancien `t()` de `lang.php` faisait deja `return $ref;`
-  en toute premiere ligne, rendant tout le code de requete
-  `Local_contentController::getdata()`/`Local_content_key` qui suivait
-  injoignable. Elles sont donc candidates a la suppression plutot qu'a
-  la conservation en lecture seule.
-- Ce qui reste (non fait dans cette session, faute de temps) :
-  contrairement a `dvups_log` (Phase 2) ou `request_history`, ces
-  entites sont profondement cablees dans `ModuleLang.php` lui-meme (son
-  routeur `manage()`/`manageServe()` a base de `switch`, ~20 references
-  : instanciation des controleurs, cases de route
-  `local-content-key/*`, `local-content/*`, `page-mapped/*`, rendu de
-  formulaires) et dans plusieurs vues (`Resource/views/admin/
-  overview.blade.php`, `Resource/views/front/setting.blade.php`,
-  `web/views/_setting.blade.php`, `Resource/views/admin/
-  exportlang.blade.php` referencent `Local_content::classpath()`/
-  `generatecacheAction()`), ainsi que dans `Dvups_lang::__delete()`
-  (`Local_content::where("lang", $this->iso_code)->delete();`). Une
-  suppression correcte demande de reecrire une bonne partie de
-  `ModuleLang.php` et ces vues, pas seulement retirer des fichiers -
-  trop risque pour le temps restant de cette session.
-  A faire dans une session dediee : (1) retirer toutes les references
-  listees ci-dessus, (2) retirer l'enregistrement dans
-  `config/dvups_configurations.php`/`config/module_configurations.php`,
-  (3) ecrire la migration `DROP TABLE local_content, local_content_key,
-  local_content_lang, page_mapped` dans `database/migration/` (non
-  executee), (4) retirer de `KNOWN_BROKEN`
-  (`tests/E2E/AdminScreensTest.php`) les 4 entrees
-  `devups/ModuleLang/local-content*` et `devups/ModuleLang/page-mapped/*`
-  devenues sans objet (les ecrans n'existeront plus du tout, donc plus
-  besoin d'entree).
-  C.5 (UI d'edition des traductions) : vu la decision de supprimer
-  Local_content, la reponse est "non, plus besoin d'UI d'edition en
-  base" - les traductions se modifient desormais directement dans les
-  fichiers `lang/<iso2>.php` (ou via `php devups lang:scan`/
-  `lang:missing`, voir C.6).
-- Fichiers concernes : `src/devups/ModuleLang/ModuleLang.php`,
-  `src/devups/ModuleLang/Controller/Local_content*.php`,
-  `src/devups/ModuleLang/Controller/Page_mappedController.php`,
-  `src/devups/ModuleLang/Entity/Local_content*.php`,
-  `src/devups/ModuleLang/Entity/Page_mapped.php`,
-  `src/devups/ModuleLang/Entity/Dvups_lang.php` (methode `__delete`),
-  `src/devups/ModuleLang/Resource/views/**`, `web/views/_setting.blade.php`,
+- Phase : G.4
+- Avis argumente : `ModuleGallery`/`Dv_image` doit etre supprime une
+  fois `cmsresource` operationnel, pas conserve en lecture seule -
+  meme logique que les suppressions deja faites cette session (module
+  remplace, pas un historique a garder).
+- Ce qui reste : recuperer dans `cmsresource` toutes les lignes
+  `dv_image` referencees via `imagecms` ET via `tree_item.folder`/
+  `tree_item_image` (ModuleTree a aussi une dependance directe a
+  `Dv_image`, y compris un asset CSS charge via `Dv_image::classpath()`
+  dans `ModuleTree.php`) avant tout DROP ; corriger
+  `Tree_item_image` (entite/Form/Datatable) pour ne plus referencer
+  `Dv_image` ; ecrire la migration `DROP TABLE imagecms, dv_image`
+  (non executee) ; retirer `ModuleGallery` des deux fichiers de config
+  et supprimer `src/devupscms/ModuleGallery/` ; retirer de
+  `KNOWN_BROKEN` les entrees `imagecms/form` et `tree-item-image/form`
+  ("depend de ModuleGallery") une fois corrige.
+- Pourquoi non fait : bloque par G.2/G.3 (cmsresource doit exister et
+  etre verifie avant de pouvoir y migrer les donnees de dv_image) ; la
+  dependance supplementaire de `ModuleTree` (non mentionnee dans la
+  demande initiale, decouverte pendant la revue) ajoute un risque de
+  perte de donnees (images d'arborescence) si traitee a la hate.
+- Fichiers concernes : `src/devupscms/ModuleGallery/**`,
+  `src/devups/ModuleTree/Entity/Tree_item_image.php`,
+  `src/devups/ModuleTree/Form/Tree_item_imageForm.php`,
+  `src/devups/ModuleTree/Datatable/Tree_item_imageTable.php`,
+  `src/devups/ModuleTree/ModuleTree.php`,
   `config/dvups_configurations.php`, `config/module_configurations.php`,
   `tests/E2E/AdminScreensTest.php` (KNOWN_BROKEN).
 
-### C.4 - langt() non retire : mails a langue explicite, incompatible avec t()
+### G.5 - generateur/datacores/tests e2e - REPORTEE (depend de G.1-G.4)
 
-- Phase : C.4
-- Ce qui reste : `langt($fr, $en, $local, $matcher)`
-  (`dclass/dvups_functions.php`) n'a pas ete retire ; il est encore
-  utilise dans `web/views/mails/invitation.blade.php`,
-  `web/views/mails/otp.blade.php`, `web/views/mails/welcome.blade.php`.
-- Pourquoi bloquant : ces templates recoivent un `$lang` explicite par
-  email (la langue du DESTINATAIRE, qui peut differer de la langue de
-  la requete/session en cours - un admin en session "en" peut declencher
-  l'envoi d'un email a un utilisateur en "fr"). Le nouveau `t($cle,
-  $params=[])` traduit toujours dans la langue COURANTE (`local()`,
-  session/URL), pas dans une langue passee explicitement : le remplacer
-  tel quel changerait silencieusement la langue des emails envoyes.
-  Il manque une variante (ex. `t_lang($cle, $iso, $params=[])` lisant
-  directement `lang/<iso>.php` sans dependre de la session) avant de
-  pouvoir migrer ces 3 templates et supprimer `langt()`.
-- Fichiers : `dclass/dvups_functions.php` (fonction `langt`),
-  `web/views/mails/invitation.blade.php`, `web/views/mails/otp.blade.php`,
-  `web/views/mails/welcome.blade.php`, `lang.php` (si `t_lang()` est
-  ajoute).
+- Phase : G.5
+- Ce qui reste : corriger `CmstextCore.json`/`ImagecmsCore.json`/
+  `CommentCore.json` (voir G.1) avant toute regeneration ; mettre a
+  jour les cles `screens()` de `AdminScreensTest` (`cmstext`/
+  `imagecms`/`comment` -> `cmscontent`/`cmsresource`/`cmscomment`) et
+  retirer les entrees `KNOWN_BROKEN` devenues sans objet ; verifier
+  qu'aucune autre reference a `cmstext`/`imagecms`/`Dv_image`/
+  `ModuleGallery` ne subsiste dans la suite de tests.
+- Pourquoi non fait : depend entierement de G.2-G.4.
+- Fichiers concernes : `dclass/generator/datacores/CmstextCore.json`
+  (chemin exact a confirmer), `ImagecmsCore.json`, `CommentCore.json`,
+  `tests/E2E/AdminScreensTest.php`.
 
-### C.6 - lang:scan et lang:missing : fait, limite connue
+---
 
-- Phase : C.6
-- Fait : `php devups lang:scan` (trouve les `t('...')` a cle litterale
-  et complete `lang/*.php`) et `php devups lang:missing` (liste par
-  langue les cles non traduites), ajoutes dans
-  `dclass/generator/builder.php` (`dv_lang_scan_keys()` +
-  les cases `lang:scan`/`lang:missing`). Teste par
-  `tests/Integration/LangScanCommandTest.php`.
-- Limite connue : le reperage des cles est une regex simple
-  (`\bt\(\s*(['"])...\1`), pas un vrai parseur PHP. Sur un appel ou la
-  cle est construite par concatenation (`t("prefix" . $var . "suffix")`),
-  elle capture un FRAGMENT de la premiere chaine litterale plutot que de
-  l'ignorer proprement (quelques entrees bizarres comme `" . $attribut
-  ->name . "` apparaissent dans `lang/*.php` apres un `lang:scan`). Pas
-  bloquant pour l'usage normal (cles simples, l'immense majorite du
-  code), mais a nettoyer/ameliorer (tokenizer PHP reel) si le besoin
-  s'en fait sentir.
-- Fichiers : `dclass/generator/builder.php`.
+## Traductions non encore faites (lang:missing, en.php)
 
-### C.1 - reference iso2 : deja en place, rien a faire
+`php devups lang:missing` (execute sur le vrai dossier `lang/`, pas sur
+le dossier temporaire de test) rapporte 274 cles non traduites dans
+`lang/en.php` (valeur = cle, comme prevu par la regle : "pour le reste,
+laisse valeur = cle"). Liste complete (ordre alphabetique, tel que
+rapporte par la commande) :
 
-- Phase : C.1
-- Constat : `local()` (`dclass/dvups_functions.php`) retourne deja le
-  code iso2 courant (session `$_SESSION[LANG]`, ou `Request::get('lang')`
-  pour l'URL), et `dvups_lang.iso_code` est deja la colonne de reference
-  en base. Les fichiers `lang/<iso2>.php` (nouveaux cette session)
-  suivent la meme convention. Rien a changer : la demande etait deja
-  satisfaite par le code existant.
+Notfication type, Notification, Numero, Numéro de téléphone mise a
+jour, Object of the mail, Occurrences, Parent id, Payload, Pays,
+Phonenumber, Position, Profile, Ref, Reference, Responsable centre,
+Save, Session, Size, Status, Statut, Sujet, Timer (minutes), Title of
+the mail, Titre, Tous les champs sont important, Type, Type of
+reporting, Un nouveau code d'activation vous a ete envoye, Une erreur
+interne est survenue., Update Privilege, User, User_ext_id, User_id,
+Username, Utilisateur introuvable, Verification du compte, Viewedat,
+Width, _key, _max, _min, _value, action, alias, auth_token, birthdate,
+callback, chain, client, cmstext.reference, code, code d'activation
+vous a été envoyé. Utilisez le pour confirmer le changement de votre
+numéro., comment, configuration._key, configuration._type,
+configuration._value, configuration.comment, configuration.id,
+constraint, content, content_type, context, continent.id,
+continent.name, continent.status, country not found,
+country.created_at, country.deleted_at, country.id, country.iso,
+country.iso3, country.name, country.nicename, country.numcode,
+country.phonecode, country.status, country.updated_at, create,
+creationdate, date_end, delete, description, dv_image.image,
+dvups_action, dvups_action.action, dvups_action.entity,
+dvups_action.label, dvups_lang.active, dvups_lang.date_format_full,
+dvups_lang.date_format_lite, dvups_lang.id, dvups_lang.iso_code,
+dvups_lang.language_code, dvups_lang.locale, dvups_lang.main,
+dvups_lang.name, dvups_log.context, dvups_log.entity_class,
+dvups_log.file, dvups_log.fingerprint, dvups_log.first_at,
+dvups_log.last_at, dvups_log.level, dvups_log.line, dvups_log.log_file,
+dvups_log.message, dvups_log.occurrences, dvups_role,
+dvups_role.alias, dvups_role.name, edit, email, emailmodel.content,
+emailmodel.contenttext, emailmodel.id, emailmodel.object, endpoint,
+entity, entity.dv_image, entity.notification, entity.tree_item,
+entity_class, export, file, fingerprint, first_at, firstname, height,
+id, image, interval, interval (J), interval._max, interval._min,
+interval._value, interval.label, is_activated, label, lang, last_at,
+lastname, le numéro doit etre constitué de 9 caractères, level, line,
+log, log_file, message, name, next_call, notification.content,
+notification.creationdate, notification.entity, notification.entityid,
+notification.id, notificationbroadcasted.status,
+notificationbroadcasted.viewedat, notificationtype,
+notificationtype._key, notificationtype.content, notificationtype.id,
+oauth_client.client, oauth_client.name, oauth_client.user_ext_id,
+oauth_client.user_id, occurrences, password.notconfirm, payload,
+phonenumber, position, public_key, push_email.date_end,
+push_subscription.auth_token, push_subscription.content_type,
+push_subscription.public_key, push_subscription.status,
+push_subscription.subscription_type, push_subscription.user_id, queue,
+reference, reportingmodel, reset password, resettingpassword, search,
+session token unavailable, sexe, show, size, slug, status.color,
+status.id, status.key, status.label, status.position,
+subscription_id, subscription_type, this field is important!, titre,
+tree, tree.branches, tree.description, tree.id, tree.label, tree.name,
+tree_item.description, tree_item.hierarchy, tree_item.id,
+tree_item.main, tree_item.name, tree_item.parent_id,
+tree_item_image.id, tree_item_image.width_size, type, user.email,
+user.firstname, user.is_activated, user.lastname, user.password,
+user.phonenumber, user.username, user_ext_id, user_id, username,
+width, workers.callback, workers.log, workers.payload, workers.queue,
+workers.type, you most specify destination (s)
+
+La plupart de ces cles sont des noms de colonnes de datacore
+(`tree_item.*`, `dvups_log.*`, `country.*`...) utilises comme libelles
+de champ generiques plutot que des phrases a traduire : a trier et
+completer manuellement, cle par cle, dans `lang/en.php` - aucune cle
+n'a ete reecrite dans le code (regle respectee).
 
 ---
 
 ## Resume phase par phase
 
 **Phase 1 (Droits)** : entierement terminee et committee AVANT cette
-session (6/6 points). Non retouchee ici (rien de nouveau a signaler).
+session (6/6 points). Non retouchee ici.
 
-**Phase 2 (Logs)** : coeur fonctionnel complet et teste.
-- Fait : nouveau module `ModuleLog` (`dvups_log`, regroupement par
-  empreinte, debordement fichier) ; API `Log::error/warning/info` ;
-  gardes globales (exception/erreur fatale) installees dans
-  `header.php`/`admin/header.php` ; ecran back-office lecture seule ;
-  migration de schema ecrite (non executee) ; ancien `dvups_log` de
-  ModuleConfig retire ; usages non-email de `Emaillog::create()`
-  rediriges vers `Log::` ; section "Logs" du README ; tests
-  (regroupement, debordement, purge, gardes simulees en sous-processus).
-- Reporte (voir TODO ci-dessus, entrees B.5/B.6/B.7/B.8) : refonte du
-  schema `Emaillog` (destinataire/sujet/modele/statut/erreur) et le
-  test correspondant ; polish JS/vue de l'ecran Log ; suppression de
-  `request_history` (avis donne : a supprimer, non execute).
+**Phase 2 (Logs) - ETAPE D** : terminee.
+- D.1 : le gestionnaire d'erreurs (`set_error_handler`) et la garde
+  shutdown (`error_get_last()`) transmettent desormais explicitement
+  `file`/`line` a `Log::write()`, qui les utilise au lieu de capturer
+  son propre emplacement - teste (`LogHandlerTest`).
+- D.2 : `error_reporting() & $level` respecte (erreurs masquees par `@`
+  jamais journalisees) ; `LOG_MIN_LEVEL` (defaut `warning`) filtre
+  `E_NOTICE`/`E_DEPRECATED` par defaut - teste.
+- D.3 : garde anti-recursion (`Log::$writing`) dans `write()` - teste
+  par reflexion.
+- D.4 : increment atomique (`UPDATE ... SET occurrences = occurrences + 1`)
+  au lieu de lire-puis-ecrire ; empreinte en `sha1()`.
+- D.5 : `respondWithFatal()` ecrit du texte brut sur `STDERR` en CLI
+  (plus de HTML).
+- D.6 : detail Log affiche le contenu du fichier de debordement
+  (echappe, dans un `<pre>`) ; le JS du module (`dvups_logCtrl.js`/
+  `dvups_logForm.js`) etait deja un stub inoffensif, rien a nettoyer.
+- B.5/B.7/B.8 (reports de la session precedente, executes cette
+  session sous ETAPE F) : voir Phase 2bis ci-dessous.
 
-**Phase 3 (Langues)** : socle fonctionnel complet et teste, nettoyage
-de l'ancien systeme reporte.
-- Fait : reference iso2 deja en place (rien a changer) ; traductions en
-  fichiers `lang/<iso2>.php` ; `t($cle, $params=[])` sans aucune requete
-  SQL, repli sur la cle, collecte automatique des cles manquantes en
-  dev uniquement (ecriture surete, jamais en prod) ; `tt()` simplifie ;
-  commandes CLI `lang:scan`/`lang:missing` ; section "Langues" du
-  README ; tests unitaires et d'integration couvrant tous les sous-
-  points demandes (traduction connue, parametres, repli, non-crash sur
-  ancien appel, collecte dev/jamais-prod, absence de SQL, lang:scan).
-- Reporte (voir TODO ci-dessus, entrees C.4/C.5/C.7) : suppression de
-  l'ancien systeme de traduction en base (`Local_content`,
-  `Local_content_key`, `Local_content_lang`, `Page_mapped`) - avis
-  donne (a supprimer), non execute car profondement cable dans le
-  routeur de `ModuleLang.php` et plusieurs vues ; retrait des entrees
-  `KNOWN_BROKEN` correspondantes, conditionne a cette suppression ;
-  retrait de `langt()` (templates d'email, bloque par un besoin de
-  langue explicite par appel que `t()` ne couvre pas encore).
+**Phase 3 (Langues) - ETAPE E** : terminee.
+- E.1 : constante `LANG_DIR` (defaut `ROOT.'lang/'`) et `LANG_COLLECT`
+  (defaut : actif hors prod) ; `tests/bootstrap.php` cree un dossier
+  temporaire dedie par run (jamais les fichiers versionnes) et le
+  propage via `putenv()` - le serveur e2e le recoit automatiquement
+  (`HttpServer` transmet `getenv()` au process `php -S` enfant).
+- E.2 : `LangTest` rendu independant de l'ordre (fixtures creees par le
+  test, plus de dependance a l'e2e).
+- E.3 : une cle collectee est aussi ajoutee a `$dv_translations` en
+  memoire (pas de nouvelle lecture disque pour la meme cle dans la
+  requete) - teste.
+- E.4 : `lang:scan` reecrit avec `token_get_all()` (plus de regex) ;
+  seules les cles litterales simples sont retenues, les appels a cle
+  construite (concatenation) sont ignores et signales en sortie -
+  teste (`LangScanCommandTest`).
+- E.5 : `lang/fr.php`/`lang/en.php` nettoyes des cles parasites issues
+  de l'ancienne regex ; traductions evidentes appliquees en anglais ;
+  274 cles restantes listees ci-dessus via `lang:missing` (valeur =
+  cle, non reecrites dans le code).
+- E.6 : `t_lang($cle, $iso, $params=[])` ajoute (lecture directe de
+  `lang/<iso>.php`, mise en cache par langue, sans session) ; les 3
+  mails (`invitation`/`otp`/`welcome`) migres ; `langt()` retire
+  (corps remplace par un commentaire de redirection).
+- E.7 : liste des langues actives mise en cache
+  (`cache/lang/active.php`, `Dvups_lang::cachedActiveDlangs()`), meme
+  modele que le cache des droits, invalidee automatiquement a chaque
+  creation/modification/suppression d'une langue (overrides
+  `__insert`/`__update`/`__delete` sur `Dvups_lang`) - `header.php` ne
+  fait plus `Dvups_lang::all()` a chaque requete.
+- E.8 : `Local_content`/`Local_content_key`/`Local_content_lang`/
+  `Page_mapped` entierement supprimes (entites, controleurs,
+  formulaires, datatables, vues, configurations) ; migration DROP
+  ecrite (non executee, `database/migration/2026_11_08_drop_local_content.sql`) ;
+  4 entrees `KNOWN_BROKEN` devenues sans objet retirees.
+- C.1 (reference iso2) : deja en place avant cette session, confirme
+  sans changement.
 
-**Etat des tests** : `composer test` vert a chaque commit de cette
-session (169 tests, 0 echec, 18 "incomplete" assumes et documentes
-dans `AdminScreensTest::KNOWN_BROKEN`).
+**Phase 2bis (Logs) - ETAPE F** : terminee.
+- F.1 : avis de la session precedente execute - `ModuleDatabase`/
+  `Request_history` supprimes entierement (mortaient des l'origine,
+  jamais alimentes) ; migration DROP ecrite (non executee,
+  `database/migration/2026_11_08_drop_request_history.sql`) ; retire
+  des deux fichiers de configuration.
+- F.2 : nouveau schema `Emaillog` (destinataire, sujet, modele, statut
+  envoye/echec, erreur, dates) ; entite, datatable et ecran lecture
+  seule ; `DMail.php` et `Reportingmodel::sendMail` adaptes via
+  `Emaillog::logSuccess()`/`logFailure()` ; migration ecrite (non
+  executee, `database/migration/2026_11_08_emaillog_schema.sql`) ;
+  tests (`EmaillogTest`) couvrant envoi reussi, envoi en echec,
+  destinataire chaine simple, et la separation stricte Log::/Emaillog
+  dans les deux sens.
 
-**A reprendre en priorite dans une prochaine session** : B.5 (refonte
-Emaillog) et C.4/C.5/C.7 (suppression Local_content/Page_mapped) sont
-les deux chantiers les plus consequents laisses ouverts ; tout le
-reste de cette liste est soit fait, soit une decision/avis deja pris
-qui n'attend plus qu'une execution mecanique.
+**Phase 4 (CMS) - ETAPE G** : plan ecrit (G.1, voir ci-dessus),
+implementation reportee (G.2-G.5, voir raisons detaillees plus haut) -
+risque de perte de donnees reelles sur des renommages de table non
+verifies manuellement, juge trop risque pour le temps restant de la
+session. A reprendre en priorite dans une prochaine session, dans
+l'ordre G.2/G.3 (renommages + migration + ecran edition) puis G.4
+(suppression ModuleGallery, qui depend des deux premiers) puis G.5
+(nettoyage generateur/tests).
+
+## Migrations a executer manuellement, dans l'ordre
+
+Aucune de ces migrations n'a ete executee par cette session (regle :
+jamais de DROP ni de suppression de donnees hors base de test). A
+executer dans cet ordre sur chaque environnement concerne :
+
+1. `database/migration/2026_11_07_dvups_log_schema.sql` (nouveau
+   schema `dvups_log`, Phase 2/ETAPE D).
+2. `database/migration/2026_11_08_drop_local_content.sql` (DROP
+   `local_content`, `local_content_key`, `local_content_lang`,
+   `page_mapped`, Phase 3/ETAPE E.8).
+3. `database/migration/2026_11_08_drop_request_history.sql` (DROP
+   `request_history`, Phase 2/ETAPE F.1).
+4. `database/migration/2026_11_08_emaillog_schema.sql` (DROP+CREATE
+   `emaillog` avec le nouveau schema - **exporter l'historique existant
+   avant execution si besoin**, voir commentaire en tete du fichier,
+   Phase 2/ETAPE F.2).
+5. (Phase 4/ETAPE G, non ecrite encore - voir G.2/G.3 ci-dessus) :
+   `RENAME TABLE cmstext/cmstext_lang`, creation `cmsresource` +
+   migration de donnees depuis `imagecms`/`dv_image`, puis
+   `DROP TABLE imagecms, dv_image` - a ecrire et verifier manuellement
+   avant execution, dans une prochaine session.
+
+Sur l'environnement de test (`devups_phpunit`), aucune de ces
+migrations n'est necessaire : le schema est recree automatiquement a
+chaque run par Doctrine SchemaTool a partir des entites
+(`tests/bootstrap.php`).
+
+## Etat des tests
+
+`composer test` verifie vert a chaque commit de cette session
+(ETAPE D : commit `d1f25e3` ; E.1-E.6 : `e5a9863` ; E.7-E.8 : `597cdd6` ;
+F.1 : `696cbc5` ; F.2 : `92af6d2` ; README : `e55cf7c`) - 179 tests, 0
+echec, 15 "incomplete" documentes et assumes dans
+`tests/E2E/AdminScreensTest.php::KNOWN_BROKEN` a la fin de la session
+(avant le commit de ce TODO.md - revalider apres ce commit, aucun
+changement de code de production ne l'accompagne, seulement
+`lang/fr.php`/`lang/en.php`).

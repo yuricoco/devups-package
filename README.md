@@ -175,6 +175,18 @@ back-office en lecture seule, comme le module Log. Ne jamais s'en servir
 pour journaliser des erreurs ou d'autres evenements : utiliser `Log::` a
 la place.
 
+## CMS (Phase 4)
+
+Chantier en cours : le plan de renommage/refonte (`cmstext` →
+`cmscontent`, `imagecms` → `cmsresource` adossé à `Dfile`, génération
+propre de `Cmscomment`, suppression de `ModuleGallery`/`Dv_image`) est
+écrit dans `TODO.md` (section "Phase 4 (CMS) - ÉTAPE G") avec le detail
+des tables/colonnes/migrations/routes impactées, mais **non encore
+implémenté** - les tables et classes `cmstext`/`imagecms`/
+`ModuleGallery` existantes à ce jour restent celles décrites ici tant
+que ce chantier n'est pas exécuté. Voir `TODO.md` pour l'état exact et
+l'ordre de reprise recommandé.
+
 ## Sécurité
 
 - Les points d'entrée historiques `src/<composant>/<Module>/services.php` exigent une
