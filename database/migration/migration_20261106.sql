@@ -1,8 +1,0 @@
-
-     CREATE TABLE oauth_client (id INT AUTO_INCREMENT NOT NULL, client VARCHAR(55) DEFAULT NULL, name VARCHAR(155) DEFAULT NULL, user_ext_id VARCHAR(55) NOT NULL, user_id INT NOT NULL, created_at DATETIME DEFAULT NULL, updated_at DATETIME DEFAULT NULL, deleted_at DATETIME DEFAULT NULL, PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB;
-
-     ALTER TABLE status ADD value INT DEFAULT NULL;
-
-     ALTER TABLE user ADD country_id INT DEFAULT NULL, ADD avatar LONGTEXT DEFAULT NULL, DROP address, DROP deletion_requested_at;
- UPDATE user SET country_id = null WHERE (SELECT COUNT(*) FROM country WHERE id = country_id) = 0; 
-     ALTER TABLE user ADD CONSTRAINT FK_8D93D649F92F3E70 FOREIGN KEY (country_id) REFERENCES country (id) ON DELETE SET NULL;
