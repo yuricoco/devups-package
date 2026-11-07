@@ -8,6 +8,10 @@ class Dvups_roleController extends Controller
 
     public function listView()
     {
+        if ($this->forbidIfCannotFor('read', 'Dvups_role')) {
+            echo json_encode(['success' => false, 'detail' => t('Action non autorisee')]);
+            die;
+        }
 
         $role = Dvups_role::find(2);
         $role->updateConfigs();
@@ -25,6 +29,8 @@ class Dvups_roleController extends Controller
 
     public function datatable()
     {
+        if ($this->forbidIfCannotFor('read', 'Dvups_role'))
+            return ['success' => false, 'detail' => t('Action non autorisee')];
 
         return ['success' => true,
             'datatable' => Dvups_roleTable::init(new Dvups_role())->router()->getTableRest(),
@@ -34,6 +40,9 @@ class Dvups_roleController extends Controller
 
     public function formView($id = null)
     {
+        if ($this->forbidIfCannotFor('read', 'Dvups_role'))
+            return ['success' => false, 'detail' => t('Action non autorisee')];
+
         $dvups_role = new Dvups_role();
         $action = __env . ("admin/api/dvups_role/create");
         if ($id) {
@@ -52,6 +61,9 @@ class Dvups_roleController extends Controller
 
     public function createAction($dvups_role_form = null)
     {
+        if ($this->forbidIfCannotFor('create', 'Dvups_role'))
+            return ['success' => false, 'detail' => t('Action non autorisee')];
+
         extract($_POST);
 
         $dvups_role = $this->form_fillingentity(new Dvups_role(), $dvups_role_form);
@@ -64,7 +76,8 @@ class Dvups_roleController extends Controller
 
         $dvups_role->updateConfigs();
         $id = $dvups_role->__insert();
-        self::syncPrivileges($id);
+        if ($this->isMasterAdmin())
+            self::syncPrivileges($id);
         return array('success' => true,
             'dvups_role' => $dvups_role,
             'tablerow' => Dvups_roleTable::init(new Dvups_role())->router()->getSingleRowRest($dvups_role),
@@ -74,6 +87,9 @@ class Dvups_roleController extends Controller
 
     public function updateAction($id, $dvups_role_form = null)
     {
+        if ($this->forbidIfCannotFor('update', 'Dvups_role'))
+            return ['success' => false, 'detail' => t('Action non autorisee')];
+
         extract($_POST);
 
         $dvups_role = $this->form_fillingentity(new Dvups_role($id), $dvups_role_form);
@@ -87,7 +103,13 @@ class Dvups_roleController extends Controller
 
         $dvups_role->updateConfigs();
         $dvups_role->__update();
-        self::syncPrivileges($id);
+        // Seul le role maitre peut modifier les privileges d'un role, meme
+        // si l'acteur a 'update' sur Dvups_role (ex: juste pour renommer les
+        // roles) : sans cette garde, renommer un role effacerait aussi ses
+        // privileges (syncPrivileges() part de $_POST['privileges'] ?? [],
+        // absent si l'acteur n'a pas la grille dans son propre formulaire).
+        if ($this->isMasterAdmin())
+            self::syncPrivileges($id);
         return array('success' => true,
             'dvups_role' => $dvups_role,
             'tablerow' => Dvups_roleTable::init(new Dvups_role())->router()->getSingleRowRest($dvups_role),
@@ -101,6 +123,7 @@ class Dvups_roleController extends Controller
      * manquantes, retire celles decochees. Jamais appele a la creation d'un
      * role sans aucune case cochee (role vide, legitime). Invalide le cache
      * des droits du role pour que can() voie le changement immediatement.
+     * N'est appele que pour un acteur maitre (voir createAction/updateAction).
      */
     private static function syncPrivileges(int $roleId): void
     {
@@ -122,6 +145,10 @@ class Dvups_roleController extends Controller
 
     public function detailView($id)
     {
+        if ($this->forbidIfCannotFor('read', 'Dvups_role')) {
+            echo json_encode(['success' => false, 'detail' => t('Action non autorisee')]);
+            die;
+        }
 
         $this->entitytarget = 'Dvups_role';
         $this->title = "Detail Dvups_role";
@@ -138,9 +165,12 @@ class Dvups_roleController extends Controller
 
     public function deleteAction($id)
     {
+        if ($this->forbidIfCannotFor('delete', 'Dvups_role'))
+            return ['success' => false, 'detail' => t('Action non autorisee')];
 
         $dvups_role = Dvups_role::find($id);
         $dvups_role->__delete();
+        Dvups_role::clearRightsCache($id);
 
         return array('success' => true,
             'detail' => t('Item deleted successfully'));
@@ -150,8 +180,12 @@ class Dvups_roleController extends Controller
 
     public function deletegroupAction($ids)
     {
+        if ($this->forbidIfCannotFor('delete', 'Dvups_role'))
+            return ['success' => false, 'detail' => t('Action non autorisee')];
 
         Dvups_role::where("this.id")->in($ids)->delete();
+        foreach ($ids as $id)
+            Dvups_role::clearRightsCache((int)$id);
 
         return array('success' => true,
             'detail' => '');
@@ -160,6 +194,9 @@ class Dvups_roleController extends Controller
 
     public function privilegeUpdate()
     {
+        if ($this->forbidIfCannotFor('update', 'Dvups_role'))
+            return ['success' => false, 'detail' => t('Action non autorisee')];
+
         $result = Core::updateDvupsTable();
         /*if ($result) {
             $admin = getadmin();

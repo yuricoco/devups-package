@@ -44,6 +44,42 @@ class Controller
     }
 
     /**
+     * Garde can('action', $entity) pour un controleur qui n'utilise pas
+     * CrudTrait (CrudTrait::forbidIfCannot fait la meme chose pour les
+     * controleurs qui l'utilisent). A appeler en debut de methode pour
+     * toute action qui ne passe pas par Request::Controller() - c'est le
+     * cas des routes dispatchees a la main depuis services.php (switch
+     * sur path, appel direct de la methode du controleur).
+     */
+    protected function forbidIfCannotFor(string $action, string $entity): bool
+    {
+        if (can($action, $entity))
+            return false;
+        http_response_code(403);
+        return true;
+    }
+
+    /**
+     * Vrai si l'administrateur actuellement connecte porte le role maitre
+     * "admin" (meme convention que can(), Dvups_role::is('admin')). Sert a
+     * reserver certaines actions sensibles (modifier les privileges d'un
+     * role, changer le role d'un admin) au-dela d'un simple can('update', ..)
+     * qui pourrait avoir ete accorde a un role non maitre.
+     */
+    protected function isMasterAdmin(): bool
+    {
+        if (empty($_SESSION[ADMIN]))
+            return false;
+        $admin = getadmin();
+        if (!$admin || !$admin->getId())
+            return false;
+        $role = $admin->dvups_role;
+        if (!$role || !$role->getId())
+            return false;
+        return $role->hydrate()->is('admin');
+    }
+
+    /**
      * this method is used by devups from the admin/services.php file to manage router as we use to do at the front App.php
      * @return false|int|mixed
      */

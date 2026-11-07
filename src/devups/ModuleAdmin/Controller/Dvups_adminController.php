@@ -128,6 +128,9 @@ class Dvups_adminController extends Controller
 
     public function createAction()
     {
+        if ($this->forbidIfCannotFor('create', 'Dvups_admin'))
+            return ['success' => false, 'detail' => t('Action non autorisee')];
+
         extract($_POST);
         $this->err = array();
 
@@ -159,6 +162,21 @@ class Dvups_adminController extends Controller
 
     public function updateAction($id)
     {
+        if ($this->forbidIfCannotFor('update', 'Dvups_admin'))
+            return ['success' => false, 'detail' => t('Action non autorisee')];
+
+        // Seul le role maitre peut changer le role d'un admin, meme si
+        // l'acteur a 'update' sur Dvups_admin pour autre chose (son profil,
+        // son login...). On force silencieusement le role actuel plutot que
+        // de refuser toute la requete : le reste de la mise a jour reste
+        // valide. $dvups_admin est construit a neuf (id seul, pas hydrate) :
+        // retirer la cle au lieu de la forcer laisserait la relation sans
+        // valeur et __update() l'ecrirait a null (role perdu, pas "inchange").
+        if (!$this->isMasterAdmin()) {
+            $currentRoleId = Dvups_admin::find($id)->dvups_role->getId();
+            $_POST['dvups_admin_form']['dvups_role.id'] = $currentRoleId;
+        }
+
         extract($_POST);
         $this->err = array();
 
@@ -182,6 +200,9 @@ class Dvups_adminController extends Controller
 
     public function formView($id = null)
     {
+        if ($this->forbidIfCannotFor('read', 'Dvups_admin'))
+            return ['success' => false, 'detail' => t('Action non autorisee')];
+
         $dvups_admin = new Dvups_admin();
         $action = __env . ("admin/api/dvups_admin/create");
         if ($id) {
@@ -197,6 +218,8 @@ class Dvups_adminController extends Controller
 
     public function datatable($next, $per_page)
     {
+        if ($this->forbidIfCannotFor('read', 'Dvups_admin'))
+            return ['success' => false, 'detail' => t('Action non autorisee')];
 
         return ['success' => true,
             'datatable' => Dvups_adminTable::init(new Dvups_admin())->buildindextable()->getTableRest(),
@@ -205,6 +228,10 @@ class Dvups_adminController extends Controller
 
     public function listView($next = 1, $per_page = 10)
     {
+        if ($this->forbidIfCannotFor('read', 'Dvups_admin')) {
+            echo json_encode(['success' => false, 'detail' => t('Action non autorisee')]);
+            die;
+        }
 
         //self::$jsfiles[] = Client::classpath('Resource/js/dvups_roleCtrl.js');
 
@@ -219,6 +246,9 @@ class Dvups_adminController extends Controller
 
     public function deleteAction($id)
     {
+        if ($this->forbidIfCannotFor('delete', 'Dvups_admin'))
+            return ['success' => false, 'detail' => t('Action non autorisee')];
+
         $admin = Dvups_admin::find($id);
         $admin->__delete();
         return ["success" => true];

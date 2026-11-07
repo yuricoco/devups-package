@@ -70,7 +70,11 @@ switch (Request::get('path')) {
         g::json_encode($dvups_roleCtrl->datatable(R::get('next'), R::get('per_page')));
         break;
 
-    case 'dvups_:update':
+    // route renommee (ex-'dvups_:update', nom ambigu avec la commande CLI
+    // `php devups dvups_:update` qui fait la meme chose cote serveur) :
+    // rafraichit le cache de navigation (Core::updateDvupsTable()), sans
+    // rapport avec les privileges malgre le nom de la methode du controleur.
+    case 'dvups_role.refreshconfig':
         g::json_encode($dvups_roleCtrl->privilegeUpdate());
         break;
 
