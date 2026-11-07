@@ -121,3 +121,98 @@ avant cette session) et le code tel que trouve sur disque.
 - Fichiers : `tests/Integration/` (fichier a creer, ex.
   `EmaillogTest.php`), `src/devupscms/ModuleReporting/Entity/
   Emaillog.php`.
+
+## Phase 3 (Langues)
+
+### C.4/C.5/C.7 - suppression Local_content/Local_content_key/Page_mapped reportee
+
+- Phase : C.4, C.5, C.7
+- Avis argumente : ces entites (ancien editeur de traduction en base,
+  colonnes `local_content`/`local_content_key`/`local_content_lang`,
+  plus `page_mapped` jamais utilise ailleurs) sont mortes au sens
+  fonctionnel - l'ancien `t()` de `lang.php` faisait deja `return $ref;`
+  en toute premiere ligne, rendant tout le code de requete
+  `Local_contentController::getdata()`/`Local_content_key` qui suivait
+  injoignable. Elles sont donc candidates a la suppression plutot qu'a
+  la conservation en lecture seule.
+- Ce qui reste (non fait dans cette session, faute de temps) :
+  contrairement a `dvups_log` (Phase 2) ou `request_history`, ces
+  entites sont profondement cablees dans `ModuleLang.php` lui-meme (son
+  routeur `manage()`/`manageServe()` a base de `switch`, ~20 references
+  : instanciation des controleurs, cases de route
+  `local-content-key/*`, `local-content/*`, `page-mapped/*`, rendu de
+  formulaires) et dans plusieurs vues (`Resource/views/admin/
+  overview.blade.php`, `Resource/views/front/setting.blade.php`,
+  `web/views/_setting.blade.php`, `Resource/views/admin/
+  exportlang.blade.php` referencent `Local_content::classpath()`/
+  `generatecacheAction()`), ainsi que dans `Dvups_lang::__delete()`
+  (`Local_content::where("lang", $this->iso_code)->delete();`). Une
+  suppression correcte demande de reecrire une bonne partie de
+  `ModuleLang.php` et ces vues, pas seulement retirer des fichiers -
+  trop risque pour le temps restant de cette session.
+  A faire dans une session dediee : (1) retirer toutes les references
+  listees ci-dessus, (2) retirer l'enregistrement dans
+  `config/dvups_configurations.php`/`config/module_configurations.php`,
+  (3) ecrire la migration `DROP TABLE local_content, local_content_key,
+  local_content_lang, page_mapped` dans `database/migration/` (non
+  executee), (4) retirer de `KNOWN_BROKEN`
+  (`tests/E2E/AdminScreensTest.php`) les 4 entrees
+  `devups/ModuleLang/local-content*` et `devups/ModuleLang/page-mapped/*`
+  devenues sans objet (les ecrans n'existeront plus du tout, donc plus
+  besoin d'entree).
+  C.5 (UI d'edition des traductions) : vu la decision de supprimer
+  Local_content, la reponse est "non, plus besoin d'UI d'edition en
+  base" - les traductions se modifient desormais directement dans les
+  fichiers `lang/<iso2>.php` (ou via `php devups lang:scan`/
+  `lang:missing`, voir C.6).
+- Fichiers concernes : `src/devups/ModuleLang/ModuleLang.php`,
+  `src/devups/ModuleLang/Controller/Local_content*.php`,
+  `src/devups/ModuleLang/Controller/Page_mappedController.php`,
+  `src/devups/ModuleLang/Entity/Local_content*.php`,
+  `src/devups/ModuleLang/Entity/Page_mapped.php`,
+  `src/devups/ModuleLang/Entity/Dvups_lang.php` (methode `__delete`),
+  `src/devups/ModuleLang/Resource/views/**`, `web/views/_setting.blade.php`,
+  `config/dvups_configurations.php`, `config/module_configurations.php`,
+  `tests/E2E/AdminScreensTest.php` (KNOWN_BROKEN).
+
+### C.4 - langt() non retire : mails a langue explicite, incompatible avec t()
+
+- Phase : C.4
+- Ce qui reste : `langt($fr, $en, $local, $matcher)`
+  (`dclass/dvups_functions.php`) n'a pas ete retire ; il est encore
+  utilise dans `web/views/mails/invitation.blade.php`,
+  `web/views/mails/otp.blade.php`, `web/views/mails/welcome.blade.php`.
+- Pourquoi bloquant : ces templates recoivent un `$lang` explicite par
+  email (la langue du DESTINATAIRE, qui peut differer de la langue de
+  la requete/session en cours - un admin en session "en" peut declencher
+  l'envoi d'un email a un utilisateur en "fr"). Le nouveau `t($cle,
+  $params=[])` traduit toujours dans la langue COURANTE (`local()`,
+  session/URL), pas dans une langue passee explicitement : le remplacer
+  tel quel changerait silencieusement la langue des emails envoyes.
+  Il manque une variante (ex. `t_lang($cle, $iso, $params=[])` lisant
+  directement `lang/<iso>.php` sans dependre de la session) avant de
+  pouvoir migrer ces 3 templates et supprimer `langt()`.
+- Fichiers : `dclass/dvups_functions.php` (fonction `langt`),
+  `web/views/mails/invitation.blade.php`, `web/views/mails/otp.blade.php`,
+  `web/views/mails/welcome.blade.php`, `lang.php` (si `t_lang()` est
+  ajoute).
+
+### C.6 - lang:scan et lang:missing : fait, limite connue
+
+- Phase : C.6
+- Fait : `php devups lang:scan` (trouve les `t('...')` a cle litterale
+  et complete `lang/*.php`) et `php devups lang:missing` (liste par
+  langue les cles non traduites), ajoutes dans
+  `dclass/generator/builder.php` (`dv_lang_scan_keys()` +
+  les cases `lang:scan`/`lang:missing`). Teste par
+  `tests/Integration/LangScanCommandTest.php`.
+- Limite connue : le reperage des cles est une regex simple
+  (`\bt\(\s*(['"])...\1`), pas un vrai parseur PHP. Sur un appel ou la
+  cle est construite par concatenation (`t("prefix" . $var . "suffix")`),
+  elle capture un FRAGMENT de la premiere chaine litterale plutot que de
+  l'ignorer proprement (quelques entrees bizarres comme `" . $attribut
+  ->name . "` apparaissent dans `lang/*.php` apres un `lang:scan`). Pas
+  bloquant pour l'usage normal (cles simples, l'immense majorite du
+  code), mais a nettoyer/ameliorer (tokenizer PHP reel) si le besoin
+  s'en fait sentir.
+- Fichiers : `dclass/generator/builder.php`.
