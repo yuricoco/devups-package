@@ -45,6 +45,7 @@ Usage:
 
         $commend[] = "install                 // create database, create database schema and create master admin ";
         $commend[] = "dvups_:update           // update right of master admin on new modules and entities ";
+        $commend[] = "rights:sync             // sync dvups_action from every entity's declared/default actions ";
 
         echo "\n\t -> ".implode("\n\t -> ", $commend);
         

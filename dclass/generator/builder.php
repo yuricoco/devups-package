@@ -475,7 +475,8 @@ if (isset($argv[2])) {
 
     require __DIR__ . '/../../src/devups/ModuleLang/Entity/Dvups_lang.php';
     require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_role.php';
-    require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_right.php';
+    require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_action.php';
+    require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_privilege.php';
     require __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_entity.php';
     require __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_entity_lang.php';
 
@@ -621,6 +622,12 @@ if (isset($argv[2])) {
                 echo "Data admin updated with success";
             else
                 echo "Data admin already uptodate";
+            break;
+
+        case 'rights:sync':
+            $result = Dvups_action::sync();
+            echo $result['created'] . "/" . $result['total'] . " action(s) synchronisee(s) ("
+                . $result['created'] . " creee(s), le reste deja en base).";
             break;
 
         default :
