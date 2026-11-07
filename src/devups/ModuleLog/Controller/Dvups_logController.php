@@ -58,21 +58,20 @@ class Dvups_logController extends Controller
         $this->title = "Detail du journal";
 
         $dvups_log = Dvups_log::find($id);
-        $fullContent = null;
-        if ($dvups_log->log_file && file_exists(ROOT . $dvups_log->log_file))
-            $fullContent = file_get_contents(ROOT . $dvups_log->log_file);
 
-        $this->renderDetailView(
-            Dvups_logTable::init()
-                ->builddetailtable()
-                ->renderentitydata($dvups_log),
-            false,
-            '',
-        );
-        // $fullContent reste disponible pour la vue detail.blade si elle
-        // souhaite l'afficher (cf. Resource/views/admin/dvups_log/detail.blade.php) ;
-        // renderDetailView() avec $return=false echoe deja la reponse, donc
-        // pas d'injection supplementaire ici sans reprendre ce rendu.
+        $detailHtml = Dvups_logTable::init()
+            ->builddetailtable()
+            ->renderentitydata($dvups_log);
+
+        if ($dvups_log->log_file && file_exists(ROOT . $dvups_log->log_file)) {
+            $fullContent = file_get_contents(ROOT . $dvups_log->log_file);
+            $detailHtml .= '<div class="dvups-log-overflow">'
+                . '<h4>' . t('Contenu complet') . '</h4>'
+                . '<pre>' . htmlspecialchars($fullContent) . '</pre>'
+                . '</div>';
+        }
+
+        $this->renderDetailView($detailHtml, false, '');
     }
 
 }

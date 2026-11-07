@@ -42,6 +42,7 @@ return array (
   'Content version text (use the 
  to go to line) ' => 'Content version text (use the 
  to go to line) ',
+  'Contenu complet' => 'Contenu complet',
   'Contenu enregistrer avec sucess' => 'Contenu enregistrer avec sucess',
   'Contenu text' => 'Contenu text',
   'Contraint' => 'Contraint',

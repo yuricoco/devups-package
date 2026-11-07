@@ -37,6 +37,29 @@ final class LogTest extends DatabaseTestCase
         $this->assertSame(1, (int)\Dvups_log::where('this.message', 'erreur de test')->count());
         $row = \Dvups_log::where('this.message', 'erreur de test')->firstOrNull();
         $this->assertSame(2, (int)$row->occurrences);
+        $this->assertSame(40, strlen($row->fingerprint), 'D.4 : empreinte en sha1 (40 caracteres hex)');
+    }
+
+    /**
+     * D.3 : si write() est deja en cours (reentrance - ex. une erreur
+     * declenchee par la persistance du log elle-meme), un appel imbrique
+     * doit etre ignore plutot que de reboucler.
+     */
+    public function testReentrantCallWhileAlreadyWritingIsIgnored(): void
+    {
+        $reflection = new \ReflectionClass(\Log::class);
+        $flag = $reflection->getProperty('writing');
+        $flag->setAccessible(true);
+        $flag->setValue(null, true);
+
+        try {
+            \Log::error('ne doit jamais etre ecrit (reentrance)');
+        } finally {
+            $flag->setValue(null, false);
+        }
+
+        $row = \Dvups_log::where('this.message', 'ne doit jamais etre ecrit (reentrance)')->firstOrNull();
+        $this->assertNull($row);
     }
 
     public function testMessagesDifferingOnlyByANumberShareTheSameFingerprint(): void

@@ -21,8 +21,13 @@ class Log
     const LEVEL_WARNING = 'warning';
     const LEVEL_INFO = 'info';
 
+    private const LEVEL_RANK = ['info' => 1, 'warning' => 2, 'error' => 3];
+
     /** Longueur au-dela de laquelle message/trace debordent vers un fichier. */
     const INLINE_MAX_LENGTH = 1000;
+
+    /** Garde anti-recursion : une erreur declenchee par write() lui-meme ne doit pas reboucler. */
+    private static bool $writing = false;
 
     public static function error($messageOrThrowable, array $context = []): void
     {
@@ -39,8 +44,23 @@ class Log
         self::write(self::LEVEL_INFO, $messageOrThrowable, $context);
     }
 
-    private static function write(string $level, $messageOrThrowable, array $context): void
-    {
+    /**
+     * $overrideFile/$overrideLine : a fournir quand l'appelant connait deja
+     * le vrai point d'origine (set_error_handler, error_get_last()) - sinon
+     * debug_backtrace() pointerait sur le gestionnaire global lui-meme
+     * (dans ce fichier), pas sur le fichier ou l'erreur a eu lieu.
+     */
+    private static function write(
+        string $level,
+        $messageOrThrowable,
+        array $context,
+        ?string $overrideFile = null,
+        ?int $overrideLine = null
+    ): void {
+        if (self::$writing)
+            return;
+        self::$writing = true;
+
         try {
             if ($messageOrThrowable instanceof \Throwable) {
                 $t = $messageOrThrowable;
@@ -53,10 +73,16 @@ class Log
                 $class = $context['class'] ?? null;
                 $trace = $context['trace'] ?? null;
                 unset($context['class'], $context['trace']);
-                $caller = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1] ?? [];
-                $file = $caller['file'] ?? null;
-                $line = $caller['line'] ?? null;
                 $message = (string)$messageOrThrowable;
+
+                if ($overrideFile !== null) {
+                    $file = $overrideFile;
+                    $line = $overrideLine;
+                } else {
+                    $caller = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1] ?? [];
+                    $file = $caller['file'] ?? null;
+                    $line = $caller['line'] ?? null;
+                }
             }
 
             $normalized = self::normalize($message);
@@ -66,6 +92,8 @@ class Log
             self::persist($level, $fingerprint, $class, $file, $line, $message, $trace, $fullContext);
         } catch (\Throwable $ignored) {
             // La journalisation ne doit jamais faire echouer l'appelant.
+        } finally {
+            self::$writing = false;
         }
     }
 
@@ -78,7 +106,19 @@ class Log
 
     private static function fingerprint(?string $class, ?string $file, ?int $line, string $normalizedMessage): string
     {
-        return hash('crc32b', ($class ?? '') . '|' . ($file ?? '') . '|' . ($line ?? '') . '|' . $normalizedMessage);
+        return sha1(($class ?? '') . '|' . ($file ?? '') . '|' . ($line ?? '') . '|' . $normalizedMessage);
+    }
+
+    private static function levelRank(string $level): int
+    {
+        return self::LEVEL_RANK[$level] ?? self::LEVEL_RANK[self::LEVEL_INFO];
+    }
+
+    /** LOG_MIN_LEVEL (config/constante.example.php) : defaut 'warning' - E_NOTICE/E_DEPRECATED (mappes sur 'info') sont donc ignores par defaut. */
+    private static function minLevelRank(): int
+    {
+        $min = defined('LOG_MIN_LEVEL') ? (string)LOG_MIN_LEVEL : self::LEVEL_WARNING;
+        return self::levelRank($min);
     }
 
     private static function ambientContext(): array
@@ -95,6 +135,13 @@ class Log
         ];
     }
 
+    /**
+     * Incrementation atomique (UPDATE ... SET occurrences = occurrences + 1)
+     * plutot qu'un firstOrNull() suivi d'un __update() : deux requetes
+     * concurrentes sur la meme empreinte ne doivent jamais perdre une
+     * occurrence (lost update). La ligne est creee seulement si l'UPDATE
+     * n'a touche aucune ligne (empreinte inconnue).
+     */
     private static function persist(
         string $level,
         string $fingerprint,
@@ -109,17 +156,18 @@ class Log
         $logFile = self::overflowToFileIfNeeded($fingerprint, $message, $trace);
         $preview = mb_substr($message, 0, self::INLINE_MAX_LENGTH);
 
-        $existing = \Dvups_log::where('fingerprint', $fingerprint)->firstOrNull();
-        if ($existing && $existing->getId()) {
-            $existing->__update([
-                'occurrences' => (int)$existing->occurrences + 1,
-                'last_at' => $now,
-                'message' => $preview,
-                'context' => json_encode($context),
-                'log_file' => $logFile,
-            ]);
+        $update = \Model::pdo()->prepare(
+            'UPDATE dvups_log SET occurrences = occurrences + 1, last_at = :last_at, message = :message, context = :context, log_file = :log_file WHERE fingerprint = :fingerprint'
+        );
+        $update->execute([
+            'last_at' => $now,
+            'message' => $preview,
+            'context' => json_encode($context),
+            'log_file' => $logFile,
+            'fingerprint' => $fingerprint,
+        ]);
+        if ($update->rowCount() > 0)
             return;
-        }
 
         \Dvups_log::create([
             'fingerprint' => $fingerprint,
@@ -189,12 +237,15 @@ class Log
      *   prod (JSON ou page selon le contexte), detail en dev ;
      * - erreurs fatales (E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR) a
      *   l'arret du script, via register_shutdown_function (set_error_handler
-     *   ne les intercepte pas) ;
+     *   ne les intercepte pas) - fichier/ligne pris sur error_get_last(),
+     *   jamais sur l'emplacement de ce gestionnaire ;
      * - E_WARNING/E_NOTICE/E_USER_* : journalises SANS rien changer au
-     *   comportement natif de PHP (on ne retourne pas true, donc
-     *   log_errors/display_errors continuent de s'appliquer comme avant -
-     *   la suite de tests e2e verifie l'absence d'erreur via le journal PHP
-     *   natif, pas via dvups_log).
+     *   comportement natif de PHP (on retourne toujours false, donc
+     *   log_errors/display_errors continuent de s'appliquer comme avant).
+     *   error_reporting() est respecte (une erreur masquee par @ n'est pas
+     *   journalisee), et seuls les niveaux >= LOG_MIN_LEVEL (defaut
+     *   'warning') sont enregistres : E_NOTICE/E_DEPRECATED (mappes sur
+     *   'info') sont donc ignores par defaut.
      */
     public static function installGlobalHandler(): void
     {
@@ -204,11 +255,14 @@ class Log
         });
 
         set_error_handler(function ($level, $message, $file = '', $line = 0) {
-            self::write(
-                in_array($level, [E_WARNING, E_USER_WARNING], true) ? self::LEVEL_WARNING : self::LEVEL_INFO,
-                $message,
-                ['class' => null, 'trace' => null]
-            );
+            if (!(error_reporting() & $level))
+                return false; // masquee par @ (ou par la config php.ini courante) : ne pas journaliser
+
+            $logLevel = in_array($level, [E_WARNING, E_USER_WARNING], true) ? self::LEVEL_WARNING : self::LEVEL_INFO;
+            if (self::levelRank($logLevel) < self::minLevelRank())
+                return false;
+
+            self::write($logLevel, $message, ['class' => null, 'trace' => null], $file, $line);
             return false; // laisse PHP traiter l'erreur normalement en plus
         });
 
@@ -217,10 +271,7 @@ class Log
             if (!$fatal || !in_array($fatal['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true))
                 return;
 
-            self::error($fatal['message'], [
-                'class' => null,
-                'trace' => null,
-            ]);
+            self::write(self::LEVEL_ERROR, $fatal['message'], ['class' => null, 'trace' => null], $fatal['file'] ?? null, $fatal['line'] ?? null);
             if (!headers_sent())
                 self::respondWithFatal($fatal['message']);
         });
@@ -228,11 +279,17 @@ class Log
 
     private static function respondWithFatal(string $message): void
     {
+        $detail = (!defined('__prod') || !__prod) ? $message : t('Une erreur interne est survenue.');
+
+        if (PHP_SAPI === 'cli') {
+            fwrite(STDERR, $detail . "\n");
+            return;
+        }
+
         if (headers_sent())
             return;
 
         http_response_code(500);
-        $detail = (!defined('__prod') || !__prod) ? $message : t('Une erreur interne est survenue.');
 
         $wantsJson = isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false;
         if ($wantsJson || strpos($_SERVER['REQUEST_URI'] ?? '', '/api/') !== false) {

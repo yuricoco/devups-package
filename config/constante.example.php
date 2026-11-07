@@ -112,5 +112,11 @@ define('GOOGLE_CLIENT_ID_IOS', dv_env('GOOGLE_CLIENT_ID_IOS', ''));
 define('GOOGLE_CLIENT_SECRET', dv_env('GOOGLE_CLIENT_SECRET', ''));
 define('GOOGLE_REDIRECT_URL', dv_env('GOOGLE_REDIRECT_URL', ''));
 
+/**
+ * Journalisation (dclass/devups/Log.php)
+ */
+define('LOG_MIN_LEVEL', dv_env('LOG_MIN_LEVEL', 'warning'));
+define('LOG_RETENTION_DAYS', dv_env('LOG_RETENTION_DAYS', 90));
+
 global $devups_cache;
 $devups_cache = [];
