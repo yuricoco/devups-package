@@ -38,6 +38,13 @@ if (dv_test_needs_db()) {
     $pdo->exec('DROP DATABASE IF EXISTS `' . dbname . '`');
     $pdo->exec('CREATE DATABASE `' . dbname . '` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
     $pdo = null;
+
+    // La base de test repart de zero (ids d'auto-increment inclus) : un
+    // cache/rights/<role_id>.php laisse par une run precedente referrerait
+    // un role qui n'est plus le meme, faussant compiledRights() pour le
+    // role qui reutilise cet id dans cette run.
+    foreach (glob(__DIR__ . '/../cache/rights/*.php') as $staleCache)
+        unlink($staleCache);
 }
 
 // noyau + EntityManager + modules. Les deprecations emises a la compilation

@@ -377,6 +377,29 @@ class Request
     }
 
     /**
+     * Code de privilege (dvups_action.action) correspondant a une methode
+     * de controleur d'entite, ou null si cette methode n'est pas une action
+     * CRUD gardee (route personnalisee : passe sans verification).
+     */
+    private static function privilegeActionFor(string $function): ?string
+    {
+        static $map = [
+            'createAction' => 'create',
+            'updateAction' => 'update',
+            'deleteAction' => 'delete',
+            'deletegroupAction' => 'delete',
+            'deleteGroupAction' => 'delete',
+            'formView' => 'read',
+            'detailView' => 'read',
+            'listView' => 'read',
+            'datatable' => 'read',
+            'exportAction' => 'export',
+            'importAction' => 'import',
+        ];
+        return $map[$function] ?? null;
+    }
+
+    /**
      * @throws Exception
      */
     public static function Controller(\Router $route, $path, $ctrl = null)
@@ -405,6 +428,20 @@ class Request
         if (!method_exists($app, $function)) {
             var_dump(" You may create method " . " " . $function . " in $ctrl. ");
             die;
+        }
+
+        // point de passage unique de TOUTE action CRUD d'entite (quel que
+        // soit le style du controleur genere : CrudTrait ou methodes
+        // propres comme ConfigurationController) : can('action', entite)
+        // avant d'appeler la methode. $ctrl est toujours "<Entite>Controller".
+        $privilegeAction = self::privilegeActionFor($function);
+        if ($privilegeAction !== null && !can($privilegeAction, preg_replace('/Controller$/', '', $ctrl))) {
+            http_response_code(403);
+            if (in_array($function, ['listView', 'detailView'], true)) {
+                echo json_encode(['success' => false, 'detail' => 'forbidden']);
+                die;
+            }
+            return ['success' => false, 'detail' => 'forbidden'];
         }
 
         $paramvalues = self::getMethodParamValues(get_class($app), $function);

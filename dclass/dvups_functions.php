@@ -108,27 +108,45 @@ function setadmin($id) {
  */
 function can(string $action, string $entity): bool
 {
+    // Une page back-office appelle can() une fois par ligne de datatable (3
+    // actions) en plus de la garde de Request::Controller() : sans ce cache,
+    // chaque appel refaisait un hydrate() SQL du role. Cle sur
+    // $_SESSION[ADMIN] (identite de connexion) plutot que sur un flag "deja
+    // resolu" : reste correct si la session change pendant le process (vrai
+    // en tests, qui appellent can() avec plusieurs sessions successives dans
+    // le meme process PHP - jamais le cas en prod, une requete = un process).
+    static $roleOfSession = [];
+    static $rightsByRole = [];
+
     if (empty($_SESSION[ADMIN]))
         return false;
 
-    $admin = getadmin();
-    if (!$admin || !$admin->getId())
-        return false;
+    $sessionKey = $_SESSION[ADMIN];
+    if (!isset($roleOfSession[$sessionKey])) {
+        $admin = getadmin();
+        $role = ($admin && $admin->getId()) ? $admin->dvups_role : null;
+        $entry = ['id' => null, 'isAdmin' => false];
+        if ($role && $role->getId()) {
+            $role = $role->hydrate();
+            $entry = ['id' => $role->getId(), 'isAdmin' => $role->is('admin')];
+        }
+        $roleOfSession[$sessionKey] = $entry;
+    }
 
-    $role = $admin->dvups_role;
-    if (!$role || !$role->getId())
+    $role = $roleOfSession[$sessionKey];
+    if ($role['id'] === null)
         return false;
-    $role = $role->hydrate();
-
-    if ($role->is('admin'))
+    if ($role['isAdmin'])
         return true;
 
     $pos = strrpos($entity, '\\');
     if ($pos !== false)
         $entity = substr($entity, $pos + 1);
-    $rights = Dvups_role::compiledRights($role->getId());
 
-    return !empty($rights[$entity][$action]);
+    if (!array_key_exists($role['id'], $rightsByRole))
+        $rightsByRole[$role['id']] = Dvups_role::compiledRights($role['id']);
+
+    return !empty($rightsByRole[$role['id']][$entity][$action]);
 }
 
 function d_url($path, $id = "", $title = "") {
