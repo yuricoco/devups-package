@@ -89,7 +89,7 @@ return array (
     'icon' => 'fas fa-language',
     'entities' => 
     array (
-      0 => 
+      0 =>
       array (
         'path' => 'devups/ModuleLang/',
         'module' => 'ModuleLang',
@@ -98,36 +98,9 @@ return array (
         'namespace' => 'devups\\ModuleLang\\Entity\\',
         'component' => 'devups',
       ),
-      1 => 
-      array (
-        'path' => 'devups/ModuleLang/',
-        'module' => 'ModuleLang',
-        'name' => 'Local_content',
-        'label' => 'Local_content',
-        'namespace' => 'devups\\ModuleLang\\Entity\\',
-        'component' => 'devups',
-      ),
-      2 => 
-      array (
-        'path' => 'devups/ModuleLang/',
-        'module' => 'ModuleLang',
-        'name' => 'Local_content_key',
-        'label' => 'Local_content_key',
-        'namespace' => 'devups\\ModuleLang\\Entity\\',
-        'component' => 'devups',
-      ),
-      3 => 
-      array (
-        'path' => 'devups/ModuleLang/',
-        'module' => 'ModuleLang',
-        'name' => 'Page_mapped',
-        'label' => 'Page_mapped',
-        'namespace' => 'devups\\ModuleLang\\Entity\\',
-        'component' => 'devups',
-      ),
     ),
   ),
-  'ModuleLog' => 
+  'ModuleLog' =>
   array (
     'name' => 'ModuleLog',
     'label' => 'Journal',

@@ -141,67 +141,7 @@ return array (
     'namespace_name' => 'Dvups_lang',
     'component' => 'devups',
   ),
-  'devups\\ModuleLang\\Entity\\Local_content' => 
-  array (
-    'path' => 'devups/ModuleLang/',
-    'module' => 'ModuleLang',
-    'name' => 'Local_content',
-    'label' => 'Local_content',
-    'namespace' => 'devups\\ModuleLang\\Entity\\',
-    'namespace_name' => 'Local_content',
-    'component' => 'devups',
-  ),
-  'Local_content' => 
-  array (
-    'path' => 'devups/ModuleLang/',
-    'module' => 'ModuleLang',
-    'name' => 'Local_content',
-    'label' => 'Local_content',
-    'namespace' => 'devups\\ModuleLang\\Entity\\',
-    'namespace_name' => 'Local_content',
-    'component' => 'devups',
-  ),
-  'devups\\ModuleLang\\Entity\\Local_content_key' => 
-  array (
-    'path' => 'devups/ModuleLang/',
-    'module' => 'ModuleLang',
-    'name' => 'Local_content_key',
-    'label' => 'Local_content_key',
-    'namespace' => 'devups\\ModuleLang\\Entity\\',
-    'namespace_name' => 'Local_content_key',
-    'component' => 'devups',
-  ),
-  'Local_content_key' => 
-  array (
-    'path' => 'devups/ModuleLang/',
-    'module' => 'ModuleLang',
-    'name' => 'Local_content_key',
-    'label' => 'Local_content_key',
-    'namespace' => 'devups\\ModuleLang\\Entity\\',
-    'namespace_name' => 'Local_content_key',
-    'component' => 'devups',
-  ),
-  'devups\\ModuleLang\\Entity\\Page_mapped' => 
-  array (
-    'path' => 'devups/ModuleLang/',
-    'module' => 'ModuleLang',
-    'name' => 'Page_mapped',
-    'label' => 'Page_mapped',
-    'namespace' => 'devups\\ModuleLang\\Entity\\',
-    'namespace_name' => 'Page_mapped',
-    'component' => 'devups',
-  ),
-  'Page_mapped' => 
-  array (
-    'path' => 'devups/ModuleLang/',
-    'module' => 'ModuleLang',
-    'name' => 'Page_mapped',
-    'label' => 'Page_mapped',
-    'namespace' => 'devups\\ModuleLang\\Entity\\',
-    'namespace_name' => 'Page_mapped',
-    'component' => 'devups',
-  ),
-  'devups\\ModuleLog\\Entity\\Dvups_log' => 
+  'devups\\ModuleLog\\Entity\\Dvups_log' =>
   array (
     'path' => 'devups/ModuleLog/',
     'module' => 'ModuleLog',

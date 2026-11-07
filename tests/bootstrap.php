@@ -65,6 +65,10 @@ if (dv_test_needs_db()) {
     // role qui reutilise cet id dans cette run.
     foreach (glob(__DIR__ . '/../cache/rights/*.php') as $staleCache)
         unlink($staleCache);
+    // meme raisonnement pour cache/lang/active.php (Dvups_lang::cachedActiveDlangs()) :
+    // des ids de langue qui ne correspondent plus a cette run.
+    foreach (glob(__DIR__ . '/../cache/lang/*.php') as $staleCache)
+        unlink($staleCache);
 }
 
 // noyau + EntityManager + modules. Les deprecations emises a la compilation
@@ -94,10 +98,5 @@ $viewdir = [web_dir . "views"];
 $global_config = require __DIR__ . '/../config/dvups_configurations.php';
 $dvlangs = [];
 $dlangs = [];
-if (dv_test_needs_db()) {
-    $dvlangs = Dvups_lang::all();
-    foreach ($dvlangs as $lang) {
-        $dlangs[$lang->iso_code] = $lang->id;
-        $dlangs[$lang->id] = $lang->iso_code;
-    }
-}
+if (dv_test_needs_db())
+    $dlangs = Dvups_lang::cachedActiveDlangs();

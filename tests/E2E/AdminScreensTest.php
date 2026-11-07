@@ -23,8 +23,6 @@ final class AdminScreensTest extends HttpTestCase
      * Retirer une entree des qu'elle est corrigee.
      */
     private const KNOWN_BROKEN = [
-        'devups/ModuleLang/local-content-key/form' => 'module Lang a refondre (traductions en fichiers)',
-        'devups/ModuleLang/page-mapped/list' => 'module Lang a refondre (traductions en fichiers)',
         'devupscms/ModuleCms/imagecms/form' => 'depend de ModuleGallery (a remplacer par cmsresource)',
         'devupscms/ModuleTree/tree-item-image/form' => 'depend de ModuleGallery (relation dv_image retiree)',
         'devupscms/ModuleLocation/department/list' => 'Location : seul Country est conserve',
@@ -36,8 +34,6 @@ final class AdminScreensTest extends HttpTestCase
         'devupscms/ModuleLocation/district/form' => 'Location : seul Country est conserve',
         'devupscms/ModuleLocation/region/form' => 'Location : seul Country est conserve',
         'devupscms/ModuleLocation/town/form' => 'Location : seul Country est conserve',
-        'devups/ModuleLang/local-content/form' => 'module Lang a refondre (traductions en fichiers)',
-        'devups/ModuleLang/page-mapped/form' => 'module Lang a refondre (traductions en fichiers)',
         'devupscms/ModuleCms/comment/form' => 'entite Comment jamais generee (futur cmscomment)',
         'devupscms/ModuleNotification/notificationbroadcasted/form' => 'entite Notificationbroadcasted absente (refonte notifications)',
         'devups/ModuleLog/dvups-log/form' => 'module Log : ecran lecture seule par design, aucun formulaire de creation/edition',

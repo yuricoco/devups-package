@@ -58,9 +58,6 @@
 
         var _admin_id = '{{getadmin()->id}}';
         var _role = '{{getadmin()->dvups_role->name}}';
-        /*
-        var _local_content = = Local_contentController::getdatajs() ?>;
-         */
     </script>
 </head>
 

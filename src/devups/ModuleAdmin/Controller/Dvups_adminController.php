@@ -94,7 +94,6 @@ class Dvups_adminController extends Controller
 
 //        Dvups_roleController::getNavigationAction($admin);
         $_SESSION[ADMIN] = serialize($admin);
-        //Local_contentController::buildlocalcachesinglelang($_POST['lang']);
 
         $admin->setLastloginAt(date("Y-m-d H:i:s"));
         $admin->__update(["lastlogin_at" => date("Y-m-d H:i:s")]);

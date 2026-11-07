@@ -23,11 +23,10 @@ const __env_lang = 'front/';
 
 global $viewdir, $dvlangs, $dlangs, $global_config, $pdocache;
 $pdocache = [];
-$dvlangs = Dvups_lang::all();
+$dvlangs = [];
+// E.7 : liste des langues actives mise en cache (cache/lang/active.php),
+// plutot qu'une requete Dvups_lang::all() a chaque requete - voir
+// Dvups_lang::cachedActiveDlangs()/invalidateActiveCache().
+$dlangs = Dvups_lang::cachedActiveDlangs();
 $viewdir = [web_dir . "views"];
 $global_config = require ROOT.'config/dvups_configurations.php';
-foreach($dvlangs as $lang){
-    $dlangs[$lang->iso_code] = $lang->id;
-    $dlangs[$lang->iso_code.'/'] = $lang->id;
-    $dlangs[$lang->id] = $lang->iso_code;
-}
