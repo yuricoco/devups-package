@@ -98,6 +98,39 @@ function setadmin($id) {
 
 }
 
+/**
+ * API unique d'autorisation : can('update', Dvups_role::class) ou
+ * can('export', 'Dvups_role'). Utilisee par les controleurs (CrudTrait),
+ * les boutons des datatables (Datatable::actionListView()) et l'API REST
+ * (memes controleurs). Le role "admin" passe toujours (bypass maitre,
+ * coherent avec Dvups_role::updateprivilegeAction()) ; sans session admin,
+ * refuse toujours.
+ */
+function can(string $action, string $entity): bool
+{
+    if (empty($_SESSION[ADMIN]))
+        return false;
+
+    $admin = getadmin();
+    if (!$admin || !$admin->getId())
+        return false;
+
+    $role = $admin->dvups_role;
+    if (!$role || !$role->getId())
+        return false;
+    $role = $role->hydrate();
+
+    if ($role->is('admin'))
+        return true;
+
+    $pos = strrpos($entity, '\\');
+    if ($pos !== false)
+        $entity = substr($entity, $pos + 1);
+    $rights = Dvups_role::compiledRights($role->getId());
+
+    return !empty($rights[$entity][$action]);
+}
+
 function d_url($path, $id = "", $title = "") {
     global $__lang;
 

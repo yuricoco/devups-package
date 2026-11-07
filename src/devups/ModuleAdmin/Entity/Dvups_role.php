@@ -205,4 +205,57 @@ class Dvups_role extends Model implements JsonSerializable
 
     }
 
+    /**
+     * Droits d'un role, compiles une seule fois en cache/rights/<id>.php :
+     * ['EntiteExacte' => ['action' => true, ...], ...] (entity et action
+     * tels que declares dans dvups_action, par Dvups_action::sync()).
+     * clearRightsCache() invalide ce fichier, a appeler apres toute
+     * modification des privileges du role (voir Dvups_privilegeController).
+     */
+    public static function compiledRights(int $roleId): array
+    {
+        $path = self::rightsCachePath($roleId);
+        if (file_exists($path))
+            return require $path;
+
+        $rights = self::buildRights($roleId);
+
+        if (!is_dir(dirname($path)))
+            mkdir(dirname($path), 0777, true);
+        file_put_contents($path, "<?php\nreturn " . var_export($rights, true) . ";\n");
+
+        return $rights;
+    }
+
+    public static function clearRightsCache(int $roleId = null): void
+    {
+        if ($roleId !== null) {
+            @unlink(self::rightsCachePath($roleId));
+            return;
+        }
+        foreach (glob(ROOT . 'cache/rights/*.php') ?: [] as $file)
+            @unlink($file);
+    }
+
+    private static function rightsCachePath(int $roleId): string
+    {
+        return ROOT . 'cache/rights/' . $roleId . '.php';
+    }
+
+    private static function buildRights(int $roleId): array
+    {
+        $rows = Model::pdo()->prepare(
+            'SELECT a.entity, a.action FROM dvups_privilege p
+             INNER JOIN dvups_action a ON a.id = p.dvups_action_id
+             WHERE p.dvups_role_id = :role_id'
+        );
+        $rows->execute(['role_id' => $roleId]);
+
+        $rights = [];
+        foreach ($rows->fetchAll(\PDO::FETCH_ASSOC) as $row)
+            $rights[$row['entity']][$row['action']] = true;
+
+        return $rights;
+    }
+
 }

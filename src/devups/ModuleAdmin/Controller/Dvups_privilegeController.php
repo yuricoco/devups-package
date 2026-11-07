@@ -56,6 +56,7 @@ class Dvups_privilegeController extends Controller{
         
 
         $id = $dvups_privilege->__insert();
+        Dvups_role::clearRightsCache($dvups_privilege->dvups_role->getId());
         return 	array(	'success' => true,
                         'dvups_privilege' => $dvups_privilege,
                         'tablerow' => Dvups_privilegeTable::init()->router()->getSingleRowRest($dvups_privilege),
@@ -76,11 +77,12 @@ class Dvups_privilegeController extends Controller{
         }
         
         $dvups_privilege->__update();
+        Dvups_role::clearRightsCache($dvups_privilege->dvups_role->getId());
         return 	array(	'success' => true,
                         'dvups_privilege' => $dvups_privilege,
                         'tablerow' => Dvups_privilegeTable::init()->router()->getSingleRowRest($dvups_privilege),
                         'detail' => '');
-                        
+
     }
     
 
@@ -103,21 +105,25 @@ class Dvups_privilegeController extends Controller{
     public function deleteAction($id){
     
         $dvups_privilege = Dvups_privilege::find($id);
+        $roleId = $dvups_privilege->dvups_role->getId();
         $dvups_privilege->__delete();
-        
-        return 	array(	'success' => true, 
+        Dvups_role::clearRightsCache($roleId);
+
+        return 	array(	'success' => true,
                         'detail' => t('Item deleted successfully'));
-                         
+
     }
-    
+
 
     public function deletegroupAction($ids)
     {
 
         Dvups_privilege::where("this.id")->in($ids)->delete();
+        // plusieurs roles potentiellement concernes : invalide tout, recompile a la demande.
+        Dvups_role::clearRightsCache();
 
         return array('success' => true,
-                'detail' => ''); 
+                'detail' => '');
 
     }
 
