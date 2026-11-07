@@ -26,7 +26,7 @@ final class NeutralityTest extends TestCase
             foreach ($it as $file) {
                 if (!preg_match('/\.(php|js|json|html)$/', $file->getFilename()))
                     continue;
-                $rel = substr($file->getPathname(), strlen($root) + 1);
+                $rel = str_replace('\\', '/', substr($file->getPathname(), strlen($root) + 1));
                 // fichiers locaux, hors depot
                 if (in_array($rel, ['config/constante.php'], true))
                     continue;
