@@ -64,6 +64,7 @@ class Dvups_roleController extends Controller
 
         $dvups_role->updateConfigs();
         $id = $dvups_role->__insert();
+        self::syncPrivileges($id);
         return array('success' => true,
             'dvups_role' => $dvups_role,
             'tablerow' => Dvups_roleTable::init(new Dvups_role())->router()->getSingleRowRest($dvups_role),
@@ -86,11 +87,36 @@ class Dvups_roleController extends Controller
 
         $dvups_role->updateConfigs();
         $dvups_role->__update();
+        self::syncPrivileges($id);
         return array('success' => true,
             'dvups_role' => $dvups_role,
             'tablerow' => Dvups_roleTable::init(new Dvups_role())->router()->getSingleRowRest($dvups_role),
             'detail' => '');
 
+    }
+
+    /**
+     * Aligne les privileges du role sur les cases cochees du formulaire
+     * (noms d'actions dvups_action.id dans $_POST['privileges']) : cree les
+     * manquantes, retire celles decochees. Jamais appele a la creation d'un
+     * role sans aucune case cochee (role vide, legitime). Invalide le cache
+     * des droits du role pour que can() voie le changement immediatement.
+     */
+    private static function syncPrivileges(int $roleId): void
+    {
+        $wanted = array_map('intval', $_POST['privileges'] ?? []);
+
+        $current = [];
+        foreach (Dvups_privilege::where('dvups_role_id', $roleId)->get() as $dvups_privilege)
+            $current[$dvups_privilege->dvups_action->getId()] = $dvups_privilege;
+
+        foreach (array_diff($wanted, array_keys($current)) as $actionId)
+            Dvups_privilege::create(['dvups_role_id' => $roleId, 'dvups_action_id' => $actionId]);
+
+        foreach (array_diff(array_keys($current), $wanted) as $actionId)
+            $current[$actionId]->__delete();
+
+        Dvups_role::clearRightsCache($roleId);
     }
 
 

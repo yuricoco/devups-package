@@ -10,6 +10,26 @@
         <label for='alias'>{{t('Alias for commun')}}</label>
         <?= Form::input('alias', $dvups_role->alias, ['class' => 'form-control']); ?>
     </div>
+    <div class='form-group'>
+        <label>{{t('Droits (entite / action)')}}</label>
+        <table class='table'>
+            @foreach($actionsByEntity as $entity => $entityActions)
+                <tr>
+                    <th>{{$entity}}</th>
+                    <td>
+                        @foreach($entityActions as $dvups_action)
+                            <label class='checkbox-inline' style='margin-right: 12px;'>
+                                <input type='checkbox' name='privileges[]' value='{{$dvups_action->getId()}}'
+                                    @if(in_array($dvups_action->getId(), $grantedActionIds)) checked @endif >
+                                {{$dvups_action->action}}
+                            </label>
+                        @endforeach
+                    </td>
+                </tr>
+            @endforeach
+        </table>
+    </div>
+
     <label for='dvups_module'>Dvups_module</label>
     <table class='table'>
         <tr>
