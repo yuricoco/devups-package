@@ -12,12 +12,30 @@ return array (
       array (
         'path' => 'devups/ModuleAdmin/',
         'module' => 'ModuleAdmin',
+        'name' => 'Dvups_action',
+        'label' => 'Dvups_action',
+        'namespace' => 'devups\\ModuleAdmin\\Entity\\',
+        'component' => 'devups',
+      ),
+      1 => 
+      array (
+        'path' => 'devups/ModuleAdmin/',
+        'module' => 'ModuleAdmin',
         'name' => 'Dvups_admin',
         'label' => 'Dvups_admin',
         'namespace' => 'devups\\ModuleAdmin\\Entity\\',
         'component' => 'devups',
       ),
-      1 => 
+      2 => 
+      array (
+        'path' => 'devups/ModuleAdmin/',
+        'module' => 'ModuleAdmin',
+        'name' => 'Dvups_privilege',
+        'label' => 'Dvups_privilege',
+        'namespace' => 'devups\\ModuleAdmin\\Entity\\',
+        'component' => 'devups',
+      ),
+      3 => 
       array (
         'path' => 'devups/ModuleAdmin/',
         'module' => 'ModuleAdmin',
@@ -26,7 +44,7 @@ return array (
         'namespace' => 'devups\\ModuleAdmin\\Entity\\',
         'component' => 'devups',
       ),
-      2 => 
+      4 => 
       array (
         'path' => 'devups/ModuleAdmin/',
         'module' => 'ModuleAdmin',

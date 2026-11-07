@@ -18,3 +18,15 @@ require 'Controller/Dvups_rightController.php';
 //require 'Entity/Dvups_role_dvups_admin.php';
 
 require 'Entity/Dvups_right_dvups_role.php';
+
+
+    require 'Entity/Dvups_action.php';
+    require 'Form/Dvups_actionForm.php';
+    require 'Datatable/Dvups_actionTable.php';
+    require 'Controller/Dvups_actionController.php';
+
+
+    require 'Entity/Dvups_privilege.php';
+    require 'Form/Dvups_privilegeForm.php';
+    require 'Datatable/Dvups_privilegeTable.php';
+    require 'Controller/Dvups_privilegeController.php';

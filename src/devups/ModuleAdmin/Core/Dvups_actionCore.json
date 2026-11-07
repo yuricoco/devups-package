@@ -1,0 +1,35 @@
+{
+    "id": 9001,
+    "name": "dvups_action",
+    "module": {
+        "id": 1
+    },
+    "ref": null,
+    "attribut": {
+        "1": {
+            "name": "entity",
+            "visibility": "",
+            "datatype": "string",
+            "size": "100",
+            "nullable": "not",
+            "formtype": "text"
+        },
+        "2": {
+            "name": "action",
+            "visibility": "",
+            "datatype": "string",
+            "size": "50",
+            "nullable": "not",
+            "formtype": "text"
+        },
+        "3": {
+            "name": "label",
+            "visibility": "",
+            "datatype": "string",
+            "size": "150",
+            "nullable": "",
+            "formtype": "text"
+        }
+    },
+    "relation": []
+}

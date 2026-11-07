@@ -1,0 +1,25 @@
+{
+    "id": 9002,
+    "name": "dvups_privilege",
+    "module": {
+        "id": 1
+    },
+    "ref": null,
+    "attribut": [],
+    "relation": [
+        {
+            "entity": "dvups_role",
+            "cardinality": "manyToOne",
+            "nullable": "not",
+            "ondelete": "cascade",
+            "onupdate": "cascade"
+        },
+        {
+            "entity": "dvups_action",
+            "cardinality": "manyToOne",
+            "nullable": "not",
+            "ondelete": "cascade",
+            "onupdate": "cascade"
+        }
+    ]
+}

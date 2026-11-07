@@ -1,6 +1,26 @@
 <?php
 
 return array (
+  'devups\\ModuleAdmin\\Entity\\Dvups_action' => 
+  array (
+    'path' => 'devups/ModuleAdmin/',
+    'module' => 'ModuleAdmin',
+    'name' => 'Dvups_action',
+    'label' => 'Dvups_action',
+    'namespace' => 'devups\\ModuleAdmin\\Entity\\',
+    'namespace_name' => 'Dvups_action',
+    'component' => 'devups',
+  ),
+  'Dvups_action' => 
+  array (
+    'path' => 'devups/ModuleAdmin/',
+    'module' => 'ModuleAdmin',
+    'name' => 'Dvups_action',
+    'label' => 'Dvups_action',
+    'namespace' => 'devups\\ModuleAdmin\\Entity\\',
+    'namespace_name' => 'Dvups_action',
+    'component' => 'devups',
+  ),
   'devups\\ModuleAdmin\\Entity\\Dvups_admin' => 
   array (
     'path' => 'devups/ModuleAdmin/',
@@ -19,6 +39,26 @@ return array (
     'label' => 'Dvups_admin',
     'namespace' => 'devups\\ModuleAdmin\\Entity\\',
     'namespace_name' => 'Dvups_admin',
+    'component' => 'devups',
+  ),
+  'devups\\ModuleAdmin\\Entity\\Dvups_privilege' => 
+  array (
+    'path' => 'devups/ModuleAdmin/',
+    'module' => 'ModuleAdmin',
+    'name' => 'Dvups_privilege',
+    'label' => 'Dvups_privilege',
+    'namespace' => 'devups\\ModuleAdmin\\Entity\\',
+    'namespace_name' => 'Dvups_privilege',
+    'component' => 'devups',
+  ),
+  'Dvups_privilege' => 
+  array (
+    'path' => 'devups/ModuleAdmin/',
+    'module' => 'ModuleAdmin',
+    'name' => 'Dvups_privilege',
+    'label' => 'Dvups_privilege',
+    'namespace' => 'devups\\ModuleAdmin\\Entity\\',
+    'namespace_name' => 'Dvups_privilege',
     'component' => 'devups',
   ),
   'devups\\ModuleAdmin\\Entity\\Dvups_right' => 
