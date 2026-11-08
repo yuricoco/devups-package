@@ -195,11 +195,33 @@ ses ressources via `CmsresourceTable`.
 (`Tree_item_image`, pour les images d'arborescence) étend lui aussi
 désormais `ImageCore` directement, sur le même modèle que
 `Cmsresource` - plus aucune dépendance à `ModuleGallery` dans tout le
-code. La migration de données (renommage CMS + nouvelles colonnes de
-`tree_item_image` + DROP de `imagecms`/`dv_image`, ces deux derniers
-commentés en attendant vérification manuelle) reste à exécuter sur les
-environnements réels (`database/migration/2026_11_08_phase4_cms_rename.sql`),
-voir `TODO.md` section "Phase 4 (CMS) - ÉTAPE G".
+code. La migration de données (renommage CMS, reprise des données
+`imagecms`→`cmsresource` et des colonnes d'image de `tree_item_image`
+- avec comptage avant/après en commentaire -, puis DROP de
+`imagecms`/`dv_image`, ces deux derniers commentés en attendant
+vérification manuelle) reste à exécuter sur les environnements réels
+(`database/migration/2026_11_08_phase4_cms_rename.sql`), voir `TODO.md`
+sections "Phase 4 (CMS) - ÉTAPE G" et "ÉTAPE I".
+
+## Localisation (Phase 5)
+
+Seule l'entité `Country` (`src/devupscms/ModuleLocation/`) est
+conservée - `Continent`, `Department`, `District`, `Region` et `Town`
+ont été retirés entièrement (aucun autre module n'en dépendait). Le nom
+de `Country` est traduit (`dvtranslate`, comme `Cmscontent`).
+
+Donnée de référence (iso2, iso3, nom, indicatif téléphonique, ~195
+pays) via `database/seed/countries.php`, chargée de façon idempotente
+par :
+
+```
+php devups location:seed
+```
+
+La migration qui `DROP` les tables retirées
+(`database/migration/2026_11_08_phase5_location_drop.sql`) reste à
+exécuter manuellement sur les environnements réels - voir `TODO.md`
+section "Phase 5 (Localisation) - ÉTAPE J".
 
 ## Sécurité
 
@@ -208,6 +230,20 @@ voir `TODO.md` section "Phase 4 (CMS) - ÉTAPE G".
 - `.htaccess` refuse l'accès direct à `config/`, `database/`, `cache/`, `vendor/`,
   `tests/`, aux fichiers cachés (`.env`) et au code PHP de `src/` et `dclass/`.
 - `cron.php` ne s'exécute qu'en ligne de commande, ou par HTTP avec `?token=<CRON_TOKEN>`.
+- Langue (`?lang=`) : validée par `dv_valid_lang()` (format `^[a-z]{2}$`
+  ET langue active) avant toute utilisation dans un chemin de fichier
+  (`local()`, `setlang()`, `lang.php`, `t_lang()`) ; une valeur invalide
+  retombe silencieusement sur `__lang`, jamais une erreur 500 ni une
+  inclusion de fichier hors de `lang/`. Voir `TODO.md` section
+  "Sécurité langue - ÉTAPE H".
+- Mots de passe (`Dvups_admin`, `User`) : stockés avec `password_hash()`
+  (jamais sha1()/md5()) ; un ancien hash sha1() encore en base est
+  remplacé automatiquement au prochain login réussi, sans
+  réinitialisation forcée. "Se souvenir de moi" ne place plus jamais le
+  mot de passe (ni son hash) dans un cookie : un token aléatoire dont
+  seul le hash est stocké en base, avec expiration, rotation à chaque
+  usage et invalidation à la déconnexion ou au changement de mot de
+  passe. Voir `TODO.md` section "Phase 7 (Mots de passe) - ÉTAPE K".
 
 ## Documentation
 
