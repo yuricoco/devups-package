@@ -241,27 +241,7 @@ return array (
     'namespace_name' => 'Status',
     'component' => 'devupscms',
   ),
-  'devupscms\\ModuleGallery\\Entity\\Dv_image' => 
-  array (
-    'path' => 'devupscms/ModuleGallery/',
-    'module' => 'ModuleGallery',
-    'name' => 'Dv_image',
-    'label' => 'Dv_image',
-    'namespace' => 'devupscms\\ModuleGallery\\Entity\\',
-    'namespace_name' => 'Dv_image',
-    'component' => 'devupscms',
-  ),
-  'Dv_image' => 
-  array (
-    'path' => 'devupscms/ModuleGallery/',
-    'module' => 'ModuleGallery',
-    'name' => 'Dv_image',
-    'label' => 'Dv_image',
-    'namespace' => 'devupscms\\ModuleGallery\\Entity\\',
-    'namespace_name' => 'Dv_image',
-    'component' => 'devupscms',
-  ),
-  'devupscms\\ModuleLocation\\Entity\\Continent' => 
+  'devupscms\\ModuleLocation\\Entity\\Continent' =>
   array (
     'path' => 'devupscms/ModuleLocation/',
     'module' => 'ModuleLocation',

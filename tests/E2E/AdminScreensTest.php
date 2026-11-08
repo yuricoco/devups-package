@@ -23,7 +23,6 @@ final class AdminScreensTest extends HttpTestCase
      * Retirer une entree des qu'elle est corrigee.
      */
     private const KNOWN_BROKEN = [
-        'devupscms/ModuleTree/tree-item-image/form' => 'depend de ModuleGallery (relation dv_image retiree)',
         'devupscms/ModuleLocation/department/list' => 'Location : seul Country est conserve',
         'devupscms/ModuleLocation/district/list' => 'Location : seul Country est conserve',
         'devupscms/ModuleLocation/region/list' => 'Location : seul Country est conserve',

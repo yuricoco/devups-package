@@ -22,21 +22,21 @@ class Tree_item_imageTable extends Datatable{
     public function buildindextable(){
 
         $this->datatablemodel = [
-['header' => t('tree_item_image.id', '#'), 'value' => 'id'], 
-['header' => t('tree_item_image.width_size', 'Width_size'), 'value' => 'width_size'], 
-['header' => t('entity.tree_item', 'Tree_item') , 'value' => 'Tree_item.name'], 
-['header' => t('entity.dv_image', 'Dv_image') , 'value' => 'Dv_image.reference']
+['header' => t('tree_item_image.id', '#'), 'value' => 'id'],
+['header' => t('tree_item_image.width_size', 'Width_size'), 'value' => 'width_size'],
+['header' => t('entity.tree_item', 'Tree_item') , 'value' => 'Tree_item.name'],
+['header' => t('image'), 'value' => 'src:image'],
 ];
 
         return $this;
     }
-    
+
     public function builddetailtable()
     {
         $this->datatablemodel = [
-['label' => t('tree_item_image.width_size'), 'value' => 'width_size'], 
-['label' => t('entity.tree_item'), 'value' => 'Tree_item.name'], 
-['label' => t('entity.dv_image'), 'value' => 'Dv_image.reference']
+['label' => t('tree_item_image.width_size'), 'value' => 'width_size'],
+['label' => t('entity.tree_item'), 'value' => 'Tree_item.name'],
+['label' => t('image'), 'value' => 'src:image'],
 ];
         // TODO: overwrite datatable attribute for this view
         return $this;

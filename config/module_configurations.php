@@ -163,25 +163,7 @@ return array (
       ),
     ),
   ),
-  'ModuleGallery' => 
-  array (
-    'name' => 'ModuleGallery',
-    'label' => 'Galerie',
-    'icon' => 'fas fa-images',
-    'entities' => 
-    array (
-      0 => 
-      array (
-        'path' => 'devupscms/ModuleGallery/',
-        'module' => 'ModuleGallery',
-        'name' => 'Dv_image',
-        'label' => 'Dv_image',
-        'namespace' => 'devupscms\\ModuleGallery\\Entity\\',
-        'component' => 'devupscms',
-      ),
-    ),
-  ),
-  'ModuleLocation' => 
+  'ModuleLocation' =>
   array (
     'name' => 'ModuleLocation',
     'label' => 'Localisation',

@@ -33,8 +33,8 @@ Vue.component("tree_item_image", {
             .on('drop',  (e) => {
                 droppedFiles = e.originalEvent.dataTransfer.files;
 
-                model.init("dv_image");
-                //ddatatable.init("dv_image");
+                model.init("tree_item_image");
+                //ddatatable.init("tree_item_image");
 
                 for (var i = 0; i < droppedFiles.length; i++) {
                     var file = droppedFiles[i];

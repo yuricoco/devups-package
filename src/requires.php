@@ -16,7 +16,6 @@ require 'devups/ModuleLog/devups.modulelog.php';
 require 'devupscms/ModuleNotification/devupscms.modulenotification.php';
 require 'devupscms/ModulePushNotification/devupscms.modulepushnotification.php';
 require 'devupscms/ModuleTree/devupscms.moduletree.php';
-require 'devupscms/ModuleGallery/devupscms.modulegallery.php';
 require 'devupscms/ModuleCms/devupscms.modulecms.php';
 require 'devupscms/ModuleData/devupscms.moduledata.php';
 require 'devupscms/ModuleReporting/devupscms.modulereporting.php';
