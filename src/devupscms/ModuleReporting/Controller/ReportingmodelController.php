@@ -188,6 +188,13 @@ class ReportingmodelController extends Controller
 
     public function loadContent($name)
     {
+        // ETAPE H.4 : basename() - $name vient d'un parametre de route et
+        // etait concatene sans controle dans un chemin lu par
+        // file_get_contents() (voir TODO.md, "Audit require/include/
+        // file_get_contents") : un '../../..' permettait de sortir de
+        // Resource/partial/ (traversee de repertoire, lecture limitee aux
+        // fichiers se terminant par "_<local>.html").
+        $name = basename((string)$name);
         $local = local();
         $filename = Reportingmodel::classroot("Resource/partial/{$name}_$local.html");
         if (!file_exists($filename))
@@ -209,7 +216,11 @@ class ReportingmodelController extends Controller
         $rm = Reportingmodel::find($id, Dvups_lang::getByIsoCode($local)->id);
 
         $filename = Reportingmodel::classroot("Resource/partial");
-        \DClass\lib\Util::log($rm->content, "{$rm->name}_$local.html", $filename);
+        // ETAPE H.4 : basename() par precaution, meme principe que
+        // loadContent() ci-dessus ($rm->name vient de la base, pas
+        // directement de la requete, mais reste un nom de modele saisi par
+        // un admin - aucune raison d'y tolerer un separateur de chemin).
+        \DClass\lib\Util::log($rm->content, basename($rm->name) . "_$local.html", $filename);
 
         return [
             "success" => true,

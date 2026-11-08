@@ -86,8 +86,15 @@ class Dfile
     {
         $dfile = new Dfile(null);
         $path = self::chdirectory(self::filepath($uploaddir));
-        $hashname = $_GET['hashName'];
-        $filename = $_GET['fileName'];
+        // ETAPE H.4 : basename() - $hashName/$fileName viennent directement
+        // de $_GET et etaient utilises sans controle dans un chemin de
+        // fichier ouvert en ecriture (fopen($path . $hashname, "ab")) :
+        // un '../../..' aurait permis d'ecrire n'importe ou (voir TODO.md,
+        // "Audit require/include/file_get_contents"). Methode jamais
+        // appelee par une route existante a ce jour - corrigee par
+        // precaution avant qu'une route ne la rende joignable.
+        $hashname = basename((string)($_GET['hashName'] ?? ''));
+        $filename = basename((string)($_GET['fileName'] ?? ''));
 
         $xmlstr = file_get_contents('php://input');
 
