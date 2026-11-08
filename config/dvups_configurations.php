@@ -281,27 +281,7 @@ return array (
     'namespace_name' => 'Notification',
     'component' => 'devupscms',
   ),
-  'devupscms\\ModuleNotification\\Entity\\Notificationbroadcasted' => 
-  array (
-    'path' => 'devupscms/ModuleNotification/',
-    'module' => 'ModuleNotification',
-    'name' => 'Notificationbroadcasted',
-    'label' => 'Notificationbroadcasted',
-    'namespace' => 'devupscms\\ModuleNotification\\Entity\\',
-    'namespace_name' => 'Notificationbroadcasted',
-    'component' => 'devupscms',
-  ),
-  'Notificationbroadcasted' => 
-  array (
-    'path' => 'devupscms/ModuleNotification/',
-    'module' => 'ModuleNotification',
-    'name' => 'Notificationbroadcasted',
-    'label' => 'Notificationbroadcasted',
-    'namespace' => 'devupscms\\ModuleNotification\\Entity\\',
-    'namespace_name' => 'Notificationbroadcasted',
-    'component' => 'devupscms',
-  ),
-  'devupscms\\ModuleNotification\\Entity\\Notificationtype' => 
+  'devupscms\\ModuleNotification\\Entity\\Notificationtype' =>
   array (
     'path' => 'devupscms/ModuleNotification/',
     'module' => 'ModuleNotification',

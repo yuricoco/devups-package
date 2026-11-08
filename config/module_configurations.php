@@ -197,16 +197,7 @@ return array (
         'namespace' => 'devupscms\\ModuleNotification\\Entity\\',
         'component' => 'devupscms',
       ),
-      1 => 
-      array (
-        'path' => 'devupscms/ModuleNotification/',
-        'module' => 'ModuleNotification',
-        'name' => 'Notificationbroadcasted',
-        'label' => 'Notificationbroadcasted',
-        'namespace' => 'devupscms\\ModuleNotification\\Entity\\',
-        'component' => 'devupscms',
-      ),
-      2 => 
+      2 =>
       array (
         'path' => 'devupscms/ModuleNotification/',
         'module' => 'ModuleNotification',

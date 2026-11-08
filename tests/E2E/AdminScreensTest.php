@@ -23,7 +23,6 @@ final class AdminScreensTest extends HttpTestCase
      * Retirer une entree des qu'elle est corrigee.
      */
     private const KNOWN_BROKEN = [
-        'devupscms/ModuleNotification/notificationbroadcasted/form' => 'entite Notificationbroadcasted absente (refonte notifications)',
         'devups/ModuleLog/dvups-log/form' => 'module Log : ecran lecture seule par design, aucun formulaire de creation/edition',
         'devupscms/ModuleReporting/emaillog/form' => 'Emaillog : ecran lecture seule par design, aucun formulaire de creation/edition',
     ];
