@@ -553,153 +553,105 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
         ];
     }
 
-    public static function resetactivationcode()
+    /**
+     * ETAPE P.1 : genere le jeton dedie de reinitialisation et l'envoie par
+     * email a $user. Fonction interne, testable directement (meme principe
+     * que resendactivationcode() ci-dessus) - le point d'entree HTTP
+     * (initresetpassword()) ne doit JAMAIS laisser deviner si $user existait
+     * (pas d'enumeration de comptes) : il renvoie toujours la meme reponse
+     * generique, que cette fonction ait ete appelee ou non, et que l'envoi
+     * ait reussi ou ait ete limite.
+     * @return array ['success' => bool, 'token' => string (seulement si success)]
+     */
+    public static function issueResetPasswordToken(\User $user): array
     {
-        extract($_POST);
+        $accountLimiter = new RateLimiter('reset_password_init:' . $user->getId(), RATE_LIMIT_RESEND_WINDOW_SECONDS, RATE_LIMIT_RESEND_MAX_ATTEMPTS);
+        $ipLimiter = new RateLimiter('reset_password_init_ip:' . (\DClass\lib\Util::get_IP_address() ?? 'unknown'), RATE_LIMIT_RESEND_WINDOW_SECONDS, RATE_LIMIT_RESEND_MAX_ATTEMPTS);
 
-        $user = User::select()
-            ->where('user.username', $user_form["login"])
-            ->orwhere('user.email', $user_form["login"])
-            ->orwhere('user.phonenumber', $user_form["login"])
-            ->first();
+        if ($accountLimiter->tooManyAttempts() || $ipLimiter->tooManyAttempts())
+            return ['success' => false];
 
-        if ($user->getId()) {
+        $accountLimiter->hit();
+        $ipLimiter->hit();
 
-            if ($user_form["login"] == $user->phonenumber) {
-                if (!isset($user_form['country_iso'])) {
-                    return array("success" => false,
-                        "error" => t('Country has not been specified. important for phonenumber'));
-                }
-                $country = Country::getbyattribut("iso", $user_form['country_iso']);
-
-                if ($country->getId())
-                    $user->country = $country;
-
-            }
-
-            return self::initialiseUserParam($user) + ["user" => $user];
-        } else {
-            return array("success" => false,
-                "error" => 'Aucun utilisateur trouve');
-        }
-    }
-
-    private static function initialiseUserParam(\User $user)
-    {
-        $resendCheck = self::checkResendAllowed($user);
-        if ($resendCheck !== true)
-            return $resendCheck;
-
-        $activationcode = __prod ? \DClass\lib\Util::randomcode(5, "0123456789"): '12345';
-
-        $user->is_activated = (false);
-        //$user->setLocked(true);
-//        $user->setResettingpassword(true);
-        $user->setActivationcode($activationcode);
+        // Un nouveau jeton ecrase (invalide) tout jeton emis plus tot pour
+        // ce compte - un seul jeton valide a la fois.
+        $token = $user->setResetPasswordToken();
         $user->__update();
 
-        $_SESSION['USERID'] = $user->getId();
-        $_SESSION[USERAPP] = serialize($user);
-        //$_SESSION[LANG] = $user->getLocale();
-
-        //updatesession($user);
-
         if ($user->email) {
-            $data = [
-                "activation_link" => route('login') . '?vld=' . $activationcode . '&u_id=' . $user->getId(),
-                "activation_code" => $activationcode,
-                "username" => $user->username,
-            ];
-
-            DMail::init("mails.otp", $user->lang)
+            DMail::init("mails.resetpassword", $user->lang)
                 ->addReceiver($user->email, $user->username)
-                ->setTitle("Verification du compte")
-                ->setObject("Code d'activation")
-//                ->preview();
-                ->sendMail($data);
-
+                ->setTitle(t("reset password"))
+                ->setObject(t("reset password"))
+                ->sendMail([
+                    // Le lien ne porte plus que le jeton : ni code court, ni
+                    // u_id (ETAPE P.1 - voir aussi checkActivationCode(),
+                    // toujours utilise par l'activation de compte / SMS).
+                    "reset_link" => d_url('reset-password') . '?token=' . $token,
+                    "username" => $user->username,
+                ]);
         }
 
-//        Notification::on($user, "otp", -1)
-//            ->send([$user], ["activationcode" => $activationcode]);
-
-        return array('success' => true, 'user' => $user, 'activationcode' => $activationcode, 'url' => "" . d_url("reset-password"));
-
+        return ['success' => true, 'token' => $token];
     }
 
     /**
      * @POST(path='/initresetpassword')
+     * ETAPE P.1 : reponse IDENTIQUE que le compte existe ou non (pas
+     * d'enumeration de comptes) - jeton dedie envoye par email uniquement,
+     * plus de code court ni de push ici (voir issueResetPasswordToken()).
      */
     public function initresetpassword()
     {
-        $result = self::resetactivationcode();
-        if (!$result['success'])
-            return $result;
+        $login = (string)($_POST['user_form']['login'] ?? '');
 
-        $user = $result['user'];
-        $fcm_token = Request::post('fcm_token');
-        $pusher = Push_subscription::where(
-            [
-                //'endpoint' => $subscription['endpoint'],
-                'auth_token' => $fcm_token,
-                'user_id' => $user->id,
-            ]
-        )->firstOrNull();
-        if (!$pusher)
-            $pusher = Push_subscription::createInstance([
-                'status' => 1,
-                'auth_token' => $fcm_token,
-                'user_id' => $user->id,
-            ]);
+        if ($login !== '') {
+            $user = User::select()
+                ->where('user.username', $login)
+                ->orwhere('user.email', $login)
+                ->orwhere('user.phonenumber', $login)
+                ->first();
 
-        /*try {
-         Push_subscription::initPusher();
-         $pusher->fcmPushNotification(
-         "Votre code d'activation : " . $result['activationcode'],
-         [
-         "entity_id" => "" . $user->id,
-         "entity" => "user",
-         "code" => $result['activationcode'],
-         "action" => "activate_account",
-         "url" => self::appLink("auth/lost-password"),
-         ]);
-         $result["pusher"] = $pusher;
-         } catch (Exception $e) {
-         Emaillog::create([
-         "log" => $e->getMessage(),
-         "object" => "Init reset password",
-         ]);
-         $result['detail'] = $e->getMessage();
-         }*/
-        return $result;
+            if ($user->getId())
+                self::issueResetPasswordToken($user);
+        }
+
+        return [
+            'success' => true,
+            'detail' => t("Si un compte existe avec ces informations, un lien de reinitialisation a ete envoye."),
+        ];
     }
 
     /**
-     * @POST(path='/resetpassword/:id')
+     * @POST(path='/resetpassword')
+     * ETAPE P.1 : identifie l'utilisateur par le jeton dedie (plus par
+     * :id/code court) - usage unique, consomme par clearResetPasswordToken()
+     * ci-dessous quelle que soit l'issue d'une tentative avec ce jeton.
      * @return array
      */
-    public function resetpassword($id)
+    public function resetpassword()
     {
-        $userapp = User::find($id);
+        $token = (string)($_POST['token'] ?? '');
+        $password = (string)($_POST['password'] ?? '');
 
-        $check = $this->checkActivationCode($userapp, (string)($_POST['activationcode'] ?? ''), 'reset_password');
-        if ($check !== true)
-            return $check;
+        if ($token === '' || $password === '')
+            return ['success' => false, 'detail' => t("Tous les champs sont important")];
 
-        $userapp->setPassword((($_POST['password'])));
-        $userapp->is_activated = (1);
-        //            $userapp->setResettingpassword(0);
-        //            $userapp->setResettingpassword(0);
-        $userapp->__update();
+        $user = User::where('reset_token_hash', hash('sha256', $token))->firstOrNull();
 
-        //            $_SESSION[USERAPP] = serialize($userapp);
-        //            $_SESSION[USERAPP] = serialize($userapp);
-        //updatesession($userapp);
+        if (!$user || !$user->getId() || !$user->verifyResetPasswordToken($token))
+            return ['success' => false, 'detail' => t("Code d'activation incorrect!")];
+
+        $user->setPassword($password);
+        $user->is_activated = (1);
+        $user->clearResetPasswordToken();
+        $user->__update();
 
         return [
-            "user" => $userapp,
+            "user" => $user,
             "success" => true,
-            "jwt" => Auth::getJWT($userapp)
+            "jwt" => Auth::getJWT($user)
         ];
     }
 

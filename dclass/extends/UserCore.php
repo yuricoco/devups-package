@@ -76,6 +76,68 @@ class UserCore extends \Model implements JsonSerializable
     }
 
     /**
+     * ETAPE P.1 : jeton dedie a la reinitialisation de mot de passe -
+     * distinct du code court d'activation (activationcode, garde pour
+     * l'activation de compte et le SMS). Seul le hash (sha256) du jeton
+     * est stocke, jamais le jeton en clair.
+     * @Column(name="reset_token_hash", type="string", length=255, nullable=true)
+     * @var string
+     **/
+    protected $reset_token_hash;
+
+    /**
+     * @Column(name="reset_token_expired_at", type="datetime", nullable=true)
+     * @var string
+     **/
+    protected $reset_token_expired_at;
+
+    /**
+     * ETAPE P.1 : genere un jeton aleatoire cryptographiquement sur
+     * (random_bytes(32), encode en base64url), stocke seulement son hash
+     * sha256 avec une expiration courte (defaut 30 min,
+     * RESET_PASSWORD_TOKEN_TTL_MINUTES) et usage unique (voir
+     * clearResetPasswordToken()). Un nouvel appel ecrase le hash
+     * precedent, invalidant implicitement tout jeton emis plus tot pour ce
+     * compte. Retourne le jeton EN CLAIR - a transmettre une seule fois
+     * (lien email), jamais journalise ni renvoye par l'API.
+     */
+    public function setResetPasswordToken(): string
+    {
+        $token = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
+        $this->reset_token_hash = hash('sha256', $token);
+        $this->reset_token_expired_at = date("Y-m-d H:i:s", strtotime("+" . RESET_PASSWORD_TOKEN_TTL_MINUTES . " minutes"));
+        return $token;
+    }
+
+    /**
+     * Verifie le jeton EN CLAIR recu (lien email) contre le hash stocke,
+     * sans le consommer : true si le hash correspond et que le jeton n'a
+     * pas expire.
+     */
+    public function verifyResetPasswordToken(string $token): bool
+    {
+        if (!$this->reset_token_hash || $token === '')
+            return false;
+        if (!hash_equals($this->reset_token_hash, hash('sha256', $token)))
+            return false;
+        if (!$this->reset_token_expired_at || strtotime($this->reset_token_expired_at) < time())
+            return false;
+        return true;
+    }
+
+    /**
+     * Invalide le jeton de reinitialisation en attente (usage unique apres
+     * un reset reussi, ou mot de passe change par un autre moyen -
+     * changepassword(), resetCredential() - pendant qu'un jeton etait
+     * actif).
+     */
+    public function clearResetPasswordToken(): void
+    {
+        $this->reset_token_hash = null;
+        $this->reset_token_expired_at = null;
+    }
+
+    /**
      * @Column(name="last_login", type="datetime"  , nullable=true)
      * @var date
      **/

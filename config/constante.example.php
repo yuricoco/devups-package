@@ -125,6 +125,11 @@ define('LOG_RETENTION_DAYS', dv_env('LOG_RETENTION_DAYS', 90));
  * verification/le renvoi de ces codes.
  */
 define('ACTIVATION_CODE_TTL_MINUTES', (int)dv_env('ACTIVATION_CODE_TTL_MINUTES', 15));
+/**
+ * ETAPE P.1 : expiration du jeton dedie de reinitialisation de mot de
+ * passe (distinct du code court d'activation ci-dessus).
+ */
+define('RESET_PASSWORD_TOKEN_TTL_MINUTES', (int)dv_env('RESET_PASSWORD_TOKEN_TTL_MINUTES', 30));
 define('RATE_LIMIT_CODE_MAX_ATTEMPTS', (int)dv_env('RATE_LIMIT_CODE_MAX_ATTEMPTS', 5));
 define('RATE_LIMIT_LOGIN_MAX_ATTEMPTS', (int)dv_env('RATE_LIMIT_LOGIN_MAX_ATTEMPTS', 5));
 define('RATE_LIMIT_LOGIN_MAX_ATTEMPTS_IP', (int)dv_env('RATE_LIMIT_LOGIN_MAX_ATTEMPTS_IP', 20));

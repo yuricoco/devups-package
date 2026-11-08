@@ -70,8 +70,11 @@ class User extends UserCore implements JsonSerializable, NotificationSerialize
         // UserFrontController::checkActivationCode()).
         $this->activationcode_expired_at = date("Y-m-d H:i:s", strtotime("+" . ACTIVATION_CODE_TTL_MINUTES . " minutes"));
         // Un nouveau code annule les echecs comptabilises contre l'ancien.
+        // ETAPE P.1 : 'reset_password' retire de cette liste - la
+        // reinitialisation de mot de passe utilise desormais son propre
+        // jeton dedie (setResetPasswordToken()), plus checkActivationCode().
         if ($this->id) {
-            foreach (['activateaccount', 'reset_password', 'change_telephone'] as $purpose)
+            foreach (['activateaccount', 'change_telephone'] as $purpose)
                 (new \RateLimiter($purpose . ':' . $this->id, ACTIVATION_CODE_TTL_MINUTES * 60, RATE_LIMIT_CODE_MAX_ATTEMPTS))->clear();
         }
     }
