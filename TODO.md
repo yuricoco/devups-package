@@ -10,6 +10,108 @@ documentait comme ouverts ont ete traites dans cette session (voir
 "Resume phase par phase" plus bas). Seul le point Phase 4 (CMS) reste
 ouvert, voir ci-dessous.
 
+## Securite langue - ETAPE H
+
+### H.1/H.2/H.3 - dv_valid_lang(), tests e2e et realpath : FAITS
+
+- Phase : H.1/H.2/H.3
+- Vulnerabilite corrigee : `local()` renvoyait directement
+  `Request::get('lang')`, sans aucune validation, et `lang.php`
+  construisait `LANG_DIR . local() . '.php'` avec cette valeur brute
+  pour un `require` - une traversee de repertoire (`?lang=../../../x`)
+  pouvait donc faire inclure n'importe quel fichier `.php` atteignable
+  depuis `LANG_DIR` par ce chemin. `t_lang($cle, $iso)` avait exactement
+  le meme defaut sur son parametre `$iso`, deja expose (appele avec une
+  valeur venant d'un champ utilisateur dans les vues de mail).
+- Correctif : une seule porte d'entree, `dv_valid_lang($iso): ?string`
+  (`dclass/dvups_functions.php`) - n'accepte que `^[a-z]{2}$` ET une
+  langue ACTIVE (cache `Dvups_lang::cachedActiveDlangs()`, jamais une
+  requete SQL directe), sinon `null`. `local()`, `setlang()`, le
+  chargement principal de `lang.php` et `t_lang()` passent tous
+  desormais par elle (repli sur `__lang`/`__default_lang` si invalide).
+  `dv_valid_lang()` encapsule l'appel au cache dans un `try/catch` :
+  base indisponible ou pas encore migree (outillage CLI, amorcage des
+  tests avant creation du schema) => refus (`null`), jamais un plantage.
+- Defense en profondeur (H.3) : `dv_lang_file_path($iso): ?string`
+  verifie en plus, par `realpath()`, que `LANG_DIR . $iso . '.php'`
+  reste bien a l'interieur de `LANG_DIR` avant tout `file_exists()`/
+  `require` - redondant avec le format impose par `dv_valid_lang()`
+  pour les appels normaux, mais couvre un eventuel appel direct avec un
+  `$iso` qui n'y serait pas passe.
+- Effet de bord corrige en chaine : valider `local()` declenche desormais
+  le premier usage (autoload) de la classe `Dvups_lang` DANS `lang.php`,
+  donc AVANT `src/requires.php` - deux `require` "nus" (pas
+  `require_once`) de son fichier d'entite re-declaraient la classe et
+  faisaient planter TOUTES les pages admin ("Cannot declare class
+  Dvups_lang, because the name is already in use") :
+  `src/devups/ModuleLang/devups.modulelang.php` et
+  `dclass/generator/builder.php` (CLI `devups`, branche partagee par
+  toutes les commandes hors `core:g:*`, dont `lang:scan`) - les deux
+  corriges en `require_once`. `tests/bootstrap.php` adapte dans le meme
+  esprit : `lang.php` est maintenant charge APRES la creation du
+  schema/les donnees de test (sinon le tout premier appel de
+  `dv_valid_lang()` interrogerait une table `dvups_lang` qui n'existe
+  pas encore).
+- Tests : `tests/Unit/LangSecurityTest.php` (18 cas invalides -
+  traversees simple/encodee/profonde, balise script, injection SQL
+  grossiere, casse, longueur, types non-string - + acceptation d'une
+  langue active, rejet d'une langue bien formee mais inactive/inconnue,
+  `dv_lang_file_path()`, `local()`/`setlang()`/`t_lang()` avec
+  `Request::set('lang', ...)`) et `tests/E2E/LangSecurityTest.php`
+  (page d'accueil et page de connexion admin avec `?lang=` malveillant :
+  200, aucune erreur serveur, page entierement rendue ; balise
+  `<script>` jamais presente non echappee dans les liens generes).
+- Suite complete verte : 216 tests, 0 echec, 12 incomplete (inchange).
+
+### H.4 - audit require/include/file_get_contents a partir d'une entree utilisateur
+
+- Phase : H.4
+- Methode : recherche de tout `require`/`require_once`/`include`/
+  `include_once`/`file_get_contents`/`fopen`/`readfile` dont le chemin
+  derive de `Request::get`/`$_GET`/`$_POST`/`$_COOKIE` ou d'un champ
+  venant de la base, dans tout le depot (hors `vendor/`).
+- `dclass/devups/Dfile.php::uploadchunk($uploaddir)` - CRITIQUE SI
+  JAMAIS APPELEE DEPUIS UNE ROUTE (ecriture arbitraire de fichier) :
+  `$_GET['hashName']`/`$_GET['fileName']` utilises bruts dans
+  `fopen($path . $hashname, "ab")`, avec le corps de la requete
+  (`php://input`) ecrit dedans - un `?hashName=../../../x` combine a un
+  corps de requete arbitraire aurait permis d'ecrire n'importe quel
+  fichier (ex. un webshell). Verifie par grep : **cette methode n'est
+  appelee par AUCUNE route ni controleur du depot** (code mort) - donc
+  non exploitable aujourd'hui, mais une bombe a retardement si jamais
+  quelqu'un la relie a une route sans relire ce commentaire. Corrige
+  par precaution (`basename()` sur les deux parametres) plutot que
+  seulement documente, le cout etant nul.
+- `src/devupscms/ModuleReporting/Controller/ReportingmodelController.php::loadContent($name)`
+  - MOYEN (authentification admin requise, portee limitee par le
+  suffixe fixe `_<local>.html`) : `$name` (parametre de route) concatene
+  sans controle dans `Reportingmodel::classroot("Resource/partial/{$name}_$local.html")`,
+  lu par `file_get_contents()` - traversee de repertoire possible vers
+  tout fichier se terminant par `_fr.html`/`_en.html` atteignable depuis
+  ce dossier. Corrige (`basename($name)`). `saveContent($id)` durcie de
+  la meme maniere par precaution (`basename($rm->name)`), bien que
+  `$rm->name` vienne de la base (saisie admin), pas directement de la
+  requete.
+- Autres usages de `Request::get('lang')` repares, bas risque (deja des
+  requetes SQL parametrees, jamais de lecture de fichier) : signales ici
+  plutot que modifies, pour rester dans le perimetre "fichier" de H.4 -
+  `Dvups_lang::defaultLang()` et `Request::Route()`
+  (`dclass/devups/Http/Request.php:237`) interrogent directement
+  `iso_code` avec la valeur brute du parametre, sans passer par
+  `dv_valid_lang()` ; une requete parametree limite le risque a une
+  recherche qui ne renvoie simplement aucun resultat pour une valeur
+  invalide (pas d'injection SQL), mais la coherence voudrait qu'elles
+  utilisent elles aussi `dv_valid_lang()` - laisse pour une prochaine
+  session, bas risque.
+- Rien d'autre trouve : les nombreux autres `file_get_contents()` du
+  depot (generateur, documentation, cache local, upload d'images via
+  `Dfile`) portent sur des chemins construits a partir de noms de classe/
+  composant internes (routing deja contraint par l'autoloader) ou de
+  champs deja valides/manipules par le framework (`Dfile::sanitize()`),
+  pas directement sur une entree brute.
+- Fichiers concernes : `dclass/devups/Dfile.php`,
+  `src/devupscms/ModuleReporting/Controller/ReportingmodelController.php`.
+
 ## Phase 4 (CMS) - ETAPE G
 
 ### G.1/G.2/G.3 - plan, renommages et ecran d'edition : FAITS
