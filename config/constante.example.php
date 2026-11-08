@@ -136,6 +136,14 @@ define('RATE_LIMIT_LOGIN_MAX_ATTEMPTS_IP', (int)dv_env('RATE_LIMIT_LOGIN_MAX_ATT
 define('RATE_LIMIT_LOGIN_WINDOW_SECONDS', (int)dv_env('RATE_LIMIT_LOGIN_WINDOW_SECONDS', 900));
 define('RATE_LIMIT_RESEND_MAX_ATTEMPTS', (int)dv_env('RATE_LIMIT_RESEND_MAX_ATTEMPTS', 3));
 define('RATE_LIMIT_RESEND_WINDOW_SECONDS', (int)dv_env('RATE_LIMIT_RESEND_WINDOW_SECONDS', 3600));
+/**
+ * ETAPE P.3 : liste blanche d'IP (reverse proxy, load balancer...)
+ * autorisees a fixer l'IP du client via X-Forwarded-For (ou assimile) -
+ * voir Util::get_IP_address(). Vide par defaut : aucun en-tete client
+ * n'est jamais pris en compte tant que ce n'est pas configure
+ * explicitement avec l'IP (ou la plage) du proxy reel.
+ */
+define('TRUSTED_PROXIES', dv_env('TRUSTED_PROXIES', ''));
 
 /**
  * ETAPE M.3 : Web Push (VAPID) - jamais versionnees, dans .env

@@ -54,6 +54,9 @@
         <env name="JWT_SECRET" value="phpunit-secret-key-0123456789abcdef0123456789" force="false"/>
         <env name="MAIL_FROM" value="no-reply@devups.test" force="false"/>
         <env name="CRON_TOKEN" value="phpunit" force="false"/>
+        <!-- ETAPE P.3 : IP fixe de "proxy de confiance" pour UtilClientIpTest -
+             TRUSTED_PROXIES reste vide par defaut en production (config/constante.example.php) -->
+        <env name="TRUSTED_PROXIES" value="203.0.113.9" force="false"/>
     </php>
     <source>
         <include>

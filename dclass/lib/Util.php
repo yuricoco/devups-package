@@ -472,29 +472,69 @@ class Util
 
     }
 
+    /**
+     * ETAPE P.3 : seule fonction a interroger pour l'IP du client (utilisee
+     * par RateLimiter et Country). Les en-tetes transmis par le client
+     * (X-Forwarded-For et assimiles) ne sont dignes de confiance QUE si la
+     * requete vient elle-meme d'un proxy de confiance (REMOTE_ADDR dans
+     * TRUSTED_PROXIES, .env, vide par defaut) - sinon n'importe qui peut
+     * forger ces en-tetes pour usurper une IP et contourner le
+     * RateLimiter (ou se faire passer pour un autre pays).
+     */
     public static function get_IP_address()
     {
-        foreach (array('HTTP_CLIENT_IP',
-                     'HTTP_X_FORWARDED_FOR',
-                     'HTTP_X_FORWARDED',
-                     'HTTP_X_CLUSTER_CLIENT_IP',
-                     'HTTP_FORWARDED_FOR',
-                     'HTTP_FORWARDED',
-                     'REMOTE_ADDR') as $key){
-            if (array_key_exists($key, $_SERVER) === true){
-                foreach (explode(',', $_SERVER[$key]) as $IPaddress){
-                    $IPaddress = trim($IPaddress); // Just to be safe
+        $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? null;
 
-                    if (filter_var($IPaddress,
-                            FILTER_VALIDATE_IP,
-                            FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)
-                        !== false) {
-
-                        return $IPaddress;
-                    }
-                }
+        if ($remoteAddr !== null && self::isTrustedProxy($remoteAddr)) {
+            foreach (array(
+                         'HTTP_CLIENT_IP',
+                         'HTTP_X_FORWARDED_FOR',
+                         'HTTP_X_FORWARDED',
+                         'HTTP_X_CLUSTER_CLIENT_IP',
+                         'HTTP_FORWARDED_FOR',
+                         'HTTP_FORWARDED',
+                     ) as $key) {
+                if (array_key_exists($key, $_SERVER) && ($ip = self::firstValidPublicIp($_SERVER[$key])) !== null)
+                    return $ip;
             }
         }
+
+        return $remoteAddr !== null ? self::firstValidPublicIp($remoteAddr) : null;
+    }
+
+    /**
+     * Premiere IP publique valide d'une liste separee par des virgules
+     * (format de X-Forwarded-For), ou null si aucune.
+     */
+    private static function firstValidPublicIp($headerValue)
+    {
+        foreach (explode(',', (string)$headerValue) as $candidate) {
+            $candidate = trim($candidate); // Just to be safe
+
+            if (filter_var($candidate,
+                    FILTER_VALIDATE_IP,
+                    FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)
+                !== false) {
+
+                return $candidate;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * true si $ip figure dans TRUSTED_PROXIES (liste separee par des
+     * virgules, .env - vide par defaut : aucun proxy de confiance, donc
+     * aucun en-tete X-Forwarded-For pris en compte tant que ce n'est pas
+     * configure explicitement).
+     */
+    private static function isTrustedProxy($ip): bool
+    {
+        if ($ip === null || $ip === '')
+            return false;
+
+        $trusted = array_filter(array_map('trim', explode(',', TRUSTED_PROXIES)));
+        return in_array($ip, $trusted, true);
     }
     public static function getTimezone()
     {
