@@ -241,7 +241,7 @@ if ($argv[1] === 'schema:update') {
     //
     /*$em = DBAL::getEntityManager();
 
-    $listentities = ["Cmstext"];
+    $listentities = ["Cmscontent"];
     foreach ($listentities as $entity){
         $lc_entity = strtolower($entity);
         $migrationlang = ROOT."database/langs/migration_$lc_entity.json";

@@ -26,14 +26,14 @@
                     <div class="panel-heading">
                         <div class="row">
                             <div class="col-xs-12 ">
-                                <h5>Manage Cmstext</h5>
+                                <h5>Manage Cmscontent</h5>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
             <div class=" col-md-offset-6 col-lg-3">
-                <?= Genesis::top_action(Cmstext::class, true); ?>
+                <?= Genesis::top_action(Cmscontent::class, true); ?>
             </div>
         </div>
     </div>
@@ -56,7 +56,7 @@
 			
 </div>
         
-<div class="modal fade" id="cmstextmodal" tabindex="-1" role="dialog"
+<div class="modal fade" id="cmscontentmodal" tabindex="-1" role="dialog"
      aria-labelledby="modallabel">
     <div  class="modal-dialog" role="document">
         <div class="modal-content">
@@ -83,7 +83,7 @@
 
 <script src="<?= CLASSJS ?>model.js"></script>
 <script src="<?= CLASSJS ?>ddatatable.js"></script>
-<script src="Resource/js/cmstextCtrl.js"></script>
+<script src="Resource/js/cmscontentCtrl.js"></script>
 
 <?php } ?>
 @section('jsimport')

@@ -141,64 +141,64 @@ return array (
     'namespace_name' => 'Dvups_log',
     'component' => 'devups',
   ),
-  'devupscms\\ModuleCms\\Entity\\Cmstext' => 
+  'devupscms\\ModuleCms\\Entity\\Cmscontent' =>
   array (
     'path' => 'devupscms/ModuleCms/',
     'module' => 'ModuleCms',
-    'name' => 'Cmstext',
-    'label' => 'Cmstext',
+    'name' => 'Cmscontent',
+    'label' => 'Cmscontent',
     'namespace' => 'devupscms\\ModuleCms\\Entity\\',
-    'namespace_name' => 'Cmstext',
+    'namespace_name' => 'Cmscontent',
     'component' => 'devupscms',
   ),
-  'Cmstext' => 
+  'Cmscontent' =>
   array (
     'path' => 'devupscms/ModuleCms/',
     'module' => 'ModuleCms',
-    'name' => 'Cmstext',
-    'label' => 'Cmstext',
+    'name' => 'Cmscontent',
+    'label' => 'Cmscontent',
     'namespace' => 'devupscms\\ModuleCms\\Entity\\',
-    'namespace_name' => 'Cmstext',
+    'namespace_name' => 'Cmscontent',
     'component' => 'devupscms',
   ),
-  'devupscms\\ModuleCms\\Entity\\Comment' => 
+  'devupscms\\ModuleCms\\Entity\\Cmscomment' =>
   array (
     'path' => 'devupscms/ModuleCms/',
     'module' => 'ModuleCms',
-    'name' => 'Comment',
-    'label' => 'Comment',
+    'name' => 'Cmscomment',
+    'label' => 'Cmscomment',
     'namespace' => 'devupscms\\ModuleCms\\Entity\\',
-    'namespace_name' => 'Comment',
+    'namespace_name' => 'Cmscomment',
     'component' => 'devupscms',
   ),
-  'Comment' => 
+  'Cmscomment' =>
   array (
     'path' => 'devupscms/ModuleCms/',
     'module' => 'ModuleCms',
-    'name' => 'Comment',
-    'label' => 'Comment',
+    'name' => 'Cmscomment',
+    'label' => 'Cmscomment',
     'namespace' => 'devupscms\\ModuleCms\\Entity\\',
-    'namespace_name' => 'Comment',
+    'namespace_name' => 'Cmscomment',
     'component' => 'devupscms',
   ),
-  'devupscms\\ModuleCms\\Entity\\Imagecms' => 
+  'devupscms\\ModuleCms\\Entity\\Cmsresource' =>
   array (
     'path' => 'devupscms/ModuleCms/',
     'module' => 'ModuleCms',
-    'name' => 'Imagecms',
-    'label' => 'Imagecms',
+    'name' => 'Cmsresource',
+    'label' => 'Cmsresource',
     'namespace' => 'devupscms\\ModuleCms\\Entity\\',
-    'namespace_name' => 'Imagecms',
+    'namespace_name' => 'Cmsresource',
     'component' => 'devupscms',
   ),
-  'Imagecms' => 
+  'Cmsresource' =>
   array (
     'path' => 'devupscms/ModuleCms/',
     'module' => 'ModuleCms',
-    'name' => 'Imagecms',
-    'label' => 'Imagecms',
+    'name' => 'Cmsresource',
+    'label' => 'Cmsresource',
     'namespace' => 'devupscms\\ModuleCms\\Entity\\',
-    'namespace_name' => 'Imagecms',
+    'namespace_name' => 'Cmsresource',
     'component' => 'devupscms',
   ),
   'devupscms\\ModuleData\\Entity\\Interval' => 

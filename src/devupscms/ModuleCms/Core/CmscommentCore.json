@@ -1,6 +1,6 @@
 {
   "id": 192,
-  "name": "comment",
+  "name": "cmscomment",
   "attribut": {
     "3": {
       "name": "pseudo",
@@ -33,7 +33,7 @@
   },
   "relation": [
     {
-      "entity": "cmstext",
+      "entity": "cmscontent",
       "cardinality": "manyToOne",
       "nullable": "default",
       "ondelete": "cascade",
@@ -48,7 +48,7 @@
     }
   ],
   "module": {
-    "id": 5,
-    "name": "ModuleComment"
+    "id": 4,
+    "name": "ModuleCms"
   }
 }

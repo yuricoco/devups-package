@@ -23,14 +23,14 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    @include("admin.cmstext.formWidget")
+                    @include("admin.cmscontent.formWidget")
                 </div>
             </div>
         </div>
         <div class="col-lg-3 col-md-12  stretch-card">
             <div class="card">
                 <div class="card-body">
-                    {!! ImagecmsTable::init()->buildindextable()->render() !!}
+                    {!! CmsresourceTable::init(new Cmsresource())->buildindextable()->render() !!}
                 </div>
             </div>
         </div>
@@ -58,6 +58,6 @@
 
     <?= Form::addDformjs() ?>
     {!! Form::addjs(__admin.'plugins/tinymce.min') !!}
-    <?= Form::addjs(Cmstext::classpath('Resource/js/cmstextForm')) ?>
+    <?= Form::addjs(Cmscontent::classpath('Resource/js/cmscontentForm')) ?>
 
 @endsection

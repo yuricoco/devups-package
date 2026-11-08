@@ -107,30 +107,30 @@ return array (
     'icon' => 'fas fa-file-alt',
     'entities' => 
     array (
-      0 => 
+      0 =>
       array (
         'path' => 'devupscms/ModuleCms/',
         'module' => 'ModuleCms',
-        'name' => 'Cmstext',
-        'label' => 'Cmstext',
+        'name' => 'Cmscontent',
+        'label' => 'Cmscontent',
         'namespace' => 'devupscms\\ModuleCms\\Entity\\',
         'component' => 'devupscms',
       ),
-      1 => 
+      1 =>
       array (
         'path' => 'devupscms/ModuleCms/',
         'module' => 'ModuleCms',
-        'name' => 'Comment',
-        'label' => 'Comment',
+        'name' => 'Cmscomment',
+        'label' => 'Cmscomment',
         'namespace' => 'devupscms\\ModuleCms\\Entity\\',
         'component' => 'devupscms',
       ),
-      2 => 
+      2 =>
       array (
         'path' => 'devupscms/ModuleCms/',
         'module' => 'ModuleCms',
-        'name' => 'Imagecms',
-        'label' => 'Imagecms',
+        'name' => 'Cmsresource',
+        'label' => 'Cmsresource',
         'namespace' => 'devupscms\\ModuleCms\\Entity\\',
         'component' => 'devupscms',
       ),

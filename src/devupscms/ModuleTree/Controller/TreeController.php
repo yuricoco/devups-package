@@ -24,7 +24,7 @@ class TreeController extends Controller
     {
 
         Genesis::renderView("overview", [
-            "basecontenturl" => Cmstext::classpath("cmstext/")
+            "basecontenturl" => Cmscontent::classpath("cmscontent/")
         ]);
     }
 

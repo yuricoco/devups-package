@@ -3,15 +3,15 @@
 
 use Genesis as g;
 
-class CmstextForm extends FormManager
+class CmscontentForm extends FormManager
 {
 
-    public $cmstext;
+    public $cmscontent;
 
-    public static function init(\Cmstext $cmstext, $action = "")
+    public static function init(\Cmscontent $cmscontent, $action = "")
     {
-        $fb = new CmstextForm($cmstext, $action);
-        $fb->cmstext = $cmstext;
+        $fb = new CmscontentForm($cmscontent, $action);
+        $fb->cmscontent = $cmscontent;
         return $fb;
     }
 
@@ -19,10 +19,10 @@ class CmstextForm extends FormManager
     {
         
         $this->fields['reference'] = [
-            "label" => t('cmstext.reference'),
+            "label" => t('cmscontent.reference'),
             FH_REQUIRE => false,
             "type" => FORMTYPE_TEXT,
-            "value" => $this->cmstext->reference,
+            "value" => $this->cmscontent->reference,
         ];
 
         return $this;
@@ -37,14 +37,14 @@ class CmstextForm extends FormManager
             FH_REQUIRE => false,
             "lang" => true,
             "type" => FORMTYPE_TEXT,
-            "value" => $this->cmstext->title,
+            "value" => $this->cmscontent->title,
         ];
 
         $this->fields['reference'] = [
-            "label" => t('cmstext.reference'),
+            "label" => t('cmscontent.reference'),
             FH_REQUIRE => false,
             "type" => FORMTYPE_TEXT,
-            "value" => $this->cmstext->getReference(),
+            "value" => $this->cmscontent->getReference(),
         ];
 
 
@@ -54,7 +54,7 @@ class CmstextForm extends FormManager
 
     public static function renderWidget($id = null, $action = "create")
     {
-        Genesis::renderView("cmstext.formWidget", self::getFormData($id, $action));
+        Genesis::renderView("cmscontent.formWidget", self::getFormData($id, $action));
     }
 
 }

@@ -12,94 +12,81 @@ ouvert, voir ci-dessous.
 
 ## Phase 4 (CMS) - ETAPE G
 
-### G.1 - plan (tables, colonnes, migration, routes impactees)
+### G.1/G.2/G.3 - plan, renommages et ecran d'edition : FAITS
 
-Issu d'une revue du code (`Cmstext`/`Cmstext_lang`, `Imagecms`,
-`CommentCore.json`, `ModuleGallery`, `ModuleTree`) - voir le detail des
-constats dans l'historique de session. Resume :
+Le plan (G.1) a ete execute dans cette meme session (pas seulement
+ecrit) : la decision initiale de reporter G.2/G.3 a ete revisee une
+fois constate que, comme pour toutes les suppressions de table de
+cette session (ModuleDatabase, Local_content*, dvups_log...), le code
+des renommages peut etre ecrit et teste integralement contre la base
+de test (schema recree depuis les entites par Doctrine SchemaTool)
+SANS jamais executer de migration sur une base reelle - le risque
+"perte de donnees" ne portait que sur l'EXECUTION de la migration, pas
+sur l'ecriture du code, exactement comme les migrations DROP deja
+ecrites (jamais executees) plus haut.
 
-**Renommages prevus**
+- Renommage `Cmstext`/`Cmstext_lang` -> `Cmscontent`/`Cmscontent_lang`
+  (classes, table `cmstext`/`cmstext_lang` -> `cmscontent`/
+  `cmscontent_lang`, routes `services.php`, vues, JS) : fait
+  integralement (entite, formulaire, datatable, controleur, front
+  controleur, vues `cmscontent/*` et `admin/cmscontent/*`).
+- `Imagecms` (table de jointure vers `Dv_image`) reconstruit en
+  `Cmsresource`, qui etend `ImageCore` DIRECTEMENT (meme modele que
+  `Dv_image`) : absorbe le stockage de fichier au lieu d'une jointure,
+  lie a `Cmscontent` par `cmscontent_id`. Plus de dependance a
+  `Dv_image` pour les images de contenu CMS.
+- `Cmscomment` genere proprement (entite/formulaire/datatable/
+  controleur) a partir de `CommentCore.json` dont le `module.name`
+  pointait vers un `ModuleComment` inexistant - corrige vers
+  `ModuleCms` (ou `Comment` etait deja enregistre dans
+  `config/dvups_configurations.php`/`module_configurations.php`,
+  maintenant renomme `Cmscomment`). Aucune donnee a migrer : la table
+  `comment` n'a jamais existe (aucune entite generee avant cette
+  session).
+- La page d'edition admin (`/admin/devupscms/ModuleCms/cmscontent/edit?id=1`)
+  fonctionne : le Blade casse (`Resource/views/cmscontent/form.blade.php`,
+  accolade d'ouverture `{!!` manquante avant un bloc
+  `Dv_imageTable::init(...)` mort) est corrige et repointe vers
+  `CmsresourceTable` ; la meme vue accedait aussi `$cmscontent->title[$iso]`/
+  `content[$iso]` en supposant toujours un tableau par langue (jamais le
+  cas pour un contenu cree hors du flux d'edition JS en place, ex. un
+  fixture de test) - rendue robuste (`is_array(...) ? ... : ...`) sans
+  changer le comportement du flux existant. Couvert par
+  `tests/E2E/CmscontentEditPageTest.php`.
+- Bug latent decouvert en testant : `Model::create()` sur une entite
+  `dvtranslate=true` (comme `Cmscontent`, heritage de `Cmstext`)
+  appelait `Dvups_lang::readCache()`, methode retiree a l'ETAPE E.7 de
+  cette meme session (remplacee par `cachedActiveDlangs()`, dont le
+  format - map iso<->id - ne correspond pas a ce que ce code attend) ;
+  jamais exerce avant (aucun test n'appelait `Cmstext::create()`).
+  Corrige au point d'appel (`dclass/devups/Tchutte/DBAL.php`) par
+  `Dvups_lang::all()`, qui restaure le comportement d'avant l'ETAPE E.7
+  pour ce chemin precis - pas un chantier de cache a part, juste la
+  reparation d'une regression introduite plus tot dans cette session.
+- `Cmsresource`/`Cmscomment` genere aussi des ecrans `list`/`form`
+  fonctionnels (verifies par `AdminScreensTest` - voir "Etat des
+  tests") : 2 entrees `KNOWN_BROKEN` devenues sans objet retirees
+  (`imagecms/form`, `comment/form`).
+- Renommages annexes necessaires decouverts en grepant les references
+  residuelles a `Cmstext`/`Imagecms` : `Tree_item::getCmstext()` ->
+  `getCmscontent()` (methode reelle, mais seul appelant etait du code
+  mort apres un `return` anterieur - corrige quand meme) ;
+  `Tree_itemController::addcontentAction()` et
+  `TreeController::managerView()` (chemins reels, utilises par le
+  module Arbre pour creer un contenu CMS depuis un item d'arbre).
+- Tests : `tests/Integration/CmsPhase4Test.php` (persistance
+  Cmscontent/Cmsresource/Cmscomment et leurs relations) et
+  `tests/E2E/CmscontentEditPageTest.php` (page d'edition demandee par
+  la consigne, verifiee sans erreur serveur).
 
-- Table `cmstext` -> `cmscontent`, table `cmstext_lang` ->
-  `cmscontent_lang` (colonne FK `cmstext_id` -> `cmscontent_id`) ;
-  classes `Cmstext`/`Cmstext_lang`/`CmstextController`/`CmstextForm`/
-  `CmstextTable` -> `Cmscontent*`. Le datacore `CmstextCore.json` est
-  perime (longueur de `reference` fausse - 25 au lieu de 125 -,
-  colonnes `lang`/`creationdate` fantomes qui n'existent pas sur
-  l'entite, relation `tree_item` et colonnes `slug`/`active`/
-  `position` absentes) : a corriger AVANT toute regeneration, pas a
-  suivre tel quel.
-- `imagecms` (table de jointure pure `id`/`image`/`cmstext`, sans
-  colonne de fichier propre) -> `cmsresource`, reconstruit comme une
-  entite qui etend `ImageCore` directement (meme modele que `Dv_image`)
-  plutot qu'une table de jointure : absorbe le stockage de fichier et
-  le lien vers `cmscontent`. `ImagecmsCore.json` est egalement perime
-  (attribut `width_size` fantome, aucune relation listee).
-- `comment` -> `cmscomment` : aucune entite n'existe aujourd'hui, seul
-  `CommentCore.json` (datacore) existe, avec `module.name` pointant
-  vers `ModuleComment` (module inexistant - reference orpheline). Les
-  deux fichiers de config (`config/dvups_configurations.php`,
-  `config/module_configurations.php`) enregistrent deja `Comment` sous
-  `ModuleCms`/`devupscms` : corriger `module.name` dans le datacore
-  vers `ModuleCms`, puis generer proprement via
-  `php devups core:g:crud Comment` (ou entite/controleur/formulaire/
-  table individuellement).
-
-**Migration (ecrite, NON executee - voir regle framework)**
-
-```sql
-RENAME TABLE cmstext TO cmscontent;
-RENAME TABLE cmstext_lang TO cmscontent_lang;
-ALTER TABLE cmscontent_lang CHANGE cmstext_id cmscontent_id INT;
--- cmsresource : creer la nouvelle table (ImageCore + colonne
--- cmscontent_id), recuperer les donnees de imagecms JOIN dv_image,
--- puis seulement alors DROP imagecms (voir G.4 plus bas) - jamais
--- avant la recuperation des donnees.
-```
-
-**Routes impactees**
-
-- `services.php` : tous les cas `cmstext.*`/`cmstext/*` -> `cmscontent.*`.
-- Route generique admin `/admin/devupscms/ModuleCms/cmscontent/edit?id=1`
-  (et equivalent API `admin/api/cmscontent/update`) : doit fonctionner
-  une fois la vue corrigee (voir G.3).
-- `imagecms.*` -> `cmsresource.*` partout ou reference (services.php,
-  vues).
-
-### G.2/G.3 - implementation (renommages, migration, ecran edition) - REPORTEE
-
-- Phase : G.2, G.3
-- Ce qui reste : executer les renommages de table/classe ci-dessus,
-  ecrire et verifier la migration de donnees `imagecms JOIN dv_image`
-  -> `cmsresource` (recuperation AVANT toute suppression), corriger le
-  Blade casse de `src/devupscms/ModuleCms/Resource/views/cmstext/
-  form.blade.php` (ligne ~105 : accolade d'ouverture `{!!` manquante
-  avant `Dv_imageTable::init(...)`, rendant le bloc totalement mort -
-  c'est la cause concrete pour laquelle l'edition d'un cmstext est
-  aujourd'hui cassee) et le repointer vers `cmsresource` au lieu de
-  `Dv_image`/`Dv_imageTable`, puis faire de meme pour
-  `admin/cmstext/form.blade.php` (widget `ImagecmsTable` embarque).
-- Pourquoi non fait dans cette session : contrairement aux suppressions
-  deja executees (ModuleDatabase, Local_content*, Page_mapped - mortes
-  des l'origine, aucune donnee reelle a preserver), ce chantier
-  renomme des tables qui contiennent potentiellement des donnees
-  reelles (contenus CMS existants) ET change leur forme (jointure ->
-  entite fichier), ce qui demande une verification manuelle des
-  donnees migrees (correspondance 1-a-1 image<->cmstext, fichiers
-  physiques toujours presents sur disque) avant d'executer quoi que ce
-  soit - une erreur ici est difficile a detecter par les tests seuls et
-  risque la perte silencieuse de contenu. Vu le temps restant de la
-  session, mieux valait livrer un plan solide et verifiable que
-  d'executer des renommages de schema non valides manuellement.
-- Fichiers concernes : `src/devupscms/ModuleCms/Entity/Cmstext.php`,
-  `Cmstext_lang.php`, `Controller/CmstextController.php`,
-  `Form/CmstextForm.php`, `Datatable/CmstextTable.php`,
-  `Resource/views/cmstext/form.blade.php`,
-  `Resource/views/admin/cmstext/form.blade.php`,
-  `src/devupscms/ModuleCms/Entity/Imagecms.php`, `CmstextCore.json`,
-  `ImagecmsCore.json`, `services.php`,
-  `database/migration/` (migration a ecrire une fois le mapping de
-  donnees verifie).
+**Migration (ecrite, NON executee, comme pour toute migration de cette
+session - voir `database/migration/2026_11_08_phase4_cms_rename.sql`)** :
+renomme `cmstext`/`cmstext_lang` en `cmscontent`/`cmscontent_lang`, cree
+`cmsresource` et `cmscomment` (vides - `cmsresource` doit ensuite etre
+peuplee depuis `imagecms JOIN dv_image`, voir le commentaire detaille
+dans le fichier ; le script ne fait PAS cette migration de donnees
+automatiquement, elle reste a verifier et executer a la main avant de
+decommenter le DROP de `imagecms`).
 
 ### G.4 - suppression ModuleGallery - REPORTEE (depend de G.2/G.3)
 
@@ -119,11 +106,15 @@ ALTER TABLE cmscontent_lang CHANGE cmstext_id cmscontent_id INT;
   et supprimer `src/devupscms/ModuleGallery/` ; retirer de
   `KNOWN_BROKEN` les entrees `imagecms/form` et `tree-item-image/form`
   ("depend de ModuleGallery") une fois corrige.
-- Pourquoi non fait : bloque par G.2/G.3 (cmsresource doit exister et
-  etre verifie avant de pouvoir y migrer les donnees de dv_image) ; la
-  dependance supplementaire de `ModuleTree` (non mentionnee dans la
-  demande initiale, decouverte pendant la revue) ajoute un risque de
-  perte de donnees (images d'arborescence) si traitee a la hate.
+- Pourquoi non fait : `cmsresource` existe desormais (G.2/G.3 faits),
+  mais la dependance supplementaire de `ModuleTree`/`Tree_item_image` a
+  `Dv_image` (non mentionnee dans la demande initiale, decouverte
+  pendant la revue - images d'arborescence, pas des images de contenu
+  CMS) reste entiere : supprimer `ModuleGallery` casserait cette
+  fonctionnalite tant qu'elle n'est pas repointee ou volontairement
+  abandonnee, ce qui est une decision produit (perdre la gestion
+  d'image des items d'arbre, ou la reconstruire ailleurs) plutot qu'une
+  simple execution mecanique - laissee pour une prochaine session.
 - Fichiers concernes : `src/devupscms/ModuleGallery/**`,
   `src/devups/ModuleTree/Entity/Tree_item_image.php`,
   `src/devups/ModuleTree/Form/Tree_item_imageForm.php`,
@@ -132,46 +123,63 @@ ALTER TABLE cmscontent_lang CHANGE cmstext_id cmscontent_id INT;
   `config/dvups_configurations.php`, `config/module_configurations.php`,
   `tests/E2E/AdminScreensTest.php` (KNOWN_BROKEN).
 
-### G.5 - generateur/datacores/tests e2e - REPORTEE (depend de G.1-G.4)
+### G.5 - generateur/datacores/tests e2e
 
 - Phase : G.5
-- Ce qui reste : corriger `CmstextCore.json`/`ImagecmsCore.json`/
-  `CommentCore.json` (voir G.1) avant toute regeneration ; mettre a
-  jour les cles `screens()` de `AdminScreensTest` (`cmstext`/
-  `imagecms`/`comment` -> `cmscontent`/`cmsresource`/`cmscomment`) et
-  retirer les entrees `KNOWN_BROKEN` devenues sans objet ; verifier
-  qu'aucune autre reference a `cmstext`/`imagecms`/`Dv_image`/
-  `ModuleGallery` ne subsiste dans la suite de tests.
-- Pourquoi non fait : depend entierement de G.2-G.4.
-- Fichiers concernes : `dclass/generator/datacores/CmstextCore.json`
-  (chemin exact a confirmer), `ImagecmsCore.json`, `CommentCore.json`,
-  `tests/E2E/AdminScreensTest.php`.
+- Fait (en meme temps que G.2/G.3, pas seulement a l'issue de G.4) :
+  `CmscontentCore.json`/`CmsresourceCore.json`/`CmscommentCore.json`
+  corriges (plus de colonnes fantomes, relations completes, module.name
+  de Comment corrige vers ModuleCms) ; `AdminScreensTest::screens()`
+  genere deja les bonnes cles depuis `config/dvups_configurations.php`
+  mis a jour (`cmscontent`/`cmsresource`/`cmscomment`), aucune cle en
+  dur a changer ; 2 entrees `KNOWN_BROKEN` sans objet retirees
+  (`imagecms/form`, `comment/form`) ; confirme par grep qu'aucune
+  reference residuelle a `Cmstext`/`Imagecms` ne subsiste dans le code
+  (`Tree_item`/`Tree_itemController`/`TreeController` corriges au
+  passage, voir G.1/G.2/G.3 ci-dessus).
+- Ce qui reste : l'entree `KNOWN_BROKEN` `tree-item-image/form`
+  ("depend de ModuleGallery") ne pourra etre retiree qu'une fois G.4
+  traite.
+- Fichiers concernes : `tests/E2E/AdminScreensTest.php`.
 
 ---
 
 ## Traductions non encore faites (lang:missing, en.php)
 
 `php devups lang:missing` (execute sur le vrai dossier `lang/`, pas sur
-le dossier temporaire de test) rapporte 274 cles non traduites dans
+le dossier temporaire de test, apres les renommages CMS de l'ETAPE G -
+qui ont ajoute `cmscontent.reference`/`entity.cmscontent` et retire
+l'ancienne cle orpheline `cmstext.reference`, et traduit au passage
+`non`/`oui`) rapporte desormais 271 cles non traduites dans
 `lang/en.php` (valeur = cle, comme prevu par la regle : "pour le reste,
 laisse valeur = cle"). Liste complete (ordre alphabetique, tel que
 rapporte par la commande) :
 
-Notfication type, Notification, Numero, Numéro de téléphone mise a
-jour, Object of the mail, Occurrences, Parent id, Payload, Pays,
-Phonenumber, Position, Profile, Ref, Reference, Responsable centre,
-Save, Session, Size, Status, Statut, Sujet, Timer (minutes), Title of
-the mail, Titre, Tous les champs sont important, Type, Type of
-reporting, Un nouveau code d'activation vous a ete envoye, Une erreur
-interne est survenue., Update Privilege, User, User_ext_id, User_id,
-Username, Utilisateur introuvable, Verification du compte, Viewedat,
-Width, _key, _max, _min, _value, action, alias, auth_token, birthdate,
-callback, chain, client, cmstext.reference, code, code d'activation
-vous a été envoyé. Utilisez le pour confirmer le changement de votre
-numéro., comment, configuration._key, configuration._type,
-configuration._value, configuration.comment, configuration.id,
-constraint, content, content_type, context, continent.id,
-continent.name, continent.status, country not found,
+#, A constante with same key already exist, Action, Activated, Active,
+Admin, Alias, All, Auth_token, Callback, Ce numéro de téléphone existe
+déjà, Client, Code, Content, Content <br><i>NB: use : to specify a
+variable i.e: :username</i>, Contenu text, Country has not been
+specified. important for phonenumber, CreatedAt, Date, Description,
+Description of the mail, Dvups_action, Dvups_role, Email, Email model
+name, Entity, Entity_class, Entityid, Event i.e: new_message, Export
+csv, File, First_at, Folder, Fomat de l'adresse email invalide,
+Height, Image, Information mis à jour avec succès, Interval, Item
+deleted successfully, Label, Last call, Last_at, Le code d'activation
+n'est pas valide. Veuillez entrer de nouveau ou alors renvoyer un
+autre code, Level, Line, Line to show, Log, Message, Mot de passe mise
+à jour avec succès, Name, Notfication type, Notification, Numéro de
+téléphone mise a jour, Object of the mail, Occurrences, Parent id,
+Payload, Phonenumber, Position, Profile, Ref, Reference, Save,
+Session, Size, Status, Timer (minutes), Title of the mail, Type, Type
+of reporting, Un nouveau code d'activation vous a ete envoye, Une
+erreur interne est survenue., User, User_ext_id, User_id, Username,
+Viewedat, Width, _key, _max, _min, _value, action, alias, auth_token,
+birthdate, callback, chain, client, cmscontent.reference, code, code
+d'activation vous a été envoyé. Utilisez le pour confirmer le
+changement de votre numéro., comment, configuration._key,
+configuration._type, configuration._value, configuration.comment,
+configuration.id, constraint, content, content_type, context,
+continent.id, continent.name, continent.status, country not found,
 country.created_at, country.deleted_at, country.id, country.iso,
 country.iso3, country.name, country.nicename, country.numcode,
 country.phonecode, country.status, country.updated_at, create,
@@ -186,19 +194,19 @@ dvups_log.last_at, dvups_log.level, dvups_log.line, dvups_log.log_file,
 dvups_log.message, dvups_log.occurrences, dvups_role,
 dvups_role.alias, dvups_role.name, edit, email, emailmodel.content,
 emailmodel.contenttext, emailmodel.id, emailmodel.object, endpoint,
-entity, entity.dv_image, entity.notification, entity.tree_item,
-entity_class, export, file, fingerprint, first_at, firstname, height,
-id, image, interval, interval (J), interval._max, interval._min,
-interval._value, interval.label, is_activated, label, lang, last_at,
-lastname, le numéro doit etre constitué de 9 caractères, level, line,
-log, log_file, message, name, next_call, notification.content,
-notification.creationdate, notification.entity, notification.entityid,
-notification.id, notificationbroadcasted.status,
+entity, entity.cmscontent, entity.dv_image, entity.notification,
+entity.tree_item, entity_class, export, file, fingerprint, first_at,
+firstname, height, id, image, interval, interval (J), interval._max,
+interval._min, interval._value, interval.label, is_activated, label,
+lang, last_at, lastname, le numéro doit etre constitué de 9
+caractères, level, line, log, log_file, message, name, next_call,
+notification.content, notification.creationdate, notification.entity,
+notification.entityid, notification.id, notificationbroadcasted.status,
 notificationbroadcasted.viewedat, notificationtype,
 notificationtype._key, notificationtype.content, notificationtype.id,
 oauth_client.client, oauth_client.name, oauth_client.user_ext_id,
 oauth_client.user_id, occurrences, password.notconfirm, payload,
-phonenumber, position, public_key, push_email.date_end,
+phonenumber, position, pseudo, public_key, push_email.date_end,
 push_subscription.auth_token, push_subscription.content_type,
 push_subscription.public_key, push_subscription.status,
 push_subscription.subscription_type, push_subscription.user_id, queue,
@@ -265,8 +273,9 @@ session (6/6 points). Non retouchee ici.
   teste (`LangScanCommandTest`).
 - E.5 : `lang/fr.php`/`lang/en.php` nettoyes des cles parasites issues
   de l'ancienne regex ; traductions evidentes appliquees en anglais ;
-  274 cles restantes listees ci-dessus via `lang:missing` (valeur =
-  cle, non reecrites dans le code).
+  271 cles restantes listees ci-dessus via `lang:missing` (valeur =
+  cle, non reecrites dans le code - liste mise a jour apres les
+  renommages CMS de l'ETAPE G, qui ont ajoute/retire quelques cles).
 - E.6 : `t_lang($cle, $iso, $params=[])` ajoute (lecture directe de
   `lang/<iso>.php`, mise en cache par langue, sans session) ; les 3
   mails (`invitation`/`otp`/`welcome`) migres ; `langt()` retire
@@ -300,14 +309,25 @@ session (6/6 points). Non retouchee ici.
   destinataire chaine simple, et la separation stricte Log::/Emaillog
   dans les deux sens.
 
-**Phase 4 (CMS) - ETAPE G** : plan ecrit (G.1, voir ci-dessus),
-implementation reportee (G.2-G.5, voir raisons detaillees plus haut) -
-risque de perte de donnees reelles sur des renommages de table non
-verifies manuellement, juge trop risque pour le temps restant de la
-session. A reprendre en priorite dans une prochaine session, dans
-l'ordre G.2/G.3 (renommages + migration + ecran edition) puis G.4
-(suppression ModuleGallery, qui depend des deux premiers) puis G.5
-(nettoyage generateur/tests).
+**Phase 4 (CMS) - ETAPE G** : plan (G.1), renommages (G.2/G.3) et
+nettoyage generateur/tests (G.5) termines et testes.
+- `Cmstext`/`Imagecms` renommes et reconstruits en `Cmscontent`/
+  `Cmsresource` (ce dernier etend directement `ImageCore`, plus de
+  jointure vers `Dv_image`) ; `Cmscomment` genere proprement (datacore
+  corrige, jamais d'entite avant cette session) ; page d'edition admin
+  du CMS corrigee et fonctionnelle (`cmscontent/edit?id=`) ; bug latent
+  de regression (`Dvups_lang::readCache()` retiree a l'ETAPE E.7,
+  jamais appele avant cette session) decouvert et corrige en testant.
+- Migration ecrite (non executee,
+  `database/migration/2026_11_08_phase4_cms_rename.sql`).
+- Tests : `tests/Integration/CmsPhase4Test.php`,
+  `tests/E2E/CmscontentEditPageTest.php`.
+- Reporte (G.4, voir raisons detaillees plus haut) : suppression de
+  `ModuleGallery`/`Dv_image` - bloquee par une dependance directe de
+  `ModuleTree`/`Tree_item_image` decouverte pendant la revue (images
+  d'arborescence, hors perimetre de la demande initiale), dont le
+  traitement est une decision produit (repointer ou abandonner cette
+  fonctionnalite) plutot qu'une execution mecanique.
 
 ## Migrations a executer manuellement, dans l'ordre
 
@@ -326,11 +346,14 @@ executer dans cet ordre sur chaque environnement concerne :
    `emaillog` avec le nouveau schema - **exporter l'historique existant
    avant execution si besoin**, voir commentaire en tete du fichier,
    Phase 2/ETAPE F.2).
-5. (Phase 4/ETAPE G, non ecrite encore - voir G.2/G.3 ci-dessus) :
-   `RENAME TABLE cmstext/cmstext_lang`, creation `cmsresource` +
-   migration de donnees depuis `imagecms`/`dv_image`, puis
-   `DROP TABLE imagecms, dv_image` - a ecrire et verifier manuellement
-   avant execution, dans une prochaine session.
+5. `database/migration/2026_11_08_phase4_cms_rename.sql` (RENAME
+   `cmstext`/`cmstext_lang` -> `cmscontent`/`cmscontent_lang`, creation
+   `cmsresource`/`cmscomment`, Phase 4/ETAPE G.2/G.3) - **la table
+   `cmsresource` reste vide apres ce script** : peupler depuis
+   `imagecms JOIN dv_image` et verifier le nombre de lignes migre avant
+   de decommenter le `DROP TABLE imagecms` en fin de fichier (voir son
+   commentaire detaille). `dv_image`/`ModuleGallery` ne doivent PAS
+   etre supprimes (ModuleTree en depend encore, voir G.4).
 
 Sur l'environnement de test (`devups_phpunit`), aucune de ces
 migrations n'est necessaire : le schema est recree automatiquement a
@@ -341,9 +364,9 @@ chaque run par Doctrine SchemaTool a partir des entites
 
 `composer test` verifie vert a chaque commit de cette session
 (ETAPE D : commit `d1f25e3` ; E.1-E.6 : `e5a9863` ; E.7-E.8 : `597cdd6` ;
-F.1 : `696cbc5` ; F.2 : `92af6d2` ; README : `e55cf7c`) - 179 tests, 0
-echec, 15 "incomplete" documentes et assumes dans
-`tests/E2E/AdminScreensTest.php::KNOWN_BROKEN` a la fin de la session
-(avant le commit de ce TODO.md - revalider apres ce commit, aucun
-changement de code de production ne l'accompagne, seulement
-`lang/fr.php`/`lang/en.php`).
+F.1 : `696cbc5` ; F.2 : `92af6d2` ; README : `e55cf7c` ; lang:scan +
+plan G : `5f04c6c` ; ETAPE G.1-G.3/G.5 : voir commit suivant) - a la
+fin de la session : **183 tests, 0 echec, 13 "incomplete"** documentes
+et assumes dans `tests/E2E/AdminScreensTest.php::KNOWN_BROKEN` (2 de
+moins qu'avant l'ETAPE G : `imagecms/form` et `comment/form` sont
+devenus `cmsresource/form`/`cmscomment/form`, desormais fonctionnels).

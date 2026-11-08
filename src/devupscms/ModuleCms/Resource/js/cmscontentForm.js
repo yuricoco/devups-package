@@ -1,4 +1,4 @@
-//cmstextForm
+//cmscontentForm
 tinymce.init({
     selector: 'textarea#editor',
     height: 550,
@@ -53,7 +53,7 @@ function copyTextToClipboard(text) {
     });
 }
 
-var cmstext = {
+var cmscontent = {
     block: null,
     optionimage: null,
     lang: "fr",
@@ -66,15 +66,15 @@ var cmstext = {
         return `<table class="dv-block-action">
         <tr>
             <td>
-                <button onclick="cmstext.startmove()" >move</button>
+                <button onclick="cmscontent.startmove()" >move</button>
             </td>
             <td>
-                <button onclick="cmstext.addimageblock('append')">add image</button>
+                <button onclick="cmscontent.addimageblock('append')">add image</button>
             </td>
-            <td><button onclick="cmstext.addblock(this, 'prepend')">ajouter un block avant</button></td>
-            <td><button onclick="cmstext.addblock(this, 'append')">ajouter un block apres</button></td>
-            <td><button onclick="cmstext.editblock(this)">edit block</button></td>
-            <td><button onclick="cmstext.deleteblock(this)" >remove block</button></td>
+            <td><button onclick="cmscontent.addblock(this, 'prepend')">ajouter un block avant</button></td>
+            <td><button onclick="cmscontent.addblock(this, 'append')">ajouter un block apres</button></td>
+            <td><button onclick="cmscontent.editblock(this)">edit block</button></td>
+            <td><button onclick="cmscontent.deleteblock(this)" >remove block</button></td>
         </tr>
     </table>`
     },
@@ -94,15 +94,15 @@ var cmstext = {
             $("#dv-editable-" + this.lang).append(`<div class="dv-block" contenteditable >your content here ${this.menu()} </div>`)
         /*$("#dv-editable-en").append(`<div class="dv-block" contenteditable >your content here <table class="dv-block-action">
         <tr>
-            <td><button onclick="cmstext.editblock(this)">edit block</button></td>
-            <td><button onclick="cmstext.deleteblock(this)" >remove block</button></td>
+            <td><button onclick="cmscontent.editblock(this)">edit block</button></td>
+            <td><button onclick="cmscontent.deleteblock(this)" >remove block</button></td>
         </tr>
     </table></div>`)*/
     },
     submit(el) {
         tinymce.triggerSave();
         //model.addLoader($(el))
-        var form = $("#cmstext-form");
+        var form = $("#cmscontent-form");
         dform._submit(form, action_api, (response) => {
             console.log(response);
             $.notify("Modification enregistrées", "info")
@@ -118,8 +118,8 @@ var cmstext = {
         $(".card-body .dv-block").find(".dv-block-action").remove()
         //model.addLoader($(el))
         var form = new FormData();
-        form.append("cmstext_form[content][fr]", $("#dv-editable-fr").html())
-        form.append("cmstext_form[content][en]", $("#dv-editable-en").html())
+        form.append("cmscontent_form[content][fr]", $("#dv-editable-fr").html())
+        form.append("cmscontent_form[content][en]", $("#dv-editable-en").html())
 
         model.addLoader($(el))
         Drequest.init(action_api)
@@ -127,7 +127,7 @@ var cmstext = {
             .post((response) => {
                 console.log(response);
                 $.notify("Modification enregistrées", "info")
-                cmstext.init()
+                cmscontent.init()
                 model.removeLoader()
             })
     },
@@ -184,12 +184,12 @@ var cmstext = {
         $( "#dv-editable-fr" ).sortable({
             stop: function( event, ui ) {
                 console.log("stop sortable")
-                cmstext.stopmove()
+                cmscontent.stopmove()
             }
         });
         $( "#dv-editable-en" ).sortable({
             stop: function( event, ui ) {
-                cmstext.stopmove()
+                cmscontent.stopmove()
             }
         });
     },
@@ -198,5 +198,5 @@ var cmstext = {
         $( "#dv-editable-en" ).sortable( "destroy" );
     }
 }
-cmstext.init()
+cmscontent.init()
 $("#commonbox").css('display', "none");

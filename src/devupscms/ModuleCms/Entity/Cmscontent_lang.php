@@ -2,9 +2,9 @@
 // user \dclass\devups\model\Model;
 
 /**
- * @Entity @Table(name="cmstext_lang")
+ * @Entity @Table(name="cmscontent_lang")
  * */
-class Cmstext_lang extends Dv_langCore
+class Cmscontent_lang extends Dv_langCore
 {
 
     /**
@@ -23,10 +23,10 @@ class Cmstext_lang extends Dv_langCore
      * */
     protected $sommary = "";
     /**
-     * @Id @ManyToOne(targetEntity="\Cmstext")
+     * @Id @ManyToOne(targetEntity="\Cmscontent")
      * @JoinColumn(onDelete="cascade")
-     * @var \Cmstext
+     * @var \Cmscontent
      */
-    public $cmstext;
+    public $cmscontent;
 
 }

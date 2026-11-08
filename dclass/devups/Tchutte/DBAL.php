@@ -747,7 +747,7 @@ class DBAL extends Database
 
             $id = self::_createAction($table, $objarray, $objectinst);
             $objarray = $keyvalue;
-            $langs = Dvups_lang::readCache();
+            $langs = Dvups_lang::all();
             foreach ($langs as $lang) {
                 $keyvalue = [];
                 foreach ($objectinst->dvtranslated_columns as $key) {

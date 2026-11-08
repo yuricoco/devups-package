@@ -177,15 +177,26 @@ la place.
 
 ## CMS (Phase 4)
 
-Chantier en cours : le plan de renommage/refonte (`cmstext` →
-`cmscontent`, `imagecms` → `cmsresource` adossé à `Dfile`, génération
-propre de `Cmscomment`, suppression de `ModuleGallery`/`Dv_image`) est
-écrit dans `TODO.md` (section "Phase 4 (CMS) - ÉTAPE G") avec le detail
-des tables/colonnes/migrations/routes impactées, mais **non encore
-implémenté** - les tables et classes `cmstext`/`imagecms`/
-`ModuleGallery` existantes à ce jour restent celles décrites ici tant
-que ce chantier n'est pas exécuté. Voir `TODO.md` pour l'état exact et
-l'ordre de reprise recommandé.
+Le contenu CMS (anciennement `cmstext`) vit dans `Cmscontent`
+(`src/devupscms/ModuleCms/`), toujours relié à un `Tree_item` et
+traduit comme avant (`dvtranslated_columns`). Les images d'un contenu
+sont des `Cmsresource` : contrairement à l'ancien `Imagecms` (simple
+table de jointure vers `Dv_image`/`ModuleGallery`), `Cmsresource`
+étend directement `ImageCore` (même modèle que `Dv_image`) et porte
+elle-même le fichier - plus de dépendance à `ModuleGallery` pour le
+contenu CMS. Les commentaires (`Cmscomment`, jamais générés avant
+cette session) sont liés à un `Cmscontent` et à un `User`.
+
+La page d'édition admin d'un contenu
+(`/admin/devupscms/ModuleCms/cmscontent/edit?id=`) fonctionne et liste
+ses ressources via `CmsresourceTable`.
+
+`ModuleGallery`/`Dv_image` reste en place : `ModuleTree`
+(`Tree_item`/`Tree_item_image`) en dépend encore directement pour les
+images d'arborescence, indépendamment du CMS - sa suppression est
+documentée comme chantier ouvert dans `TODO.md` (section "Phase 4
+(CMS) - ÉTAPE G", G.4), de même que la migration de données à exécuter
+manuellement (`database/migration/2026_11_08_phase4_cms_rename.sql`).
 
 ## Sécurité
 

@@ -3,19 +3,19 @@
 
 use dclass\devups\Datatable\Datatable as Datatable;
 
-class ImagecmsTable extends Datatable
+class CmsresourceTable extends Datatable
 {
-
-    public $entity = "imagecms";
 
     public function __construct($lazyloading = null, $datatablemodel = [])
     {
         parent::__construct($lazyloading, $datatablemodel);
     }
 
-    public static function init($lazyloading = null)
+    public static function init(\Cmsresource $cmsresource = null)
     {
-        $dt = new ImagecmsTable($lazyloading);
+        $dt = new CmsresourceTable($cmsresource);
+        $dt->entity = $cmsresource;
+
         return $dt;
     }
 
@@ -23,7 +23,7 @@ class ImagecmsTable extends Datatable
     {
 
         $this->datatablemodel = [
-            ['header' => t('Image'), 'value' => 'src:image.image', "param"=>["150_"]]
+            'image' => ['header' => t('image'), 'value' => 'src:image'],
         ];
 
         $this->enablepagination = false;
@@ -34,9 +34,9 @@ class ImagecmsTable extends Datatable
     public function builddetailtable()
     {
         $this->datatablemodel = [
-            ['label' => 'Width_size', 'value' => 'width_size']
+            ['label' => t('width'), 'value' => 'width'],
+            ['label' => t('height'), 'value' => 'height'],
         ];
-        // TODO: overwrite datatable attribute for this view
         return $this;
     }
 

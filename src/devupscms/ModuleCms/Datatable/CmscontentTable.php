@@ -3,20 +3,20 @@
 
 use dclass\devups\Datatable\Datatable as Datatable;
 
-class CmstextTable extends Datatable
+class CmscontentTable extends Datatable
 {
 
 
-    public function __construct($cmstext = null, $datatablemodel = [])
+    public function __construct($cmscontent = null, $datatablemodel = [])
     {
-        parent::__construct($cmstext, $datatablemodel);
+        parent::__construct($cmscontent, $datatablemodel);
     }
 
-    public static function init(\Cmstext $cmstext = null)
+    public static function init(\Cmscontent $cmscontent = null)
     {
 
-        $dt = new CmstextTable($cmstext);
-        $dt->entity = $cmstext;
+        $dt = new CmscontentTable($cmscontent);
+        $dt->entity = $cmscontent;
 
         return $dt;
     }

@@ -2,9 +2,9 @@
 // user \dclass\devups\model\Model;
 
 /**
- * @Entity @Table(name="cmstext")
+ * @Entity @Table(name="cmscontent")
  * */
-class Cmstext extends Model implements JsonSerializable, DatatableOverwrite, DvupsTranslation
+class Cmscontent extends Model implements JsonSerializable, DatatableOverwrite, DvupsTranslation
 {
 
     /**
@@ -207,7 +207,7 @@ class Cmstext extends Model implements JsonSerializable, DatatableOverwrite, Dvu
      */
     public function editcontentAction()
     {
-        return '<a class="btn btn-warning"  href="'.("/admin/devupscms/ModuleCms/cmstext/edit?id=").$this->id.'"> edit content</a>';
+        return '<a class="btn btn-warning"  href="'.("/admin/devupscms/ModuleCms/cmscontent/edit?id=").$this->id.'"> edit content</a>';
     }
     /**
      * @inheritDoc
@@ -232,8 +232,8 @@ class Cmstext extends Model implements JsonSerializable, DatatableOverwrite, Dvu
         // TODO: Implement deleteAction() method.
     }
 
-    public static function getActiveCmstext(){
-        return Cmstext::where(Tree_item::getbyattribut("this.name", "news"))
+    public static function getActiveCmscontent(){
+        return Cmscontent::where(Tree_item::getbyattribut("this.name", "news"))
             ->andwhere("active", 1);
     }
 

@@ -325,7 +325,7 @@ class Tree_item extends Model implements JsonSerializable
                 'main' => $this->main,
                 'status' => $this->status,
                 'chain' => $this->chain,
-                'content_id' => $this->getCmstext()->getId(),
+                'content_id' => $this->getCmscontent()->getId(),
                 'count_children' => $countchildren,
                 'children' => $children,
                 'in_company' => $this->in_company,
@@ -477,9 +477,9 @@ class Tree_item extends Model implements JsonSerializable
             ->get();
     }
 
-    public function getCmstext()
+    public function getCmscontent()
     {
-        return Cmstext::where($this)
+        return Cmscontent::where($this)
             ->first();
     }
 

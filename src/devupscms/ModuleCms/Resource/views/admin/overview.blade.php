@@ -5,7 +5,7 @@
 
 	<div class="row">
                   
-                            <?php //if($moi->is_anable('cmstext')){ ?> 
+                            <?php //if($moi->is_anable('cmscontent')){ ?> 
             <div class="col-lg-3 col-md-6">
                             <div class="panel panel-primary">
                                     <div class="panel-heading">
@@ -14,14 +14,14 @@
                                                         <i class="fa fa-tasks fa-5x"></i>
                                                     </div>
                                                     <div class="col-xs-9 ">
-                                                            <h4>Gestion Cmstext</h4>
+                                                            <h4>Gestion Cmscontent</h4>
                                                     </div>
                                             </div>
                                     </div>
-                                    <a href="index.php?path=cmstext/index">
+                                    <a href="index.php?path=cmscontent/index">
                                             <div class="panel-footer">
                                                     <?php 
-                                                            //$action = 'cmstext';
+                                                            //$action = 'cmscontent';
                                                             //include RESSOURCE.'navigation.php'; 
                                                     ?>
                                                     <span class="pull-left">View Details</span>
@@ -33,7 +33,7 @@
                     </div>  
                 <?php //} ?> 			
 				
-                            <?php //if($moi->is_anable('imagecms')){ ?> 
+                            <?php //if($moi->is_anable('cmsresource')){ ?> 
             <div class="col-lg-3 col-md-6">
                             <div class="panel panel-primary">
                                     <div class="panel-heading">
@@ -42,14 +42,14 @@
                                                         <i class="fa fa-tasks fa-5x"></i>
                                                     </div>
                                                     <div class="col-xs-9 ">
-                                                            <h4>Gestion Imagecms</h4>
+                                                            <h4>Gestion Cmsresource</h4>
                                                     </div>
                                             </div>
                                     </div>
-                                    <a href="index.php?path=imagecms/index">
+                                    <a href="index.php?path=cmsresource/index">
                                             <div class="panel-footer">
                                                     <?php 
-                                                            //$action = 'imagecms';
+                                                            //$action = 'cmsresource';
                                                             //include RESSOURCE.'navigation.php'; 
                                                     ?>
                                                     <span class="pull-left">View Details</span>

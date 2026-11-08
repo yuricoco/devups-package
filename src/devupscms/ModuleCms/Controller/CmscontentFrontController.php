@@ -1,7 +1,7 @@
 <?php
 
 
-class CmstextFrontController extends CmstextController
+class CmscontentFrontController extends CmscontentController
 {
 
     public static function documentView()
@@ -16,7 +16,7 @@ class CmstextFrontController extends CmstextController
         }
         $cms = null;
         if ($ref = Request::get("ref"))
-            $cms = Cmstext::where("slug", $ref)->__getOne();
+            $cms = Cmscontent::where("slug", $ref)->__getOne();
         Genesis::render('documentation', compact("collection", "cms"));
     }
 
@@ -24,10 +24,10 @@ class CmstextFrontController extends CmstextController
     public function detailAction($id)
     {
 
-        $cmstext = Cmstext::find($id);
+        $cmscontent = Cmscontent::find($id);
 
         return array('success' => true,
-            'cmstext' => $cmstext,
+            'cmscontent' => $cmscontent,
             'detail' => '');
 
     }
