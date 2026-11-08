@@ -886,7 +886,7 @@ exacts), fichiers `lang/*.php` reecrits avec le meme format (`'cle' =>
 'valeur',`, triees) ; aucune cle n'a ete ajoutee ni retiree, seules des
 valeurs ont change.
 
-Commit : (a suivre).
+Commit : `9c92375`.
 
 ---
 
@@ -1034,6 +1034,41 @@ tous termines et testes.
   `Dvups_admin::updatePassword()` (bug preexistant, methode manquante)
   corrigee au passage. Aucun agrandissement de colonne necessaire.
 
+**Durcissement - ETAPE L** : terminee.
+- Rate limiting generique (`dclass/devups/RateLimiter.php`, cache
+  fichier) branche sur le login admin, le login front et la
+  verification/renvoi de code d'activation ; expiration du code
+  d'activation parametrable (`ACTIVATION_CODE_TTL_MINUTES`), colonne
+  `activationcode_expired_at` passee de `date` a `datetime`.
+  "Remember me" (rotation a chaque restauration, jamais a la
+  deconnexion simple) et `dv_valid_lang()` (defaut langue,
+  `Request::Route()`) etaient deja corrects depuis K.3/H - verifies et
+  testes plutot que retouches. Bug introduit puis corrige dans la meme
+  etape : `Util::getIp()` (n'existe pas) -> `Util::get_IP_address()`.
+
+**Phase 6 (Notifications / Push / Reporting) - ETAPE M** : terminee.
+- `Notificationbroadcasted` (entite fantome, jamais generee) supprimee
+  de la configuration et du code appelant ; `Notification::of()` seule
+  API desormais. Web Push reel via `minishlink/web-push` (cles VAPID
+  dans `.env`, `Push_subscription::sendWebPush()`, suppression
+  automatique d'un abonnement expire sur 410) ; testee entierement hors
+  ligne (Guzzle `MockHandler`). `Reportingmodel` : collecte des
+  gabarits Blade existants (bouton back-office), creation inverse
+  (gabarit genere automatiquement a la creation d'un modele), apercu et
+  envoi de test via `DMail`/`Emaillog`.
+
+**Phase 8 (Documentation) - ETAPE N** : terminee (detail plus haut).
+- `php devups api:doc`/`doc:guide` (generateurs partages, extraits des
+  pages `documentation/` deja fonctionnelles, sortie verifiee
+  identique) ; Swagger UI back-office (`admin/apidocs`, protegee par
+  `can()`) distinguant routes front (JWT) et admin (session) ; README
+  complete (premier module, documentation).
+
+**Traductions - ETAPE O** : terminee (detail plus haut).
+- `lang:missing` : 254/288 cles -> 77/81 (le reste deja correct ou
+  ambigu, liste exhaustive plus haut) ; aucune cle ajoutee/retiree,
+  uniquement des valeurs corrigees.
+
 ## Migrations a executer manuellement, dans l'ordre
 
 Aucune de ces migrations n'a ete executee par cette session (regle :
@@ -1081,11 +1116,20 @@ executer dans cet ordre sur chaque environnement concerne :
    ne sont PAS transformes par cette migration : ils le sont
    automatiquement, un par un, par le code applicatif au prochain login
    reussi de chaque compte (voir ETAPE K.1) - rien a executer pour ca.
+8. `database/migration/2026_11_08_phase8_rate_limit_activation_expiry.sql`
+   (**ALTER** `user` - `activationcode_expired_at` passe de `date` a
+   `datetime`, aucune donnee supprimee ; valeurs existantes conservees
+   et simplement reinterpretees avec une heure a minuit. Durcissement/
+   ETAPE L.1).
+9. `database/migration/2026_11_08_phase6_push_subscription_endpoint.sql`
+   (**ALTER** `push_subscription` - ajoute la colonne `endpoint`
+   (URL du service de push), NULL pour les abonnements existants
+   jusqu'a leur prochain renouvellement cote client. Phase 6/ETAPE M.3).
 
 **Destructrices de donnees (a valider avec precaution)** : #2, #3, #4
 (DROP+CREATE, exporter l'historique si besoin), #5 (DROP final commente,
 a decommenter apres verification manuelle), #6. Toutes les autres (#1,
-#7) sont des ALTER/CREATE additifs, sans perte de donnees.
+#7, #8, #9) sont des ALTER/CREATE additifs, sans perte de donnees.
 
 Sur l'environnement de test (`devups_phpunit`), aucune de ces
 migrations n'est necessaire : le schema est recree automatiquement a
@@ -1114,3 +1158,30 @@ ajoutes aux ETAPES H (`LangSecurityTest` unit+e2e), I
 et K (`PasswordHashMigrationTest`, `RememberMeTest`), moins la
 disparition de 8 des 9 ecrans Location (`department`/`district`/
 `region`/`town`, list+form) du generateur `AdminScreensTest::screens()`.
+
+### Mise a jour finale (ETAPES L a O)
+
+`composer test` reste vert a chaque commit (ETAPE L : `7a4f6ac`..
+`a25def2` ; ETAPE M : `dfb405b`..`902739a` ; ETAPE N.1/N.2 : `0d8aa5a` ;
+N.3 : `bf36a1a` ; README N : `68020e3` ; ETAPE O : `9c92375`) - a la
+fin de cette session : **252 tests, 717 assertions,
+0 echec, 2 "incomplete"** (les memes `Dvups_log`/`Emaillog`,
+ecrans lecture seule par design - `Notificationbroadcasted` a disparu
+de `KNOWN_BROKEN` a l'ETAPE M puisque l'entite fantome elle-meme a ete
+supprimee). La hausse de 224 a 252 tests vient des ajouts des ETAPES L
+(`RateLimiterTest`, `RememberMeConcurrencyTest`), M
+(`NotificationApiTest`, `PushSubscriptionWebPushTest`,
+`ReportingmodelCollectTest`), N (`DocGenerationTest`,
+`AdminApiDocsTest`) - ETAPE O n'a ajoute aucun test (uniquement des
+valeurs de traduction, verifiees par la suite existante + `lang:missing`
+en CLI).
+
+**Recapitulatif general (ETAPES L-O)** : les 4 etapes demandees sont
+terminees, testees et committees individuellement (voir "Resume phase
+par phase" ci-dessus pour le detail). Aucune migration n'a ete executee
+hors de la base de test ; la liste ordonnee ci-dessus (9 scripts, dont
+4 destructeurs de donnees a valider manuellement : #2, #3, #4, #5/#6)
+est a jour. Items laisses ouverts, tous documentes a leur section :
+droit `Documentation` dedie pour `can()` (ETAPE N.3, actuellement
+reserve au role `admin`) ; items de traduction ambigus et bug de scan
+pre-existant sur une cle tronquee (ETAPE O, section ci-dessus).
