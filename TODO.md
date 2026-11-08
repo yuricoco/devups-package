@@ -585,7 +585,75 @@ decommenter le DROP de `imagecms`).
 
 ---
 
-## Traductions non encore faites (lang:missing, en.php)
+## Phase 6 (Notifications / Push / Reporting) - ETAPE M
+
+### Plan (ecrit avant implementation, comme demande)
+
+- Constat de depart : un systeme de notifications COMPLET et
+  fonctionnel existe deja (`src/devupscms/ModuleNotification/Entity/Notification.php`,
+  `Notificationtype.php`, `src/devupscms/ModulePushNotification/`) -
+  entite unique `Notification` (user_id OU admin_id, deja le cas),
+  `Notificationtype` (cle `_key` + contenu traduit par langue),
+  `Notification::on()->send()->braodcast()`, listes/compteurs non lus
+  cote admin (cloche, `NotificationController::alertAction()`) ET cote
+  front (`NotificationFrontController`, deja une API `@Api` avec
+  `@Auth(authorized=1)` donc deja protegee par JWT - `index()`,
+  `notified()`, `readall()`, `alert()`). Decision : ADAPTER cette base
+  plutot que la reecrire - une reecriture totale jetterait du code qui
+  fonctionne et risquerait de casser les appelants existants (SMS,
+  FCM mobile) pour un gain net faible face a l'echeance.
+- M.2 (entite/API/routes/cloche) :
+  1. **Notificationbroadcasted** : FAIT (ce commit) - c'etait l'ancien
+     nom de l'entite, renommee en `Notification` sans nettoyage -
+     fichiers Controller/Datatable/Form/Resource orphelins supprimes,
+     entrees de config retirees, seul appelant restant
+     (`Dvups_entity::alert()`) bascule sur `Notification::of()`.
+  2. **API simple `toUser()`/`toAdmin()`/`toRole()`** : ajoutee
+     PAR-DESSUS `on()`/`braodcast()` (pas en remplacement) - le
+     gabarit du message vient de `t($type)` (lang/xx.php), conforme a
+     la demande ("gabarit traduit via `t()`"), au lieu du champ
+     `content` par-langue de `Notificationtype` (qui reste utilise par
+     l'API existante `on()`/`braodcast()`, pour SMS/push groupes).
+     `Notificationtype` est quand meme cree/retrouve par `_key` pour
+     rester filtrable (cloche, liste admin).
+  3. Routes API front JWT, cloche back-office : **deja faites**,
+     aucun changement necessaire.
+  4. Migration : aucune necessaire pour M.2 (aucune colonne ajoutee -
+     reutilise le schema existant).
+- M.3 (push) :
+  1. Constat : une PREMIERE tentative de Web Push (VAPID) existe deja
+     mais incomplete/incoherente -
+     `Push_subscriptionFrontController::pushNotificaiton()`/`cloudMessagingPush()`
+     interrogent un champ `subscription_id` qui n'existe PAS sur
+     l'entite (seul `user_id` existe) - code mort en l'etat (aucun
+     appelant), `minishlink/web-push` n'etait meme plus dans
+     `composer.json`. Hors perimetre de corriger integralement cette
+     ancienne tentative (pas d'appelant actif, risque de regression
+     pour un gain nul) - seule la nouvelle API ci-dessous est branchee
+     et testee.
+  2. `minishlink/web-push` ajoute (composer). `Push_subscription`
+     recoit une colonne `endpoint` (manquante - migration ecrite) et
+     implemente reellement `SubscriptionInterface` (deja presque le
+     cas : `getEndpoint()`/`getPublicKey()`/`getAuthToken()`/`getContentEncoding()`
+     existaient déjà, juste jamais branches).
+  3. Cles VAPID dans `.env`/`.env.example` uniquement
+     (`VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`/`VAPID_SUBJECT`), jamais
+     en base - independant du mecanisme existant
+     `Push_subscriptionFrontController::generateKey()`/`key()` qui les
+     stocke dans `Configuration` (laisse tel quel, inchange, toujours
+     utilise par le flux FCM/mobile existant).
+  4. `Push_subscription::sendWebPush()` (nouveau) : envoie via
+     `Minishlink\WebPush\WebPush`, supprime l'abonnement automatiquement
+     si `isSubscriptionExpired()` (410). Teste avec un faux client HTTP
+     (Guzzle `MockHandler`) - aucun appel reseau reel dans les tests.
+  5. Fil d'attente : `WorkersController::work()` (deja la logique
+     cron/Workers, deja hors-prod desactivee sauf `PUSH_FORCE_SEND=1`,
+     cf. ETAPE anterieure) distingue desormais `subscription_type`
+     ('webpush' -> `sendWebPush()`, sinon FCM/Expo comme avant).
+- M.4 (reporting) : **reporte apres M.2/M.3** faute de temps restant
+  dans cette session - voir entree dediee ci-dessous si non traite.
+
+### M.1/M.2/M.3 - notifications et push : FAIT (voir detail ci-dessus)
 
 `php devups lang:missing` (execute sur le vrai dossier `lang/`, pas sur
 le dossier temporaire de test, apres les renommages CMS de l'ETAPE G -
