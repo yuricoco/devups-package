@@ -42,6 +42,7 @@
         "phpstan/phpstan": "^1.10"
     },
     "config": {
+        "process-timeout": 600,
         "allow-plugins": {
             "kylekatarnls/update-helper": false
         },

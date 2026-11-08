@@ -1294,4 +1294,69 @@ idempotent.
 `composer test` reste vert (288 tests, 0 echec, les 2 memes
 "incomplete" documentees).
 
-## ETAPE R (Version publiable) - EN COURS
+## ETAPE R (Version publiable)
+
+1. `CHANGELOG.md` ajoute (format Keep a Changelog), resume de tout le
+   chantier (ETAPES D a Q) avec une section "Mise a jour depuis la
+   version precedente" (migrations, nouvelles constantes `.env`,
+   ruptures de compatibilite).
+2. `.env.example` complete (toutes les constantes ajoutees au fil du
+   chantier qui manquaient encore : `DB_DUMPER`, `DB_TRANSACTION`,
+   `ROUTE_CACHE`, `CACHE_VERSION`, `TOOLRAD_*`, `LOG_*`,
+   `ACTIVATION_CODE_TTL_MINUTES`, `RESET_PASSWORD_TOKEN_TTL_MINUTES`,
+   `RATE_LIMIT_*`, `TRUSTED_PROXIES`, `LANG_COLLECT`) ;
+   `config/constante.example.php` etait deja a jour et commente (verifie
+   par comparaison automatisee de tous les `dv_env()` du depot contre
+   ce fichier - aucun ecart reel trouve).
+3. Verifie de bout en bout, dans un dossier vide separe (jamais dans ce
+   depot) : `composer create-project --repository '{"type":"path",
+   "url":"<chemin de ce depot>"}' spacekola/devups:dev-master app`
+   (le depot local sert de repository path, le paquet n'etant pas
+   publie sur Packagist - a publier pour que la commande "nue" du
+   README, `composer create-project spacekola/devups mon-projet`,
+   fonctionne sans l'option `--repository`) puis `php devups install`
+   sur une base MySQL dediee et jetable (`devups_install_check`,
+   supprimee apres verification) : creation de la base, schema Doctrine
+   complet (36 tables), les 10 migrations existantes marquees jouees
+   (lot 0) sans etre executees, compte admin maitre cree
+   (`dv_admin`/`admin`). Admin verifie accessible : serveur PHP demarre
+   sur le projet installe, `GET /admin/` redirige vers la page de login
+   (HTTP 302), `POST .../connexion-action` avec les identifiants
+   maitres reussit (HTTP 302 vers `complete-registration`, le flux
+   normal de premiere connexion), page suivante HTTP 200 sans erreur.
+   Aucune etape manuelle manquante trouvee au-dela de ce que
+   README.md "Installation" documente deja, a une exception : le
+   paquet `spacekola/devups` doit etre publie (Packagist ou un
+   repository prive configure) pour que la commande `create-project`
+   sans `--repository` fonctionne telle que documentee - note ajoutee
+   au README.
+4. CI : `.github/workflows/tests.yml` - `composer test` sur PHP 8.1,
+   8.2, 8.3 avec un service MySQL, a chaque push/pull request.
+5. Au passage (trouve par la verification du point 3) : `composer
+   phpstan` echouait systematiquement par timeout (687 erreurs
+   existantes, majoritairement les faux positifs deja documentes dans
+   `phpstan.neon.dist`, mais le process composer par defaut (300s) est
+   plus court que le temps d'analyse reel) - corrige par
+   `"process-timeout": 600` dans `composer.json` (`config`). Sans
+   rapport avec le chantier migrations/version mais bloquant pour
+   quiconque lance `composer phpstan` localement.
+
+`composer test` reste vert apres les changements ci-dessus (288 tests,
+0 echec).
+
+### Version proposee (semver) - tag NON cree, en attente de validation
+
+**v1.0.0** - premiere version jamais taguee de ce depot (aucun tag
+existant). Justification : le chantier ETAPES D-Q couvre un
+durcissement de securite complet (mots de passe, jetons, rate
+limiting, IP cliente), un systeme de migrations gere, une
+documentation (API + guide + Swagger) et une CI fonctionnelle - les
+criteres habituels d'une premiere version stable publiable, malgre des
+ruptures de compatibilite internes au depot (listees dans
+`CHANGELOG.md`) qui sont attendues pour un premier tag (rien ne pouvait
+casser une API publique qui n'a jamais ete versionnee). Alternative
+plus prudente si une verification manuelle supplementaire est
+souhaitee avant de s'engager sur un `1.0.0` definitif : **v1.0.0-rc1**,
+promu en `v1.0.0` sans changement de code dès que ce depot aura ete
+teste par **au moins une installation reelle** (hors le dossier vide de
+verification ci-dessus) - a la decision de qui validera le tag.

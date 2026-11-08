@@ -28,6 +28,14 @@ Toute la configuration propre à une installation (base, URLs, SMTP, JWT, FCM,
 Google...) vit dans `.env`. `config/constante.example.php` lit ces valeurs avec
 `dv_env()` ; les variables d'environnement du serveur sont prioritaires sur le fichier.
 
+`composer create-project spacekola/devups mon-projet` suppose le paquet publié
+(Packagist ou un repository privé configuré côté client). Pour l'essayer
+directement depuis ce dépôt (sans publication), utiliser un repository local :
+
+```bash
+composer create-project --repository '{"type":"path","url":"/chemin/vers/ce/depot"}' spacekola/devups:dev-master mon-projet
+```
+
 ## Premier module
 
 Un module est décrit entièrement par des fichiers *datacore* (JSON) avant
@@ -114,6 +122,9 @@ La suite utilise une base **dédiée** (`DB_NAME=devups_phpunit` par défaut, vo
 une base dont le nom ne contient pas `test` ou `phpunit`. Pour surcharger les accès
 (utilisateur, mot de passe), définir les variables d'environnement `DB_USER`,
 `DB_PASSWORD`... ou copier `phpunit.xml.dist` en `phpunit.xml` (non versionné).
+
+CI : `.github/workflows/tests.yml` exécute `composer test` sur PHP 8.1,
+8.2 et 8.3 avec un service MySQL, à chaque push/pull request.
 
 La suite e2e ouvre chaque écran liste et chaque formulaire du back-office pour
 toutes les entités déclarées : les écrans connus comme cassés sont listés dans
