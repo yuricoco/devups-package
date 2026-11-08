@@ -15,17 +15,71 @@ if(!isset($_SESSION[LANG]))
 //elseif ($_SESSION[PREVIOUSPAGE] != $_SERVER["url"])
 //    $_SESSION[PREVIOUSPAGE] = $_SERVER["url"];
 
+/**
+ * ETAPE H (securite langue) : SEULE porte d'entree pour valider un code
+ * langue venant de l'utilisateur (parametre ?lang, session, cookie...)
+ * avant de l'utiliser pour construire un chemin de fichier
+ * (LANG_DIR . $iso . '.php') ou de l'exposer dans une URL generee
+ * (d_url()). N'accepte que deux lettres minuscules (^[a-z]{2}$ - exclut
+ * par construction tout '/', '.', balise ou espace : aucune traversee de
+ * repertoire ni injection n'est possible avec un tel format) ET une
+ * langue ACTIVE (cache de Dvups_lang::cachedActiveDlangs(), jamais une
+ * requete SQL directe ici). Retourne null si invalide - jamais la valeur
+ * d'entree telle quelle.
+ */
+function dv_valid_lang($iso): ?string
+{
+    if (!is_string($iso) || !preg_match('/^[a-z]{2}$/', $iso))
+        return null;
+
+    try {
+        $active = \Dvups_lang::cachedActiveDlangs();
+    } catch (\Throwable $e) {
+        // base indisponible ou pas encore migree (outillage CLI, amorcage
+        // des tests avant creation du schema...) : on refuse plutot que
+        // de planter - jamais de repli permissif sur le seul format.
+        return null;
+    }
+
+    return isset($active[$iso]) ? $iso : null;
+}
+
+/**
+ * Chemin du fichier de traduction pour $iso, UNIQUEMENT s'il reste a
+ * l'interieur de LANG_DIR une fois resolu (realpath) : defense en
+ * profondeur en plus du format verifie par dv_valid_lang() - $iso ne
+ * devrait deja plus jamais pouvoir faire sortir le chemin de LANG_DIR,
+ * mais ce controle supplementaire est gratuit et couvre un eventuel appel
+ * direct avec un $iso non passe par dv_valid_lang(). Retourne null si le
+ * dossier resultant n'est pas LANG_DIR lui-meme (ou si LANG_DIR est
+ * introuvable).
+ */
+function dv_lang_file_path(string $iso): ?string
+{
+    $dir = realpath(LANG_DIR);
+    if ($dir === false)
+        return null;
+
+    $path = LANG_DIR . $iso . '.php';
+    // dirname() plutot que realpath($path) : le fichier peut ne pas
+    // encore exister (nouvelle langue jamais sauvegardee sur le disque).
+    if (realpath(dirname($path)) !== $dir)
+        return null;
+
+    return $path;
+}
+
 function local() {
-    if ($lang = Request::get('lang')) {
+    if ($lang = dv_valid_lang(Request::get('lang')))
         return $lang;
-    }elseif (isset($_SESSION[LANG]))
-        return $_SESSION[LANG];
+    if (isset($_SESSION[LANG]) && ($lang = dv_valid_lang($_SESSION[LANG])))
+        return $lang;
 
     return __lang;
 }
 
 function setlang($lang) {
-    $_SESSION[LANG] = $lang;
+    $_SESSION[LANG] = dv_valid_lang($lang) ?? __lang;
 }
 
 function redirect($url = "", $admin = false){

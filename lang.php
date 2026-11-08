@@ -10,8 +10,11 @@
 global $dv_translations;
 $dv_translations = [];
 
-$dv_lang_file = LANG_DIR . local() . '.php';
-if (file_exists($dv_lang_file))
+// local() ne renvoie plus jamais qu'un code valide (ETAPE H -
+// dv_valid_lang()) ; dv_lang_file_path() ajoute un controle realpath en
+// plus, par securite (voir dvups_functions.php).
+$dv_lang_file = dv_lang_file_path(local());
+if ($dv_lang_file && file_exists($dv_lang_file))
     $dv_translations = require $dv_lang_file;
 
 /**
@@ -69,9 +72,14 @@ function t_lang($cle, string $iso, $params = [])
     if (!isset($dv_translations_by_lang))
         $dv_translations_by_lang = [];
 
+    // ETAPE H : $iso passe lui aussi par dv_valid_lang() (repli sur la
+    // langue par defaut si invalide/inactive), jamais utilise brut pour
+    // construire un chemin de fichier.
+    $iso = dv_valid_lang($iso) ?? __default_lang;
+
     if (!array_key_exists($iso, $dv_translations_by_lang)) {
-        $file = LANG_DIR . $iso . '.php';
-        $dv_translations_by_lang[$iso] = file_exists($file) ? require $file : [];
+        $file = dv_lang_file_path($iso);
+        $dv_translations_by_lang[$iso] = ($file && file_exists($file)) ? require $file : [];
     }
 
     $translation = $dv_translations_by_lang[$iso][$cle] ?? $cle;

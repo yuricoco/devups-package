@@ -575,12 +575,15 @@ if (isset($argv[2])) {
     chdir('../../');
 } else {
 
-    require __DIR__ . '/../../src/devups/ModuleLang/Entity/Dvups_lang.php';
-    require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_role.php';
-    require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_action.php';
-    require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_privilege.php';
-    require __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_entity.php';
-    require __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_entity_lang.php';
+    // require_once (ETAPE H) : lang.php (require a la ligne 126 plus haut)
+    // declenche desormais l'autoload de Dvups_lang (dv_valid_lang() ->
+    // cachedActiveDlangs()) - un require nu ici re-declarerait la classe.
+    require_once __DIR__ . '/../../src/devups/ModuleLang/Entity/Dvups_lang.php';
+    require_once __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_role.php';
+    require_once __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_action.php';
+    require_once __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_privilege.php';
+    require_once __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_entity.php';
+    require_once __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_entity_lang.php';
 
     switch ($argv[1]) {
 

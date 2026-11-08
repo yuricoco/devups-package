@@ -75,7 +75,6 @@ if (dv_test_needs_db()) {
 // par des dependances tierces ne concernent pas le code teste.
 error_reporting(E_ALL & ~E_DEPRECATED);
 require __DIR__ . '/../config/dependanceInjection.php';
-require __DIR__ . '/../lang.php';
 require __DIR__ . '/../src/requires.php';
 error_reporting(E_ALL);
 
@@ -88,6 +87,13 @@ if (dv_test_needs_db()) {
     $seed = file_get_contents(__DIR__ . '/../dclass/generator/config_data.sql');
     \Model::pdo()->exec($seed);
 }
+
+// lang.php (ETAPE H) appelle desormais local(), qui valide la langue via
+// dv_valid_lang() - lequel interroge le cache des langues ACTIVES
+// (Dvups_lang::cachedActiveDlangs()), donc la base. Chargé seulement une
+// fois le schema/les donnees prets ci-dessus (sinon la toute premiere
+// requete SQL de la suite se ferait sur une table dvups_lang inexistante).
+require __DIR__ . '/../lang.php';
 
 foreach (glob(__DIR__ . '/Support/*.php') as $support)
     require_once $support;
