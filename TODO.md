@@ -650,10 +650,44 @@ decommenter le DROP de `imagecms`).
      cron/Workers, deja hors-prod desactivee sauf `PUSH_FORCE_SEND=1`,
      cf. ETAPE anterieure) distingue desormais `subscription_type`
      ('webpush' -> `sendWebPush()`, sinon FCM/Expo comme avant).
-- M.4 (reporting) : **reporte apres M.2/M.3** faute de temps restant
-  dans cette session - voir entree dediee ci-dessous si non traite.
+- M.4 (reporting) : FAIT (voir detail ci-dessous).
 
 ### M.1/M.2/M.3 - notifications et push : FAIT (voir detail ci-dessus)
+
+### M.4 - Reportingmodel : collecte, sens inverse, apercu, envoi via DMail : FAIT
+
+- Phase : M.4
+- Constat : `Reportingmodel` existait deja (entite, CRUD back-office,
+  `loadContent()`/`saveContent()`/`downloadContent()` pour un stockage
+  fichier SEPARE dans `Resource/partial/`), mais pas branche sur
+  `web/views/mails/*.blade.php` (gabarits Blade deja utilises par
+  `DMail`, lui-meme deja utilise par `UserFrontController` pour les
+  codes/OTP et deja journalise dans `Emaillog`).
+- `ReportingmodelController::collectAction()` (nouveau) : parcourt
+  `web/views/mails/*.blade.php`, cree les `Reportingmodel` manquants
+  (nom = `mails.<fichier>`, meme convention que `DMail::init()`), ne
+  supprime jamais rien.
+- Sens inverse : `createAction()` (back-office) genere desormais le
+  fichier gabarit correspondant s'il n'existe pas deja
+  (`ensureTemplateFile()`, jamais d'ecrasement d'un fichier existant).
+- `previewAction($id)` (nouveau) : rend le gabarit Blade avec un
+  payload d'exemple fixe, sans envoi.
+- `sendtestviadmailAction($id, $email)` (nouveau) : envoie via `DMail`
+  (pas via l'ancien `Reportingmodel::sendMail()`, qui reste inchange
+  pour ses appelants existants - contenu stocke en base, pas un
+  fichier Blade) - deja journalise dans `Emaillog` (`DMail::sendMail()`).
+- Bug corrige en passant : `Reportingmodel::getbyattribut('name', ...)`
+  (ModelTrait, partagee par tout l'ORM) genere une colonne `name`
+  AMBIGUE pour `Reportingmodel` (jointure avec `reportingmodel_lang`/
+  `dvups_lang`, qui a elle aussi une colonne `name`) - contourne
+  localement (`Reportingmodel::where('reportingmodel.name', ...)`)
+  plutot que de toucher `ModelTrait` (risque pour tous les autres
+  appelants de `getbyattribut()`) ; `Reportingmodel::model()` utilise
+  encore l'ancienne forme ambigue, signale ici pour une prochaine
+  session si elle devient genante.
+- Tests : `tests/Integration/ReportingmodelCollectTest.php` (7 tests).
+  Suite complete verte : 244 tests, 697 assertions, 2 incomplete
+  (inchangees).
 
 `php devups lang:missing` (execute sur le vrai dossier `lang/`, pas sur
 le dossier temporaire de test, apres les renommages CMS de l'ETAPE G -

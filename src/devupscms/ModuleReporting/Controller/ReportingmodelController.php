@@ -90,11 +90,142 @@ class ReportingmodelController extends Controller
         $id = $reportingmodel->__insert();
         //return redirect(Reportingmodel::classpath("reportingmodel/index"));
 
+        // ETAPE M.4 : sens inverse de collectAction() ci-dessous - creer un
+        // Reportingmodel depuis le back-office genere son fichier gabarit
+        // Blade (web/views/mails/), s'il n'existe pas deja.
+        self::ensureTemplateFile(Reportingmodel::find($id));
+
         return array('success' => true,
             'reportingmodel' => $reportingmodel,
             'tablerow' => ReportingmodelTable::init()->buildindextable()->getSingleRowRest($reportingmodel),
             'detail' => '');
 
+    }
+
+    /**
+     * ETAPE M.4 : nom de fichier Blade correspondant a $name - 'mails.foo'
+     * (convention attendue par DMail::init()/Genesis::getView(), notation
+     * pointee de Blade) donne 'foo.blade.php' ; un nom sans ce prefixe est
+     * utilise tel quel (basename() par precaution, meme raisonnement que
+     * loadContent()/saveContent() plus haut).
+     */
+    private static function templateBasename(string $name): string
+    {
+        $base = basename($name);
+        if (strpos($base, 'mails.') === 0)
+            $base = substr($base, strlen('mails.'));
+        return $base !== '' ? $base : 'template';
+    }
+
+    /**
+     * N'ecrit JAMAIS par-dessus un fichier existant - seulement pour un
+     * modele qui n'a pas encore de gabarit sur le disque.
+     */
+    private static function ensureTemplateFile(Reportingmodel $reportingmodel): void
+    {
+        if (!$reportingmodel->getId() || !$reportingmodel->getName())
+            return;
+
+        $dir = ROOT . 'web/views/mails/';
+        if (!is_dir($dir))
+            @mkdir($dir, 0777, true);
+
+        $path = $dir . self::templateBasename($reportingmodel->getName()) . '.blade.php';
+        if (file_exists($path))
+            return;
+
+        file_put_contents($path, "{{-- genere automatiquement pour le modele '" . $reportingmodel->getName() . "' (ETAPE M.4) --}}\n<h1>{{ \$title ?? '' }}</h1>\n<p>{{ \$message ?? '' }}</p>\n");
+    }
+
+    /**
+     * ETAPE M.4 : bouton "Collecter les modeles" - parcourt
+     * web/views/mails/*.blade.php et cree les Reportingmodel manquants
+     * (par nom de fichier, prefixe 'mails.' - meme convention que
+     * DMail::init()). Ne supprime jamais rien.
+     */
+    public function collectAction()
+    {
+        $dir = ROOT . 'web/views/mails/';
+        $created = [];
+
+        foreach (glob($dir . '*.blade.php') ?: [] as $file) {
+            $name = 'mails.' . basename($file, '.blade.php');
+
+            // Reportingmodel::getbyattribut('name', ...) genere une colonne
+            // `name` ambigue (jointure avec reportingmodel_lang/dvups_lang,
+            // qui a elle aussi une colonne `name`) - qualifiee explicitement
+            // ici plutot que dans ModelTrait (partagee par tout l'ORM).
+            $existing = Reportingmodel::where('reportingmodel.name', $name)->firstOrNull();
+            if ($existing && $existing->getId())
+                continue;
+
+            $id = Reportingmodel::create([
+                'name' => $name,
+                'type' => 'email',
+                'description' => t('Modele collecte automatiquement depuis :file', ['file' => basename($file)]),
+            ]);
+            $created[] = Reportingmodel::find($id);
+        }
+
+        return [
+            'success' => true,
+            'created' => $created,
+            'detail' => count($created) . ' modele(s) cree(s)',
+        ];
+    }
+
+    /**
+     * ETAPE M.4 : apercu du rendu avec un payload d'exemple (sans envoi).
+     */
+    public function previewAction($id)
+    {
+        $reportingmodel = Reportingmodel::find($id);
+        if (!$reportingmodel->getId())
+            return ['success' => false, 'detail' => t('Modele introuvable')];
+
+        global $viewdir;
+        $viewdir[] = ROOT . 'web/views';
+
+        $payload = [
+            'title' => 'Exemple',
+            'username' => 'Jane Doe',
+            'activationcode' => '123456',
+            'activation_code' => '123456',
+            'message' => 'Ceci est un exemple de contenu.',
+            'mail_title' => PROJECT_NAME,
+        ];
+
+        $html = Genesis::getView($reportingmodel->getName(), $payload);
+        if ($html === null)
+            return ['success' => false, 'detail' => t('Apercu impossible : gabarit introuvable')];
+
+        return ['success' => true, 'html' => $html, 'payload' => $payload];
+    }
+
+    /**
+     * ETAPE M.4 : "Envoi via DMail, enregistre dans Emaillog" - DMail (deja
+     * utilise par UserFrontController pour les codes/OTP) rend le meme
+     * gabarit Blade que collectAction()/previewAction() et logge deja dans
+     * Emaillog (DMail::sendMail()) - independant de
+     * Reportingmodel::sendMail() (contenu stocke en base, pas un fichier
+     * Blade), conserve tel quel pour ses appelants existants.
+     */
+    public function sendtestviadmailAction($id, $email)
+    {
+        $reportingmodel = Reportingmodel::find($id);
+        if (!$reportingmodel->getId())
+            return ['success' => false, 'detail' => t('Modele introuvable')];
+
+        return DMail::init($reportingmodel->getName())
+            ->setObject($reportingmodel->getDescription() ?: $reportingmodel->getName())
+            ->addReceiver($email, 'Test')
+            ->sendMail([
+                'title' => 'Test',
+                'username' => 'Test',
+                'activationcode' => '000000',
+                'activation_code' => '000000',
+                'message' => 'Message de test.',
+            ]);
     }
 
     public function updateAction($id, $reportingmodel_form = null)
