@@ -255,9 +255,23 @@ abstract class FormManager
 //                    }
             } else {
                 if (method_exists($entity, 'get' . ucfirst($value)))
-                    $key_value[call_user_func(array($entity, 'get' . ucfirst($key)))] = call_user_func(array($entity, 'get' . ucfirst($value)));
+                    $label = call_user_func(array($entity, 'get' . ucfirst($value)));
                 else
-                    $key_value[$entity->{$key}] = $entity->{$value};
+                    $label = $entity->{$value};
+
+                // ETAPE V : $value peut designer une colonne traduite
+                // (dvtranslated_columns) - son getter (ou son attribut brut)
+                // renvoie alors un tableau par langue, pas une chaine. Sans
+                // cette resolution, FormFactory::__select() concatene ce
+                // tableau dans le HTML du <option> ("Warning: Array to
+                // string conversion" + markup casse, ex. CmsresourceForm
+                // qui liste les Cmscontent par titre).
+                if (is_array($label) && !empty($entity->dvtranslated_columns)) {
+                    $iso = \Dvups_lang::currentLang()->getIso_code();
+                    $label = $label[$iso] ?? reset($label);
+                }
+
+                $key_value[call_user_func(array($entity, 'get' . ucfirst($key)))] = $label;
             }
             $entitylist2[call_user_func(array($entity, 'getId'))] = $entity;
         }

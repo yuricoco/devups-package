@@ -142,4 +142,14 @@ abstract class HttpTestCase extends TestCase
             'password' => $password,
         ]);
     }
+
+    /**
+     * Pour les requetes qu'il faut construire a la main avec curl (upload
+     * multipart via CURLFile, request() ne le permet pas) tout en restant
+     * dans la MEME session (cookie jar) que loginAdmin()/get()/post().
+     */
+    protected function cookieJarPath(): string
+    {
+        return self::$cookieJar;
+    }
 }

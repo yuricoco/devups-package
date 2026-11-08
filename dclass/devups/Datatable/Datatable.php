@@ -619,8 +619,20 @@ EOF;
             $entity->singlelang($this->id_lang);
 
         try{
+            // ETAPE V : XTable::init() construit souvent le Datatable avec
+            // l'entite potentiellement null recue en argument (au lieu
+            // d'une instance fraiche) - qbcustom reste alors null (voir
+            // Datatable::__construct()). "->where()" sur null leve un
+            // \Error (pas une \Exception) en PHP8 : non rattrape par le
+            // catch ci-dessous, il remontait en fatal 500 des qu'un
+            // controleur appelait init() SANS argument avant
+            // getSingleRowRest() (ex. Cmsresource apres upload d'image).
+            // \Throwable couvre les deux, conformement a l'intention du
+            // fallback deja ecrit juste en dessous.
+            if (!$this->qbcustom)
+                throw new \RuntimeException('qbcustom non initialise');
             $this->entity = $this->qbcustom->where("this.id", $entity->id)->first();
-        }catch(\Exception $e){
+        }catch(\Throwable $e){
             $this->entity = $entity;
         }
 

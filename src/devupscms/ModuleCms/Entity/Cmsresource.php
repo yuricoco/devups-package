@@ -74,7 +74,12 @@ class Cmsresource extends ImageCore implements JsonSerializable
             $this->image = $url['file']['hashname'];
             $this->name = $url['file']['hashname'];
             $this->reference = $url['file']['hashname'];
-            $this->size = $url['file']['imagesize'] ?? ($url['file']['size'] ?? null);
+            // ETAPE V : l'ordre etait inverse par rapport au meme code dans
+            // Tree_item_image::uploadImage() - $url['file']['imagesize'] est
+            // le tableau brut de getimagesize() (pas un nombre), passe en
+            // priorite dans $this->size (colonne "size", type float) :
+            // "Warning: Array to string conversion" au INSERT (DBAL.php).
+            $this->size = $url['file']['size'] ?? ($url['file']['imagesize'] ?? null);
         }
     }
 
