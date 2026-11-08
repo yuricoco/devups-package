@@ -8,6 +8,15 @@
 -- n'etaient referencees nulle part ailleurs. Aucune colonne a retirer
 -- en dehors de ces 5 tables elles-memes.
 --
+-- ETAPE V : ce grep n'avait pas vu les FK ENTRE ces 5 tables elles-memes
+-- (department.region_id -> region, district.town_id -> town,
+-- town.department_id -> department) - trouve en executant cette migration
+-- sur la base de dev reelle (1451 sur le premier DROP, `department`
+-- encore reference par `town`). L'ordre ci-dessous part des tables sans
+-- aucune reference entrante restante (district, puis town une fois
+-- district supprime, etc.) pour que chaque DROP soit valide au moment ou
+-- il s'execute, sans jamais desactiver FOREIGN_KEY_CHECKS.
+--
 -- A executer via la commande de migration (jamais par un script mysql
 -- manuel) :
 --   php devups migrate
@@ -23,8 +32,8 @@
 -- (ex. mysqldump --no-create-info <dbname> department district region town
 -- continent > backup_location.sql).
 
-DROP TABLE IF EXISTS `department`;
 DROP TABLE IF EXISTS `district`;
-DROP TABLE IF EXISTS `region`;
 DROP TABLE IF EXISTS `town`;
+DROP TABLE IF EXISTS `department`;
+DROP TABLE IF EXISTS `region`;
 DROP TABLE IF EXISTS `continent`;
