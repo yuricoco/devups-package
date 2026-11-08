@@ -684,7 +684,16 @@ class DBAL extends Database
                 }
                 $keyvalue["lang_id"] = $lang->getId();
                 $keyvalue[$this->table . "_id"] = $id;
-                DBAL::_createDbal($this->table . "_lang", $keyvalue);
+                // ETAPE V : _createDbal() utilise ce premier argument comme
+                // un NOM DE CLASSE PHP (getClassMetadata(), new $object) -
+                // $this->table est TOUJOURS en minuscules (strtolower()),
+                // alors que la classe compagnon reelle garde la casse de la
+                // classe entite (ex. Country -> Country_lang, jamais
+                // country_lang) ; l'autoload composer (classmap) echoue sur
+                // la version minuscule si la classe n'a pas deja ete chargee
+                // par ailleurs ("Class 'xxx_lang' does not exist" - trouve
+                // en executant Country::seed() pour de vrai, ETAPE V.3).
+                DBAL::_createDbal($this->objectName . "_lang", $keyvalue);
             }
         }
 
