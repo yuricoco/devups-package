@@ -260,6 +260,73 @@ decommenter le DROP de `imagecms`).
   l'ecran passe desormais sans erreur.
 - Fichiers concernes : `tests/E2E/AdminScreensTest.php`.
 
+## Phase 4 (CMS), fin des migrations - ETAPE I
+
+### I.1/I.2/I.3 - reprise de donnees dans la migration + test : FAITS
+
+- Phase : I.1/I.2/I.3
+- `database/migration/2026_11_08_phase4_cms_rename.sql` ne faisait que
+  CREATE les nouvelles tables (vides) : il reprend desormais reellement
+  les donnees - `INSERT INTO cmsresource ... SELECT ... FROM imagecms
+  JOIN dv_image`, puis `UPDATE tree_item_image ... FROM dv_image` pour
+  ses nouvelles colonnes `ImageCore`.
+- Fichiers physiques : AUCUN deplacement necessaire - chaque ligne
+  reprise garde son `uploaddir` D'ORIGINE (celui ecrit par l'ancien
+  `Dv_image`), jamais force aux chemins par defaut des NOUVEAUX uploads
+  (`cms/`/`treeitem/`, utilises par `Cmsresource::uploadImage()`/
+  `Tree_item_image::uploadImage()`) - verifie explicitement par le test
+  d'integration (assertion sur `uploaddir`, voir plus bas).
+- Bloc de comptage (`SELECT COUNT(*)` avant/apres) ajoute en commentaire
+  autour de chaque reprise, a executer et comparer a la main ; les DROP
+  (`imagecms`, `dv_image`) restent commentes, a decommenter uniquement
+  une fois ces comptages verifies egaux - jamais executes par cette
+  session, comme pour toute migration de ce chantier.
+- Test : `tests/Integration/CmsMigrationTest.php` - recree l'ANCIEN
+  schema (`cmstext`, `imagecms`, `dv_image`, `tree_item_image` avec sa
+  colonne `image_id`) sur une base DEDIEE (`devups_phpunit_migration`,
+  creee/detruite par le test lui-meme - jamais `devups_phpunit`, qui
+  est deja au NOUVEAU schema issu des entites actuelles et n'a donc
+  plus de table `cmstext` a renommer), y insere quelques lignes,
+  execute le script REEL (`file_get_contents()` + un seul
+  `PDO::exec()` - les lignes commentees sont ignorees nativement par la
+  syntaxe SQL, meme principe que `config_data.sql` dans
+  `tests/bootstrap.php`), puis verifie la reprise de donnees (y compris
+  `uploaddir` inchange) et que les tables d'origine existent encore
+  (DROP commentes).
+- Fichiers concernes :
+  `database/migration/2026_11_08_phase4_cms_rename.sql`,
+  `tests/Integration/CmsMigrationTest.php`.
+
+### I.4 - DBAL::_createDbal() et le cache des langues actives : FAIT
+
+- Phase : I.4
+- `Dvups_lang::all()` (une requete SQL a chaque creation d'une entite
+  traduite via `Model::create()`/`_createDbal()`) remplacee par
+  `Dvups_lang::cachedActiveDlangs()` - le meme cache deja utilise par
+  `header.php` et par `dv_valid_lang()` (ETAPE H). Ce cache est un
+  tableau PLAT iso_code<->id (`iso_code => id`, `iso_code.'/' => id`,
+  `id => iso_code`) : la boucle ne retient que les entrees
+  `iso_code => id` (cle string qui ne finit pas par `/`).
+- Historique du bug (rappel, voir aussi ETAPE G.1/G.2/G.3 ci-dessus) :
+  `Dvups_lang::readCache()` avait ete retiree a l'ETAPE E.7 (remplacee
+  par `cachedActiveDlangs()`), mais ce chemin precis de `DBAL.php`
+  n'avait jamais ete exerce par aucun test avant l'ETAPE G - le
+  correctif de l'epoque (`Dvups_lang::all()`) etait fonctionnellement
+  correct (aucun test ne cassait) mais n'utilisait pas le cache attendu
+  et effectuait une requete SQL a chaque creation, pour TOUTES les
+  langues existantes (actives ou non).
+- Test : `tests/Integration/DbalTranslatedCreateTest.php` - verifie
+  qu'une ligne `cmscontent_lang` est creee pour chaque langue ACTIVE
+  (ni plus, ni moins) et qu'une langue INACTIVE nouvellement creee n'en
+  recoit jamais.
+- Fichiers concernes : `dclass/devups/Tchutte/DBAL.php`,
+  `tests/Integration/DbalTranslatedCreateTest.php`.
+- Non traite (hors perimetre explicite de I.4, bas risque) : les deux
+  autres usages de `Dvups_lang::allrows()` dans `DBAL.php` (chemin
+  d'instance `__insert()`, different de `_createDbal()`) restent
+  inchanges - methode differente, preexistante, jamais signalee comme
+  cassee.
+
 ---
 
 ## Traductions non encore faites (lang:missing, en.php)
@@ -467,16 +534,18 @@ executer dans cet ordre sur chaque environnement concerne :
 5. `database/migration/2026_11_08_phase4_cms_rename.sql` (RENAME
    `cmstext`/`cmstext_lang` -> `cmscontent`/`cmscontent_lang`, creation
    `cmsresource`/`cmscomment`, ALTER `tree_item_image` pour les
-   nouvelles colonnes `ImageCore`, Phase 4/ETAPE G.2/G.3/G.4) - **la
-   table `cmsresource` reste vide apres ce script** : peupler depuis
-   `imagecms JOIN dv_image` et verifier le nombre de lignes migre avant
-   de decommenter le `DROP TABLE imagecms` en fin de fichier (voir son
-   commentaire detaille). De meme, **peupler les nouvelles colonnes de
-   `tree_item_image` depuis `dv_image`** (jointure existante) avant de
-   decommenter le `DROP TABLE dv_image` egalement present (commente) en
-   fin de fichier - `ModuleGallery` etant desormais supprime du code,
-   ce DROP n'est plus bloque par ModuleTree, mais reste une suppression
-   de donnees a verifier manuellement avant execution.
+   nouvelles colonnes `ImageCore`, Phase 4/ETAPE G.2/G.3/G.4) - **depuis
+   l'ETAPE I, ce script REPREND reellement les donnees** (`INSERT INTO
+   cmsresource ... SELECT ... FROM imagecms JOIN dv_image`, `UPDATE
+   tree_item_image ... FROM dv_image`), verifie par
+   `tests/Integration/CmsMigrationTest.php`. Seuls les DROP
+   (`imagecms`, `dv_image`) restent commentes en fin de fichier : a
+   decommenter manuellement, apres avoir compare les comptages
+   avant/apres (blocs `SELECT COUNT(*)` en commentaire, juste avant
+   chaque DROP) sur l'environnement concerne - `ModuleGallery` etant
+   desormais supprime du code, plus rien ne lit `dv_image`, mais ce
+   DROP reste une suppression de donnees a verifier manuellement avant
+   execution, jamais automatique.
 
 Sur l'environnement de test (`devups_phpunit`), aucune de ces
 migrations n'est necessaire : le schema est recree automatiquement a
