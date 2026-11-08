@@ -85,6 +85,15 @@ class Dvups_adminFrontController extends \Dvups_adminController
         $login = Request::post('login');
         $password = Request::post('password');
 
+        // ETAPE L.1 : limite par compte ET par IP.
+        $ipLimiter = new RateLimiter('login_admin_ip:' . (\DClass\lib\Util::get_IP_address() ?? 'unknown'), RATE_LIMIT_LOGIN_WINDOW_SECONDS, RATE_LIMIT_LOGIN_MAX_ATTEMPTS_IP);
+        $loginLimiter = new RateLimiter('login_admin:' . strtolower((string)$login), RATE_LIMIT_LOGIN_WINDOW_SECONDS, RATE_LIMIT_LOGIN_MAX_ATTEMPTS);
+
+        if ($ipLimiter->tooManyAttempts() || $loginLimiter->tooManyAttempts()) {
+            http_response_code(429);
+            return array("success" => false, "error" => 'Trop de tentatives, veuillez réessayer plus tard.');
+        }
+
         $user = \Dvups_admin::select()
             ->where('login', "=", $login)
             ->__getOne();
@@ -95,11 +104,17 @@ class Dvups_adminFrontController extends \Dvups_adminController
                 ->where('email', "=", $login)
                 ->__getOne();
 
-            if (!$user->getId() || !$user->verifyPassword($password))
+            if (!$user->getId() || !$user->verifyPassword($password)) {
+                $ipLimiter->hit();
+                $loginLimiter->hit();
                 return array("success" => false,
                     "error" => 'Login et/ou mot de passe incorrecte');
+            }
 
         }
+
+        $ipLimiter->clear();
+        $loginLimiter->clear();
 
 //        if (!$user->isActivated())
 //            return array("success" => false,

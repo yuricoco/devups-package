@@ -119,6 +119,20 @@ define('LOG_MIN_LEVEL', dv_env('LOG_MIN_LEVEL', 'warning'));
 define('LOG_RETENTION_DAYS', dv_env('LOG_RETENTION_DAYS', 90));
 
 /**
+ * ETAPE L.1 : expiration des codes a 6 chiffres (activation, changement de
+ * telephone, reinitialisation de mot de passe) et limiteur de frequence
+ * generique (dclass/devups/RateLimiter.php) sur la connexion et la
+ * verification/le renvoi de ces codes.
+ */
+define('ACTIVATION_CODE_TTL_MINUTES', (int)dv_env('ACTIVATION_CODE_TTL_MINUTES', 15));
+define('RATE_LIMIT_CODE_MAX_ATTEMPTS', (int)dv_env('RATE_LIMIT_CODE_MAX_ATTEMPTS', 5));
+define('RATE_LIMIT_LOGIN_MAX_ATTEMPTS', (int)dv_env('RATE_LIMIT_LOGIN_MAX_ATTEMPTS', 5));
+define('RATE_LIMIT_LOGIN_MAX_ATTEMPTS_IP', (int)dv_env('RATE_LIMIT_LOGIN_MAX_ATTEMPTS_IP', 20));
+define('RATE_LIMIT_LOGIN_WINDOW_SECONDS', (int)dv_env('RATE_LIMIT_LOGIN_WINDOW_SECONDS', 900));
+define('RATE_LIMIT_RESEND_MAX_ATTEMPTS', (int)dv_env('RATE_LIMIT_RESEND_MAX_ATTEMPTS', 3));
+define('RATE_LIMIT_RESEND_WINDOW_SECONDS', (int)dv_env('RATE_LIMIT_RESEND_WINDOW_SECONDS', 3600));
+
+/**
  * Langues (lang.php) : LANG_DIR permet de pointer ailleurs que lang/ (la
  * suite de tests utilise un dossier temporaire recree par tests/bootstrap.php
  * pour ne jamais ecrire dans les fichiers versionnes). LANG_COLLECT coupe

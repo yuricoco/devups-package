@@ -393,6 +393,18 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
             );
         }
 
+        // ETAPE L.1 : limite par compte ET par IP.
+        $ipLimiter = new RateLimiter('login_user_ip:' . (\DClass\lib\Util::get_IP_address() ?? 'unknown'), RATE_LIMIT_LOGIN_WINDOW_SECONDS, RATE_LIMIT_LOGIN_MAX_ATTEMPTS_IP);
+        $loginLimiter = new RateLimiter('login_user:' . strtolower((string)$login), RATE_LIMIT_LOGIN_WINDOW_SECONDS, RATE_LIMIT_LOGIN_MAX_ATTEMPTS);
+
+        if ($ipLimiter->tooManyAttempts() || $loginLimiter->tooManyAttempts()) {
+            http_response_code(429);
+            return array(
+                "success" => false,
+                "detail" => 'Trop de tentatives, veuillez réessayer plus tard.',
+            );
+        }
+
         if($login == 'force' && !__prod){
             $user = User::select()
                 ->where('user.id', "=", $password)
@@ -419,15 +431,20 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
                 if ($candidate->getId() && $candidate->verifyPassword($password))
                     $user = $candidate;
 
-                if (!$user->getId())
+                if (!$user->getId()) {
+                    $ipLimiter->hit();
+                    $loginLimiter->hit();
                     return array(
                         "success" => false,
                         "user" => $user,
                         "detail" => 'Login ou mot de passe incorrecte',
                         "error" => ["login" => 'Login ou mot de passe incorrecte']
                     );
+                }
             }
         }
+        $ipLimiter->clear();
+        $loginLimiter->clear();
         Auth::$user_id = $user->id;
         return array(
             'success' => true,
@@ -510,6 +527,10 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
         if ($user->isActivated())
             return ['success' => false, 'detail' => t("Ce compte est deja active")];
 
+        $resendCheck = self::checkResendAllowed($user);
+        if ($resendCheck !== true)
+            return $resendCheck;
+
         $activationcode = User::generatecode();
         $user->setActivationcode($activationcode);
         $user->__update();
@@ -565,6 +586,9 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
 
     private static function initialiseUserParam(\User $user)
     {
+        $resendCheck = self::checkResendAllowed($user);
+        if ($resendCheck !== true)
+            return $resendCheck;
 
         $activationcode = __prod ? \DClass\lib\Util::randomcode(5, "0123456789"): '12345';
 
@@ -658,26 +682,79 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     {
         $userapp = User::find($id);
 
-        $code = sha1($_POST['activationcode']);
-        if ($code == $userapp->activationcode) {
-            $userapp->setPassword((($_POST['password'])));
-            $userapp->is_activated = (1);
-            //            $userapp->setResettingpassword(0);
-            //            $userapp->setResettingpassword(0);
-            $userapp->__update();
+        $check = $this->checkActivationCode($userapp, (string)($_POST['activationcode'] ?? ''), 'reset_password');
+        if ($check !== true)
+            return $check;
 
-            //            $_SESSION[USERAPP] = serialize($userapp);
-            //            $_SESSION[USERAPP] = serialize($userapp);
-            //updatesession($userapp);
+        $userapp->setPassword((($_POST['password'])));
+        $userapp->is_activated = (1);
+        //            $userapp->setResettingpassword(0);
+        //            $userapp->setResettingpassword(0);
+        $userapp->__update();
 
-            return [
-                "user" => $userapp,
-                "success" => true,
-                "jwt" => Auth::getJWT($userapp)
-            ];
-        } else {
+        //            $_SESSION[USERAPP] = serialize($userapp);
+        //            $_SESSION[USERAPP] = serialize($userapp);
+        //updatesession($userapp);
+
+        return [
+            "user" => $userapp,
+            "success" => true,
+            "jwt" => Auth::getJWT($userapp)
+        ];
+    }
+
+    /**
+     * ETAPE L.1 : verification commune d'un code a 6 chiffres (activation,
+     * reinitialisation de mot de passe, changement de telephone) :
+     * limite par compte ET par IP, expiration courte
+     * (ACTIVATION_CODE_TTL_MINUTES), compteur d'echecs par compte (code
+     * invalide apres RATE_LIMIT_CODE_MAX_ATTEMPTS echecs, sans attendre
+     * l'expiration). Retourne `true` si le code est valide (et remet les
+     * compteurs a zero), sinon le tableau de reponse a retourner tel quel
+     * (429 si la limite est atteinte, erreur neutre sinon).
+     */
+    /**
+     * ETAPE L.1 : limite le RENVOI d'un code (abus pour spammer l'email/SMS
+     * d'un compte, ou enumeration de comptes existants) - par compte ET
+     * par IP. Retourne `true` si autorise, sinon la reponse 429 a renvoyer.
+     */
+    private static function checkResendAllowed(\User $user)
+    {
+        $accountLimiter = new RateLimiter('resend_code:' . $user->getId(), RATE_LIMIT_RESEND_WINDOW_SECONDS, RATE_LIMIT_RESEND_MAX_ATTEMPTS);
+        $ipLimiter = new RateLimiter('resend_code_ip:' . (\DClass\lib\Util::get_IP_address() ?? 'unknown'), RATE_LIMIT_RESEND_WINDOW_SECONDS, RATE_LIMIT_RESEND_MAX_ATTEMPTS);
+
+        if ($accountLimiter->tooManyAttempts() || $ipLimiter->tooManyAttempts()) {
+            http_response_code(429);
+            return ['success' => false, 'detail' => t("Trop de tentatives, veuillez réessayer plus tard.")];
+        }
+
+        $accountLimiter->hit();
+        $ipLimiter->hit();
+        return true;
+    }
+
+    private function checkActivationCode(\User $user, string $submittedCode, string $purpose)
+    {
+        $accountLimiter = new RateLimiter($purpose . ':' . $user->getId(), ACTIVATION_CODE_TTL_MINUTES * 60, RATE_LIMIT_CODE_MAX_ATTEMPTS);
+        $ipLimiter = new RateLimiter($purpose . '_ip:' . (\DClass\lib\Util::get_IP_address() ?? 'unknown'), ACTIVATION_CODE_TTL_MINUTES * 60, RATE_LIMIT_CODE_MAX_ATTEMPTS);
+
+        if ($accountLimiter->tooManyAttempts() || $ipLimiter->tooManyAttempts()) {
+            http_response_code(429);
+            return ["success" => false, "error" => t("Trop de tentatives, veuillez réessayer plus tard.")];
+        }
+
+        $expired = $user->getActivationcodeExpiredAt() && strtotime($user->getActivationcodeExpiredAt()) < time();
+        $valid = $submittedCode !== '' && hash_equals((string)$user->activationcode, sha1($submittedCode));
+
+        if (!$valid || $expired) {
+            $accountLimiter->hit();
+            $ipLimiter->hit();
             return ["success" => false, "error" => t("Code d'activation incorrect!")];
         }
+
+        $accountLimiter->clear();
+        $ipLimiter->clear();
+        return true;
     }
 
     /**
@@ -692,27 +769,22 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
         if ($appuser->isActivated())
             return ["success" => true, "url" => route('home')];
         else {
-            $code = sha1($activationcode);
-            if ($code == $appuser->activationcode) {
+            $check = $this->checkActivationCode($appuser, (string)$activationcode, 'activateaccount');
+            if ($check !== true)
+                return $check;
 
-                $appuser->is_activated = (1);
-                $appuser->__update();
+            $appuser->is_activated = (1);
+            $appuser->__update();
 
-                DMail::init("mails.welcome", 'fr')
-                    ->addReceiver($appuser->email, $appuser->username)
-                    ->setTitle("Compte active")
-                    ->setObject(t("Bienvenue sur") . " " . PROJECT_NAME)
-                    //                ->preview();
-                    //                ->preview();
-                    ->sendMail(['user' => $appuser]);
-                return ["success" => true, "detail" => 'Votre compte a bien ete active'];
-            }
+            DMail::init("mails.welcome", 'fr')
+                ->addReceiver($appuser->email, $appuser->username)
+                ->setTitle("Compte active")
+                ->setObject(t("Bienvenue sur") . " " . PROJECT_NAME)
+                //                ->preview();
+                //                ->preview();
+                ->sendMail(['user' => $appuser]);
+            return ["success" => true, "detail" => 'Votre compte a bien ete active'];
         }
-
-        return [
-            "success" => false,
-            'detail' => t("Le code d'activation n'est pas valide. Veuillez entrer de nouveau ou alors renvoyer un autre code")
-        ];
     }
 
     /**
@@ -819,6 +891,10 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
             return ["success" => false, "detail" => t("Ce numéro de téléphone existe déjà")];
 
         $userhydrate = User::find(Request::get("user_id"));
+
+        $resendCheck = self::checkResendAllowed($userhydrate);
+        if ($resendCheck !== true)
+            return $resendCheck;
 
         $activationcode = User::generatecode();
         $userhydrate->setActivationcode($activationcode);

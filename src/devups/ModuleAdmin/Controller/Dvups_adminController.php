@@ -100,10 +100,26 @@ class Dvups_adminController extends Controller
         }
         extract($_POST);
 
+        // ETAPE L.1 : limite par compte ET par IP, independamment du
+        // resultat de l'authentification - un attaquant qui essaie des
+        // identifiants au hasard doit etre bloque, pas seulement un compte
+        // existant dont le mot de passe est errone.
+        $ipLimiter = new RateLimiter('login_admin_ip:' . (\DClass\lib\Util::get_IP_address() ?? 'unknown'), RATE_LIMIT_LOGIN_WINDOW_SECONDS, RATE_LIMIT_LOGIN_MAX_ATTEMPTS_IP);
+        $loginLimiter = new RateLimiter('login_admin:' . strtolower((string)$login), RATE_LIMIT_LOGIN_WINDOW_SECONDS, RATE_LIMIT_LOGIN_MAX_ATTEMPTS);
+
+        if ($ipLimiter->tooManyAttempts() || $loginLimiter->tooManyAttempts())
+            redirect( __env . "admin/login.php?err=" . 'Trop de tentatives, veuillez réessayer plus tard.');
+
         $admin = Dvups_admin::select()->where('login', $login)->first();
 
-        if (!$admin->getId() || !$admin->verifyPassword($password))
+        if (!$admin->getId() || !$admin->verifyPassword($password)) {
+            $ipLimiter->hit();
+            $loginLimiter->hit();
             redirect( __env . "admin/login.php?err=" . 'Login ou mot de passe incorrect.');
+        }
+
+        $ipLimiter->clear();
+        $loginLimiter->clear();
 
 //        Dvups_roleController::getNavigationAction($admin);
         $_SESSION[ADMIN] = serialize($admin);
