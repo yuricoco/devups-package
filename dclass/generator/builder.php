@@ -410,7 +410,12 @@ if ($argv[1] === 'transaction:rollback') {
 }
 
 $project = null;
-if (isset($argv[2])) {
+// ETAPE V : $argv[2] n'est un nom de projet que s'il ne commence pas par
+// "--" - sinon (ex. "php devups migrate --dry-run") c'est un flag de la
+// commande elle-meme (gere plus bas, cf. case 'migrate') et il ne faut
+// pas tenter de le resoudre comme projet (getproject() echouerait avec
+// un message trompeur, "projectCore '--dry-run' not found").
+if (isset($argv[2]) && substr($argv[2], 0, 2) !== '--') {
     $project = getproject($argv[2]);
 
     chdir('src/' . $project->name);
