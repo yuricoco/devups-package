@@ -168,59 +168,14 @@ return array (
     'name' => 'ModuleLocation',
     'label' => 'Localisation',
     'icon' => 'fas fa-map-marker-alt',
-    'entities' => 
+    'entities' =>
     array (
-      0 => 
-      array (
-        'path' => 'devupscms/ModuleLocation/',
-        'module' => 'ModuleLocation',
-        'name' => 'Continent',
-        'label' => 'Continent',
-        'namespace' => 'devupscms\\ModuleLocation\\Entity\\',
-        'component' => 'devupscms',
-      ),
-      1 => 
+      0 =>
       array (
         'path' => 'devupscms/ModuleLocation/',
         'module' => 'ModuleLocation',
         'name' => 'Country',
         'label' => 'Country',
-        'namespace' => 'devupscms\\ModuleLocation\\Entity\\',
-        'component' => 'devupscms',
-      ),
-      2 => 
-      array (
-        'path' => 'devupscms/ModuleLocation/',
-        'module' => 'ModuleLocation',
-        'name' => 'Department',
-        'label' => 'Department',
-        'namespace' => 'devupscms\\ModuleLocation\\Entity\\',
-        'component' => 'devupscms',
-      ),
-      3 => 
-      array (
-        'path' => 'devupscms/ModuleLocation/',
-        'module' => 'ModuleLocation',
-        'name' => 'District',
-        'label' => 'District',
-        'namespace' => 'devupscms\\ModuleLocation\\Entity\\',
-        'component' => 'devupscms',
-      ),
-      4 => 
-      array (
-        'path' => 'devupscms/ModuleLocation/',
-        'module' => 'ModuleLocation',
-        'name' => 'Region',
-        'label' => 'Region',
-        'namespace' => 'devupscms\\ModuleLocation\\Entity\\',
-        'component' => 'devupscms',
-      ),
-      5 => 
-      array (
-        'path' => 'devupscms/ModuleLocation/',
-        'module' => 'ModuleLocation',
-        'name' => 'Town',
-        'label' => 'Town',
         'namespace' => 'devupscms\\ModuleLocation\\Entity\\',
         'component' => 'devupscms',
       ),

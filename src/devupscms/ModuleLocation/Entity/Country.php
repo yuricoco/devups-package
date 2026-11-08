@@ -45,8 +45,11 @@ class Country extends \Model implements JsonSerializable
 
     public function __construct($id = null)
     {
-        // $this->dvtranslate = true;
-        // $this->dvtranslated_columns = ["nicename"];
+        // ETAPE J.2 : reactive - CountryForm declare bien le champ
+        // nicename avec "lang" => true (traduit, comme Cmscontent), mais
+        // sans ce flag l'entite ne liait jamais Country_lang.
+        $this->dvtranslate = true;
+        $this->dvtranslated_columns = ["nicename"];
         if ($id) {
             $this->id = $id;
         }
@@ -55,22 +58,6 @@ class Country extends \Model implements JsonSerializable
     public function getId()
     {
         return $this->id;
-    }
-
-    /**
-     * @return Continent
-     */
-    public function getContinent()
-    {
-        return $this->continent;
-    }
-
-    /**
-     * @param Continent $continent
-     */
-    public function setContinent(Continent $continent)
-    {
-        $this->continent = $continent;
     }
 
     public function getName()
@@ -129,11 +116,6 @@ class Country extends \Model implements JsonSerializable
             'phonecode' => $this->phonecode,
             'status' => $this->status,
         ];
-    }
-
-    public function tvas()
-    {
-        return $this->__hasmany(Tva::class);
     }
 
     public function showFlag()

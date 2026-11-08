@@ -241,27 +241,7 @@ return array (
     'namespace_name' => 'Status',
     'component' => 'devupscms',
   ),
-  'devupscms\\ModuleLocation\\Entity\\Continent' =>
-  array (
-    'path' => 'devupscms/ModuleLocation/',
-    'module' => 'ModuleLocation',
-    'name' => 'Continent',
-    'label' => 'Continent',
-    'namespace' => 'devupscms\\ModuleLocation\\Entity\\',
-    'namespace_name' => 'Continent',
-    'component' => 'devupscms',
-  ),
-  'Continent' => 
-  array (
-    'path' => 'devupscms/ModuleLocation/',
-    'module' => 'ModuleLocation',
-    'name' => 'Continent',
-    'label' => 'Continent',
-    'namespace' => 'devupscms\\ModuleLocation\\Entity\\',
-    'namespace_name' => 'Continent',
-    'component' => 'devupscms',
-  ),
-  'devupscms\\ModuleLocation\\Entity\\Country' => 
+  'devupscms\\ModuleLocation\\Entity\\Country' =>
   array (
     'path' => 'devupscms/ModuleLocation/',
     'module' => 'ModuleLocation',
@@ -281,87 +261,7 @@ return array (
     'namespace_name' => 'Country',
     'component' => 'devupscms',
   ),
-  'devupscms\\ModuleLocation\\Entity\\Department' => 
-  array (
-    'path' => 'devupscms/ModuleLocation/',
-    'module' => 'ModuleLocation',
-    'name' => 'Department',
-    'label' => 'Department',
-    'namespace' => 'devupscms\\ModuleLocation\\Entity\\',
-    'namespace_name' => 'Department',
-    'component' => 'devupscms',
-  ),
-  'Department' => 
-  array (
-    'path' => 'devupscms/ModuleLocation/',
-    'module' => 'ModuleLocation',
-    'name' => 'Department',
-    'label' => 'Department',
-    'namespace' => 'devupscms\\ModuleLocation\\Entity\\',
-    'namespace_name' => 'Department',
-    'component' => 'devupscms',
-  ),
-  'devupscms\\ModuleLocation\\Entity\\District' => 
-  array (
-    'path' => 'devupscms/ModuleLocation/',
-    'module' => 'ModuleLocation',
-    'name' => 'District',
-    'label' => 'District',
-    'namespace' => 'devupscms\\ModuleLocation\\Entity\\',
-    'namespace_name' => 'District',
-    'component' => 'devupscms',
-  ),
-  'District' => 
-  array (
-    'path' => 'devupscms/ModuleLocation/',
-    'module' => 'ModuleLocation',
-    'name' => 'District',
-    'label' => 'District',
-    'namespace' => 'devupscms\\ModuleLocation\\Entity\\',
-    'namespace_name' => 'District',
-    'component' => 'devupscms',
-  ),
-  'devupscms\\ModuleLocation\\Entity\\Region' => 
-  array (
-    'path' => 'devupscms/ModuleLocation/',
-    'module' => 'ModuleLocation',
-    'name' => 'Region',
-    'label' => 'Region',
-    'namespace' => 'devupscms\\ModuleLocation\\Entity\\',
-    'namespace_name' => 'Region',
-    'component' => 'devupscms',
-  ),
-  'Region' => 
-  array (
-    'path' => 'devupscms/ModuleLocation/',
-    'module' => 'ModuleLocation',
-    'name' => 'Region',
-    'label' => 'Region',
-    'namespace' => 'devupscms\\ModuleLocation\\Entity\\',
-    'namespace_name' => 'Region',
-    'component' => 'devupscms',
-  ),
-  'devupscms\\ModuleLocation\\Entity\\Town' => 
-  array (
-    'path' => 'devupscms/ModuleLocation/',
-    'module' => 'ModuleLocation',
-    'name' => 'Town',
-    'label' => 'Town',
-    'namespace' => 'devupscms\\ModuleLocation\\Entity\\',
-    'namespace_name' => 'Town',
-    'component' => 'devupscms',
-  ),
-  'Town' => 
-  array (
-    'path' => 'devupscms/ModuleLocation/',
-    'module' => 'ModuleLocation',
-    'name' => 'Town',
-    'label' => 'Town',
-    'namespace' => 'devupscms\\ModuleLocation\\Entity\\',
-    'namespace_name' => 'Town',
-    'component' => 'devupscms',
-  ),
-  'devupscms\\ModuleNotification\\Entity\\Notification' => 
+  'devupscms\\ModuleNotification\\Entity\\Notification' =>
   array (
     'path' => 'devupscms/ModuleNotification/',
     'module' => 'ModuleNotification',
