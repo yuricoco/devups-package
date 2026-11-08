@@ -229,7 +229,11 @@ class Dvups_lang extends Model implements JsonSerializable
     }
 
     public static function defaultLang(){
-        if ($iso = Request::get('lang'))
+        // ETAPE L.3 : passe par dv_valid_lang() comme le reste de la
+        // validation de langue (ETAPE H) - meme si le where() parametre ne
+        // risquait aucune injection, seul un code a 2 lettres ACTIF doit
+        // etre accepte, jamais la valeur brute du parametre.
+        if ($iso = dv_valid_lang(Request::get('lang')))
             $lang = self::where("this.iso_code", $iso)->firstOrNull();
         else
             $lang = self::where("this.main", 1)->firstOrNull();

@@ -92,17 +92,10 @@ ouvert, voir ci-dessous.
   la meme maniere par precaution (`basename($rm->name)`), bien que
   `$rm->name` vienne de la base (saisie admin), pas directement de la
   requete.
-- Autres usages de `Request::get('lang')` repares, bas risque (deja des
-  requetes SQL parametrees, jamais de lecture de fichier) : signales ici
-  plutot que modifies, pour rester dans le perimetre "fichier" de H.4 -
-  `Dvups_lang::defaultLang()` et `Request::Route()`
-  (`dclass/devups/Http/Request.php:237`) interrogent directement
-  `iso_code` avec la valeur brute du parametre, sans passer par
-  `dv_valid_lang()` ; une requete parametree limite le risque a une
-  recherche qui ne renvoie simplement aucun resultat pour une valeur
-  invalide (pas d'injection SQL), mais la coherence voudrait qu'elles
-  utilisent elles aussi `dv_valid_lang()` - laisse pour une prochaine
-  session, bas risque.
+- ~~Autres usages de `Request::get('lang')` repares, bas risque~~ -
+  **fait (ETAPE L.3)** : `Dvups_lang::defaultLang()` et `Request::Route()`
+  (`dclass/devups/Http/Request.php`) passent maintenant par
+  `dv_valid_lang()`, comme le reste de la validation de langue (ETAPE H).
 - Rien d'autre trouve : les nombreux autres `file_get_contents()` du
   depot (generateur, documentation, cache local, upload d'images via
   `Dfile`) portent sur des chemins construits a partir de noms de classe/

@@ -234,7 +234,10 @@ class Request
     public static function Route($app, $path)
     {
 
-        if (!Dvups_lang::where("iso_code", Request::get("lang"))->count()) {
+        // ETAPE L.3 : passe par dv_valid_lang() comme le reste de la
+        // validation de langue (ETAPE H), au lieu d'interroger directement
+        // iso_code avec la valeur brute du parametre.
+        if (!dv_valid_lang(Request::get("lang"))) {
             //die(var_dump(__env.local().'/'.(Request::get("lang"))));
             $env = str_replace(__server, "", __env);
             $url = str_replace($env, __env . __lang . '/', self::$uri);
