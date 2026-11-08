@@ -22,15 +22,20 @@ class Country extends \Model implements JsonSerializable
      **/
     protected $iso;
     /**
+     * ETAPE V : valeur par defaut '' (pas null) - la colonne SQL est
+     * NOT NULL mais CountryForm ne collecte pas iso3/numcode (seul
+     * Country::seed() les renseigne depuis database/seed/countries.php) :
+     * creer un pays depuis l'ecran admin levait "Column 'iso3' cannot be
+     * null" (SQLSTATE 23000) a chaque fois.
      * @Column(name="iso3", type="string" , length=255 )
      * @var string
      **/
-    protected $iso3;
+    protected $iso3 = '';
     /**
      * @Column(name="numcode", type="string" , length=255 )
      * @var string
      **/
-    protected $numcode;
+    protected $numcode = '';
     /**
      * @Column(name="phonecode", type="integer"  )
      * @var integer
