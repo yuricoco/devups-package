@@ -33,6 +33,25 @@ final class DocGenerationTest extends TestCase
         $this->assertSame(dv_build_openapi_spec(ROOT), dv_build_openapi_spec(ROOT));
     }
 
+    public function testBuildOpenapiSpecWithoutAdminOmitsSessionAuthAndAdminPaths(): void
+    {
+        $spec = dv_build_openapi_spec(ROOT);
+
+        $this->assertArrayNotHasKey('SessionAuth', $spec['components']['securitySchemes']);
+    }
+
+    public function testBuildOpenapiSpecWithAdminAddsSessionRoutesAndSessionAuth(): void
+    {
+        $withAdmin = dv_build_openapi_spec(ROOT, true);
+        $withoutAdmin = dv_build_openapi_spec(ROOT);
+
+        $this->assertArrayHasKey('SessionAuth', $withAdmin['components']['securitySchemes']);
+        $this->assertGreaterThan(count($withoutAdmin['paths']), count($withAdmin['paths']));
+
+        $tagNames = array_column($withAdmin['tags'], 'name');
+        $this->assertContains('Admin – session', $tagNames);
+    }
+
     public function testBuildDocGuideReturnsComponentsServicesAndAuth(): void
     {
         $guide = dv_build_doc_guide(ROOT);

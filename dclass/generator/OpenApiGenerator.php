@@ -79,13 +79,61 @@ if (!function_exists('dv_openapi_json_body')) {
     }
 }
 
+if (!function_exists('dv_build_admin_openapi_paths')) {
+    /**
+     * ETAPE N.3 : routes back-office (session admin, CRUD standard genere
+     * par ModuleController - voir tests/E2E/AdminScreensTest.php::screens()
+     * pour le meme calcul de chemin), pour "distinguer les routes front
+     * (JWT) et admin (session)" - absentes de dv_build_openapi_spec() par
+     * defaut (ces routes ne sont pas exposees publiquement, contrairement
+     * aux routes front documentees par documentation/api.php).
+     */
+    function dv_build_admin_openapi_paths(string $root): array
+    {
+        $root = rtrim($root, '/\\') . '/';
+        $config = require $root . 'config/dvups_configurations.php';
+
+        $paths = [];
+        $tags = [['name' => 'Admin – session', 'description' => "Back-office (authentification par session, cookie `PHPSESSID`), pas par JWT."]];
+
+        foreach ($config as $key => $entity) {
+            if (strpos($key, '\\') !== false || !is_array($entity) || empty($entity['component']))
+                continue;
+
+            $slug = str_replace('_', '-', strtolower($entity['name']));
+            $ekLower = strtolower($entity['name']);
+            $base = $entity['component'] . '/' . $entity['module'] . '/' . $slug;
+
+            $paths["/{$base}/list"]['get'] = [
+                'tags' => ['Admin – session'],
+                'summary' => "Liste back-office de {$entity['name']} (HTML)",
+                'security' => [['SessionAuth' => []]],
+                'responses' => ['200' => ['description' => 'Page HTML complète'], '401' => ['description' => 'Session admin requise']],
+            ];
+            $paths["/api/{$ekLower}/form"]['get'] = [
+                'tags' => ['Admin – session'],
+                'summary' => "Formulaire back-office de {$entity['name']} (JSON)",
+                'security' => [['SessionAuth' => []]],
+                'responses' => ['200' => ['description' => '{"success":true,"form":"<form>…</form>"}'], '401' => ['description' => 'Session admin requise']],
+            ];
+        }
+
+        return ['tags' => $tags, 'paths' => $paths];
+    }
+}
+
 if (!function_exists('dv_build_openapi_spec')) {
     /**
      * Construit le document OpenAPI 3 complet. $root est la racine du
      * projet (ROOT, ou un dossier different en test) - permet d'appeler
      * cette fonction sans dependre du constant ROOT du bootstrap complet.
+     *
+     * $includeAdmin (ETAPE N.3, defaut false pour ne pas changer le
+     * comportement de documentation/api.php, verifie byte-identique) ajoute
+     * les routes back-office (session) en plus des routes front (JWT) -
+     * utilise par la page Swagger UI admin, protegee par can().
      */
-    function dv_build_openapi_spec(string $root): array
+    function dv_build_openapi_spec(string $root, bool $includeAdmin = false): array
     {
         $root = rtrim($root, '/\\') . '/';
 
@@ -133,6 +181,10 @@ if (!function_exists('dv_build_openapi_spec')) {
             'tags' => [],
             'paths' => [],
         ];
+
+        if ($includeAdmin) {
+            $spec['components']['securitySchemes']['SessionAuth'] = ['type' => 'apiKey', 'in' => 'cookie', 'name' => 'PHPSESSID'];
+        }
 
         $paths = [];
         $tags = [];
@@ -270,6 +322,12 @@ if (!function_exists('dv_build_openapi_spec')) {
                 '401' => ['description' => 'Token invalide'],
             ],
         ];
+
+        if ($includeAdmin) {
+            $admin = dv_build_admin_openapi_paths($root);
+            $paths = array_merge($paths, $admin['paths']);
+            $tags = array_merge($tags, $admin['tags']);
+        }
 
         ksort($paths);
 

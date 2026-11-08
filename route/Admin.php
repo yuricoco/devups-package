@@ -83,6 +83,43 @@ class Admin extends \dclass\devups\Controller\ModuleController
         \devups\ModuleAdmin\ModuleAdmin::renderView('admin.dvups_admin.complete_registration', (new \Dvups_adminController())->completeRegistration($id));
     }
 
+    /**
+     * ETAPE N.3 : Swagger UI back-office, protege par can() (meme garde
+     * que l'ecran Dvups_log, lecture seule) - inclut les routes front
+     * (JWT) ET admin (session), contrairement a documentation/api.php
+     * (routes front uniquement, servi sans authentification). Aucune
+     * action "Documentation" n'existe dans dvups_action : seul le role
+     * "admin" (bypass maitre de can()) y a acces tant qu'un droit dedie
+     * n'est pas cree via `php devups rights:sync` + Dvups_privilege.
+     */
+    public function apidocsView()
+    {
+        if (!can('read', 'Documentation')) {
+            http_response_code(403);
+            echo t('Action non autorisee');
+            die;
+        }
+
+        require_once ROOT . 'dclass/generator/OpenApiGenerator.php';
+        $spec = dv_build_openapi_spec(ROOT, true);
+        $specJson = json_encode($spec, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG);
+
+        header('Content-Type: text/html; charset=utf-8');
+        echo '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
+            . '<meta name="viewport" content="width=device-width, initial-scale=1">'
+            . '<title>' . PROJECT_NAME . ' – API (back-office)</title>'
+            . '<link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">'
+            . '<style>.swagger-ui .topbar{display:none}body{margin:0}</style>'
+            . '</head><body><div id="swagger-ui"></div>'
+            . '<script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>'
+            . '<script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-standalone-preset.js"></script>'
+            . '<script>window.onload=()=>{SwaggerUIBundle({spec:' . $specJson . ',dom_id:"#swagger-ui",'
+            . 'deepLinking:true,displayRequestDuration:true,defaultModelsExpandDepth:-1,docExpansion:"none",'
+            . 'filter:true,presets:[SwaggerUIBundle.presets.apis,SwaggerUIStandalonePreset],'
+            . 'plugins:[SwaggerUIBundle.plugins.DownloadUrl],layout:"StandaloneLayout"});};</script>'
+            . '</body></html>';
+    }
+
     public function web($path = "")
     {
         // TODO: Implement web() method.
