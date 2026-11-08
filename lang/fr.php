@@ -20,7 +20,6 @@ return array (
   'Aucun arbre pour le moment. Creez-en un depuis le module Tree.' => 'Aucun arbre pour le moment. Creez-en un depuis le module Tree.',
   'Aucun résultat pour cette recherche.' => 'Aucun résultat pour cette recherche.',
   'Aucun élément pour l\'instant.' => 'Aucun élément pour l\'instant.',
-  'Aucun élément pour l\\' => 'Aucun élément pour l\\',
   'Auth_token' => 'Jeton d\'authentification',
   'Avant que vous vous connectiez, nous avons besoin de verifier votre identite. Entrer le code suivant sur la page de verification' => 'Avant que vous vous connectiez, nous avons besoin de verifier votre identite. Entrer le code suivant sur la page de verification',
   'Bienvenue sur' => 'Bienvenue sur',
