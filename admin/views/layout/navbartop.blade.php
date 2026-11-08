@@ -26,7 +26,7 @@
                     <button type="button"
                             class="btn-icon btn-icon-only btn btn-primary btn-sm mobile-toggle-header-nav">
                         <span class="btn-icon-wrapper">
-                            <i class="fa fa-ellipsis-v fa-w-6"></i>
+                            <i class="fa fa-ellipsis-v"></i>
                         </span>
                     </button>
                 </span>
@@ -88,14 +88,14 @@
                                      class="dropdown-menu dropdown-menu-right">
                                     <a href="{{__env . 'admin/devups/ModuleAdmin/dvups-admin/profile'}}"
                                        class="dropdown-item">{{t("Admin Account")}}</a>
-                                    <a href="<?= Dvups_admin::classpath() . 'dvups-admin/editpassword' ?>"
+                                    <a href="<?= __env . 'admin/devups/ModuleAdmin/dvups-admin/editpassword' ?>"
                                        class="dropdown-item">
-                                        <i class="mdi mdi-settings text-primary"></i>
+                                        <i class="fas fa-cog text-primary"></i>
                                         {{t("Settings")}}
                                     </a>
                                     <a class="dropdown-item"
                                        href="<?= __env . 'admin/devups/ModuleAdmin/dvups-admin/deconnexion-action' ?>">
-                                        <i class="mdi mdi-logout text-primary"></i>
+                                        <i class="fas fa-sign-out-alt text-primary"></i>
                                         {{t("Logout")}}
                                     </a>
                                 </div>

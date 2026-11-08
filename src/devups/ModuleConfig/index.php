@@ -1,6 +1,6 @@
 <?php
             //ModuleConfig
-        
+
         require '../../../admin/header.php';
         global $app;
 if (isset($_SERVER['PATH_INFO']) && strpos($_SERVER['PATH_INFO'], '/api/') === 0) {

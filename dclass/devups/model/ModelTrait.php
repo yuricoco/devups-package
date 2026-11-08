@@ -11,15 +11,85 @@ trait ModelTrait
     public $dvid_lang = false; // this attribute has an issue I've forgot the one but this note is just to remind me of that
     // in fact if the attribute is not setted the __get() method will throw a error: attribute not found! why Have i commented it?
     public $dvtranslated_columns = [];
-    private static $dvkeys = ["dvold", "dvid_lang", "dvfetched", "dvinrelation", "dvsoftdelete", "dvtranslate", "dvtranslated_columns",];
+    public $dvpersistence = [];
+    public $dvserialised = [];
+    protected $with = [];
+    private static $dvkeys = ["dvserialised", "dvpersistence", "dvold", "dvid_lang", "dvfetched", "dvinrelation", "dvsoftdelete", "dvtranslate", "dvtranslated_columns",];
 
     public $dv_collection = [];
 
+    public function setId($val) {}
+
+    /**
+     * @inheritDoc
+     */
+    #[\ReturnTypeWillChange]
+    public function jsonSerialize()
+    {
+        //        $data = get_object_vars($this);
+        $data = [];
+        //        foreach ($this as $key => $value) {
+        foreach ($this->with as $key) {
+
+            if (is_object($this->{$key})) {
+                $data[$key] = $this->{$key}->jsonSerialize();
+            }
+            //            else if ($value)
+            //                $data[$key] = $value;
+
+        }
+
+        return $data + $this->dvserialised;
+    }
+
     public function __get($attribut)
     {
+        if (!property_exists($this, $attribut)) {
+            $entityattribut = substr($attribut, 1, strlen($attribut) - 1);
+            //var_dump($attribut);
+            if ($attribut != "_" . $entityattribut) {
+                // Colonne traduite pas encore hydratee (entite neuve, ou lue
+                // sans sa langue) : valeur absente, pas une erreur.
+                if (!empty($this->dvtranslated_columns) && in_array($attribut, $this->dvtranslated_columns, true))
+                    return null;
+
+                // Attribut inconnu : signale en developpement, sans jamais
+                // interrompre le rendu (un `die` ici tronquait silencieusement
+                // la page en cours, avec un statut 200).
+                if (!__prod) {
+                    $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
+                    trigger_error(
+                        'Propriété non-définie via __get() : ' . $attribut .
+                            ' de la class ' . get_class($this) .
+                            ' dans ' . ($trace[0]['file'] ?? '?') .
+                            ' à la ligne ' . ($trace[0]['line'] ?? '?'),
+                        E_USER_NOTICE
+                    );
+                }
+                return null;
+            }
+            if (is_object($this->{$entityattribut})) { //  && isset($this->{$entityattribut . "_id"})
+
+                if ($this->{$entityattribut}->dvfetched)
+                    return $this->{$entityattribut};
+
+                $this->{$attribut} = $this->{$entityattribut}->hydrate($this->dvid_lang);
+                unset($this->dvpersistence['this.' . $attribut]);
+                //                    $classname = get_class($this->{$attribut});
+                //                    $this->{"_".$attribut} = $classname::findrow($this->{$attribut . "_id"});
+
+                return $this->{$attribut};
+            }
+            return null;
+        }
+
+        return $this->{$attribut};
+    }
+    public function __toUpdate__get($attribut)
+    {
         global $em; //$global_config;
-//        dv_dump($this);
-//        $config = $global_config[get_class($this)];
+        //        dv_dump($this);
+        //        $config = $global_config[get_class($this)];
         if (!property_exists($this, $attribut)) {
 
             if ($this->dvtranslate && in_array($attribut, $this->dvtranslated_columns)) {
@@ -30,7 +100,7 @@ trait ModelTrait
 
                 $metadata = $em->getClassMetadata("\\" . $classlang);
                 $cnl = $metadata->table['name'];
-//                $cnl = strtolower($classlang);
+                //                $cnl = strtolower($classlang);
                 if (property_exists($classlang, $attribut)) {
                     $idlang = DBAL::$id_lang_static;
 
@@ -52,10 +122,11 @@ trait ModelTrait
                     $trace = debug_backtrace();
                     trigger_error(
                         'Propriété non-définie via __get() : ' . $attribut .
-                        ' de la class ' . get_class($this) .
-                        ' dans ' . $trace[0]['file'] .
-                        ' à la ligne ' . $trace[0]['line'],
-                        E_USER_NOTICE);
+                            ' de la class ' . get_class($this) .
+                            ' dans ' . $trace[0]['file'] .
+                            ' à la ligne ' . $trace[0]['line'],
+                        E_USER_NOTICE
+                    );
                     die;
                 }
                 if (is_object($this->{$entityattribut})) { //  && isset($this->{$entityattribut . "_id"})
@@ -64,14 +135,13 @@ trait ModelTrait
                         return $this->{$entityattribut};
 
                     $this->{$attribut} = $this->{$entityattribut}->hydrate($this->dvid_lang);
-//                    $classname = get_class($this->{$attribut});
-//                    $this->{"_".$attribut} = $classname::findrow($this->{$attribut . "_id"});
+                    //                    $classname = get_class($this->{$attribut});
+                    //                    $this->{"_".$attribut} = $classname::findrow($this->{$attribut . "_id"});
 
                     return $this->{$attribut};
                 }
-
             }
-        } elseif (property_exists($this, $attribut)) {//$this->id &&
+        } elseif (property_exists($this, $attribut)) { //$this->id &&
 
             /*
              * if id is defined and value of the attribut of this instance is null (problem with default value) and
@@ -96,14 +166,11 @@ trait ModelTrait
                 if (!isset($this->id))
                     return $this->{$attribut};
 
-                $classlang = get_class($this);
+                /*$classlang = get_class($this);
                 $metadata = $em->getClassMetadata("\\" . $classlang);
                 $fieldNames = $metadata->fieldNames;
                 $assiactions = array_keys($metadata->associationMappings);
-                /*if ($attribut === 'parent_id') {
-                $config = $global_config[get_class($this)];
-                    dv_dump($config, $metadata->table['name']);
-                }*/
+
                 $cn = $metadata->table['name'];
                 if (!$this->id)
                     return $this->{$attribut};
@@ -120,20 +187,20 @@ trait ModelTrait
                     $this->{$k . "_id"} = $data[$k . "_id"];
                 }
 
-                $this->dvfetched = true;
+                $this->dvfetched = true;*/
                 //return $data[0];
             }
             return $this->{$attribut};
-
         }
 
         $trace = debug_backtrace();
         trigger_error(
             'Propriété non-définie via __get() : ' . $attribut .
-            ' de la class ' . get_class($this) .
-            ' dans ' . $trace[0]['file'] .
-            ' à la ligne ' . $trace[0]['line'],
-            E_USER_NOTICE);
+                ' de la class ' . get_class($this) .
+                ' dans ' . $trace[0]['file'] .
+                ' à la ligne ' . $trace[0]['line'],
+            E_USER_NOTICE
+        );
         return null;
     }
 
@@ -143,10 +210,28 @@ trait ModelTrait
             $attribut = str_replace('_id', '', $name);
             if (property_exists($this, $attribut) && is_object($this->{$attribut})) {
                 $this->{$attribut}->id = $value;
+                $this->dvpersistence['this.' . $attribut . '_id'] = $value;
             }
         }
+        $this->dvpersistence['this.' . $name] = $value;
+        $this->dvserialised[$name] = $value;
         // TODO: Implement __set() method.
         $this->{$name} = $value;
+    }
+
+    /**
+     * create a new entry
+     * @return integer
+     */
+    public function __insert()
+    {
+        if (isset($this->created_at))
+            $this->created_at = date(\DClass\lib\Util::dateformat);
+
+        $dbal = new DBAL();
+        DBAL::$id_lang_static = $this->dvid_lang;
+        $id = $dbal->createDbal($this);
+        return $id;
     }
 
     /**
@@ -169,7 +254,6 @@ trait ModelTrait
             return $qb->select()->where($parameter)->count();
 
         return $qb->select()->where($parameter, "=", $value)->count();
-
     }
 
 
@@ -205,7 +289,6 @@ trait ModelTrait
         $qb = new QueryBuilder($entity);
         $qb->setLang($id_lang);
         return $qb->firstOrCreate($constraint, $data, $id_lang);
-
     }
 
     /**
@@ -223,7 +306,6 @@ trait ModelTrait
         $qb = new QueryBuilder($entity);
         $qb->setLang($id_lang);
         return $qb->firstOrNull($id_lang);
-
     }
 
     /**
@@ -241,7 +323,6 @@ trait ModelTrait
         $qb = new QueryBuilder($entity);
         $qb->setLang($id_lang);
         return $qb->firstOrNew($constraint, $data, $id_lang);
-
     }
 
     /**
@@ -356,8 +437,8 @@ trait ModelTrait
         $qb = new QueryBuilder($entity);
 
         $qb->custom_columns_array = [...$columns];
-//        $qb->custom_columns .= implode(", ", $columns);
-        return $qb;// ->addColumns($columns)->getValue();
+        //        $qb->custom_columns .= implode(", ", $columns);
+        return $qb; // ->addColumns($columns)->getValue();
     }
 
     public static $columns = [];
@@ -387,8 +468,8 @@ trait ModelTrait
             $as = " AS $as";
         }
         $qb = new QueryBuilder($entity);
-        $qb->custom_columns .= (" " . $column . " $as ");
-        return $qb;// ->addColumns($columns)->getValue();
+        $qb->custom_columns .= (" (" . $column . ") $as ");
+        return $qb; // ->addColumns($columns)->getValue();
 
     }
 
@@ -428,7 +509,7 @@ trait ModelTrait
 
         $qb = new QueryBuilder($entity);
         $qb->addIndex($columnOrder, $alias);
-        return $qb;// ->addColumns($columns)->getValue();
+        return $qb; // ->addColumns($columns)->getValue();
     }
 
     /**
@@ -456,17 +537,16 @@ trait ModelTrait
             return $qb->where("this.id")->in($id)->get();
         }
         if ($entity->dvtranslate) {
-//            if (!$id_lang)
-//                $id_lang = Dvups_lang::defaultLang()->getId();
+            //            if (!$id_lang)
+            //                $id_lang = Dvups_lang::defaultLang()->getId();
 
             return $qb //->select()
-            //->leftjoinrecto($classname . "_lang")
-            ->where("this.id", "=", $id)
+                //->leftjoinrecto($classname . "_lang")
+                ->where("this.id", "=", $id)
                 //->where($classname . "_lang.lang_id", "=", $id_lang)
                 ->getInstance();
         } else
-            return $qb->select()->where("id", "=", $id)->getInstance();
-
+            return $qb->select()->where("this.id", "=", $id)->getInstance();
     }
 
     /**
@@ -494,12 +574,11 @@ trait ModelTrait
                 return $qb->where($id)->getInstance();
 
             return $qb->whereIn("this.id", $id)->get();
-        }
-        $entity->setId($id);
+        } else
+            $entity->setId($id);
 
         return $qb->select()->where("this.id", "=", $id)
             ->getInstance();
-
     }
 
     /**
@@ -531,7 +610,6 @@ trait ModelTrait
 
         return $qb->select()->where("this.id", "=", $id)
             ->firstOrNull();
-
     }
 
     private static $keyvalues = [];
@@ -561,7 +639,6 @@ trait ModelTrait
         if (count($ids)) {
             $instances = [];
             foreach ($ids as $id) {
-
             }
         }
     }
@@ -576,7 +653,6 @@ trait ModelTrait
 
         $qb = new QueryBuilder($entity);
         return $qb->createFrom($data, $table_targeted);
-
     }
 
     /**
@@ -597,7 +673,6 @@ trait ModelTrait
         }
 
         return DBAL::_updateDbal($classname, $arrayvalues, $where);
-
     }
 
     /**
@@ -615,8 +690,9 @@ trait ModelTrait
         if (!$arrayvalues) {
             return $dbal->updateDbal($this);
         } else {
-            $qb = new QueryBuilder($this);
-            return $qb->update($arrayvalues, $seton, $case, $defauljoin);
+            //            QueryBuilder::$debug = true;
+            $qb = new QueryBuilder($this, false);
+            return $qb->whereId($qb->identifier)->update($arrayvalues, $seton, $case);
         }
     }
 
@@ -646,7 +722,6 @@ trait ModelTrait
             $qb = new QueryBuilder($entity);
             return $qb->delete($force);
         }
-
     }
 
     /**
@@ -668,7 +743,6 @@ trait ModelTrait
             $sort = $qb->getTable() . "." . $sort;
 
         return $qb->select()->handlesoftdelete()->orderby($sort . " " . $order)->get();
-
     }
 
     /**
@@ -761,25 +835,34 @@ trait ModelTrait
      * @return QueryBuilder
      * @throws ReflectionException
      */
-    public static function initBulk($payload)
+    public static function initBulk()
     {
         $reflection = new ReflectionClass(get_called_class());
         $entity = $reflection->newInstance();
 
         $qb = new QueryBuilder($entity);
-        return $qb->initBulk($payload);
+        return $qb->initBulk();
     }
 
     /**
+     * Memes sentinelles que QueryBuilder::where(), transmises
+     * TELLES QUELLES : `Model::where('col', 0)` doit atteindre l'instance
+     * `where()` comme un appel a DEUX arguments (`$value` reste la
+     * sentinelle), pas comme trois arguments explicites dont le troisieme
+     * vaudrait `null` par defaut - sinon la distinction deux/trois
+     * arguments que QueryBuilder::where() sait desormais faire serait
+     * perdue avant meme d'y arriver.
+     *
      * @param $column
-     * @param null $operator
-     * @param null $value
+     * @param mixed $operator
+     * @param mixed $value
      * @return QueryBuilder
      */
-    public static function where($column, $operator = null, $value = null, $id_lang = null)
+    public static function where($column, $operator = QueryBuilder::NO_ARG, $value = QueryBuilder::NO_ARG, $id_lang = null)
     {
         return self::select("*", $id_lang)->where($column, $operator, $value);
     }
+
     /**
      * @param $column
      * @param null $operator
@@ -788,6 +871,12 @@ trait ModelTrait
      */
     public static function whereId($id, $id_lang = null)
     {
+        if (is_array($id)) {
+            if (is_string(array_key_first($id)))
+                return self::select("*", $id_lang)->where($id);
+
+            return self::select("*", $id_lang)->whereIn("this.id", $id);
+        }
         return self::select("*", $id_lang)->where("this.id", $id);
     }
 
@@ -880,7 +969,6 @@ trait ModelTrait
 
         $qb = new QueryBuilder($entity);
         return $qb->orderBy($column, $sort);
-
     }
 
     /**
@@ -896,7 +984,6 @@ trait ModelTrait
 
         $qb = new QueryBuilder($entity);
         return $qb->sum($columns);
-
     }
 
     public static function avg($columns, $as = "")
@@ -927,25 +1014,6 @@ trait ModelTrait
         return $qb->distinct("$columns");
     }
 
-    public function hydrateMatch($flowDB, $entity, $deep = true)
-    {
-
-        foreach ($this as $key => $val) {
-            if (isset($flowDB[$entity . '_' . $key])) {
-                $this->{$key} = $flowDB[$entity . '_' . $key];
-            } elseif (is_object($this->{$key})) {
-                if (isset($flowDB[$entity . '_' . $key . '_id'])) {
-                    $this->{$key}->id = $flowDB[$entity . '_' . $key . '_id'];
-                    $this->{$key}->hydrateMatch($flowDB, $entity . '_' . $key, false);
-                }
-            }
-        }
-
-//        if (!$deep)
-//            return;
-
-    }
-
     public function inCollectionOf($collection, $key_map = "")
     {
 
@@ -967,11 +1035,11 @@ trait ModelTrait
             $entityTable = $thisclass . "_" . $collection;
             $entity_id = $collection . "_id";
         }
-//        else {
-//            $association = false;
-//            $entityTable = $entityName;
-//            $direction = "lr";
-//        }
+        //        else {
+        //            $association = false;
+        //            $entityTable = $entityName;
+        //            $direction = "lr";
+        //        }
 
         $collection_ids = [];
 
@@ -985,15 +1053,61 @@ trait ModelTrait
         //return implode(",", $collection_ids);
     }
 
-    public function entityKey($fieldNames, &$entity_link_list = null, &$collection = null, &$softdelete = null)
+    public function entityKeyInsert($fieldNames, $assiactions = [], $suffix = "", &$softdelete = null)
     {
         $keys = [];
+        foreach ($assiactions as $key) {
+            $keys[$key . '_id' . $suffix] = $this->{$key}->id;
+        }
+
         foreach ($this as $key => $val) {
-            if (isset($fieldNames[$key]))
+            if (array_key_exists($key, $fieldNames))
+                $keys[$key . $suffix] = $val;
+        }
+        if (!isset($this->created_at))
+            $keys['created_at' . $suffix] = date("Y-m-d H:i:s");
+
+        return $keys;
+    }
+
+    public function entityKeyUpdate($fieldNames, $assiactions = [])
+    {
+        $keys = [];
+        // sans etat lu (entite construite par id, jamais hydratee), toutes
+        // les valeurs presentes sont considerees comme modifiees
+        $old = is_object($this->dvold) ? $this->dvold : null;
+        foreach ($assiactions as $key) {
+            if ($old && $this->{$key}?->id == $old->{$key}?->id)
+                continue;
+            $keys[$key . '_id'] = $this->{$key}?->id;
+        }
+        foreach ($this as $key => $val) {
+            if (array_key_exists($key, $fieldNames) && (!$old || $val != $old->{$key}))
+                $keys[$key] = $val;
+        }
+        /*dv_dump($this->dvtranslate, $keys);
+        if ($this->dvtranslate){
+            foreach ($this->dvtranslate as $key)
+                unset($keys[$key]);
+        }*/
+        return $keys;
+    }
+
+    public function entityKey($fieldNames, $assiactions = [], $without = [], &$softdelete = null)
+    {
+        $keys = [];
+        foreach ($assiactions as $key) {
+            if (in_array($key, $without))
+                continue;
+            $keys[$key . '_id'] = $this->{$key}?->id;
+        }
+        foreach ($this as $key => $val) {
+            if (in_array($key, $without))
+                continue;
+            if (array_key_exists($key, $fieldNames))
                 $keys[$key] = $val;
         }
         return $keys;
-
     }
 
     public function entityKeyForm()
@@ -1039,7 +1153,7 @@ trait ModelTrait
      * @throws ReflectionException
      */
     public static function lazyloading($order = "", $qb = null, $debug = false)
-    {//
+    { //
         $classname = get_called_class();
         $reflection = new ReflectionClass($classname);
         $entity = $reflection->newInstance();
@@ -1050,7 +1164,6 @@ trait ModelTrait
             return $ll->renderQuery()->lazyloading($entity, $qb, $order);
 
         return $ll->lazyloading($entity, $qb, $order);
-
     }
 
     public static function importSanitizer($key, $value)
@@ -1065,43 +1178,119 @@ trait ModelTrait
         $sql = "TRUNCATE `" . $classname . "`; ";
         $dbal = new DBAL();
         $dbal->executeDbal($sql);
+    }
+
+    public function hydrateMatch($flowDB, $entity, $with_lang)
+    {
+
+        //        echo "<pre><br>";
+        //        var_dump($entity, $with_lang);
+        if (isset($with_lang[$entity])) {
+            (new DBAL($this))->getLangValues($this, $with_lang[$entity]);
+        }
+
+        foreach ($this as $key => $val) {
+
+            if (isset($flowDB[$entity . '_' . $key])) {
+                $this->{$key} = $flowDB[$entity . '_' . $key];
+                $this->dvserialised[$key] = $flowDB[$entity . '_' . $key];
+
+                //                echo "<pre><br>";
+                //                var_dump($entity, $key,  $flowDB[$entity . '_' . $key]);
+            } elseif (is_object($this->{$key})) {
+                if (isset($flowDB[$entity . '_' . $key . '_id'])) {
+                    $this->{$key}->id = $flowDB[$entity . '_' . $key . '_id'];
+                    $this->dvserialised[$key . '_id'] = $flowDB[$entity . '_' . $key . '_id'];
+                    $this->{$key}->hydrateMatch($flowDB, $entity . '_' . $key, $with_lang);
+
+                    $this->with[] = $key;
+                    //                  $this->dvserialised[$key] = $this->{$key}->jsonSerialize();
+                }
+            }
+        }
+
+        //        if (!$deep)
+        //            return;
 
     }
 
+    private function parseLang($str)
+    {
+        $result = [];
+
+        preg_match_all('/\[(.*?)\](.*?)(?=\[|$)/', $str, $matches, PREG_SET_ORDER);
+
+        foreach ($matches as $match) {
+            $lang = $match[1];
+            $value = $match[2];
+            $result[$lang] = $value;
+        }
+
+        return $result;
+    }
+
     public function hydrateData(
-        $flowBD, $id_lang, $table, $custom_column_keys, $with){
+        $flowBD,
+        $id_lang,
+        $without,
+        $custom_column_keys,
+        $with_lang
+    ) {
 
-        foreach ($this->dvtranslated_columns as $append)
-            if (isset($flowBD[$append]))
-                $this->{$append} = $flowBD[$append];
+        foreach ($this->dvtranslated_columns as $append) {
 
-        foreach ($custom_column_keys as $custom) {
-            $this->{$custom} = $flowBD[$custom];
+            //            if (get_class($this) == 'Tree_item')
+            //                dv_dump($flowBD[$append]);
+            if (isset($flowBD[$append])) {
+                //                $this->{$append} = $flowBD[$append];
+                if ($id_lang)
+                    $this->{$append} = $this->dvserialised[$append] = $flowBD[$append];
+                else
+                    $this->{$append} = $this->dvserialised[$append] = $this->parseLang($flowBD[$append]);
+                //                unset($this->dvtranslated_columns[$append]);
+                unset($flowBD[$append]);
+            }
+        }
+
+        foreach ($flowBD as $key => $value) {
+            $this->{$key} = $value;
+            if (!$value || in_array($key, $without)) {
+                continue;
+            }
+            $this->dvserialised[$key] = $value;
         }
 
         foreach ($this as $key => $value) {
 
+            //            var_dump($key);
+            if (in_array($key, $without)) {
+                continue;
+            }
+            if (array_key_exists($key . "_id", $flowBD) && is_object($value)) {
 
-            if (array_key_exists($key."_id", $flowBD)) {
-
-                $this->{$key . "_id"} = $flowBD[$key."_id"];
-                if (!$flowBD[$key."_id"] || !$value)
+                $this->{$key . "_id"} = $flowBD[$key . "_id"];
+                $this->dvserialised[$key . "_id"] = $flowBD[$key . "_id"];
+                if (!$flowBD[$key . "_id"] || !($value)) {
+                    if (array_key_exists($key, $flowBD))
+                        $this->{$key} = $flowBD[$key];
                     continue;
+                }
 
-                $value->setId($flowBD[$key."_id"]);
+                $value->setId($flowBD[$key . "_id"]);
                 $value->dvid_lang = $id_lang;
-                $value->hydrateMatch($flowBD, $key);
+                $value->hydrateMatch($flowBD, $key, $with_lang);
                 $this->{$key} = $value;
 
-            }
+                $this->with[] = $key;
+                //                  $this->dvserialised[$key] = $value->jsonSerialize();
 
-            elseif (isset($flowBD[$key]))
+            } elseif (isset($flowBD[$key])) {
                 $this->{$key} = $flowBD[$key];
-
+                $this->dvserialised[$key] = $flowBD[$key];
+            }
         }
+        $this->dvpersistence = [];
 
         return $this;
     }
-
-
 }

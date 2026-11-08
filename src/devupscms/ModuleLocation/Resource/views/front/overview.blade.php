@@ -3,7 +3,7 @@
 
 @section('layout_content')
     <div class="row">
-        @foreach($moduledata->dvups_entity as $entity)
+        @foreach($moduledata['entities'] as $entity)
             @include("default.entitywidget")
         @endforeach
     </div>

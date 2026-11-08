@@ -1,3 +1,8 @@
+{{--
+    Non utilise par le noyau (seul un bloc commente de
+    FormManager::renderForm() y fait reference). Conserve pour les projets
+    qui l'incluraient.
+--}}
 <div class="main-card mb-3 card " style="width: {{$width}}px">
     <div class="card-header">
         <h3 class="card-title"> {!! $formtitle !!}</h3>

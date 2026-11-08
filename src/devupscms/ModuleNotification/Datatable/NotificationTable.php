@@ -26,14 +26,16 @@ class NotificationTable extends Datatable
 
         $this->base_url = __env . "admin/";
         $this->order_by = "this.id desc";
-        $this->qbcustom->with('user', ['username']);
         $this->datatablemodel = [
             ['header' => t('notification.id', '#'), 'value' => 'id'],
             ['header' => "sent to", 'value' => function ($item) {
                 $note = " || status : {$item->status} ";
                 if ($item->user_id) {
-                    return $item->user->username.$note ;
+                    $user = \User::find($item->user_id);
+                    return ($user->getId() ? $user->username : 'user #' . $item->user_id) . $note;
                 }
+                if ($item->admin_id)
+                    return 'admin #' . $item->admin_id . $note;
                 return $item->entity.$note;
             }],
             ['header' => t('Entityid'), 'value' => function ($item) {

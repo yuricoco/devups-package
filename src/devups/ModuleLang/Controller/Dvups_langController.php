@@ -38,9 +38,9 @@ class Dvups_langController extends Controller{
     /*public function formView($id = null)
     {
         $dvups_lang = new Dvups_lang();
-        $action = Dvups_lang::classpath("services.php?path=dvups_lang.create");
+        $action = __env . ("admin/api/dvups_lang/create");
         if ($id) {
-            $action = Dvups_lang::classpath("services.php?path=dvups_lang.update&id=" . $id);
+            $action = __env . ("admin/api/dvups_lang/update?id=" . $id);
             $dvups_lang = Dvups_lang::find($id);
         }
 

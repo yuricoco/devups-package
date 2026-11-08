@@ -16,7 +16,10 @@ class Request
 
 
     public static $uri_get_param = [];
-    public static $uri_header_param = [];
+    public static $uri_header_param = [
+        'dcolumns' => [],
+        'dlang' => '',
+    ];
     public static $uri_get_route_param = [];
     public static $uri_post_param = [];
     public static $uri_raw_param = [];
@@ -34,10 +37,21 @@ class Request
         if (!isset($query[1]))
             return 1;
 
+        // Parse bracket-notation array params (e.g. month_year[month]=7&month_year[year]=2026)
+        // before the custom string replacements that would mangle the brackets.
+        parse_str($query[1], $parsedArrayParams);
+        foreach ($parsedArrayParams as $key => $value) {
+            if (is_array($value)) {
+                Request::$uri_get_param[$key] = $value;
+            }
+        }
+
         $query[1] = self::strReplaceAssoc([
             "%3C" => "<",
             "%20" => " ",
             "%3A" => ":",
+            "%5B" => "['",
+            "%5D" => "']",
             "+d" => " d",
             "+a" => " a",
             "+D" => " D",
@@ -45,7 +59,6 @@ class Request
         ], $query[1]);
 
         $param = explode('&', $query[1]);
-        //$param = explode('&', $uri[1]);
         foreach ($param as $el) {
             $kv = explode("=", $el);
             if (isset($kv[1])) {
@@ -112,7 +125,6 @@ class Request
                 Request::$uri_post_param[$key] = $value;
             }
         }
-
     }
 
     public static function classroot($key)
@@ -149,7 +161,6 @@ class Request
             return Request::$uri_header_param[$key];
         else
             return $default;
-
     }
 
     public static function raw($key = null, $default = null, $format = "json")
@@ -176,19 +187,35 @@ class Request
 
     public static function geturi()
     {
-//        $uri = $_SERVER["REQUEST_URI"];
-//        if (__prod)
-//            return substr($uri, -strlen($uri) + 1);
+        //        $uri = $_SERVER["REQUEST_URI"];
+        //        if (__prod)
+        //            return substr($uri, -strlen($uri) + 1);
 
-//        return $_SERVER;
+        //        return $_SERVER;
         $uri = explode("?", $_SERVER['REQUEST_URI'])[0];
         return str_replace("api//", "api/", $uri);
-//        return str_replace(__base_dir, "", $uri);
+        //        return str_replace(__base_dir, "", $uri);
     }
 
     public static function getpath()
     {
-        return str_replace('/api', '', Request::geturi());
+        $baseDir = dirname($_SERVER['SCRIPT_NAME']);
+        $baseDir = str_replace('\\', '/', $baseDir); // for Windows
+
+        $requestUri = self::geturi();
+        $requestUri = str_replace("api//", "api/", $requestUri);
+
+        // Remove baseDir from requestUri
+        if ($baseDir && strpos($requestUri, $baseDir) === 0) {
+            $requestUri = substr($requestUri, strlen($baseDir));
+        }
+
+        // Remove '/api' prefix if present
+        if (strpos($requestUri, '/api') === 0 || strpos($requestUri, 'api') === 0) {
+            return substr($requestUri, strlen('api'));
+        }
+
+        return $requestUri;
     }
 
     public static function niceFunction($name, $separator = '_')
@@ -207,7 +234,10 @@ class Request
     public static function Route($app, $path)
     {
 
-        if (!Dvups_lang::where("iso_code", Request::get("lang"))->count()) {
+        // ETAPE L.3 : passe par dv_valid_lang() comme le reste de la
+        // validation de langue (ETAPE H), au lieu d'interroger directement
+        // iso_code avec la valeur brute du parametre.
+        if (!dv_valid_lang(Request::get("lang"))) {
             //die(var_dump(__env.local().'/'.(Request::get("lang"))));
             $env = str_replace(__server, "", __env);
             $url = str_replace($env, __env . __lang . '/', self::$uri);
@@ -239,9 +269,16 @@ class Request
     public static function Module(\Router $route, $path, $ctrl = null)
     {
 
-        $function = \DClass\lib\Util::toPascalCase($path) . "View";
+        $function = ($path) . "View";
+        //        $function = \DClass\lib\Util::toPascalCase($path)."View";
 
-        $app = new $ctrl();
+        // Module<X> extends ModuleController extends Router,
+        // dont le constructeur attend un $default_url (string) - jamais le $route
+        // (objet Router/Admin) de cette fonction, malgre le nom de parametre
+        // identique dans Module<X>::__construct($route). 'layout' est la valeur
+        // attendue par les modules. Sans danger pour les constructeurs a 0
+        // argument : PHP ignore un argument positionnel surnumeraire.
+        $app = new $ctrl('layout');
 
         if (!method_exists($app, $function)) {
             var_dump(" You may create method " . " " . $function . " in $ctrl. ");
@@ -250,20 +287,119 @@ class Request
 
         $paramvalues = self::getMethodParamValues(get_class($app), $function);
 
-        if ($paramvalues) {
+        // un ecran dont le code n'a jamais ete
+        // genere (classe absente, referencee plus loin dans la methode ou
+        // dans un template rendu) ne doit pas fuir de fatale : voir
+        // Controller() plus bas, meme mecanisme, meme message. Seule une
+        // erreur "Class ... not found" est degradee - un vrai bug (methode
+        // existante mais cassee, mauvais type d'argument...) continue de
+        // planter bruyamment, le message serait un mensonge sinon.
+        try {
+            if ($paramvalues) {
 
-            Router::cacheRoute($route->url, $ctrl . '@' . $function, array_keys($paramvalues), Router::$route_builder['auth']);
+                Router::cacheRoute($route->url, $ctrl . '@' . $function, array_keys($paramvalues), Router::$route_builder['auth']);
 
-            //$app->{$function}(...$paramvalues);
-            return call_user_func_array(array($app, $function), $paramvalues);
-            //Genesis::json_encode(call_user_func_array(array($app, $function), $paramvalues));
-        } else {
+                //$app->{$function}(...$paramvalues);
+                return call_user_func_array(array($app, $function), $paramvalues);
+                //Genesis::json_encode(call_user_func_array(array($app, $function), $paramvalues));
+            } else {
 
-//            Router::cacheRoute($route->url, $ctrl . '@' . $function, [], Router::$route_builder['auth']);
+                //            Router::cacheRoute($route->url, $ctrl . '@' . $function, [], Router::$route_builder['auth']);
 
-            return $app->{$function}();
+                return $app->{$function}();
+            }
+            //call_user_func(array($app, $function));
+        } catch (\Throwable $e) {
+            if (self::isClassNotFoundError($e)) {
+                return self::renderNotMonitored('', $ctrl);
+            }
+            throw $e;
         }
-//call_user_func(array($app, $function));
+    }
+
+    /**
+     * une seule fois, appelee par Module() et
+     * Controller() - voir leurs commentaires. true seulement pour "Class
+     * "X" not found" ET quand rien de tres proche ne couvre deja le meme
+     * nom. Jamais pour un TypeError (mauvais type d'argument), une methode
+     * manquante sur une classe existante, ou tout autre defaut reel :
+     * ceux-la restent des bugs a reparer, pas des ecrans "non generes".
+     *
+     * Attrape \Throwable, pas seulement \Error : certaines fatales (pendant
+     * le rendu d'un template Blade compile) passent par le handler legacy de
+     * Symfony\Component\Debug et arrivent en FatalThrowableError, qui
+     * etend \Exception, pas \Error.
+     *
+     * Le filtre "classe tres proche" (class_exists($nom . 's')) ecarte les
+     * erreurs de nommage singulier/pluriel ("Article" cite alors que l'entite
+     * s'appelle "Articles") : c'est un bug a corriger, pas un ecran non genere.
+     */
+    private static function isClassNotFoundError(\Throwable $e)
+    {
+        if (!preg_match('/^Class "([^"]+)" not found/', $e->getMessage(), $m)) {
+            return false;
+        }
+        if (class_exists($m[1] . 's')) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * l'ecran degrade reste un ecran du
+     * back-office (layout + menu + fil d'Ariane, via admin.layout_module,
+     * deja utilise partout ailleurs) - jamais une page blanche, un
+     * var_dump ou une trace PHP. Aucun chemin serveur, aucune trace, aucun
+     * nom de classe interne dans le texte affiche : $entityName/$moduleName
+     * seulement, un administrateur non developpeur peut voir cet ecran.
+     */
+    private static function renderNotMonitored($entityName, $moduleClassOrName)
+    {
+        global $viewdir, $moduledata;
+
+        $moduleLabel = '';
+        if (is_array($moduledata) && isset($moduledata['label'])) {
+            $moduleLabel = $moduledata['label'];
+        } elseif (is_array($moduledata) && isset($moduledata['name'])) {
+            $moduleLabel = $moduledata['name'];
+        } elseif ($moduleClassOrName) {
+            $moduleLabel = preg_replace('/^Module/', '', $moduleClassOrName);
+        }
+
+        if (!$entityName && $moduleClassOrName && preg_match('/Controller$/', $moduleClassOrName)) {
+            $entityName = preg_replace('/Controller$/', '', $moduleClassOrName);
+        }
+
+        $blade = new \BladeD($viewdir, ROOT . "cache/views");
+        echo $blade->view()->file(__DIR__ . '/../Resource/views/not_monitored.blade.php', [
+            'moduledata' => $moduledata,
+            'entityName' => $entityName,
+            'moduleName' => $moduleLabel,
+        ])->render();
+        return 1;
+    }
+
+    /**
+     * Code de privilege (dvups_action.action) correspondant a une methode
+     * de controleur d'entite, ou null si cette methode n'est pas une action
+     * CRUD gardee (route personnalisee : passe sans verification).
+     */
+    private static function privilegeActionFor(string $function): ?string
+    {
+        static $map = [
+            'createAction' => 'create',
+            'updateAction' => 'update',
+            'deleteAction' => 'delete',
+            'deletegroupAction' => 'delete',
+            'deleteGroupAction' => 'delete',
+            'formView' => 'read',
+            'detailView' => 'read',
+            'listView' => 'read',
+            'datatable' => 'read',
+            'exportAction' => 'export',
+            'importAction' => 'import',
+        ];
+        return $map[$function] ?? null;
     }
 
     /**
@@ -279,6 +415,17 @@ class Request
         else if (in_array($function, ["form", "detail", "list",]))
             $function .= "View";
 
+        // le controleur lui-meme peut manquer
+        // (Book_statsController, RelationController - jamais generes), pas
+        // seulement une classe qu'il reference plus loin (KolaTable,
+        // FollowTable, l'entite Notificationbroadcasted) : les deux sont le
+        // meme cas "non genere" et recoivent le meme ecran degrade. Couvre
+        // les trois chemins d'arrivee sur un ecran d'entite (liste, detail,
+        // formulaire), qui passent tous par cette fonction unique.
+        if (!class_exists($ctrl)) {
+            return self::renderNotMonitored('', $ctrl);
+        }
+
         $app = new $ctrl();
 
         if (!method_exists($app, $function)) {
@@ -286,22 +433,43 @@ class Request
             die;
         }
 
+        // point de passage unique de TOUTE action CRUD d'entite (quel que
+        // soit le style du controleur genere : CrudTrait ou methodes
+        // propres comme ConfigurationController) : can('action', entite)
+        // avant d'appeler la methode. $ctrl est toujours "<Entite>Controller".
+        $privilegeAction = self::privilegeActionFor($function);
+        if ($privilegeAction !== null && !can($privilegeAction, preg_replace('/Controller$/', '', $ctrl))) {
+            http_response_code(403);
+            if (in_array($function, ['listView', 'detailView'], true)) {
+                echo json_encode(['success' => false, 'detail' => 'forbidden']);
+                die;
+            }
+            return ['success' => false, 'detail' => 'forbidden'];
+        }
+
         $paramvalues = self::getMethodParamValues(get_class($app), $function);
 
-        if ($paramvalues) {
+        try {
+            if ($paramvalues) {
 
-            Router::cacheRoute($route->url, $ctrl . '@' . $function, array_keys($paramvalues), Router::$route_builder['auth']);
+                Router::cacheRoute($route->url, $ctrl . '@' . $function, array_keys($paramvalues), Router::$route_builder['auth']);
 
-            //$app->{$function}(...$paramvalues);
-            return call_user_func_array(array($app, $function), $paramvalues);
-            //Genesis::json_encode(call_user_func_array(array($app, $function), $paramvalues));
-        } else {
+                //$app->{$function}(...$paramvalues);
+                return call_user_func_array(array($app, $function), $paramvalues);
+                //Genesis::json_encode(call_user_func_array(array($app, $function), $paramvalues));
+            } else {
 
-            Router::cacheRoute($route->url, $ctrl . '@' . $function, [], Router::$route_builder['auth']);
+                Router::cacheRoute($route->url, $ctrl . '@' . $function, [], Router::$route_builder['auth']);
 
-            return $app->{$function}();
+                return $app->{$function}();
+            }
+            //call_user_func(array($app, $function));
+        } catch (\Throwable $e) {
+            if (self::isClassNotFoundError($e)) {
+                return self::renderNotMonitored('', $ctrl);
+            }
+            throw $e;
         }
-//call_user_func(array($app, $function));
     }
 
     /**
@@ -318,37 +486,8 @@ class Request
          * restriction are used in the webservice controller to handle @Auth in system crud
          */
 
-        if (isset(Auth::$restrictions[Request::$uri_get_param["dclass"]])) {
-            // todo: fix the issue of default empty function
-            if ($function && !in_array($function, Auth::$restrictions[Request::$uri_get_param["dclass"]])) {
-//                $Auth = new Auth();
-//                $result = $Auth->authorize();
-                if (!Auth::$user_id) {
-//                if (is_array($result) && $result['success'] == false) {
-                    header('HTTP/1.0 401 Bad Request AUTHORIZATION not found');
-                    $result = ([
-                        'success' => false,
-                        'detail' => "Bad Request AUTHORIZATION or AUTH not found",
-                    ]);
-                    throw new Exception($result);
-//                    throw new Exception($result['detail']);
-                }
-//                Router::$route_builder['auth'] = true;
-//                Request::$uri_get_param['user_id'] = $result->userId;
-
-            } /*else if ($ctrl) {
-                $Auth = new Auth();
-                $result = $Auth->execute();
-                if (is_object($result)) {
-                    Router::$route_builder['auth'] = true;
-                    Request::$uri_get_param['user_id'] = $result->userId;
-                }
-            }*/
-        } /*else
-            dv_dump($function, Auth::$restrictions[Request::$uri_get_param["dclass"]]);*/
-
         $reflection = new ReflectionAnnotatedClass($ctrl);
-        $ctrlApi = $reflection->getAnnotation('Api');//
+        $ctrlApi = $reflection->getAnnotation('Api'); //
 
         if ("/" . Request::$uri_get_param["dclass"] !== $ctrlApi->name) {
             /*echo json_encode([
@@ -365,35 +504,95 @@ class Request
 
         if (!method_exists($app, $function)) {
 
-            $path = explode("/", trim(Router::$path, '/'));
+            // Try to resolve the method by matching HTTP-method annotations (e.g. @GET(path='/:id/comments'))
+            // against the full request URI. This handles sub-resource paths beyond /:id.
+            $matched = null;
+            $requestUri = str_replace('api/', '', Router::$path_info);
+            foreach ($reflection->getMethods(\ReflectionMethod::IS_PUBLIC) as $reflMethod) {
+                if (!$reflMethod->hasAnnotation($route->request_method)) continue;
+                $ann = $reflMethod->getAnnotation($route->request_method);
+                if (empty($ann->path)) continue;
+                /*
+                 * La barre oblique initiale est OBLIGATOIRE : `$ctrlApi->name`
+                 * vaut `/share` et le chemin de l'annotation `/og`, donc la
+                 * concatenation directe donnait `\share/og` (barre oblique
+                 * INVERSEE) la ou l'URI vaut `/share/og`. Aucune annotation de
+                 * sous-ressource ne pouvait correspondre, d'ou des 404 sans
+                 * explication. Constate le 2026-10-06 sur `GET /api/share/og`.
+                 */
+                $pattern = rtrim($ctrlApi->name, '/') . '/' . ltrim($ann->path, '/');
+                $parsed = Route::parseRoute($pattern, $requestUri);
+                if ($parsed !== null) {
+                    $matched = $reflMethod->name;
+                    break;
+                }
+            }
 
-            if ((count($path) === 2)) {
-                if (in_array($route->request_method, ['PUT', 'DELETE']))
+            if ($matched !== null) {
+                $function = $matched;
+            } else {
+                $path = explode("/", trim(Router::$path, '/'));
+
+                if ((count($path) === 2)) {
+                    if (in_array($route->request_method, ['PUT', 'DELETE']))
+                        Router::$path = Router::$default_path[$route->request_method];
+                    elseif ($route->request_method == 'GET')
+                        Router::$path = 'detail';
+                    else {
+
+                        http_response_code(404);
+                        throw new Exception("Request method {$route->request_method} not found with 2 paths");
+                    }
+                    Request::$uri_get_param["path"] = Router::$path;
+                } else if (count($path) === 1) {
                     Router::$path = Router::$default_path[$route->request_method];
-                elseif ($route->request_method == 'GET')
-                    Router::$path = 'detail';
-                else {
+                    Request::$uri_get_param["path"] = Router::$path;
+                } else {
 
                     http_response_code(404);
-                    throw new Exception("Request method {$route->request_method} not found with 2 paths");
-
+                    throw new Exception("Request method {$route->request_method} not allowed for this route");
                 }
-                Request::$uri_get_param["path"] = Router::$path;
-            } else if (count($path) === 1) {
-                Router::$path = Router::$default_path[$route->request_method];
-                Request::$uri_get_param["path"] = Router::$path;
-            } else {
-
-                http_response_code(404);
-                throw new Exception("Request method {$route->request_method} not allowed for this route");
-
-                /*Router::$path = $path[1];
-                Request::$uri_get_param["path"] = $path[1];*/
+                $function = Router::$path;
             }
-            $function = Router::$path;
         }
 
-        $method = $reflection->getMethod($function);//
+        /**
+         * Controle d'habilitation : verifie Auth::$restrictions contre le nom
+         * de methode REELLEMENT resolu ci-dessus.
+         *
+         * Corrige le 2026-10-01 : ce controle etait place plus haut dans la
+         * methode, alors que le bloc de resolution par annotation (juste
+         * au-dessus) reaffecte $function APRES lui. Sur une route REST dediee
+         * resolue par annotation, il comparait donc l'ANCIENNE valeur de
+         * $function - le chemin par defaut de la methode HTTP (`index` par
+         * defaut pour un GET) - et non la methode qui allait etre appelee.
+         *
+         * Note d'honnetete : sur l'etat actuel du code, cette branche de
+         * resolution par annotation n'a pas pu etre declenchee par un appel
+         * reel lors des tests du 2026-10-01 - les routes essayees tombent
+         * toutes sur le chemin par defaut, et `POST /api/follow` echoue plus
+         * loin en "class FollowFrontController doesn't exist". Le defaut
+         * corrige est donc reel dans la logique mais non demontre exploitable
+         * en l'etat : la correction est preventive. Le defaut REELLEMENT
+         * exploitable, lui, etait ailleurs et il est corrige aussi : le style
+         * generique (/api/create|update|delete|upload/<entite>) executait
+         * l'ecriture malgre le refus, faute de `die` dans
+         * WebService::systemServe() - verifie en direct.
+         *
+         * $function est ici garantie non vide : utilisee juste apres par
+         * $reflection->getMethod(). Le `header` a ete remplace par
+         * http_response_code() : un header('HTTP/1.0 401 ...') pose par
+         * Auth::authorize() ecrasait le code de l'appelant - meme correction
+         * que dans Auth.php.
+         */
+        if (isset(Auth::$restrictions[Request::$uri_get_param["dclass"]])
+            && !in_array($function, Auth::$restrictions[Request::$uri_get_param["dclass"]])
+            && !Auth::$user_id) {
+            http_response_code(401);
+            throw new Exception("Bad Request AUTHORIZATION or AUTH not found");
+        }
+
+        $method = $reflection->getMethod($function); //
         $mparams = $method->getParameters();
 
         $methoparams = [];
@@ -406,7 +605,7 @@ class Request
             }
 
             Router::$route_builder['auth'] = true;
-            Request::$uri_get_param['user_id'] = $result->userId;
+            Request::$uri_get_param['session_user_id'] = $result->userId;
         }
         if ($method->hasAnnotation($route->request_method)) {
             $methodView = $method->getAnnotation($route->request_method);
@@ -416,7 +615,6 @@ class Request
 
             http_response_code(405);
             throw new Exception("Request method {$route->request_method} not allowed for this route");
-
         }
 
         if ($methodView) {
@@ -432,7 +630,6 @@ class Request
                 if (isset(Request::$uri_get_route_param[$param->name]))
                     $methoparams[$param->name] = Request::$uri_get_route_param[$param->name]; // Request::get($param->name)
             }
-
         }
 
         if (!method_exists($app, $function)) {
@@ -447,14 +644,12 @@ class Request
             Router::cacheRoute($methodView->name ?? $route->url, $ctrl . '@' . $function, array_keys($paramvalues), Router::$route_builder['auth']);
 
             return call_user_func_array(array($app, $function), $paramvalues);
-
         } else {
 
             Router::cacheRoute($route->url, $ctrl . '@' . $function, [], Router::$route_builder['auth']);
 
             return $app->{$function}();
         }
-
     }
 
     public static function getMethodParamValues($class, $method)
@@ -594,6 +789,4 @@ class Request
     {
         return json_decode($this->_response);
     }
-
-
 }

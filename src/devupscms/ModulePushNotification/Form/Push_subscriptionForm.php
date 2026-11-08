@@ -15,48 +15,46 @@ class Push_subscriptionForm extends FormManager{
 
     public function buildForm()
     {
-    
-        
-            $this->fields['subscription_type'] = [
-                "label" => t('push_subscription.subscription_type'), 
-"type" => FORMTYPE_TEXT,
-            "value" => $this->push_subscription->getSubscription_type(), 
+        $this->fields['subscription_type'] = [
+            "label" => t('push_subscription.subscription_type', 'Type (fcm, expo, webpush)'),
+            "type" => FORMTYPE_TEXT,
+            "value" => $this->push_subscription->subscription_type,
         ];
 
-            $this->fields['subscription_id'] = [
-                "label" => t('push_subscription.subscription_id'), 
-"type" => FORMTYPE_TEXT,
-            "value" => $this->push_subscription->getSubscription_id(), 
+        $this->fields['user_id'] = [
+            "label" => t('push_subscription.user_id', 'Utilisateur'),
+            "type" => FORMTYPE_NUMBER,
+            "value" => $this->push_subscription->user_id,
         ];
 
-            $this->fields['endpoint'] = [
-                "label" => t('push_subscription.endpoint'), 
-"type" => FORMTYPE_TEXT,
-            "value" => $this->push_subscription->getEndpoint(), 
+        $this->fields['status'] = [
+            "label" => t('push_subscription.status', 'Statut'),
+            "type" => FORMTYPE_RADIO,
+            "options" => ['Desactive', 'Active'],
+            "value" => $this->push_subscription->status,
         ];
 
-            $this->fields['public_key'] = [
-                "label" => t('push_subscription.public_key'), 
-"type" => FORMTYPE_TEXT,
-            "value" => $this->push_subscription->getPublic_key(), 
+        $this->fields['auth_token'] = [
+            "label" => t('push_subscription.auth_token', 'Jeton'),
+            "type" => FORMTYPE_TEXT,
+            "value" => $this->push_subscription->auth_token,
         ];
 
-            $this->fields['auth_token'] = [
-                "label" => t('push_subscription.auth_token'), 
-"type" => FORMTYPE_TEXT,
-            "value" => $this->push_subscription->getAuth_token(), 
+        $this->fields['public_key'] = [
+            "label" => t('push_subscription.public_key', 'Cle publique'),
+            FH_REQUIRE => false,
+            "type" => FORMTYPE_TEXT,
+            "value" => $this->push_subscription->public_key,
         ];
 
-            $this->fields['content_type'] = [
-                "label" => t('push_subscription.content_type'), 
-			FH_REQUIRE => false,
- "type" => FORMTYPE_TEXT,
-            "value" => $this->push_subscription->getContent_type(), 
+        $this->fields['content_type'] = [
+            "label" => t('push_subscription.content_type', 'Content-Type'),
+            FH_REQUIRE => false,
+            "type" => FORMTYPE_TEXT,
+            "value" => $this->push_subscription->content_type,
         ];
 
-           
-        return  $this;
-    
+        return $this;
     }
 
     public static function renderWidget($id = null, $action = "create")

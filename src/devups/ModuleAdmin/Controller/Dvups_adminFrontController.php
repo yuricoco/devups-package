@@ -25,7 +25,7 @@ class Dvups_adminFrontController extends \Dvups_adminController
         $dvups_admin = $this->hydrateWithJson(new \Dvups_admin(), $rawdata["admin"]);
 
         $password = $dvups_admin->generatePassword();
-        $dvups_admin->setPassword(sha1($password));
+        $dvups_admin->setPassword($password);
         $dvups_admin->setLogin($dvups_admin->generateLogin());
 
         $id = $dvups_admin->__insert();
@@ -83,25 +83,38 @@ class Dvups_adminFrontController extends \Dvups_adminController
     public function connexionAction($login = false, $password = false)
     {
         $login = Request::post('login');
-        $password = sha1(Request::post('password'));
+        $password = Request::post('password');
+
+        // ETAPE L.1 : limite par compte ET par IP.
+        $ipLimiter = new RateLimiter('login_admin_ip:' . (\DClass\lib\Util::get_IP_address() ?? 'unknown'), RATE_LIMIT_LOGIN_WINDOW_SECONDS, RATE_LIMIT_LOGIN_MAX_ATTEMPTS_IP);
+        $loginLimiter = new RateLimiter('login_admin:' . strtolower((string)$login), RATE_LIMIT_LOGIN_WINDOW_SECONDS, RATE_LIMIT_LOGIN_MAX_ATTEMPTS);
+
+        if ($ipLimiter->tooManyAttempts() || $loginLimiter->tooManyAttempts()) {
+            http_response_code(429);
+            return array("success" => false, "error" => 'Trop de tentatives, veuillez réessayer plus tard.');
+        }
 
         $user = \Dvups_admin::select()
-            ->where('password', "=", $password)
-            ->andwhere('login', "=", $login)
+            ->where('login', "=", $login)
             ->__getOne();
 
-        if (!$user->getId()) {
+        if (!$user->getId() || !$user->verifyPassword($password)) {
 
             $user = \Dvups_admin::select()
-                ->where('password', "=", $password)
-                ->andwhere('email', "=", $login)
+                ->where('email', "=", $login)
                 ->__getOne();
 
-            if (!$user->getId())
+            if (!$user->getId() || !$user->verifyPassword($password)) {
+                $ipLimiter->hit();
+                $loginLimiter->hit();
                 return array("success" => false,
                     "error" => 'Login et/ou mot de passe incorrecte');
+            }
 
         }
+
+        $ipLimiter->clear();
+        $loginLimiter->clear();
 
 //        if (!$user->isActivated())
 //            return array("success" => false,
@@ -167,7 +180,7 @@ class Dvups_adminFrontController extends \Dvups_adminController
 
         }
         $password = $dvups_admin->generatePassword();
-        $dvups_admin->setPassword(sha1($password));
+        $dvups_admin->setPassword($password);
 //        $dvups_admin->setLogin();
         $dvups_admin->generateLogin($dvups_admin->getName());
 
@@ -190,8 +203,9 @@ class Dvups_adminFrontController extends \Dvups_adminController
 
         $dvups_admin = Dvups_admin::find($id);
 
-        if (sha1($oldpwd) == $dvups_admin->getPassword()) {
-            $dvups_admin->__update("password", sha1($newpwd))->exec();
+        if ($dvups_admin->verifyPassword($oldpwd)) {
+            $dvups_admin->clearRememberToken();
+            $dvups_admin->__update("password", dv_hash_password($newpwd))->exec();
             return array('success' => true, // pour le restservice
                 'detail' => 'Mot de passe mise a jour avec success');
         } else {

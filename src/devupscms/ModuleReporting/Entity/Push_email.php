@@ -142,6 +142,7 @@ class Push_email extends Model implements JsonSerializable, DatatableOverwrite
     }
 
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return [

@@ -1,3 +1,21 @@
+# [adminauth-2] 2026-10-14 - refus total d'acces web aux journaux d'erreur
+# PHP, ou qu'ils se trouvent dans le depot. Mesure en direct : GET
+# /monebilreques.log et GET /src/shopping/ModulePayment/error_log
+# repondaient tous les deux 200, contenu complet servi - aucune des deux
+# formes n'avait de protection. Couvre tout fichier nomme "error_log" (4
+# dans ce depot aujourd'hui) et toute extension ".log" (ex.
+# monebilreques.log), present ou futur, a la racine comme dans n'importe
+# quel sous-dossier (FilesMatch s'applique recursivement).
+<FilesMatch "(^error_log$|\.log$)">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
 <IfModule mod_deflate.c>
 AddOutputFilterByType DEFLATE text/html
 AddOutputFilterByType DEFLATE text/css
@@ -44,6 +62,15 @@ mod_gzip_item_include handler ^cgi-script$
 
     RewriteEngine On
     RewriteBase /
+
+    # Fichiers et dossiers internes : jamais servis directement
+    RewriteRule (^|/)\.(?!well-known/) - [F,L]
+    RewriteRule ^(config|database|cache|tests|vendor|bin|ai_knowledge)(/|$) - [F,L]
+    RewriteRule ^(composer\.(json|lock)|phpunit\.xml(\.dist)?|devups|cli-config\.php|header\.php|lang\.php)$ - [F,L]
+    # code PHP du framework et des modules : seuls les points d'entree
+    # services.php (proteges par session admin) restent joignables
+    RewriteCond %{REQUEST_URI} !/services\.php$
+    RewriteRule ^(src|dclass)/.*\.php$ - [F,L]
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .

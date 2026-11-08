@@ -1,122 +1,63 @@
-<?php 
+<?php
 
-            
 use dclass\devups\Controller\Controller;
 
-class EmaillogController extends Controller{
+/**
+ * Ecran back-office en lecture seule (comme le module Log) : Emaillog
+ * n'est alimente que par un envoi d'email reel (DMail::sendMail(),
+ * Reportingmodel::sendMail()), jamais par une action du back-office.
+ */
+class EmaillogController extends Controller
+{
 
-    public function listView($next = 1, $per_page = 10){
+    public function listView()
+    {
+        if ($this->forbidIfCannotFor('read', 'Emaillog')) {
+            echo json_encode(['success' => false, 'detail' => t('Action non autorisee')]);
+            die;
+        }
 
         $this->datatable = EmaillogTable::init(new Emaillog())->buildindextable();
 
         self::$jsfiles[] = Emaillog::classpath('Resource/js/emaillogCtrl.js');
 
         $this->entitytarget = 'Emaillog';
-        $this->title = "Manage Emaillog";
-        
+        $this->title = "Emails envoyes";
+
         $this->renderListView();
 
     }
 
-    public function datatable($next, $per_page) {
-    
+    public function datatable($next, $per_page)
+    {
+        if ($this->forbidIfCannotFor('read', 'Emaillog'))
+            return ['success' => false, 'detail' => t('Action non autorisee')];
+
         return ['success' => true,
             'datatable' => EmaillogTable::init(new Emaillog())->router()->getTableRest(),
         ];
-        
-    }
-
-    public function formView($id = null)
-    {
-        $emaillog = new Emaillog();
-        $action = Emaillog::classpath("services.php?path=emaillog.create");
-        if ($id) {
-            $action = Emaillog::classpath("services.php?path=emaillog.update&id=" . $id);
-            $emaillog = Emaillog::find($id);
-        }
-
-        return ['success' => true,
-            'form' => EmaillogForm::init($emaillog, $action)
-                ->buildForm()
-                ->addDformjs()
-                ->renderForm(),
-        ];
-    }
-
-    public function createAction($emaillog_form = null ){
-        extract($_POST);
-
-        $emaillog = $this->form_fillingentity(new Emaillog(), $emaillog_form);
-        if ( $this->error ) {
-            return 	array(	'success' => false,
-                            'emaillog' => $emaillog,
-                            'action' => 'create', 
-                            'error' => $this->error);
-        } 
-        
-
-        $id = $emaillog->__insert();
-        return 	array(	'success' => true,
-                        'emaillog' => $emaillog,
-                        'tablerow' => EmaillogTable::init()->router()->getSingleRowRest($emaillog),
-                        'detail' => '');
 
     }
-
-    public function updateAction($id, $emaillog_form = null){
-        extract($_POST);
-            
-        $emaillog = $this->form_fillingentity(new Emaillog($id), $emaillog_form);
-     
-        if ( $this->error ) {
-            return 	array(	'success' => false,
-                            'emaillog' => $emaillog,
-                            'action_form' => 'update&id='.$id,
-                            'error' => $this->error);
-        }
-        
-        $emaillog->__update();
-        return 	array(	'success' => true,
-                        'emaillog' => $emaillog,
-                        'tablerow' => EmaillogTable::init()->router()->getSingleRowRest($emaillog),
-                        'detail' => '');
-                        
-    }
-    
 
     public function detailView($id)
     {
+        if ($this->forbidIfCannotFor('read', 'Emaillog')) {
+            echo json_encode(['success' => false, 'detail' => t('Action non autorisee')]);
+            die;
+        }
 
         $this->entitytarget = 'Emaillog';
-        $this->title = "Detail Emaillog";
+        $this->title = "Detail de l'email";
 
         $emaillog = Emaillog::find($id);
 
         $this->renderDetailView(
             EmaillogTable::init()
                 ->builddetailtable()
-                ->renderentitydata($emaillog)
+                ->renderentitydata($emaillog),
+            false,
+            '',
         );
-
-    }
-    
-    public function deleteAction($id){
-    
-        Emaillog::delete($id);
-        
-        return 	array(	'success' => true, 
-                        'detail' => ''); 
-    }
-    
-
-    public function deletegroupAction($ids)
-    {
-
-        Emaillog::where("id")->in($ids)->delete();
-
-        return array('success' => true,
-                'detail' => ''); 
-
     }
 
 }

@@ -12,31 +12,126 @@
 
 //namespace dclass\devups;
 
-class Model extends \stdClass
+class Model extends \dclass\devups\model\ModelSerializer
 {
 
     use ModelTrait;
+    use \dclass\devups\model\DateTimeTrait;
 //    use BaseModel;
 
     public static $jsonmodel;
 
-    /**
-     * @Column(name="created_at", type="datetime" , nullable=true )
-     * @var string
-     **/
-    protected $created_at;
-    /**
-     * @Column(name="updated_at", type="datetime" , nullable=true )
-     * @var string
-     **/
-    protected $updated_at;
-    /**
-     * @Column(name="deleted_at", type="datetime" , nullable=true )
-     * @var string
-     **/
-    protected $deleted_at;
-
     //public $dverrormessage = "";
+
+    /**
+     * Point d'entree public pour tout code metier
+     * qui a besoin de la connexion PDO du socle - la MEME que celle utilisee
+     * par Ticket::find(), ->__insert(), ->__update(), etc. Delegue a
+     * DBAL::pdo(), seul proprietaire reel du cache de connexion ; ne pas
+     * fabriquer une seconde connexion `new PDO(...)` a cote.
+     */
+    public static function pdo(): \PDO
+    {
+        return \DBAL::pdo();
+    }
+
+    /**
+     * Profondeur d'imbrication des transactions
+     * ouvertes via Model::beginTransaction(). Compteur sur la CONNEXION
+     * (statique, partagee par toutes les entites), pas sur une
+     * entite en particulier - une transaction protege la connexion, pas une
+     * table.
+     */
+    private static int $transactionDepth = 0;
+
+    /**
+     * Ouvre une transaction, ou pose un SAVEPOINT si une transaction est
+     * deja ouverte. PDO leve une exception sur un beginTransaction()
+     * imbrique (`There is already an active transaction`) - sans ce
+     * compteur, deux methodes transactionnelles ne pourraient jamais
+     * s'appeler l'une l'autre.
+     * Seul le niveau 0 ouvre une vraie transaction ; seul son commit() (ou
+     * rollBack()) engage reellement la base.
+     */
+    public static function beginTransaction(): void
+    {
+        if (self::$transactionDepth === 0) {
+            self::pdo()->beginTransaction();
+        } else {
+            self::pdo()->exec('SAVEPOINT model_tx_' . self::$transactionDepth);
+        }
+        self::$transactionDepth++;
+    }
+
+    /**
+     * Valide le niveau courant. Au niveau 0, commit reel sur la
+     * connexion. A un niveau interne, ne fait rien de plus que descendre le
+     * compteur - le SAVEPOINT posé par beginTransaction() n'a pas besoin
+     * d'etre "relache" explicitement, ses effets restent acquis a la
+     * transaction englobante jusqu'a son propre commit (ou jusqu'a un
+     * ROLLBACK TO SAVEPOINT explicite a ce niveau).
+     */
+    public static function commit(): void
+    {
+        if (self::$transactionDepth === 0) {
+            throw new \RuntimeException('Model::commit() appele sans transaction ouverte (Model::beginTransaction())');
+        }
+        self::$transactionDepth--;
+        if (self::$transactionDepth === 0) {
+            self::pdo()->commit();
+        }
+    }
+
+    /**
+     * Annule le niveau courant. Au niveau 0, rollBack reel (annule
+     * tout). A un niveau interne, ROLLBACK TO SAVEPOINT - annule uniquement
+     * ce que CE niveau a ecrit, laisse intact ce que le niveau englobant a
+     * deja ecrit avant d'appeler ce niveau. C'est ce qui rend l'imbrication
+     * utile : le niveau externe peut continuer et valider malgre l'echec
+     * d'un sous-appel.
+     */
+    public static function rollBack(): void
+    {
+        if (self::$transactionDepth === 0) {
+            throw new \RuntimeException('Model::rollBack() appele sans transaction ouverte (Model::beginTransaction())');
+        }
+        self::$transactionDepth--;
+        if (self::$transactionDepth === 0) {
+            self::pdo()->rollBack();
+        } else {
+            self::pdo()->exec('ROLLBACK TO SAVEPOINT model_tx_' . self::$transactionDepth);
+        }
+    }
+
+    /** Profondeur courante (0 = aucune transaction ouverte). */
+    public static function transactionDepth(): int
+    {
+        return self::$transactionDepth;
+    }
+
+    /**
+     * Forme recommandee par defaut - valide au retour de
+     * $fn, annule sur toute exception (rethrow apres rollBack, jamais
+     * avalee). Protege contre l'oubli d'un rollBack() sur un retour
+     * anticipe : un `return` a l'interieur de $fn rend simplement la main
+     * a ce bloc, qui enchaine normalement sur commit().
+     *
+     * @template T
+     * @param callable():T $fn
+     * @return T
+     */
+    public static function transaction(callable $fn)
+    {
+        self::beginTransaction();
+        try {
+            $result = $fn();
+        } catch (\Throwable $e) {
+            self::rollBack();
+            throw $e;
+        }
+        self::commit();
+        return $result;
+    }
 
     public function inrelation()
     {
@@ -229,13 +324,41 @@ class Model extends \stdClass
     public function __update($arrayvalues = null, $seton = null, $case = null, $defauljoin = true)
     {
         $this->updated_at = date(\DClass\lib\Util::dateformat);
+
+        /**
+         * Avant d'ecrire une mise a jour complete
+         * (pas une creation : $this->id deja pose) d'une entite traduite :
+         * si la fiche n'a aucune traduction valide (voir
+         * DvtranslateInspector::diagnose(),,
+         * la synchronisation de traduction plus bas
+         * (DBAL::updateDbal() -> updateLangValue()) peut produire une erreur SQL
+         * illisible pour un administrateur. Refus explicite ici, avec un
+         * motif clair, avant d'y arriver - uniquement sur ce chemin
+         * ($arrayvalues === null, celui de CrudTrait::updateAction()/
+         * __save()) : l'autre branche (mise a jour partielle via
+         * QueryBuilder::update()) n'a pas ce defaut mesure, elle n'est pas
+         * touchee. N'ecrit rien : seulement une lecture (DvtranslateInspector)
+         * puis un refus.
+         */
+        if ($arrayvalues === null && $this->id && !empty($this->dvtranslate)) {
+            $diagnosis = DvtranslateInspector::diagnose(get_class($this), (int)$this->id);
+            if (in_array($diagnosis['case'], ['no_translation', 'orphan_lang'], true)) {
+                throw new \RuntimeException($diagnosis['message_admin']);
+            }
+        }
+
         $dbal = new DBAL();
         DBAL::$id_lang_static = $this->dvid_lang;
-        if ($arrayvalues === null) {
+//        dv_dump($arrayvalues, $this->dvpersistence);
+        if ($arrayvalues === null) {// && !$this->dvpersistence
+
             return $dbal->updateDbal($this);
         } else {
-            $qb = new QueryBuilder($this);
-            return $qb->whereId($this->id)->update($arrayvalues, $seton, $case, $defauljoin);
+            $qb = new QueryBuilder($this, false);
+//            if ($arrayvalues)
+            return $qb->whereId($this->id)->update($arrayvalues, $seton, $case);
+
+//            return $qb->whereId($this->id)->update($this->dvpersistence, $seton, $case);
         }
     }
 
@@ -391,12 +514,14 @@ class Model extends \stdClass
             (new DBAL($this))->getLangValues($this, $this->dvtranslated_columns);
         }
         $this->dvfetched = true;
-        $this->dvold = $this;
-
+        // une COPIE de l'etat lu : une reference vers $this rendrait toute
+        // modification ulterieure invisible pour entityKeyUpdate()
+        $this->dvold = clone $this;
+        $this->dvpersistence = [];
         return $this;
     }
 
-    public function hydrateData(
+ /*   public function hydrateData(
         $flowBD, $id_lang, $table, $custom_column_keys, $with){
 
         foreach ($this->dvtranslated_columns as $append)
@@ -413,8 +538,11 @@ class Model extends \stdClass
             if (array_key_exists($key."_id", $flowBD)) {
 
                 $this->{$key . "_id"} = $flowBD[$key."_id"];
-                if (!$flowBD[$key."_id"] || !$value)
+                if (!$flowBD[$key."_id"] || !$value) {
+                    if (array_key_exists($key, $flowBD))
+                        $this->{$key} = $flowBD[$key];
                     continue;
+                }
 
                 $value->setId($flowBD[$key."_id"]);
                 $value->dvid_lang = $id_lang;
@@ -429,7 +557,7 @@ class Model extends \stdClass
         }
 
         return $this;
-    }
+    }*/
 
     public function getId()
     {
@@ -545,18 +673,6 @@ class Model extends \stdClass
 //        return $_POST[$classname."_form['$formfeild']"];
 //
 //    }
-
-    /**
-     * @inheritDoc
-     */
-    public function jsonSerialize()
-    {
-        return [
-            "created_at" => $this->created_at,
-            "updated_at" => $this->updated_at,
-            "deleted_at" => $this->deleted_at,
-        ];
-    }
 
     const split = ";";
 

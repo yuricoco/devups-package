@@ -20,16 +20,22 @@
       "formtype": "",
       "comment": "",
       "nullablevalue": true
+    },
+    "3": {
+      "name": "branches",
+      "designation": "",
+      "visibility": "",
+      "datatype": "string",
+      "size": "120",
+      "nullable": "default",
+      "formtype": "",
+      "comment": "use to organise the data in the tree view",
+      "nullablevalue": true
     }
   },
   "relation": [],
   "methods": [],
   "name": "tree",
   "id": "171",
-  "module": {
-    "id": "41",
-    "name": "ModuleTree"
-  },
-  "projectid": "5",
   "visible": true
 }

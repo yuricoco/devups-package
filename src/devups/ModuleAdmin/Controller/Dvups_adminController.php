@@ -21,7 +21,7 @@ class Dvups_adminController extends Controller
 
         $dvups_admin = Dvups_admin::find($id);
         $password = $dvups_admin->generatePassword();
-        $dvups_admin->setPassword(sha1($password));
+        $dvups_admin->setPassword($password);
 //        $dvups_admin->setLogin();
         $dvups_admin->generateLogin();
 
@@ -33,6 +33,15 @@ class Dvups_adminController extends Controller
     public function deconnexionAction()
     {
 
+        // ETAPE K.3 : invalide le token "remember me" cote serveur AVANT de
+        // detruire la session - un cookie vole ne doit plus jamais pouvoir
+        // relancer une session apres une deconnexion explicite.
+        if (isset($_SESSION[ADMIN])) {
+            $current = unserialize($_SESSION[ADMIN]);
+            if ($current instanceof Dvups_admin && $current->getId())
+                Dvups_admin::find($current->getId())->clearRememberToken();
+        }
+
         $_SESSION[ADMIN] = array();
         unset($_SESSION[LANG]);
         unset($_SESSION[ADMIN]);
@@ -43,7 +52,7 @@ class Dvups_adminController extends Controller
         if (isset($_COOKIE[ADMIN])) {
             \DClass\lib\Util::clearcookie(ADMIN);
             \DClass\lib\Util::clearcookie(ADMIN."_login");
-            \DClass\lib\Util::clearcookie(ADMIN."_pwd");
+            \DClass\lib\Util::clearcookie(ADMIN."_remember");
         }
 
         redirect( route('admin/login.php'));
@@ -56,25 +65,29 @@ class Dvups_adminController extends Controller
     static function restartsessionAction()
     {
 
-        if (!isset($_COOKIE[ADMIN]) || !isset($_COOKIE[ADMIN."_login"])  || !isset($_COOKIE[ADMIN."_pwd"]) )
+        if (!isset($_COOKIE[ADMIN]) || !isset($_COOKIE[ADMIN."_login"])  || !isset($_COOKIE[ADMIN."_remember"]) )
             return 0;
 
         if(isset($_SESSION[ADMIN]))
             return 0;
 
-        //$dbal = new DBAL(new User());
-        //$user = $dbal->findOneElementWhereXisY(['user.email', 'user.devupspwd'], [$_COOKIE[USERMAIL], $_COOKIE[USERPASS]]);
+        // ETAPE K.3 : le cookie ne contient plus le hash du mot de passe -
+        // un token aleatoire dont seul le hash (sha256) est compare a celui
+        // stocke en base, avec expiration et rotation a chaque usage.
+        $admin = Dvups_admin::where("this.login", $_COOKIE[ADMIN."_login"])->first();
 
-        $admin = Dvups_admin::where("this.login", $_COOKIE[ADMIN."_login"])
-            ->andwhere('this.password', $_COOKIE[ADMIN."_pwd"])
-            ->first();
-        if ($admin->getId()) {
+        if ($admin->getId() && $admin->verifyRememberToken($_COOKIE[ADMIN."_remember"])) {
 
 //            Dvups_roleController::getNavigationAction($admin);
             $_SESSION[ADMIN] = serialize($admin);
+            $newToken = $admin->issueRememberToken();
+            \DClass\lib\Util::setcookie(ADMIN."_remember", $newToken);
             return 1;
             //header("location: " . __env ."/admin". $url);
         } else {
+            \DClass\lib\Util::clearcookie(ADMIN);
+            \DClass\lib\Util::clearcookie(ADMIN."_login");
+            \DClass\lib\Util::clearcookie(ADMIN."_remember");
             redirect(route("admin/"));
         }
         die;
@@ -87,14 +100,29 @@ class Dvups_adminController extends Controller
         }
         extract($_POST);
 
-        $admin = Dvups_admin::select()->where('login', $login)->andwhere('password', sha1($password))->first();
+        // ETAPE L.1 : limite par compte ET par IP, independamment du
+        // resultat de l'authentification - un attaquant qui essaie des
+        // identifiants au hasard doit etre bloque, pas seulement un compte
+        // existant dont le mot de passe est errone.
+        $ipLimiter = new RateLimiter('login_admin_ip:' . (\DClass\lib\Util::get_IP_address() ?? 'unknown'), RATE_LIMIT_LOGIN_WINDOW_SECONDS, RATE_LIMIT_LOGIN_MAX_ATTEMPTS_IP);
+        $loginLimiter = new RateLimiter('login_admin:' . strtolower((string)$login), RATE_LIMIT_LOGIN_WINDOW_SECONDS, RATE_LIMIT_LOGIN_MAX_ATTEMPTS);
 
-        if (!$admin->getId())
+        if ($ipLimiter->tooManyAttempts() || $loginLimiter->tooManyAttempts())
+            redirect( __env . "admin/login.php?err=" . 'Trop de tentatives, veuillez réessayer plus tard.');
+
+        $admin = Dvups_admin::select()->where('login', $login)->first();
+
+        if (!$admin->getId() || !$admin->verifyPassword($password)) {
+            $ipLimiter->hit();
+            $loginLimiter->hit();
             redirect( __env . "admin/login.php?err=" . 'Login ou mot de passe incorrect.');
+        }
+
+        $ipLimiter->clear();
+        $loginLimiter->clear();
 
 //        Dvups_roleController::getNavigationAction($admin);
         $_SESSION[ADMIN] = serialize($admin);
-        //Local_contentController::buildlocalcachesinglelang($_POST['lang']);
 
         $admin->setLastloginAt(date("Y-m-d H:i:s"));
         $admin->__update(["lastlogin_at" => date("Y-m-d H:i:s")]);
@@ -105,10 +133,12 @@ class Dvups_adminController extends Controller
         }
 
         if (isset($remember_me)) {
-            //set cookie
+            // ETAPE K.3 : plus jamais le hash du mot de passe en cookie - un
+            // token aleatoire dont seul le hash est stocke en base.
+            $token = $admin->issueRememberToken();
             \DClass\lib\Util::setcookie(ADMIN, 1);
             \DClass\lib\Util::setcookie(ADMIN."_login", $admin->getLogin());
-            \DClass\lib\Util::setcookie(ADMIN."_pwd", $admin->getPassword());
+            \DClass\lib\Util::setcookie(ADMIN."_remember", $token);
         }
 
         //return array('success' => false, "err" => 'Login ou mot de passe incorrect.');
@@ -128,6 +158,9 @@ class Dvups_adminController extends Controller
 
     public function createAction()
     {
+        if ($this->forbidIfCannotFor('create', 'Dvups_admin'))
+            return ['success' => false, 'detail' => t('Action non autorisee')];
+
         extract($_POST);
         $this->err = array();
 
@@ -141,7 +174,7 @@ class Dvups_adminController extends Controller
         }
 
         $password = $dvups_admin->generatePassword();
-        $dvups_admin->setPassword(sha1($password));
+        $dvups_admin->setPassword($password);
         $dvups_admin->setLogin($dvups_admin->generateLogin());
 
         $id = $dvups_admin->__insert();
@@ -159,6 +192,21 @@ class Dvups_adminController extends Controller
 
     public function updateAction($id)
     {
+        if ($this->forbidIfCannotFor('update', 'Dvups_admin'))
+            return ['success' => false, 'detail' => t('Action non autorisee')];
+
+        // Seul le role maitre peut changer le role d'un admin, meme si
+        // l'acteur a 'update' sur Dvups_admin pour autre chose (son profil,
+        // son login...). On force silencieusement le role actuel plutot que
+        // de refuser toute la requete : le reste de la mise a jour reste
+        // valide. $dvups_admin est construit a neuf (id seul, pas hydrate) :
+        // retirer la cle au lieu de la forcer laisserait la relation sans
+        // valeur et __update() l'ecrirait a null (role perdu, pas "inchange").
+        if (!$this->isMasterAdmin()) {
+            $currentRoleId = Dvups_admin::find($id)->dvups_role->getId();
+            $_POST['dvups_admin_form']['dvups_role.id'] = $currentRoleId;
+        }
+
         extract($_POST);
         $this->err = array();
 
@@ -182,10 +230,13 @@ class Dvups_adminController extends Controller
 
     public function formView($id = null)
     {
+        if ($this->forbidIfCannotFor('read', 'Dvups_admin'))
+            return ['success' => false, 'detail' => t('Action non autorisee')];
+
         $dvups_admin = new Dvups_admin();
-        $action = Dvups_admin::classpath("services.php?path=dvups_admin.create");
+        $action = __env . ("admin/api/dvups_admin/create");
         if ($id) {
-            $action = Dvups_admin::classpath("services.php?path=dvups_admin.update&id=" . $id);
+            $action = __env . ("admin/api/dvups_admin/update?id=" . $id);
             $dvups_admin = Dvups_admin::find($id);
             //$dvups_admin->collectDvups_role();
         }
@@ -197,6 +248,8 @@ class Dvups_adminController extends Controller
 
     public function datatable($next, $per_page)
     {
+        if ($this->forbidIfCannotFor('read', 'Dvups_admin'))
+            return ['success' => false, 'detail' => t('Action non autorisee')];
 
         return ['success' => true,
             'datatable' => Dvups_adminTable::init(new Dvups_admin())->buildindextable()->getTableRest(),
@@ -205,8 +258,12 @@ class Dvups_adminController extends Controller
 
     public function listView($next = 1, $per_page = 10)
     {
+        if ($this->forbidIfCannotFor('read', 'Dvups_admin')) {
+            echo json_encode(['success' => false, 'detail' => t('Action non autorisee')]);
+            die;
+        }
 
-        //self::$jsfiles[] = Client::classpath('Ressource/js/dvups_roleCtrl.js');
+        //self::$jsfiles[] = Client::classpath('Resource/js/dvups_roleCtrl.js');
 
         $this->datatable = Dvups_adminTable::init(new Dvups_admin())->buildindextable();
 
@@ -219,6 +276,9 @@ class Dvups_adminController extends Controller
 
     public function deleteAction($id)
     {
+        if ($this->forbidIfCannotFor('delete', 'Dvups_admin'))
+            return ['success' => false, 'detail' => t('Action non autorisee')];
+
         $admin = Dvups_admin::find($id);
         $admin->__delete();
         return ["success" => true];
@@ -242,9 +302,10 @@ class Dvups_adminController extends Controller
         extract($_POST);
         if ($newpwd == $confimnewpwd) {
 
-            if (sha1($currentpwd) == $admin->getPassword()) {
-                $admin->password = sha1($newpwd);
+            if ($admin->verifyPassword($currentpwd)) {
+                $admin->setPassword($newpwd);
                 $admin->firstconnexion = 0;
+                $admin->clearRememberToken();
                 $admin->__update();
 
                 unset($_SESSION[ADMIN]);
@@ -289,8 +350,9 @@ class Dvups_adminController extends Controller
 //        $adminDao = new AdminDAO();
         $dvups_admin = Dvups_admin::find(getadmin()->getId());
         extract($_POST);
-        if (sha1($oldpwd) == $dvups_admin->getPassword()) {
-            $dvups_admin->__update("password", sha1($newpwd));
+        if ($dvups_admin->verifyPassword($oldpwd)) {
+            $dvups_admin->clearRememberToken();
+            $dvups_admin->__update("password", dv_hash_password($newpwd));
             $data = array('success' => true, // pour le restservice
                 'redirect' => Dvups_admin::classpath() . 'dvups-admin/profile?detail=password updated successfully', // pour le web service
                 'detail' => '');

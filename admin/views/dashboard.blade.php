@@ -18,18 +18,21 @@
                 </div>
             </div>
             <div class="page-title-actions">
-                <a href="{{route('admin/config')}}" type="button" data-toggle="tooltip" title="Example Tooltip" data-placement="bottom"
-                        class="btn-shadow mr-3 btn btn-dark">
+                <a href="{{ route('admin/config') }}" type="button" data-toggle="tooltip" title="Example Tooltip"
+                    data-placement="bottom" class="btn-shadow mr-3 btn btn-dark">
                     <i class="fa fa-star"></i>
                 </a>
             </div>
         </div>
     </div>
-
-
+    <div class="row"> 
+    </div>
+    <div class="row"> 
+    </div>
+ 
 @endsection
 
-@section("jsimport")
+@section('jsimport')
 
     <script src="<?= CLASSJS ?>devups.js"></script>
     <script src="<?= CLASSJS ?>model.js"></script>

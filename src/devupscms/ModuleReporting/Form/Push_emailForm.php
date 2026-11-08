@@ -22,8 +22,8 @@ class Push_emailForm extends FormManager
             "type" => FORMTYPE_SELECT,
             "value" => $this->push_email->notificationtype->id,
             "label" => t('notificationtype'),
-            "options" => FormManager::Options_Helper('_key', Notificationtype::where("dvups_entity.name", "user")
-                ->where("emailmodel", "!=", "")->get()),
+            "options" => FormManager::Options_Helper('_key', Notificationtype::where("this.entity", "user")
+                ->where("this.emailmodel", "!=", "")->get()),
         ];
         $this->fields['status'] = [
             "type" => FORMTYPE_RADIO,

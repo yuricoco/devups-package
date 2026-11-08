@@ -1,0 +1,92 @@
+<?php
+
+namespace Devups\Tests\E2E;
+
+use Devups\Tests\Support\HttpTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
+
+/**
+ * Ouvre, connecte en administrateur, pour CHAQUE entite declaree dans
+ * config/dvups_configurations.php :
+ *  - la page liste  : admin/<composant>/<Module>/<entite>/list (HTML complet) ;
+ *  - le formulaire  : admin/api/<entite>/form (JSON {success, form}), tel que
+ *    le demande model._new() dans le back-office.
+ *
+ * Un ecran est valide s'il repond 200, sans aucune erreur PHP cote serveur
+ * et avec un rendu complet (pas de page tronquee).
+ */
+final class AdminScreensTest extends HttpTestCase
+{
+    /**
+     * Ecrans connus comme casses, a corriger (ou a supprimer avec leur
+     * module) : signales comme incomplets, sans faire echouer la suite.
+     * Retirer une entree des qu'elle est corrigee.
+     */
+    private const KNOWN_BROKEN = [
+        'devups/ModuleLog/dvups-log/form' => 'module Log : ecran lecture seule par design, aucun formulaire de creation/edition',
+        'devupscms/ModuleReporting/emaillog/form' => 'Emaillog : ecran lecture seule par design, aucun formulaire de creation/edition',
+    ];
+
+    private static bool $logged = false;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        if (!self::$logged) {
+            $this->loginAdmin();
+            self::$logged = true;
+            \Devups\Tests\Support\HttpServer::newErrors();
+        }
+    }
+
+    public static function screens(): array
+    {
+        $config = require __DIR__ . '/../../config/dvups_configurations.php';
+        $screens = [];
+        foreach ($config as $key => $entity) {
+            if (strpos($key, '\\') !== false || !is_array($entity) || empty($entity['component']))
+                continue;
+            $slug = str_replace('_', '-', strtolower($entity['name']));
+            $base = $entity['component'] . '/' . $entity['module'] . '/' . $slug;
+            $screens[$base . '/list'] = [$base . '/list', 'admin/' . $base . '/list', 'html'];
+            $screens[$base . '/form'] = [$base . '/form', 'admin/api/' . strtolower($entity['name']) . '/form?1', 'json'];
+        }
+        ksort($screens);
+        return $screens;
+    }
+
+    #[DataProvider('screens')]
+    public function testScreenRendersWithoutError(string $path, string $url, string $kind): void
+    {
+        $res = $this->get($url);
+        $errors = \Devups\Tests\Support\HttpServer::newErrors();
+
+        if (isset(self::KNOWN_BROKEN[$path])) {
+            if ($this->screenIsHealthy($res, $errors, $kind))
+                $this->fail("$path fonctionne desormais : le retirer de KNOWN_BROKEN");
+            $this->markTestIncomplete(self::KNOWN_BROKEN[$path]);
+        }
+
+        $this->assertSame(200, $res['status'], $url);
+        $this->assertSame([], $errors, "erreurs PHP sur $url :\n" . implode("\n", $errors));
+        if ($kind === 'html') {
+            $this->assertStringContainsString('</html>', $res['body'], "rendu tronque sur $url");
+        } else {
+            $data = json_decode($res['body'], true);
+            $this->assertIsArray($data, "JSON attendu sur $url, recu : " . substr($res['body'], 0, 200));
+            $this->assertTrue($data['success'] ?? false, $url);
+            $this->assertStringContainsString('<form', (string)($data['form'] ?? ''), "formulaire absent sur $url");
+            $this->assertStringContainsString('</form>', (string)$data['form'], "formulaire tronque sur $url");
+        }
+    }
+
+    private function screenIsHealthy(array $res, array $errors, string $kind): bool
+    {
+        if ($res['status'] !== 200 || $errors)
+            return false;
+        if ($kind === 'html')
+            return strpos($res['body'], '</html>') !== false;
+        $data = json_decode($res['body'], true);
+        return is_array($data) && !empty($data['success']) && strpos((string)($data['form'] ?? ''), '</form>') !== false;
+    }
+}

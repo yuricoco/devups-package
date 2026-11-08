@@ -3,42 +3,45 @@
 
 use dclass\devups\Controller\Controller;
 
-class StatusController extends Controller{
+class StatusController extends Controller
+{
 
-    public function listView($next = 1, $per_page = 10){
+    public function listView($next = 1, $per_page = 10)
+    {
 
         $this->datatable = StatusTable::init(new Status())->buildindextable();
 
-        self::$cssfiles[] = __admin."plugins/jquery-ui-1.12.1/jquery-ui.min.css";
+        self::$cssfiles[] = __admin . "plugins/jquery-ui-1.12.1/jquery-ui.min.css";
         self::$cssfiles[] = Status::classpath('Resource/css/status.css');
-        self::$jsfiles[] = __admin."plugins/jquery-ui-1.12.1/jquery-ui.min.js";
+        self::$jsfiles[] = __admin . "plugins/jquery-ui-1.12.1/jquery-ui.min.js";
         self::$jsfiles[] = Status::classpath('Resource/js/statusCtrl.js');
 
         $this->entitytarget = 'Status';
         $this->title = "Manage Status";
 
         $this->renderListView();
-
     }
 
-    public function datatable($next, $per_page) {
+    public function datatable($next, $per_page)
+    {
 
-        return ['success' => true,
+        return [
+            'success' => true,
             'datatable' => StatusTable::init(new Status())->buildindextable()->getTableRest(),
         ];
-
     }
 
     public function formView($id = null)
     {
         $status = new Status();
-        $action = Status::classpath("services.php?path=status.create");
+        $action = __env . ("admin/api/status/create");
         if ($id) {
-            $action = Status::classpath("services.php?path=status.update&id=" . $id);
+            $action = __env . ("admin/api/status/update?id=" . $id);
             $status = Status::find($id);
         }
 
-        return ['success' => true,
+        return [
+            'success' => true,
             'form' => StatusForm::init($status, $action)
                 ->buildForm()
                 ->addDformjs()
@@ -46,45 +49,54 @@ class StatusController extends Controller{
         ];
     }
 
-    public function createAction($status_form = null ){
+    public function createAction($status_form = null)
+    {
         extract($_POST);
 
         $status = $this->form_fillingentity(new Status(), $status_form);
-        if ( $this->error ) {
-            return 	array(	'success' => false,
-                            'status' => $status,
-                            'action' => 'create',
-                            'error' => $this->error);
+        if ($this->error) {
+            return     array(
+                'success' => false,
+                'status' => $status,
+                'action' => 'create',
+                'error' => $this->error
+            );
         }
 
         $status->dvid_lang = "fr";
         $id = $status->__insert();
-        return 	array(	'success' => true,
-                        'status' => $status,
-                        'tablerow' => StatusTable::init()->buildindextable()->getSingleRowRest($status),
-                        'detail' => '');
-
+        $status = Status::find($id, 1);
+        return     array(
+            'success' => true,
+            'status' => $status,
+            'tablerow' => StatusTable::init($status)->buildindextable()->getSingleRowRest($status),
+            'detail' => ''
+        );
     }
 
-    public function updateAction($id, $status_form = null){
+    public function updateAction($id, $status_form = null)
+    {
         extract($_POST);
 
         $status = $this->form_fillingentity(new Status($id), $status_form);
 
-        if ( $this->error ) {
-            return 	array(	'success' => false,
-                            'status' => $status,
-                            'action_form' => 'update&id='.$id,
-                            'error' => $this->error);
+        if ($this->error) {
+            return     array(
+                'success' => false,
+                'status' => $status,
+                'action_form' => 'update&id=' . $id,
+                'error' => $this->error
+            );
         }
 
         $status->__update();
-        return 	array(	'success' => true,
-                        'status' => $status,
+        return     array(
+            'success' => true,
+            'status' => $status,
 
             'tablerow' => StatusTable::init()->buildindextable()->getSingleRowRest($status),
-            'detail' => '');
-
+            'detail' => ''
+        );
     }
 
 
@@ -101,14 +113,16 @@ class StatusController extends Controller{
                 ->builddetailtable()
                 ->renderentitydata($status)
         );
-
     }
 
-    public function deleteAction($id){
+    public function deleteAction($id)
+    {
 
-            Status::delete($id);
-        return 	array(	'success' => true,
-                        'detail' => '');
+        Status::delete($id);
+        return     array(
+            'success' => true,
+            'detail' => ''
+        );
     }
 
 
@@ -117,29 +131,31 @@ class StatusController extends Controller{
 
         Status::delete()->where("id")->in($ids)->exec();
 
-        return array('success' => true,
-                'detail' => '');
-
+        return array(
+            'success' => true,
+            'detail' => ''
+        );
     }
 
     public function sortlistAction()
     {
-        foreach ($_POST["positions"] as $i => $id){
-            Status::where("this.id", $id)->update(["position"=>$i+1]);
+        foreach ($_POST["positions"] as $i => $id) {
+            Status::where("this.id", $id)->update(["position" => $i + 1]);
         }
         return Response::$data;
     }
 
-    public function cloneAction($id){
+    public function cloneAction($id)
+    {
 
         $status = Status::find($id);
         $status->setId(null);
         $status->__insert();
-        return 	array(	'success' => true,
+        return     array(
+            'success' => true,
             'status' => $status,
             'tablerow' => StatusTable::init()->buildindextable()->getSingleRowRest($status),
-            'detail' => '');
-
+            'detail' => ''
+        );
     }
-
 }

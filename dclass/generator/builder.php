@@ -1,5 +1,121 @@
 <?php
 
+if (!function_exists('dv_lang_scan_keys')) {
+    /**
+     * Parcourt src/, dclass/, admin/ et web/ a la recherche des appels
+     * t('...')/tt('...') a cle LITTERALE (lang:scan/lang:missing), via le
+     * tokenizer PHP (token_get_all()) plutot qu'une regex : un appel dont
+     * la cle est construite (concatenation, variable - ex. t("prefix" .
+     * $var)) est repere mais volontairement IGNORE (ne peut pas etre
+     * pre-rempli sans executer le code) ; la liste de ces appels ignores
+     * est deposee dans $GLOBALS['__dv_lang_scan_ignored'] pour affichage
+     * (cf. case 'lang:scan' ci-dessous).
+     */
+    function dv_lang_scan_keys(): array
+    {
+        $keys = [];
+        $ignored = [];
+        $dirs = [ROOT . 'src', ROOT . 'dclass', ROOT . 'admin', ROOT . 'web'];
+        foreach ($dirs as $dir) {
+            if (!is_dir($dir))
+                continue;
+            $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS));
+            foreach ($iterator as $file) {
+                if (!preg_match('/\.(php|blade\.php)$/', $file->getFilename()))
+                    continue;
+
+                dv_lang_scan_tokens(file_get_contents($file->getPathname()), $file->getPathname(), $keys, $ignored);
+            }
+        }
+
+        $keys = array_keys($keys);
+        sort($keys);
+        $GLOBALS['__dv_lang_scan_ignored'] = $ignored;
+        return $keys;
+    }
+
+    /** Premier index >= 0, a partir de $i en avancant de $step, qui n'est pas un espace/commentaire ; null si fin de flux. */
+    function dv_lang_skip_trivia(array $tokens, int $i, int $step): ?int
+    {
+        $count = count($tokens);
+        while ($i >= 0 && $i < $count) {
+            $token = $tokens[$i];
+            if (is_array($token) && in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                $i += $step;
+                continue;
+            }
+            return $i;
+        }
+        return null;
+    }
+
+    function dv_lang_unquote(string $raw): string
+    {
+        $quote = $raw[0];
+        $inner = substr($raw, 1, -1);
+        return $quote === "'"
+            ? str_replace(["\\'", '\\\\'], ["'", '\\'], $inner)
+            : stripcslashes($inner);
+    }
+
+    /** Tokenize $content et accumule dans $keys (cle litterale simple) / $ignored (cle construite, rapportee pas remplie). */
+    function dv_lang_scan_tokens(string $content, string $path, array &$keys, array &$ignored): void
+    {
+        $tokens = @token_get_all($content);
+        if (!$tokens)
+            return;
+        $count = count($tokens);
+
+        for ($i = 0; $i < $count; $i++) {
+            $token = $tokens[$i];
+            if (!is_array($token) || $token[0] !== T_STRING || !in_array($token[1], ['t', 'tt'], true))
+                continue;
+
+            // ignore $obj->t(...), Classe::t(...) (methode, pas la fonction globale)
+            $prev = dv_lang_skip_trivia($tokens, $i - 1, -1);
+            if ($prev !== null && is_array($tokens[$prev]) && in_array($tokens[$prev][0], [T_OBJECT_OPERATOR, T_DOUBLE_COLON], true))
+                continue;
+
+            $open = dv_lang_skip_trivia($tokens, $i + 1, 1);
+            if ($open === null || $tokens[$open] !== '(')
+                continue;
+
+            $arg = dv_lang_skip_trivia($tokens, $open + 1, 1);
+            if ($arg === null || !is_array($tokens[$arg]) || $tokens[$arg][0] !== T_CONSTANT_ENCAPSED_STRING)
+                continue;
+
+            $cle = dv_lang_unquote($tokens[$arg][1]);
+
+            $after = dv_lang_skip_trivia($tokens, $arg + 1, 1);
+            $isSimpleCall = $after !== null && ($tokens[$after] === ')' || $tokens[$after] === ',');
+
+            if ($isSimpleCall) {
+                $keys[$cle] = true;
+            } else {
+                // ex. t("prefix" . $var) : cle construite, pas litterale -
+                // signalee en sortie de lang:scan, jamais ajoutee automatiquement.
+                $line = is_array($token) ? $token[2] : 0;
+                $ignored[] = $path . ':' . $line . ' - "' . mb_substr($cle, 0, 40) . '..."';
+            }
+        }
+    }
+}
+
+if (!function_exists('dv_doctrine_command')) {
+    /**
+     * Commande Doctrine portable (Windows, Linux, macOS) : appelle
+     * vendor/bin/doctrine avec l'interpreteur PHP courant.
+     */
+    function dv_doctrine_command(string $args): string
+    {
+        $bin = __DIR__ . '/../../vendor/bin/doctrine';
+        if (!file_exists($bin))
+            $bin = __DIR__ . '/../../bin/doctrine';
+        return escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($bin) . ' ' . $args . ' 2>&1';
+    }
+}
+
+
 //require __DIR__ . '/../../config/constante.php';
 
 use dclass\devups\Tchutte\DB_dumper;
@@ -7,7 +123,9 @@ use dclass\devups\Tchutte\DB_dumper;
 define('__debug', false);
 
 require __DIR__ . '/../../config/dependanceInjection.php';
+require __DIR__ . '/../../lang.php';
 
+require __DIR__ . '/GeneratorFileGuard.php';
 require __DIR__ . '/BackendGenerator.php';
 require __DIR__ . '/android/BackendGeneratorJava.php';
 require __DIR__ . '/RequestGenerator.php';
@@ -118,12 +236,12 @@ if ($argv[1] === 'tests') {
 if ($argv[1] === 'schema:update') {
 
     $result = [];
-    exec("bin\doctrine orm:schema:update --dump-sql", $result);
+    exec(dv_doctrine_command("orm:schema:update --dump-sql"), $result);
 
     //
     /*$em = DBAL::getEntityManager();
 
-    $listentities = ["Cmstext"];
+    $listentities = ["Cmscontent"];
     foreach ($listentities as $entity){
         $lc_entity = strtolower($entity);
         $migrationlang = ROOT."database/langs/migration_$lc_entity.json";
@@ -189,7 +307,6 @@ CREATE TABLE `$lc_entity\_lang` (
 
             // todo: connect to toolrad and update the schema of the entity
 
-            $dbal = new DBAL();
             for ($i = 2; $i < count($result); $i++) {
 
                 if (!isset($result[$i]))
@@ -220,7 +337,9 @@ CREATE TABLE `$lc_entity\_lang` (
 
                     try {
 
-                        $r = $dbal->executeDbal($sanitize.$query, [], 0, true);
+                        $rqg = new Database();
+                        $rqg->link()->prepare($sanitize.$query)->execute();
+//                        $r = (new DBAL())->executeDbal($sanitize.$query, [], 0, true);
                         \dclass\devups\Tchutte\DB_dumper::migration($sanitize);
                         \dclass\devups\Tchutte\DB_dumper::migration($query);
                     }catch (Exception $exception){
@@ -291,10 +410,27 @@ if ($argv[1] === 'transaction:rollback') {
 }
 
 $project = null;
-if (isset($argv[2])) {
+// ETAPE V : $argv[2] n'est un nom de projet que s'il ne commence pas par
+// "--" - sinon (ex. "php devups migrate --dry-run") c'est un flag de la
+// commande elle-meme (gere plus bas, cf. case 'migrate') et il ne faut
+// pas tenter de le resoudre comme projet (getproject() echouerait avec
+// un message trompeur, "projectCore '--dry-run' not found").
+if (isset($argv[2]) && substr($argv[2], 0, 2) !== '--') {
     $project = getproject($argv[2]);
 
     chdir('src/' . $project->name);
+
+    // --force et printSummary() pour TOUTES les
+    // commandes core:g:* d'un coup (onze d'entre elles passaient deja par
+    // la garde sans jamais pouvoir forcer ni savoir ce qui avait ete
+    // renomme). Cherche n'importe ou dans $argv, pas a un index fixe : la
+    // position du flag n'est pas la meme d'une commande a l'autre
+    // (core:g:entity utilise deja $argv[3] pour --lang, core:g:crud pour la
+    // variante java). GeneratorFileGuard::$force ne change le comportement
+    // d'aucune commande hors core:g:*, qui n'appelle jamais cette classe.
+    if (in_array('--force', $argv, true)) {
+        GeneratorFileGuard::$force = true;
+    }
 
     switch ($argv[1]) {
 
@@ -375,7 +511,12 @@ if (isset($argv[2])) {
             break;
 
         case 'core:g:crud':
-            if (isset($argv[3])) {
+            // isset($argv[3]) signifiait jusqu'ici
+            // "variante java" sans condition - --force (detecte plus haut,
+            // n'importe ou dans $argv, voir backoffice-socle5-0c) en est
+            // explicitement exclu pour ne pas detourner ce branchement
+            // existant.
+            if (isset($argv[3]) && $argv[3] !== '--force') {
                 if (isset($argv[4])) {
                     __Generatorjava::crud($argv[2], $project, $argv[4]); //,$argv[4] for package
                     echo $argv[2] . ": Entity java generated with success";
@@ -385,7 +526,6 @@ if (isset($argv[2])) {
                 __Generator::crud($argv[2], $project); //,
                 echo $argv[2] . ": CRUD generated with success";
             }
-            Core::updateDvupsTable();
             break;
 
         case 'core:g:dependencies':
@@ -396,7 +536,6 @@ if (isset($argv[2])) {
         case 'core:g:module':
             __Generator::module($project, $argv[2]); //,
             echo $argv[2] . ": Module generated with success";
-            Core::updateDvupsTable();
             break;
 
         case 'core:g:moduleendless':
@@ -427,7 +566,6 @@ if (isset($argv[2])) {
         case 'core:g:component':
             __Generator::component(Core::getComponentCore($argv[2])); //,
             echo $project->name . ": component generated with success";
-            Core::updateDvupsTable();
             break;
 
         default :
@@ -435,14 +573,22 @@ if (isset($argv[2])) {
             break;
     }
 
+    // une seule fois pour les treize commandes
+    // core:g:* de ce switch, plutot que repetee dans chacune.
+    GeneratorFileGuard::printSummary();
+
     chdir('../../');
 } else {
 
-    require __DIR__ . '/../../src/devups/ModuleLang/Entity/Dvups_lang.php';
-    require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_role.php';
-    require __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_right.php';
-    require __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_entity.php';
-    require __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_entity_lang.php';
+    // require_once (ETAPE H) : lang.php (require a la ligne 126 plus haut)
+    // declenche desormais l'autoload de Dvups_lang (dv_valid_lang() ->
+    // cachedActiveDlangs()) - un require nu ici re-declarerait la classe.
+    require_once __DIR__ . '/../../src/devups/ModuleLang/Entity/Dvups_lang.php';
+    require_once __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_role.php';
+    require_once __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_action.php';
+    require_once __DIR__ . '/../../src/devups/ModuleAdmin/Entity/Dvups_privilege.php';
+    require_once __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_entity.php';
+    require_once __DIR__ . '/../../src/devups/ModuleConfig/Entity/Dvups_entity_lang.php';
 
     switch ($argv[1]) {
 
@@ -452,6 +598,7 @@ if (isset($argv[2])) {
                 echo " > /cache folders created with success ...\n";
                 mkdir('cache', 0777);
                 mkdir('cache/views', 0777);
+                mkdir('cache/trees', 0777);
                 mkdir('cache/local', 0777);
                 mkdir('cache/local/admin', 0777);
                 mkdir('cache/local/front', 0777);
@@ -508,6 +655,7 @@ if (isset($argv[2])) {
                 echo " > /cache folders created with success ...\n";
                 mkdir('cache', 0777);
                 mkdir('cache/views', 0777);
+                mkdir('cache/trees', 0777);
                 mkdir('cache/local', 0777);
                 mkdir('cache/local/admin', 0777);
                 mkdir('cache/local/front', 0777);
@@ -526,7 +674,7 @@ if (isset($argv[2])) {
                 RequestGenerator::databasecreate(dbname); //,
                 echo " > Creating Database.\n\n" . dbname . ": created with success ...\n";
                 $result = [];
-                exec("bin\doctrine orm:schema:create", $result);
+                exec(dv_doctrine_command("orm:schema:create"), $result);
 
                 echo "\n > Update database schema (DOCTRINE ORM).\n\n" . implode("\n", $result);
 
@@ -541,7 +689,7 @@ if (isset($argv[2])) {
                     (\"__lang\", \"en\", 'string'),
                     (\"JSON_ENCODE_DEPTH\", 512, 'integer');
             ";
-
+ 
                 try {
                     $rqg->link()->prepare($dvupsadminsql)->execute();
                 } catch (Exception $e) {
@@ -552,7 +700,18 @@ if (isset($argv[2])) {
             }
 
             Dvups_lang::cacheData();
-            Core::updateDvupsTable();
+
+            // ETAPE Q.4 : une installation neuve construit deja le schema
+            // COMPLET depuis les entites actuelles (orm:schema:create
+            // ci-dessus) - les fichiers de database/migration/ existants
+            // sont donc marques joues sans etre executes (les rejouer
+            // produirait des erreurs SQL, colonnes/tables deja presentes).
+            // Seule une base EXISTANTE (anterieure a cette installation)
+            // doit vraiment les executer, via `php devups migrate`.
+            if (!__prod) {
+                $baselined = \dclass\devups\Migration\MigrationRunner::markAllAsBaseline();
+                echo "\n > " . $baselined . " migration(s) existante(s) marquee(s) comme base de depart (deja incluses dans le schema cree ci-dessus).\n";
+            }
 
             echo "\n\n > Set the master admin.\n\nData master admin initialized with success.\ncredential\nlogin: dv_admin\npassword: admin
             \nYour project is ready to use. Do your best :)
@@ -562,7 +721,7 @@ if (isset($argv[2])) {
         case 'database:create':
             RequestGenerator::databasecreate(dbname); //,
             $result = [];
-            exec("bin\doctrine orm:schema:create", $result);
+            exec(dv_doctrine_command("orm:schema:create"), $result);
 
             echo dbname . ": created with success\n\n " . implode("\n", $result);
             break;
@@ -585,6 +744,180 @@ if (isset($argv[2])) {
                 echo "Data admin updated with success";
             else
                 echo "Data admin already uptodate";
+            break;
+
+        case 'rights:sync':
+            $result = Dvups_action::sync();
+            echo $result['created'] . "/" . $result['total'] . " action(s) synchronisee(s) ("
+                . $result['created'] . " creee(s), le reste deja en base).\n";
+
+            // ETAPE V.4 : trouve en testant l'application reelle - le menu
+            // lateral (sidebar.blade.php) ne lit jamais dvups_action /
+            // config/dvups_configurations.php directement, il lit
+            // Dvups_role::getConfigs() (colonne `configs`, un JSON
+            // materialise par Dvups_role::updateConfigs(), jusqu'ici
+            // uniquement appele - et sauvegarde - quand un role est cree ou
+            // modifie depuis l'ecran Roles). Sans ce rafraichissement ici,
+            // tout changement de dvups_action (nouvelle action creee par ce
+            // sync, ou action retiree par une migration de nettoyage)
+            // restait invisible dans le menu de TOUS les roles existants
+            // jusqu'a leur prochaine sauvegarde manuelle via l'ecran Roles.
+            $rolesRefreshed = 0;
+            $roleIds = Model::pdo()->query('SELECT id FROM dvups_role')->fetchAll(\PDO::FETCH_COLUMN);
+            foreach ($roleIds as $roleId) {
+                $role = (new Dvups_role((int)$roleId))->hydrate();
+                $role->updateConfigs();
+                $role->__update();
+                $rolesRefreshed++;
+            }
+            echo $rolesRefreshed . " role(s) : menu rafraichi (Dvups_role::configs).\n";
+            break;
+
+        case 'lang:scan':
+            $keys = dv_lang_scan_keys();
+            $added = 0;
+            foreach (glob(LANG_DIR . '*.php') ?: [] as $file) {
+                $translations = require $file;
+                foreach ($keys as $cle) {
+                    if (array_key_exists($cle, $translations))
+                        continue;
+                    dv_lang_write_missing_key($file, $cle);
+                    $added++;
+                }
+            }
+            echo count($keys) . " cle(s) trouvee(s) dans le code, " . $added . " ajout(s) dans les fichiers lang/*.php.\n";
+            $ignored = $GLOBALS['__dv_lang_scan_ignored'] ?? [];
+            if ($ignored) {
+                echo count($ignored) . " appel(s) ignore(s) (cle construite par concatenation, a traiter a la main si besoin) :\n";
+                foreach ($ignored as $line)
+                    echo "  - " . $line . "\n";
+            }
+            break;
+
+        case 'location:seed':
+            $result = Country::seed();
+            echo $result['total'] . " pays references (" . $result['created'] . " cree(s), "
+                . $result['updated'] . " mis a jour).\n";
+            break;
+
+        case 'lang:missing':
+            $keys = dv_lang_scan_keys();
+            foreach (glob(LANG_DIR . '*.php') ?: [] as $file) {
+                $translations = require $file;
+                $missing = [];
+                foreach ($keys as $cle) {
+                    if (!array_key_exists($cle, $translations) || $translations[$cle] === $cle)
+                        $missing[] = $cle;
+                }
+                echo basename($file) . " : " . count($missing) . " cle(s) non traduite(s)\n";
+                foreach ($missing as $cle)
+                    echo "  - " . $cle . "\n";
+            }
+            break;
+
+        case 'migrate':
+            // ETAPE Q.1/Q.2 : rejoue dans l'ordre les fichiers de
+            // database/migration/ non encore enregistres dans
+            // dvups_migration (MigrationRunner). --dry-run affiche le SQL
+            // sans l'executer ; --step attribue un lot distinct a chaque
+            // migration (au lieu d'un seul lot pour tout le batch) ;
+            // --force saute la confirmation d'une migration destructive
+            // (DROP/TRUNCATE/DELETE) - en production (__prod), seul
+            // --force passe, jamais la confirmation interactive "oui".
+            $dryRun = in_array('--dry-run', $argv, true);
+            $force = in_array('--force', $argv, true);
+            $step = in_array('--step', $argv, true);
+
+            $confirm = function ($migration) {
+                echo "\n[ATTENTION] '" . $migration . "' contient une instruction destructive (DROP/TRUNCATE/DELETE).\n";
+                echo "Tapez « oui » pour confirmer son execution (ou relancez avec --force) : ";
+                $answer = trim((string)fgets(STDIN));
+                return strtolower($answer) === 'oui';
+            };
+
+            $result = \dclass\devups\Migration\MigrationRunner::run([
+                'dry_run' => $dryRun,
+                'force' => $force,
+                'step' => $step,
+                'confirm' => $confirm,
+            ]);
+
+            if ($dryRun) {
+                if (!$result['dry_run']) {
+                    echo "Aucune migration en attente.\n";
+                    break;
+                }
+                foreach ($result['dry_run'] as $entry) {
+                    echo "-- " . $entry['migration'] . ($entry['destructive'] ? " (DESTRUCTIVE)" : "") . " --\n";
+                    echo ($entry['sql'] ?? "(migration PHP - SQL non affichable en dry-run)") . "\n\n";
+                }
+                break;
+            }
+
+            foreach ($result['ran'] as $file)
+                echo "[OK] " . $file . "\n";
+
+            foreach ($result['refused_destructive'] as $file)
+                echo "[REFUSE] " . $file . " - migration destructive non confirmee (--force, ou repondez « oui » a l'invite, hors production).\n";
+
+            foreach ($result['failed'] as $entry)
+                echo "[ECHEC] " . $entry['migration'] . " - " . $entry['error'] . "\n";
+
+            if (!$result['ran'] && !$result['refused_destructive'] && !$result['failed'])
+                echo "Aucune migration en attente.\n";
+            else
+                echo count($result['ran']) . " migration(s) jouee(s).\n";
+            break;
+
+        case 'migrate:status':
+            $rows = \dclass\devups\Migration\MigrationRunner::status();
+            if (!$rows) {
+                echo "Aucun fichier de migration trouve dans database/migration/.\n";
+                break;
+            }
+            foreach ($rows as $row) {
+                $state = $row['played']
+                    ? ("jouee (lot " . $row['batch'] . ", " . $row['executed_at'] . ")")
+                    : "en attente";
+                echo $row['migration'] . " : " . $state . "\n";
+            }
+            break;
+
+        case 'api:doc':
+            // ETAPE N.1 : meme generateur que documentation/api.php (parsing
+            // statique, aucune classe PHP chargee) - ecrit un instantane a
+            // la racine du projet.
+            require_once __DIR__ . '/OpenApiGenerator.php';
+            $spec = dv_build_openapi_spec(ROOT);
+            $outFile = ROOT . 'openapi.json';
+            file_put_contents($outFile, json_encode($spec, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+            echo "openapi.json genere (" . count($spec['paths']) . " chemin(s)) : $outFile\n";
+            break;
+
+        case 'doc:guide':
+            // ETAPE N.2 : meme generateur que documentation/guide.php - ecrit
+            // une page HTML statique par module/entite sous documentation/guide/.
+            require_once __DIR__ . '/DocGuideGenerator.php';
+            $guideData = dv_build_doc_guide(ROOT);
+            $guideDir = ROOT . 'documentation/guide';
+            if (!is_dir($guideDir))
+                mkdir($guideDir, 0777, true);
+
+            $pageCount = 0;
+            foreach ($guideData['components'] as $component) {
+                foreach ($component['modules'] as $module) {
+                    $modDir = $guideDir . '/' . $component['name'] . '/' . $module['name'];
+                    if (!is_dir($modDir))
+                        mkdir($modDir, 0777, true);
+
+                    foreach ($module['entities'] as $entity) {
+                        $page = dv_render_doc_guide_entity_page($guideData, $entity);
+                        file_put_contents($modDir . '/' . $entity['key'] . '.html', $page);
+                        $pageCount++;
+                    }
+                }
+            }
+            echo $pageCount . " page(s) de guide generee(s) sous documentation/guide/\n";
             break;
 
         default :

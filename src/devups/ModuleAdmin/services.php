@@ -12,7 +12,6 @@ global $viewdir;
 $viewdir[] = __DIR__ . '/Resource/views';
 
 $dvups_adminCtrl = new Dvups_adminController();
-$dvups_rightCtrl = new Dvups_rightController();
 $dvups_roleCtrl = new Dvups_roleController();
 
 (new Request('hello'));
@@ -31,7 +30,7 @@ switch (Request::get('path')) {
         g::json_encode($dvups_adminCtrl->createAction());
         break;
     case 'dvups_admin.form':
-        g::json_encode(Dvups_adminController::renderForm(R::get("id")));
+        g::json_encode($dvups_adminCtrl->formView(R::get("id")));
         break;
     case 'dvups_admin.update':
         g::json_encode($dvups_adminCtrl->updateAction(R::get("id")));
@@ -44,25 +43,6 @@ switch (Request::get('path')) {
         break;
     case 'dvups_admin.datatable':
         g::json_encode($dvups_adminCtrl->datatable(R::get('next'), R::get('per_page')));
-        break;
-
-    case 'dvups_right._new':
-        g::json_encode(Dvups_rightController::renderForm());
-        break;
-    case 'dvups_right.form':
-        g::json_encode(Dvups_rightController::renderForm(R::get("id")));
-        break;
-    case 'dvups_right._show':
-        g::json_encode(Dvups_rightController::renderDetail(R::get("id")));
-        break;
-    case 'dvups_right._delete':
-        g::json_encode($dvups_rightCtrl->deleteAction(R::get("id")));
-        break;
-    case 'dvups_right._deletegroup':
-        g::json_encode($dvups_rightCtrl->deletegroupAction(R::get("ids")));
-        break;
-    case 'dvups_right.datatable':
-        g::json_encode($dvups_rightCtrl->datatable(R::get('next'), R::get('per_page')));
         break;
 
     case 'dvups_role._new':
@@ -78,7 +58,7 @@ switch (Request::get('path')) {
         g::json_encode(Dvups_roleForm::renderWidget(R::get("id")));
         break;
     case 'dvups_role._show':
-        g::json_encode(Dvups_roleController::renderDetail(R::get("id")));
+        $dvups_roleCtrl->detailView(R::get("id"));
         break;
     case 'dvups_role._delete':
         g::json_encode($dvups_roleCtrl->deleteAction(R::get("id")));
@@ -90,7 +70,11 @@ switch (Request::get('path')) {
         g::json_encode($dvups_roleCtrl->datatable(R::get('next'), R::get('per_page')));
         break;
 
-    case 'dvups_:update':
+    // route renommee (ex-'dvups_:update', nom ambigu avec la commande CLI
+    // `php devups dvups_:update` qui fait la meme chose cote serveur) :
+    // rafraichit le cache de navigation (Core::updateDvupsTable()), sans
+    // rapport avec les privileges malgre le nom de la methode du controleur.
+    case 'dvups_role.refreshconfig':
         g::json_encode($dvups_roleCtrl->privilegeUpdate());
         break;
 

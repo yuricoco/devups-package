@@ -11,10 +11,25 @@
         <?= Form::input('alias', $dvups_role->alias, ['class' => 'form-control']); ?>
     </div>
     <div class='form-group'>
-        <label for='dvups_right'>Dvups_right</label>
-        <?= Form::checkbox('dvups_right::values', FormManager::Options_Helper('name', Dvups_right::allrows()),
-            $dvups_role->inCollectionOf("dvups_right"), ['class' => 'form-control']); ?>
+        <label>{{t('Droits (entite / action)')}}</label>
+        <table class='table'>
+            @foreach($actionsByEntity as $entity => $entityActions)
+                <tr>
+                    <th>{{$entity}}</th>
+                    <td>
+                        @foreach($entityActions as $dvups_action)
+                            <label class='checkbox-inline' style='margin-right: 12px;'>
+                                <input type='checkbox' name='privileges[]' value='{{$dvups_action->getId()}}'
+                                    @if(in_array($dvups_action->getId(), $grantedActionIds)) checked @endif >
+                                {{$dvups_action->action}}
+                            </label>
+                        @endforeach
+                    </td>
+                </tr>
+            @endforeach
+        </table>
     </div>
+
     <label for='dvups_module'>Dvups_module</label>
     <table class='table'>
         <tr>
@@ -68,5 +83,5 @@
 <?= Form::close() ?>
 
 <?= Form::addDformjs() ?>
-<?= Form::addjs(Dvups_role::classpath('Ressource/js/dvups_roleForm')) ?>
+<?= Form::addjs(Dvups_role::classpath('Resource/js/dvups_roleForm')) ?>
     

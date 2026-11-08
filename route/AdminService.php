@@ -8,7 +8,20 @@ use Genesis;
 use Notificationtype;
 use Request;
 use Genesis as g;
+use OpenApi\Annotations as OA;
 
+/**
+ * @OA\Info(
+ *   title="Devups API",
+ *   version="1.0.0",
+ *   description="Documentation des WebServices de Devups."
+ * )
+ *
+ * @OA\Server(
+ *   url="https://monsite.com/api",
+ *   description="Serveur principal"
+ * )
+ */
 class AdminService extends \dclass\devups\Controller\ModuleController
 {
 
@@ -20,6 +33,40 @@ class AdminService extends \dclass\devups\Controller\ModuleController
     private $frontController;
     public function __construct($route)
     {
+        // 2026-10-14 - SEUL point de passage de startAdmin()
+        // vers manageServe() (dclass/devups/Http/Router.php:124-132, lu en
+        // lecture seule) : `new AdminService('hello')` est construit AVANT
+        // que manageServe() ne fasse quoi que ce soit. La verification de
+        // session que manageServe() est censee faire est elle-meme du code
+        // mort (son corps est commente) - sans ce garde-fou, systemServe(),
+        // les methodes `…Service()` et Controller::serve() servaient TOUTES
+        // les entites de config/dvups_configurations.php SANS AUCUNE
+        // authentification, ni jeton JWT ni session admin : demontre en
+        // ecriture reelle. assertOwnership() etait en
+        // plus neutralisee par Router::$admin_route (pose avant ce
+        // constructeur), donc meme les entites a controle de propriete
+        // etaient ouvertes a la modification d'autrui.
+        //
+        // Aucune exemption : le formulaire de connexion de l'administration
+        // (admin/login.php) poste vers
+        // `admin/devups/ModuleAdmin/dvups-admin/connexion-action`, qui ne
+        // contient PAS `/api/` et ne passe donc jamais par ici (il passe par
+        // Router::manage(), qui exempte explicitement `connexion-action` -
+        // voir Router.php:463). Un refus ici ne peut donc jamais bloquer la
+        // connexion elle-meme.
+        //
+        // Meme piege que les deux fois precedentes (WebService.php,
+        // ) : sans `die`, un refus encode en JSON laisserait
+        // l'execution continuer vers systemServe()/Controller::serve().
+        if (!isset($_SESSION[ADMIN])) {
+            http_response_code(401);
+            Genesis::json_encode([
+                'success' => false,
+                'detail' => 'admin session required',
+            ]);
+            die;
+        }
+
         parent::__construct($route);
         $this->frontController = new FrontController();
     }

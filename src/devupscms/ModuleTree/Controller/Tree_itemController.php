@@ -42,9 +42,9 @@ class Tree_itemController extends Controller{
     public function formView($id = null)
     {
         $tree_item = new Tree_item();
-        $action = Tree_item::classpath("services.php?path=tree_item.create&tablemodel=".Request::get("tablemodel", ''));
+        $action = __env . ("admin/api/tree_item/create?tablemodel=".Request::get("tablemodel", ''));
         if ($id) {
-            $action = Tree_item::classpath("services.php?path=tree_item.update&id=" . $id."&tablemodel=".Request::get("tablemodel", ''));
+            $action = __env . ("admin/api/tree_item/update?id=" . $id."&tablemodel=".Request::get("tablemodel", ''));
             $tree_item = Tree_item::find($id);
         }else{
 
@@ -204,7 +204,7 @@ class Tree_itemController extends Controller{
     public function addcontentAction()
     {
         $menu = Tree_item::find(Request::get("id"));
-        $content = new Cmstext();
+        $content = new Cmscontent();
         $content->setSlug($menu->getSlug());
         $content->title = $menu->name;
         $content->setContent("comming soon");
@@ -212,7 +212,7 @@ class Tree_itemController extends Controller{
         $content->tree_item = $menu;
         $id = $content->__insert();
 
-        Response::set("redirect", Cmstext::classpath("cmstext/edit?id=".$id));
+        Response::set("redirect", Cmscontent::classpath("cmscontent/edit?id=".$id));
         return Response::$data;
 
     }

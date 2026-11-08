@@ -24,4 +24,9 @@ class Tree_item_lang extends \Dv_langCore
      */
     public $tree_item;
 
+    public function __construct($id = null){
+        $this->tree_item = new Tree_item();
+        $this->lang = new Dvups_lang();
+    }
+
 }

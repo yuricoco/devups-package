@@ -1,5 +1,7 @@
 <?php
 
+use DClass\lib\Util;
+
 class BackendGenerator
 {
 
@@ -13,14 +15,26 @@ class BackendGenerator
 
         unset($entity->attribut[0]);
 
-        $fichier = fopen('Entity/' . ucfirst($name) . '.php', 'w');
+        // Aligne le nom de classe et de fichier des entites
+        // sur la convention utilisee PARTOUT ailleurs dans le generateur
+        // (Form, Datatable, Controller, moduledependencies, relations) ainsi que par
+        // les composants existants (Interval_group, Status_lang, Dvups_role).
+        // Util::convertCase(..., 'pascal') produisait IntervalGroup alors que le reste
+        // du generateur referencait Interval_group : tout composant dont une entite
+        // contient un underscore etait ingenerable (require et targetEntity casses).
+        $entityfile = ucfirst($name);
+        // accumule en memoire, ecrit via la garde
+        // par renommage a la fin (fclose plus bas) - le contenu est construit
+        // par plusieurs fputs() successifs dans cette fonction, inchanges.
+        $__guardedPath = 'Entity/' . $entityfile . '.php';
+        $fichier = fopen('php://memory', 'w+');
 
-        fputs($fichier, "<?php 
+        fputs($fichier, "<?php
         // user \dclass\devups\model\Model;
     /**
      * @Entity @Table(name=\"" . $name . "\")
      * */
-    class " . ucfirst($name) . " extends Model implements JsonSerializable{\n");
+    class " . $entityfile . " extends Model implements JsonSerializable{\n");
         $method = "";
 
         $construt = "
@@ -227,7 +241,7 @@ class BackendGenerator
 
                 $jsonserializeRelation .= "
                     '" . $relation->entity . "' => $" . "this->" . $relation->entity . ",";
-               $relation->entity =  $original;
+                $relation->entity =  $original;
             }
 
         }
@@ -299,15 +313,15 @@ class BackendGenerator
         }
         ";
                 } else {
-                   /* $construt .= "
-        public function get" . ucfirst($attribut->name) . "() {
-            return $" . "this->" . $attribut->name . ";
-        }
+                    /* $construt .= "
+         public function get" . ucfirst($attribut->name) . "() {
+             return $" . "this->" . $attribut->name . ";
+         }
 
-        public function set" . ucfirst($attribut->name) . "($" . $attribut->name . ") {
-            $" . "this->" . $attribut->name . " = $" . $attribut->name . ";
-        }
-        ";*/
+         public function set" . ucfirst($attribut->name) . "($" . $attribut->name . ") {
+             $" . "this->" . $attribut->name . " = $" . $attribut->name . ";
+         }
+         ";*/
                 }
             }
         }
@@ -315,20 +329,22 @@ class BackendGenerator
         
         // getter and setter
         $methodcollection
+        #[\ReturnTypeWillChange]
         public function jsonSerialize() {
                 return [
-                    'id' => $" . "this->id,";
-        foreach ($entity->attribut as $attribut) {
+                    ... \$this->dvserialised,";
+        //'id' => $" . "this->id,
+        /*foreach ($entity->attribut as $attribut) {
             $construt .= "
                     '" . $attribut->name . "' => $" . "this->" . $attribut->name . ",";
         }
         if (!empty($entity->relation)) {
             $construt .= $jsonserializeRelation;
-            /*foreach ($entity->relation as $relation) {
+            foreach ($entity->relation as $relation) {
                 $construt .= "
                     '" . $relation->entity . "' => $" . "this->" . $relation->entity . ",";
-            }*/
-        }
+            }
+        }*/
         $construt .= "
                 ];
         }
@@ -337,6 +353,8 @@ class BackendGenerator
         fputs($fichier, $construt);
         fputs($fichier, "\n}\n");
 
+        rewind($fichier);
+        GeneratorFileGuard::write($__guardedPath, stream_get_contents($fichier));
         fclose($fichier);
 
 
@@ -360,9 +378,10 @@ class BackendGenerator
 
         unset($entity->attribut[0]);
 
-        $fichier = fopen('Entity/' . ucfirst($name) . '_lang.php', 'w');
+        $__guardedPath = 'Entity/' . ucfirst($name) . '_lang.php';
+        $fichier = fopen('php://memory', 'w+');
 
-        fputs($fichier, "<?php 
+        fputs($fichier, "<?php
 /**
  * @Entity @Table(name=\"" . $name . "_lang\")
  * */
@@ -432,6 +451,8 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
         fputs($fichier, $construt);
         fputs($fichier, "\n}\n");
 
+        rewind($fichier);
+        GeneratorFileGuard::write($__guardedPath, stream_get_contents($fichier));
         fclose($fichier);
 
     }
@@ -616,7 +637,50 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
      */
     public function create(){
     
-        return 	parent::createCore();
+        $" . "rawdata = \Request::raw();
+        $" . $name . " = $" . "this->hydrateWithJson(new " . ucfirst($name) . "(), $" . "rawdata[\"$name\"]);\n ";
+        // gestion des relations many to many dans le controller
+        $mtm = [];
+
+        if (!empty($entity->relation)) {
+            //relation sera l'entité
+            foreach ($entity->relation as $relation) {
+
+                if ($relation->cardinality == "oneToOne") {
+                    $contenu .= "
+                    
+        $" . $relation->entity . " = $" . "this->hydrateWithJson(new " . ucfirst($relation->entity) . "(), $" . "rawdata[\"" . $relation->entity . "\"]);
+        $" . $relation->entity . "->__insert();
+        $" . $name . "->set" . ucfirst($relation->entity) . "($" . $relation->entity . "); ";
+                }
+            }
+        }
+        $contenu .= "\n" . implode("\n", $mtm);
+        $otherattrib = false;
+//        if (isset($entity->attribut[1])) {
+//            $otherattrib = true;
+        foreach ($entity->attribut as $attribut) {
+//			for($i = 1; $i < count($entity->attribut); $i++){
+            if (in_array($attribut->formtype, ['document', 'music', 'video', 'image'])) {
+                $otherattrib = true;
+                $contenu .= "
+        $" . $name . "->upload" . ucfirst($attribut->name) . "();\n";
+            }
+
+            if (in_array($attribut->datatype, ['date', 'datetime', 'time']) && isset($attribut->defaultvalue)) {
+                $contenu .= "
+        $" . $name . "->set" . ucfirst($attribut->name) . "(new DateTime());\n";
+            }
+
+        }
+//        }
+
+        $contenu .= "
+        
+        $" . "id = $" . $name . "->__insert();
+        return 	array(	'success' => true,
+                        '" . $name . "' => $" . $name . ",
+                        'detail' => '');
 
     }
 
@@ -638,7 +702,25 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
      */
     public function update($" . "id){
     
-        return 	parent::updateCore(\$id);
+        $" . "rawdata = \Request::raw();
+            
+        $" . $name . " = $" . "this->hydrateWithJson(new " . ucfirst($name) . "($" . "id), $" . "rawdata[\"$name\"]);
+
+            "; //.implode($mtmedit, "\n")
+        if ($otherattrib):
+            foreach ($entity->attribut as $attribut) {
+//                            for($i = 1; $i < count($entity->attribut); $i++){
+                if (in_array($attribut->formtype, ['document', 'music', 'video', 'image']))
+                    $contenu .= "
+                        $" . $name . "->upload" . ucfirst($attribut->name) . "();\n";
+            }
+        endif;
+        $contenu .= "      
+        
+        $" . $name . "->__update();
+        return 	array(	'success' => true,
+                        '" . $name . "' => $" . $name . ",
+                        'detail' => '');
                         
     }
     
@@ -671,7 +753,6 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
         if ($front) {
 
             $ctrlname = '' . ucfirst($name) . 'FrontController';
-            $classController = fopen('Controller/' . $ctrlname . '.php', 'w');
             $extend = '\dclass\devups\Controller\FrontController';
 
             $content = $this->frontCtrlContent($name, $entity);
@@ -686,9 +767,7 @@ class " . $ctrlname . " extends $extend{
     $content
 
 }\n";
-            fputs($classController, $contenu);
-            //fputs($classController, "\n}\n");
-            fclose($classController);
+            GeneratorFileGuard::write('Controller/' . $ctrlname . '.php', $contenu);
 
             return 0;
         }
@@ -696,12 +775,11 @@ class " . $ctrlname . " extends $extend{
 
         //if(__Generator::$ctrltype == 'both'){
         $ctrlname = '' . ucfirst($name) . 'Controller';
-        $classController = fopen('Controller/' . $ctrlname . '.php', 'w');
         $extend = 'Controller';
         $content = $this->defaultCtrlContent($name, $entity);
 
         $contenu = "<?php \n
-            
+
 use dclass\devups\Controller\Controller;
 
 class " . $ctrlname . " extends $extend{
@@ -709,9 +787,7 @@ class " . $ctrlname . " extends $extend{
     $content
 
 }\n";
-        fputs($classController, $contenu);
-        //fputs($classController, "\n}\n");
-        fclose($classController);
+        GeneratorFileGuard::write('Controller/' . $ctrlname . '.php', $contenu);
 
         // }
 
@@ -725,8 +801,6 @@ class " . $ctrlname . " extends $extend{
         $detailview = DvAdmin::builddetaildatatable($entity, $listmodule);
 
         $name = strtolower($entity->name);
-
-        $classController = fopen('Datatable/' . ucfirst($name) . 'Table.php', 'w');
 
         $contenu = "<?php \n
 
@@ -776,12 +850,9 @@ class " . ucfirst($name) . "Table extends Datatable{
             }
 
     }
-    
-}\n";
-        fputs($classController, $contenu);
-        //fputs($classController, "\n}\n");
 
-        fclose($classController);
+}\n";
+        GeneratorFileGuard::write('Datatable/' . ucfirst($name) . 'Table.php', $contenu);
 
     }
 
@@ -849,16 +920,13 @@ class " . ucfirst($name) . "Table extends Datatable{
             $classdevupsmetadata["relation"][] = $dvfield;
         }
 
-        $contenu = json_encode($classdevupsmetadata);
+        $contenu = json_encode($classdevupsmetadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         if (!$sync) {
             if (!file_exists('Core')) {
                 mkdir('Core', 0777);
             }
 
-            $entitycore = fopen('Core/' . $name . 'Core.json', 'w+');
-            fputs($entitycore, $contenu);
-
-            fclose($entitycore);
+            GeneratorFileGuard::writeEntityCoreJson('Core/' . $name . 'Core.json', $contenu);
         }
         if ($sync && false) {
             $curl = curl_init();
@@ -930,11 +998,8 @@ class " . ucfirst($name) . "Table extends Datatable{
             mkdir('PostmanDoc', 0777);
         }
 
-        $entitycore = fopen('PostmanDoc/' . $name . '_pmd.json', 'w+');
         $contenu = json_encode($postmandoc);
-        fputs($entitycore, $contenu);
-
-        fclose($entitycore);
+        GeneratorFileGuard::write('PostmanDoc/' . $name . '_pmd.json', $contenu);
     }
 
     /* CREATION DU FORM */
@@ -1105,10 +1170,7 @@ class " . ucfirst($name) . "Form extends FormManager{
     
 }
     ";
-        $entityform = fopen('Form/' . ucfirst($name) . 'Form.php', 'w');
-        fputs($entityform, $contenu);
-
-        fclose($entityform);
+        GeneratorFileGuard::write('Form/' . ucfirst($name) . 'Form.php', $contenu);
     }
 
     /* CREATION DU FORM FIELD */
@@ -1260,11 +1322,7 @@ class " . ucfirst($name) . "Form extends FormManager{
         unset($entity->attribut[0]);
         $contenu = $this->detailwidget($entity, $listmodule);
 
-        $entityform = fopen('Resource/views/' . $name . '/detail.blade.php', 'w');
-        //$entityform = fopen('Form/' . ucfirst($name) . 'DetailWidget.php', 'w');
-        fputs($entityform, $contenu);
-
-        fclose($entityform);
+        GeneratorFileGuard::write('Resource/views/' . $name . '/detail.blade.php', $contenu);
     }
 
     public function formWidgetGenerator($entity, $listmodule)
@@ -1296,10 +1354,7 @@ class " . ucfirst($name) . "Form extends FormManager{
         if (!file_exists('Resource/views/admin/' . $name . ''))
             mkdir('Resource/views/admin/' . $name . '', 777, true);
 
-        $entityform = fopen('Resource/views/admin/' . $name . '/formWidget.blade.php', 'w');
-        fputs($entityform, $contenu);
-
-        fclose($entityform);
+        GeneratorFileGuard::write('Resource/views/admin/' . $name . '/formWidget.blade.php', $contenu);
     }
 
     /* CREATION DU DAO */

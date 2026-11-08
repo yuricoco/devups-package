@@ -5,14 +5,15 @@ use PHPMailer\PHPMailer\PHPMailer;
 class DMail
 {
 
-    public $title = 'Reader3ag : ';
-    public $view;
+    public $title = PROJECT_NAME . "";
     public $object;
     public $content;
+    public $view;
     public $lang;
     public $receivers = [];
     public $receiver_cc = [];
     public $attachments = [];
+
     /**
      * @param $model
      * @return DMail
@@ -22,19 +23,15 @@ class DMail
 
         $dm = new DMail();
         $dm->view = $view;
-        $dm->lang = $lang;
+        $dm->lang = Request::$uri_header_param['dlang'] ?? $lang;
         return $dm;
 
     }
 
-    public function preview($data, $show = true){
-        $data['mail_title'] = $this->title;
-        $data['lang'] = $this->lang;
-        if ($show) {
-            echo Genesis::getView($this->view, $data);
-            die;
-        }
-        return Genesis::getView($this->view, $data);
+    public function preview()
+    {
+        echo $this->content;
+        die;
     }
 
     public function setTitle($object)
@@ -56,9 +53,9 @@ class DMail
      */
     public function addCC($email, $name = null)
     {
-        if (is_array($email)){
+        if (is_array($email)) {
             $this->receiver_cc = $email;
-        }else {
+        } else {
             $this->receiver_cc[$email] = $name;
         }
         return $this;
@@ -71,11 +68,22 @@ class DMail
      */
     public function addReceiver($email, $name = null)
     {
-        if (is_array($email)){
+        if (is_array($email)) {
             $this->receivers = $email;
-        }else {
+        } else {
             $this->receivers[$email] = $name;
         }
+        return $this;
+    }
+
+    /**
+     * @param $email
+     * @param $name
+     * @return $this
+     */
+    public function setReceiver($email, $name = null)
+    {
+        $this->receivers = $email;
         return $this;
     }
 
@@ -90,12 +98,16 @@ class DMail
         return $this;
     }
 
-    public function sendMail($data)
+    public function sendMail($data = [])
     {
 
-        $this->content = $this->preview($data, false);
-        if (!__prod ) {
-            \DClass\lib\Util::log($this->content, date("Y_m_d-H_i_s")."_".$this->object.".html", ROOT."cache/", "w");
+        if (!isset($data['lang']))
+            $data['lang'] = $this->lang;
+
+        $this->content = Genesis::getView($this->view, array_merge($data, ['mail_title' => PROJECT_NAME]));
+
+        if (!__prod) {
+            \DClass\lib\Util::log($this->content, date("Y_m_d-H_i_s") . "_" . $this->object . ".html", ROOT . "cache/", "w");
             return 0;
         }
 
@@ -139,10 +151,7 @@ class DMail
 
             //echo 'Message has been sent';
             $result = $mail->send();
-            Emaillog::create([
-                "object" => $this->object . " - object : " . $this->object . ' to ' . json_encode($this->receivers),
-                "log" => json_encode($result),
-            ]);
+            Emaillog::logSuccess($this->object, $this->receivers, $this->view);
 
             return [
                 "success" => true,
@@ -151,10 +160,7 @@ class DMail
             ];
         } catch (Exception $e) {
             //echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
-            Emaillog::create([
-                "object" => $this->object  . " - object : " . $this->object . ' to ' . json_encode($this->receivers),
-                "log" => "Message could not be sent. Error detail: {$mail->ErrorInfo}",
-            ]);
+            Emaillog::logFailure($this->object, $this->receivers, "Message could not be sent. Error detail: {$mail->ErrorInfo}", $this->view);
 
             return [
                 "success" => false,

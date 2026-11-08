@@ -1,7 +1,8 @@
 {
-  "id": 5,
-  "name": "devupscms",
-  "project": "devupscms",
-  "nbent": 1,
-  "listentity": []
+    "id": 5,
+    "name": "devupscms",
+    "label": "Devups CMS",
+    "project": "devupscms",
+    "nbent": 1,
+    "listentity": []
 }

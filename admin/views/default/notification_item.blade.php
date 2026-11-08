@@ -1,7 +1,7 @@
 <a class="dropdown-item d-flex align-items-center @if(!$notification->status) bg-info @endif"
    href="{{ $notification->getRedirect()}}"
 >
-    @if(!$notification->status)
+    @if($notification->status != 1)
         <input type="checkbox" name="ids[]" value="{{$notification->id}}" checked hidden >
     @endif
     <div class="mr-3">
@@ -11,6 +11,6 @@
     </div>
     <div>
         <div class="small text-gray-500">{{ (new DateTime($notification->created_at))->format("D, M Y H:i") }}</div>
-        <span class="@if(!$notification->read) font-weight-bold @endif">{!! $notification->content !!}</span>
+        <span class="@if(!$notification->status < 1) font-weight-bold @endif">{!! $notification->content !!}</span>
     </div>
 </a>

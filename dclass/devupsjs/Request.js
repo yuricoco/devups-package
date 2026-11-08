@@ -8,19 +8,25 @@ class Drequest {
 
     }
 
+    // cle de stockage local, propre au projet (surchargeable avant usage :
+    // Drequest.storageKey = 'monprojet';)
+    static storageKey = 'devups_store';
+
     static localstorage() {
-        if (localStorage.getItem('edition3ag')) {
-            try {
-                return JSON.parse(localStorage.getItem('edition3ag'));
-            } catch (e) {
-                localStorage.removeItem('edition3ag');
-            }
+        try {
+            const raw = localStorage.getItem(Drequest.storageKey);
+            if (raw)
+                return JSON.parse(raw);
+        } catch (e) {
+            try { localStorage.removeItem(Drequest.storageKey); } catch (e2) {}
         }
         return {};
     }
 
     static localsave(database) {
-        localStorage.setItem('edition3ag', JSON.stringify(database))
+        try {
+            localStorage.setItem(Drequest.storageKey, JSON.stringify(database));
+        } catch (e) {}
     }
 
     static init(url) {
@@ -82,6 +88,7 @@ class Drequest {
             dataType: "json",
             success: callback,
             error: function (e) {
+                callback(e);//responseText
                 console.log(e);//responseText
             }
         });

@@ -1,9 +1,12 @@
 {
     "id": 4,
     "name": "ModuleCms",
+    "label": "Contenu",
+    "icon": "fas fa-file-alt",
     "project": "devupscms",
     "nbent": 3,
-    "listentity": [{
+    "listentity": [
+        {
             "id": 5,
             "name": "cmstext",
             "module": {
@@ -44,39 +47,44 @@
                     "datatype": "string",
                     "size": "2",
                     "nullable": "default",
-                    "enum": {"en": "En", "fr": "Fr"},
+                    "enum": {
+                        "en": "En",
+                        "fr": "Fr"
+                    },
                     "defaultvalue": "en",
                     "formtype": "radio",
                     "$$hashKey": "object:2350"
                 },
-              "5": {
-                "name": "creationdate",
-                "visibility": "",
-                "datatype": "datetime",
-                "size": "",
-                "nullable": "not",
-                "defaultvalue": "auto",
-                "formtype": "text"
-              }
+                "5": {
+                    "name": "creationdate",
+                    "visibility": "",
+                    "datatype": "datetime",
+                    "size": "",
+                    "nullable": "not",
+                    "defaultvalue": "auto",
+                    "formtype": "text"
+                }
             },
             "relation": [],
             "$$hashKey": "object:1358"
-        },{
-      "id": 910,
-      "name": "imagecms",
-      "attribut": {
-        "2": {
-          "name": "width_size",
-          "nullable": "not",
-          "size": "255",
-          "formtype": "text",
-          "datatype": "string"
+        },
+        {
+            "id": 910,
+            "name": "imagecms",
+            "attribut": {
+                "2": {
+                    "name": "width_size",
+                    "nullable": "not",
+                    "size": "255",
+                    "formtype": "text",
+                    "datatype": "string"
+                }
+            },
+            "relation": [],
+            "module": {
+                "id": 5
+            }
         }
-      },
-      "relation": [],
-      "module": {
-        "id": 5
-      }
-    }],
+    ],
     "$$hashKey": "object:4470"
 }

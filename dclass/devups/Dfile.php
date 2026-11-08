@@ -86,8 +86,15 @@ class Dfile
     {
         $dfile = new Dfile(null);
         $path = self::chdirectory(self::filepath($uploaddir));
-        $hashname = $_GET['hashName'];
-        $filename = $_GET['fileName'];
+        // ETAPE H.4 : basename() - $hashName/$fileName viennent directement
+        // de $_GET et etaient utilises sans controle dans un chemin de
+        // fichier ouvert en ecriture (fopen($path . $hashname, "ab")) :
+        // un '../../..' aurait permis d'ecrire n'importe ou (voir TODO.md,
+        // "Audit require/include/file_get_contents"). Methode jamais
+        // appelee par une route existante a ce jour - corrigee par
+        // precaution avant qu'une route ne la rende joignable.
+        $hashname = basename((string)($_GET['hashName'] ?? ''));
+        $filename = basename((string)($_GET['fileName'] ?? ''));
 
         $xmlstr = file_get_contents('php://input');
 
@@ -511,7 +518,7 @@ class Dfile
                 imagealphablending($newimage, false);
                 imagesavealpha($newimage, true);
 
-                $source = imagecreatefrompng($source_url);
+                $source = @imagecreatefrompng($source_url);
                 imagealphablending($source, true);
 
                 imagecopyresampled($newimage, $source, 0, 0, 0, 0, $largeur, $hauteur, $imagesize[0], $imagesize[1]);
@@ -549,23 +556,23 @@ class Dfile
         $isAlpha = false;
         try {
 
-        if ($info['mime'] == 'image/jpeg')
-            $image = imagecreatefromjpeg($source);
-        elseif ($isAlpha = $info['mime'] == 'image/gif') {
-            $image = imagecreatefromgif($source);
-        } elseif ($isAlpha = $info['mime'] == 'image/png') {
-            $image = imagecreatefrompng($source);
-        } else {
-            return $source;
-        }
-        if ($isAlpha) {
-            imagepalettetotruecolor($image);
-            imagealphablending($image, true);
-            imagesavealpha($image, true);
-        }
-        imagewebp($image, $destination, $quality);
+            if ($info['mime'] == 'image/jpeg')
+                $image = imagecreatefromjpeg($source);
+            elseif ($isAlpha = $info['mime'] == 'image/gif') {
+                $image = imagecreatefromgif($source);
+            } elseif ($isAlpha = $info['mime'] == 'image/png') {
+                $image = @imagecreatefrompng($source);
+            } else {
+                return $source;
+            }
+            if ($isAlpha) {
+                imagepalettetotruecolor($image);
+                imagealphablending($image, true);
+                imagesavealpha($image, true);
+            }
+            imagewebp($image, $destination, $quality);
 
-        }catch (Exception $exception){
+        } catch (Exception $exception) {
             throw $exception;
         }
 
@@ -705,8 +712,9 @@ class Dfile
                 }
 
                 // dv_dump(Dfile::source("tmp_" . $this->file_name, $path));
-                Dfile::webpImage($path . "tmp_" . $this->file_name,
-                    $this->compressionquality, true);
+                if (!in_array($this->extension, array('webp', 'WEBP')))
+                    Dfile::webpImage($path . "tmp_" . $this->file_name,
+                        $this->compressionquality, true);
 
                 if ($this->original):
                     // rename the file
@@ -725,8 +733,9 @@ class Dfile
                 // rename the file
                 self::d_rename("tmp_" . $this->file_name, $this->file_name, $this->uploaddir);
 
-                $this->file_name = Dfile::webpImage($path . $this->file_name,
-                    $this->compressionquality, true);
+                if (!in_array($this->extension, array('webp', 'WEBP')))
+                    $this->file_name = Dfile::webpImage($path . $this->file_name,
+                        $this->compressionquality, true);
 
 //                $this->resizeimage($path . $this->file_name,
 //                    ["resize" => [$this->imagesize[0], $this->imagesize[1]], "sufix" => "", "uploaddir" => $this->uploaddir, "crop" => false, "quality" => $this->compressionquality]);
@@ -744,7 +753,7 @@ class Dfile
                 if (in_array($this->extension, ["jpg", "jpeg"]))
                     $input = imagecreatefromjpeg(UPLOAD_DIR . $this->uploaddir . '/' . $this->file_name);
                 else
-                    $input = imagecreatefrompng(UPLOAD_DIR . $this->uploaddir . '/' . $this->file_name);
+                    $input = @imagecreatefrompng(UPLOAD_DIR . $this->uploaddir . '/' . $this->file_name);
 
                 $width = imagesx($input);
                 $height = imagesy($input);
@@ -761,11 +770,15 @@ class Dfile
 
             }
 
+            $size = null;
+            if (file_exists(UPLOAD_DIR . $this->uploaddir . '/' . $this->file_name))
+                $size = filesize(UPLOAD_DIR . $this->uploaddir . '/' . $this->file_name);
+
             //chmod($path . $this->file_name, 755);
             return array("success" => true,
                 "file" => [
                     'name' => $this->name,
-                    'size' => filesize(UPLOAD_DIR . $this->uploaddir . '/' .$this->file_name),
+                    'size' => $size,
                     'type' => $this->type,
                     'path' => $path,
                     'uploaddir' => $this->uploaddir,
@@ -793,7 +806,7 @@ class Dfile
             else
                 $image = SRC_FILE . $path . $image;
         } else
-            $image = __front . ($default);
+            $image = null;
 
         return $image;
     }
@@ -849,8 +862,8 @@ class Dfile
 
             if ($variants) {
                 foreach ($variants as $variant)
-                    if (file_exists($path2 . $variant.$name_file))
-                        unlink($path2 . $variant. $name_file);
+                    if (file_exists($path2 . $variant . $name_file))
+                        unlink($path2 . $variant . $name_file);
             }
 
             return array('success' => true);
@@ -872,7 +885,8 @@ class Dfile
         }
     }
 
-    public static function filesize($filename, $decimals = 2) {
+    public static function filesize($filename, $decimals = 2)
+    {
         $bytes = filesize($filename);
         $factor = floor((strlen($bytes) - 1) / 3);
         if ($factor > 0) $sz = 'KMGT';
@@ -880,4 +894,3 @@ class Dfile
     }
 
 }
-

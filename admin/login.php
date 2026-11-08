@@ -1,10 +1,10 @@
 <?php
 
-require '../config/constante.php';
+require __DIR__ . '/../config/load_constants.php';
 define('VENDOR', __env . 'admin/vendors/');
 define('assets', __env . 'admin/assets/');
 
-$action = __env.'/admin/devups/ModuleAdmin/dvups-admin/connexion-action';
+$action = __env.'admin/devups/ModuleAdmin/dvups-admin/connexion-action';
 
 ?>
 

@@ -17,12 +17,10 @@ class ReportingmodelForm extends FormManager
 
     public function buildForm()
     {
-        $files = scandir(ROOT."src/devupscms/ModuleReporting/Resource/views/models/");
-
-        unset($files[0]);
-        unset($files[1]);
-        if (!$this->emailmodel->type)
-            $this->emailmodel->type = explode(".", $files[2])[0];
+        $dir = ROOT . "src/devupscms/ModuleReporting/Resource/views/models/";
+        $files = is_dir($dir) ? array_values(array_diff(scandir($dir), ['.', '..'])) : [];
+        if (!$this->emailmodel->type && $files)
+            $this->emailmodel->type = explode(".", $files[0])[0];
 
         $this->fields['type'] = [
             "label" => t('Type of reporting '),

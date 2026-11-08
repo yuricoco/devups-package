@@ -37,6 +37,7 @@ class Interval_group extends stdClass implements JsonSerializable
     }
 
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return [

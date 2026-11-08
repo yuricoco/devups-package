@@ -5,9 +5,10 @@
     <div id="dv_pagination" data-entity="{{$entityname}}" data-route="{{$base_url}}" style="width: 100%"
          class="row">
         <div id="pagination-notice" data-notice="{{$ll->pagination}}" class="col-lg-2 col-md-4">
-            {{ t(" showing :index to :lastindex of :nbelement ",
+           page : {{(($ll->current_page - 1) * $ll->per_page + 1)}} - {{$ll->per_page * $ll->current_page}} / total : {{$ll->nb_element}}
+            {{--{ t(" showing :index to :lastindex of :nbelement ",
  ["index"=>(($ll->current_page - 1) * $ll->per_page + 1),
- 'lastindex'=>$ll->per_page * $ll->current_page, "nbelement"=> $ll->nb_element]) }}
+ 'lastindex'=>$ll->per_page * $ll->current_page, "nbelement"=> $ll->nb_element]) }}--}}
 
         </div>
 

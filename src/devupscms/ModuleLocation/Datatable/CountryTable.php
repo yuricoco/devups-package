@@ -12,19 +12,18 @@ class CountryTable extends Datatable{
     }
 
     public static function init(\Country $country = null){
-    
-        $dt = new CountryTable();
+
+        $dt = new CountryTable($country);
         $dt->entity = $country;
-        
+
         return $dt;
     }
 
     public function buildindextable(){
 
         $this->datatablemodel = [
-           // ['header' => t('country.id', '#'), 'value' => 'id'], 
+           // ['header' => t('country.id', '#'), 'value' => 'id'],
             'id' => ['header' => t('country.id', 'Id')],
-            ['header' => "Content", 'value' => 'continent.name'],
             'name' => ['header' => t('country.name', 'Name'),],
             'nicename' => ['header' => t('country.name', 'Name')],
             'iso' => ['header' => t('country.iso', 'Iso'), 'value' => 'iso'],

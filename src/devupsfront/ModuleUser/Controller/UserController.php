@@ -32,9 +32,9 @@ class UserController extends Controller
     public function formView($id = null)
     {
         $user = new User();
-        $action = User::classpath("services.php?path=user.create");
+        $action = __env . ("admin/api/user/create");
         if ($id) {
-            $action = User::classpath("services.php?path=user.update&id=" . $id);
+            $action = __env . ("admin/api/user/update?id=" . $id);
             $user = User::find($id);
         }
 
@@ -94,7 +94,9 @@ class UserController extends Controller
         $this->entitytarget = 'User';
         $this->title = "Detail User";
 
-        $user = User::find($id);
+        self::$jsfiles[] = Push_subscription::classpath('Resource/js/push_subscriptionCtrl.js');
+
+        $user = User::whereId($id)->first();
 
         Genesis::renderView('admin.detail', compact('user'));
 
@@ -103,7 +105,8 @@ class UserController extends Controller
     public function deleteAction($id)
     {
 
-        User::delete($id);
+        $user = User::find($id);
+        $user->__delete();
         return array('success' => true,
             'detail' => '');
     }
@@ -119,10 +122,10 @@ class UserController extends Controller
     public function deletegroupAction($ids)
     {
 
-        User::where("id")->in($ids)->delete();
+        User::where("this.id")->in($ids)->delete();
 
         return array('success' => true,
-            'detail' => '');
+            'detail' => $ids);
 
     }
 

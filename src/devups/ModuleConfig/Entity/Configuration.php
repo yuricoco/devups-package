@@ -101,6 +101,7 @@ class Configuration extends Model implements JsonSerializable
         $this->comment = $comment;
     }
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return [
@@ -111,23 +112,34 @@ class Configuration extends Model implements JsonSerializable
         ];
     }
 
-    public static function get($key)
+    /**
+     * Valeur d'une entree de configuration, ou $default si la cle n'existe pas.
+     */
+    public static function get($key, $default = null)
     {
-        return self::getbyattribut("_key", $key)->get_value();
+        $cf = self::getbyattribut("_key", $key);
+        if (!$cf || !$cf->getId())
+            return $default;
+        return $cf->get_value();
     }
 
+    /**
+     * Cree ou met a jour une entree de configuration. Le type et le
+     * commentaire ne sont ecrits qu'a la creation, ou s'ils sont fournis.
+     */
     public static function set($key, $value, $type = "string", $comment = "")
     {
-
         $cf = self::getbyattribut("_key", $key);
+        $isnew = !$cf->getId();
         $cf->set_key($key);
-        $cf->set_value($key);
-        if (!$cf->getId()) {
-            $cf->set_type($key);
-            $cf->setComment($key);
-        }
+        $cf->set_value($value);
+        if ($isnew || $type !== "string")
+            $cf->set_type($type);
+        if ($isnew || $comment !== "")
+            $cf->setComment($comment);
         $cf->__save();
 
+        return $cf;
     }
 
     public static function buildConfig()

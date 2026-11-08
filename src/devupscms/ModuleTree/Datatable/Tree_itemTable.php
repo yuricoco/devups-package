@@ -24,16 +24,6 @@ class Tree_itemTable extends Datatable
     public function buildteststable()
     {
 
-        /*
-        $idcomic = Request::get("comicbook_id", $idcomic);
-                $this->qbcustom->where("tree.name", "gender")
-                    ->addColumns(" ( select count(*) from comicbook_gender where comicbook_id = $idcomic AND gender_id = this.id ) AS has_gender ");
-        */
-        //if ($idexp = Request::get("exploitation_id", $idexp))
-        /*$this->qbcustom->leftjoinrecto("comicbook_member", "category", "cm")
-            ->where("cm.comicbook_id", $idcomic)
-            ->where_str("ec.category_id = this.category_id", "and");*/
-
         $this->groupaction = false;
         $this->base_url = __env . "admin/";
         $this->responsive = " table-responsive";
@@ -91,8 +81,13 @@ class Tree_itemTable extends Datatable
     {
 
         $this->base_url = __env . "admin/";
+        // "main" ambigu (colonne partagee avec
+        // dvups_lang via la jointure de traduction de Tree_item) - qualifie
+        // (voie A). Confirme en testant : c'etait le chemin par defaut du
+        // back-office (liste des items sans filtre parent_id), cassait a
+        // chaque ouverture.
         if (!Request::get("parent_id:eq") && !is_null($this->qbcustom))
-            $this->qbcustom->where("main", 1);
+            $this->qbcustom->where("this.main", 1);
 
         $this->datatablemodel = [
             'id' => ['header' => t('tree_item.id', '#'),],

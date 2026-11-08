@@ -3,59 +3,112 @@
 namespace route;
 
 use Auth;
-use dclass;
 use Exception;
 use Genesis as g;
-use Push_emailController;
 use Request;
-use Router;
+use Router; 
+use devupsfront\ModuleUser\Entity\Oauth_client; 
+use Google\Client; 
+use Push_emailController; 
 
-/**
- * this class refer to the front pages. each method represent a page. where we can add js css and some other parameter
- * such as meta titel, title and so on
- *
- * Class App
- */
 class WebService extends Router
 {
 
     /*
-     * collection of the entity available for the webservice
+     * Entites joignables via l'API generique (/api/<action>/<entite>) et via
+     * les FrontController dedies. Toute entite listee ici est protegee par
+     * defaut sur TOUTES ses methodes, sauf celles nommees dans $publicMethods.
      */
     public $public_access =
-        [
-            'user' => \User::class,
-            'notification' => \Notification::class,
-        ];
-
-    public $append_routes = [
-        '/auth/google' => 'googleAuth'
+    [
+        'push_subscription' => \Push_subscription::class,
+        'notification' => \Notification::class,
+        'user' => \User::class,
     ];
+
+    /**
+     * Methodes autorisees SANS jeton, par entite. Le nom est celui RESOLU par
+     * le routeur : `index` pour GET /api/<entite>, `detail` pour
+     * GET /api/<entite>/<id>, et le nom de l'action pour une route annotee
+     * (@GET(path='/ranking') -> 'ranking').
+     *
+     * Garder cette liste courte : rien de ce qui touche au compte, a
+     * l'ecriture ou a l'argent ne devrait y figurer.
+     */
+    public static $publicMethods = [
+        'user' => [
+            'registration',
+            'authentification',
+            'tokenize',
+            'activateaccount',
+            'resentactivationcode',
+            'initresetpassword',
+            'resetpassword',
+            'googleAuth',
+            'appleAuth',
+            'detail',
+        ],
+    ];
+
+    /**
+     * Entites que le chemin GENERIQUE (/api/{create|upload|update|delete|
+     * detail|lazyloading}/<entite>, servi par systemServe()) ne doit PAS
+     * servir du tout, lectures comprises. A utiliser pour les entites
+     * sensibles (paiements, soldes...) qui ont leur FrontController dedie
+     * avec ses propres controles : le chemin generique les contournerait.
+     */
+    private static $genericPathMoneyEntities = [];
+
+    /**
+     * Entites dont le chemin generique ne sert que les LECTURES : leurs
+     * ecritures passent obligatoirement par leur FrontController dedie.
+     */
+    private static $genericPathWriteBlockedEntities = [];
+
+    public $append_routes = [];
+
     /*
      * PoC
-     * can it be possible to set an instance of the front controller then while instanciate it, making control of restrication,
-     * either public access of global auth restrictions.
+     * can it be possible to set an instance of the front controller then while
+     * instanciate it, making control of restrication, either public access of
+     * global auth restrictions.
      */
     private $frontController;
 
     public function __construct($route)
     {
 
-        // this syntax allows restriction on all the methods in the userFrontController
-        // if there is some method non affectec by the auth restriction, we can add them through the second parameter
-        Auth::addRestriction('user', ['registration','lazyloading','detail', 'deleteAccount',
-            'authenticate', 'logout', 'changepassword', 'resentactivationcode',
-            'initresetpassword', 'activateaccount', 'resetpassword']);
+        // Protection par defaut : toute entite exposee dans $public_access est
+        // restreinte sur toutes ses methodes, sauf celles de $publicMethods.
+        //
+        // Controle de propriete (optionnel) : declarer ici les colonnes qui
+        // designent le proprietaire d'une ligne, ex.
+        //     \dclass\devups\Controller\FrontController::setOwnerColumns([
+        //         'post' => 'user_id',
+        //     ]);
+        foreach (array_keys($this->public_access) as $entity) {
+            Auth::addRestriction($entity, self::$publicMethods[$entity] ?? []);
+        }
+        $this->frontController = new \dclass\devups\Controller\FrontController();
 
-
-        $this->frontController = new dclass\devups\Controller\FrontController();
         parent::__construct($route);
-
     }
 
     /*
      * the service method should always follow the nomenclatura nameserviceServe
      * adding the suffix Serve to the name of the method allow the method to be accessible via webservice.
+     */
+    /**
+     * @OA\Get(
+     *     path="/hello",
+     *     summary="Récupère la liste des livres",
+     *     tags={"Books"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Liste des livres",
+     *         @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/Book"))
+     *     )
+     * )
      */
     public function helloServe()
     {
@@ -64,14 +117,39 @@ class WebService extends Router
 
     public function systemServe()
     {
-        $classname = dclass\devups\Controller\FrontController::getclassname($this->public_access);
+        $classname = \dclass\devups\Controller\FrontController::getclassname($this->public_access);
 
         try {
             $this->frontController->authorization($classname, self::$path);
         } catch (Exception $e) {
+            // Le `die` est indispensable : sans lui, l'execution continuerait
+            // vers le switch ci-dessous malgre le refus.
+            http_response_code(401);
             g::json_encode([
                 'success' => false,
-                'detail' => $e->getMessage()]);
+                'detail' => $e->getMessage()
+            ]);
+            die;
+        }
+
+        // Garde-fou du chemin generique ($genericPathMoneyEntities /
+        // $genericPathWriteBlockedEntities). Meme remarque : le `die` est
+        // indispensable.
+        if (
+            in_array($classname, self::$genericPathMoneyEntities, true)
+            || (
+                in_array($classname, self::$genericPathWriteBlockedEntities, true)
+                && in_array(self::$path, self::$genericPathWriteActions, true)
+            )
+        ) {
+            http_response_code(403);
+            g::json_encode([
+                'success' => false,
+                // Ne dit pas si la ligne existe : ce chemin ne sert ni
+                // lecture ni ecriture pour cette entite, quel que soit l'id.
+                'detail' => 'this path does not serve this entity',
+            ]);
+            die;
         }
 
         try {
@@ -102,11 +180,10 @@ class WebService extends Router
                     g::json_encode((new Push_emailController())->cronjobAction());
                     break;
 
-                default :
+                default:
                     g::json_encode(["success" => false, "message" => "404 :" . Request::get('path') . " page note found"]);
                     break;
             }
-
         } catch (\Exception $e) {
             g::json_encode([
                 'success' => false,
@@ -114,22 +191,16 @@ class WebService extends Router
             ]);
         }
     }
-
-
+ 
     public function cacheServe()
-    {
-        $cache = Request::get('v');
-        if (__cache_version == $cache)
-            g::json_encode([
-                'success' => false,
-                'detail' => 'You are up to date',
-            ]);
-
-
+    { 
+        $statues = [];
         g::json_encode([
-            'success' => true,
-        ]);
+            'success' => true, 
+            '__cache_version' => __cache_version,
+            'countries' => \Country::allrows(),
+        ]  );
     }
 
-
+ 
 }

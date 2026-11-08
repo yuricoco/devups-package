@@ -34,7 +34,7 @@ class RequestGenerator
 
             // création de la requête sql
             // on teste avant si elle existe ou non (par sécurité)
-            $requete = "CREATE DATABASE IF NOT EXISTS `" . $dbname . "` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci";
+            $requete = "CREATE DATABASE IF NOT EXISTS `" . $dbname . "` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
 
             // on prépare et on exécute la requête
             $pdo->prepare($requete)->execute();
@@ -49,7 +49,7 @@ class RequestGenerator
             $this->exist = false;
 
             $pdo = new PDO('mysql:host=' . dbhost, $user, $pass);
-            $requete = "CREATE DATABASE IF NOT EXISTS `" . $dbname . "` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci";
+            $requete = "CREATE DATABASE IF NOT EXISTS `" . $dbname . "` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
             $pdo->prepare($requete)->execute();
 
             $this->link = new PDO($dsn, $user, $pass);

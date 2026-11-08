@@ -12,76 +12,76 @@ use Request as R;
 header("Access-Control-Allow-Origin: *");
 
 global $viewdir, $moduledata;
-$viewdir[] = __DIR__ . '/Ressource/views';
+$viewdir[] = __DIR__ . '/Resource/views';
 
 
-$cmstextCtrl = new CmstextController();
-$imagecmsCtrl = new ImagecmsController();
+$cmscontentCtrl = new CmscontentController();
+$cmsresourceCtrl = new CmsresourceController();
 
 (new Request('hello'));
 
 switch (R::get('path')) {
 
-    case 'cmstext._new':
-        CmstextForm::render();
+    case 'cmscontent._new':
+        g::json_encode($cmscontentCtrl->formView());
         break;
-    case 'cmstext.create':
-        g::json_encode($cmstextCtrl->createAction());
+    case 'cmscontent.create':
+        g::json_encode($cmscontentCtrl->createAction());
         break;
-    case 'cmstext.form':
-        CmstextForm::render(R::get("id"));
+    case 'cmscontent.form':
+        g::json_encode($cmscontentCtrl->formView(R::get("id")));
         break;
-    case 'cmstext/update':
-        g::json_encode($cmstextCtrl->updateAction(R::get("id")));
+    case 'cmscontent/update':
+        g::json_encode($cmscontentCtrl->updateAction(R::get("id")));
         break;
-    case 'cmstext.update':
-        g::json_encode($cmstextCtrl->updateAction(R::get("id")));
+    case 'cmscontent.update':
+        g::json_encode($cmscontentCtrl->updateAction(R::get("id")));
         break;
-    case 'cmstext.uploadimage':
-        g::json_encode($cmstextCtrl->uploadAction());
+    case 'cmscontent.uploadimage':
+        g::json_encode($cmscontentCtrl->uploadAction());
         break;
-    case 'cmstext.loadimage':
-        g::json_encode($cmstextCtrl->loadAction());
+    case 'cmscontent.loadimage':
+        g::json_encode($cmscontentCtrl->loadAction());
         break;
-    case 'cmstext.deleteimage':
-        g::json_encode($cmstextCtrl->deleteimageAction());
+    case 'cmscontent.deleteimage':
+        g::json_encode($cmscontentCtrl->deleteimageAction());
         break;
-    case 'cmstext._show':
-        $cmstextCtrl->detailView(R::get("id"));
+    case 'cmscontent._show':
+        $cmscontentCtrl->detailView(R::get("id"));
         break;
-    case 'cmstext._delete':
-        g::json_encode($cmstextCtrl->deleteAction(R::get("id")));
+    case 'cmscontent._delete':
+        g::json_encode($cmscontentCtrl->deleteAction(R::get("id")));
         break;
-    case 'cmstext._deletegroup':
-        g::json_encode($cmstextCtrl->deletegroupAction(R::get("ids")));
+    case 'cmscontent._deletegroup':
+        g::json_encode($cmscontentCtrl->deletegroupAction(R::get("ids")));
         break;
-    case 'cmstext.datatable':
-        g::json_encode($cmstextCtrl->datatable(R::get('next'), R::get('per_page')));
+    case 'cmscontent.datatable':
+        g::json_encode($cmscontentCtrl->datatable(R::get('next'), R::get('per_page')));
         break;
 
-    case 'imagecms._new':
-        ImagecmsForm::renderWidget();
+    case 'cmsresource._new':
+        CmsresourceForm::renderWidget();
         break;
-    case 'imagecms.create':
-        g::json_encode($imagecmsCtrl->createAction());
+    case 'cmsresource.create':
+        g::json_encode($cmsresourceCtrl->createAction());
         break;
-    case 'imagecms.form':
-        ImagecmsForm::renderWidget(R::get("id"));
+    case 'cmsresource.form':
+        CmsresourceForm::renderWidget(R::get("id"));
         break;
-    case 'imagecms.update':
-        g::json_encode($imagecmsCtrl->updateAction(R::get("id")));
+    case 'cmsresource.update':
+        g::json_encode($cmsresourceCtrl->updateAction(R::get("id")));
         break;
-    case 'imagecms._show':
-        $imagecmsCtrl->detailView(R::get("id"));
+    case 'cmsresource._show':
+        $cmsresourceCtrl->detailView(R::get("id"));
         break;
-    case 'imagecms._delete':
-        g::json_encode($imagecmsCtrl->deleteAction(R::get("id")));
+    case 'cmsresource._delete':
+        g::json_encode($cmsresourceCtrl->deleteAction(R::get("id")));
         break;
-    case 'imagecms._deletegroup':
-        g::json_encode($imagecmsCtrl->deletegroupAction(R::get("ids")));
+    case 'cmsresource._deletegroup':
+        g::json_encode($cmsresourceCtrl->deletegroupAction(R::get("ids")));
         break;
-    case 'imagecms.datatable':
-        g::json_encode($imagecmsCtrl->datatable(R::get('next'), R::get('per_page')));
+    case 'cmsresource.datatable':
+        g::json_encode($cmsresourceCtrl->datatable(R::get('next'), R::get('per_page')));
         break;
 
 
@@ -89,4 +89,3 @@ switch (R::get('path')) {
         g::json_encode(['success' => false, 'error' => ['message' => "404 : action note found", 'route' => R::get('path')]]);
         break;
 }
-

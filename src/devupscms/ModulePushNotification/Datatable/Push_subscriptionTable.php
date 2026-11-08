@@ -24,17 +24,23 @@ class Push_subscriptionTable extends Datatable
     public function buildindextable()
     {
 
+        $this->enabletopaction = false;
         $this->groupaction = false;
         $this->order_by = 'this.id desc';
         $this->base_url = __env . "admin/";
         $this->datatablemodel = [
             'id' => ['header' => t('#'),],
-// 'subscription_type' => ['header' => t('Subscription_type'),],
+            // 'subscription_type' => ['header' => t('Subscription_type'),],
             'user_id' => ['header' => t('user_id'),],
             'status' => ['header' => t('Status'),],
-//'public_key' => ['header' => t('Public_key'),],
-            'auth_token' => ['header' => t('Auth_token'),],
-//'content_type' => ['header' => t('Content_type'),]
+            //'public_key' => ['header' => t('Public_key'),],
+            'auth_token' => [
+                'header' => t('Auth_token'),
+                'get' => function ($item) {
+                    return '<div style="max-width:150px;">' . $item->auth_token . '</div>';
+                }
+            ],
+            'created_at' => ['header' => t('Created At'),]
         ];
 
         $this->addcustomaction(function ($item) {
@@ -47,7 +53,7 @@ class Push_subscriptionTable extends Datatable
     {
         $this->datatablemodel = [
             ['label' => t('subscription_type'), 'value' => 'subscription_type'],
-            ['label' => t('subscription_id'), 'value' => 'subscription_id'],
+            ['label' => t('user_id'), 'value' => 'user_id'],
             ['label' => t('endpoint'), 'value' => 'endpoint'],
             ['label' => t('public_key'), 'value' => 'public_key'],
             ['label' => t('auth_token'), 'value' => 'auth_token'],
@@ -68,7 +74,5 @@ class Push_subscriptionTable extends Datatable
                 default:
                     return $this->buildindextable();
             }
-
     }
-
 }

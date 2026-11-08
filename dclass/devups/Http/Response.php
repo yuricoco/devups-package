@@ -30,7 +30,7 @@ class Response
 
         if(is_array($value)){
             $_end = microtime(true);
-            $value["exectime"] = $_end - $_start;
+            header("X-Exec-Time: " . ($_end - $_start));
         }
         echo json_encode($value, $options, $depth);
         die;

@@ -35,6 +35,7 @@ class Datatable extends Lazyloading
     protected $lazyloading = "";
     protected $noidentity = false;
     protected $tablefilter = "";
+    public $entity_id;
     public $pagination = 0;
     public $paginationcustom = [];
     protected $editAction = null;
@@ -76,10 +77,12 @@ class Datatable extends Lazyloading
 
         if ($entity) {
             $this->entity = $entity;
-            $this->class = strtolower(get_class($this->entity));
-
             $global_config = require ROOT.'config/dvups_configurations.php';
-            $dentity = $global_config["".ucfirst($this->class)];
+//            dv_dump(get_class($this->entity), $global_config);
+            $dentity = $global_config["".get_class($this->entity)];
+            $this->class = strtolower($dentity['name']);
+//            $this->class = strtolower(get_class($this->entity));
+
 //            $dentity = \Dvups_entity::getbyattribut("this.name", $this->class);
             $this->base_url = '/admin/'.$dentity['path'].'';
 
@@ -96,14 +99,58 @@ class Datatable extends Lazyloading
             'habit' => 'stateless',
             'modal' => 'data-toggle="modal" ',
         ];
+        // applique ici, pas comme defaut de
+        // propriete dans TableTemplateRender.php (t() y est interdit,
+        // "Constant expression contains invalid operations") - suit le
+        // meme patron que createaction juste au-dessus. fa-close -> fa-times
+        // : fa-close n'existe pas en FA5 (0 occurrence de .fa-close:before
+        // dans main.css), fa-times existe (1 occurrence) - le bouton de
+        // suppression de chaque ligne de chaque liste n'avait donc pas
+        // d'icone.
+        // 'class' porte desormais la vraie
+        // classe Bootstrap (depuis $this->btnedit_class/btnview_class/
+        // btndelete_class du trait TableTemplateRender), pas un mot-cle
+        // semantique ("edit"/"show"/"delete") a retraduire ailleurs.
+        // Mesure avant d'ecrire : ce mot-cle n'avait aucun autre usage
+        // dans tout dclass/ (grep sur ["class"] des tableaux de rowaction)
+        // ni comme selecteur CSS/JS (.edit/.show/.delete n'apparaissent
+        // nulle part comme classe ciblee) - seul AdminTemplateGenerator
+        // le relisait, via un tableau $actionclass en dur qui ecrasait
+        // tout. Ce tableau en dur est retire de AdminTemplateGenerator.php
+        // (voir ce fichier) ; la classe vient desormais d'une seule
+        // source, ces proprietes du trait.
+        $this->defaultaction = [
+            "edit" => [
+                'content' => '<i class="fa fa-edit" ></i> ' . t('edit'),
+                'class' => $this->btnedit_class,
+                'action' => '',
+                'habit' => 'stateless',
+                'modal' => 'data-toggle="modal" ',
+            ],
+            "show" => [
+                'content' => '<i class="fa fa-eye" ></i> ' . t('show'),
+                'class' => $this->btnview_class,
+                'action' => '',
+                'habit' => 'stateless',
+                'modal' => 'data-toggle="modal" ',
+            ],
+            "delete" => [
+                'content' => '<i class="fa fa-times" ></i> ' . t('delete'),
+                'class' => $this->btndelete_class,
+                'action' => '',
+                'habit' => 'stateless',
+                'modal' => 'data-toggle="modal" ',
+            ],
+        ];
 
 
     }
 
-
-    public function Qb(\QueryBuilder $qb)
+    public function Qb($callback) //\QueryBuilder $qb
     {
-        $this->qbcustom = $qb;
+        if (is_callable($callback))
+            $callback($this->qbcustom);
+
         return $this;
     }
 
@@ -196,13 +243,13 @@ class Datatable extends Lazyloading
                     if (!is_null($result))
                         $this->defaultaction[$actionkey] = $result;
                     else
-                        $this->defaultaction[$actionkey]['action'] = 'onclick="model._' . $actionkey . '(' . $entity->getId() . ', \'' . $this->classname . '\', this)"';
+                        $this->defaultaction[$actionkey]['action'] = 'onclick="model._' . $actionkey . '(\'' . $this->entity_id . '\', \'' . $this->class . '\', this)"';
                 } else if (is_callable($this->defaultaction[$actionkey])) {
                     $this->defaultaction[$actionkey] = $this->defaultaction[$actionkey]($entity);
                 } elseif ($actionkey == 'show')
                     return " ";
                 else
-                    $this->defaultaction[$actionkey]['action'] = 'onclick="model._' . $actionkey . '(' . $entity->getId() . ', \'' . $this->classname . '\', this)"';
+                    $this->defaultaction[$actionkey]['action'] = 'onclick="model._' . $actionkey . '(\'' . $this->entity_id . '\', \'' . $this->class . '\', this)"';
 
                 return $this->defaultaction[$actionkey];
 
@@ -217,13 +264,15 @@ class Datatable extends Lazyloading
             return 1;
         }
 
-//        if (!isset($_SESSION[dv_role_permission]))
-//            return false;
+        // can('action', $this->class) : API unique d'autorisation
+        // (dclass/dvups_functions.php), compilee par role depuis
+        // dvups_privilege/dvups_action. Le role "admin" voit toujours tous
+        // les boutons (bypass maitre, voir can()).
+        $entityrigths = array_values(array_filter(
+            ['read', 'update', 'delete'],
+            fn($action) => can($action, $this->class)
+        ));
 
-        //$rigths = getadmin()->availableentityright($path);
-        $entityrigths = ['update', 'delete'];
-
-//        $entityrigths = \Dvups_entity::getRigthOf($this->class);
         if ($entityrigths) {
             $this->rowaction[] = $this->getaction($entity, "edit", 'update', $entityrigths);
 
@@ -306,7 +355,11 @@ class Datatable extends Lazyloading
     public function render()
     {
 
-        //Lazyloading::$colunms = array_keys($this->datatablemodel);
+        foreach ($this->datatablemodel as $key => $value) {
+            if (isset($value['sql'])) {
+                $this->qbcustom->addColumn("".$value['sql'] . "", $key);
+            }
+        }
 
         $this->lazyloading($this->entity, $this->qbcustom, $this->order_by, $this->id_lang);
 
@@ -330,7 +383,7 @@ EOF;
         $theader = $this->headerbuilder();
 
         if (!$this->listentity) {
-            $tbody = "";
+            $tbody = $this->emptyStateRow();
         } else
             $tbody = $this->tablebodybuilder();
 
@@ -565,12 +618,29 @@ EOF;
         if ($entity->dvtranslated_columns)
             $entity->singlelang($this->id_lang);
 
-        $this->entity = $entity;
+        try{
+            // ETAPE V : XTable::init() construit souvent le Datatable avec
+            // l'entite potentiellement null recue en argument (au lieu
+            // d'une instance fraiche) - qbcustom reste alors null (voir
+            // Datatable::__construct()). "->where()" sur null leve un
+            // \Error (pas une \Exception) en PHP8 : non rattrape par le
+            // catch ci-dessous, il remontait en fatal 500 des qu'un
+            // controleur appelait init() SANS argument avant
+            // getSingleRowRest() (ex. Cmsresource apres upload d'image).
+            // \Throwable couvre les deux, conformement a l'intention du
+            // fallback deja ecrit juste en dessous.
+            if (!$this->qbcustom)
+                throw new \RuntimeException('qbcustom non initialise');
+            $this->entity = $this->qbcustom->where("this.id", $entity->id)->first();
+        }catch(\Throwable $e){
+            $this->entity = $entity;
+        }
+
         $this->class = get_class($entity);
-        $this->listentity = [$entity];
+        $this->listentity = [$this->entity];
         if ($this->template) {
             $this->classname = strtolower(get_class($entity));
-            return $this->buildCustomView($entity);
+            return $this->buildCustomView( $this->entity);
         }
 
         return [
@@ -581,22 +651,117 @@ EOF;
 
     }
 
+    public function exportCsv()
+    {
+
+        function filterData(&$str)
+        {
+            $str = preg_replace("/\t/", "\\t", $str);
+            $str = preg_replace("/\r?\n/", "\\n", $str);
+            if (strstr($str, '"')) $str = '"' . str_replace('"', '""', $str) . '"';
+        }
+
+        $keys = [];
+        $entity = $this->entity;
+
+        // if (Request::post("allcolumns")) {
+        //     $keys = explode(',', $fields);
+        //     //$columns = "$fields";
+        // } else {
+        //     $keys = Request::post("columns");
+        // }
+        $columns = [];// array_keys($this->datatablemodel);
+        foreach ($this->datatablemodel as $key => $value) {
+            $keys[] = $value['header'];
+            if (isset($value['sql'])) {
+                $this->qbcustom->addColumn("".$value['sql'] . "", $key);
+            }else{
+                $columns[] = $key;
+            }
+        }
+
+        /*foreach ($this as $key => $val) {
+            self::$dvkeys[] = 'id';
+            if (in_array($key, self::$dvkeys) || is_array($val))
+                continue;
+            if (is_object($val)) {
+                $keys[] = $key . '_id';
+            } else
+                $keys[] = $key;
+        }*/
+
+        $exportat = date("YmdHis");
+        
+        $_GET['per_page'] = 'all';
+        Request::$uri_get_param['per_page'] = 'all';
+        $dataexport = implode("\t", $keys) . "\n";
+        (new \dclass\devups\Datatable\Lazyloading())->lazyloading($entity, $this->qbcustom, "", Request::post("idlang"), true)
+            ->getRows(implode(",", $columns), function ($row, $classname) use (&$dataexport) {
+
+                $dataexport .= implode("\t", array_values($row)) . "\n";
+
+            });
+
+        //$download = __env . "database/fixtures/" . $classname . "/" . $filename;
+        //return compact('keys', "download");
+        //$message = $classname . ": CSV generated with success";
+
+        $fileName = $this->class . "_" . date('Y-m-d_H-i') . ".xls";
+//        $excelData = file_get_contents(__DIR__ . "/../import/datalang.csv");
+
+        header("Content-Type: application/vnd.ms-excel; charset=UTF-8");
+        header("Content-Disposition: attachment; filename=\"$fileName\"");
+
+        \Response::$header = 'application/vnd.ms-excel';
+        // \Response::$header = 'application/vnd.ms-excel';
+        // \Response::$header = 'application/vnd.ms-excel';
+// Render excel data avec encodage UTF-16LE (BOM) pour une lecture parfaite des accents et tabulations sous MS Excel
+        echo chr(255).chr(254).mb_convert_encoding($dataexport, 'UTF-16LE', 'UTF-8');
+
+        exit;
+    }
+
     public function getTableRest($datatablemodel = [])
     {
 
+        if ($datatablemodel)
+            $this->datatablemodel = $datatablemodel;
+
+        foreach ($this->datatablemodel as $key => $value) {
+            if (isset($value['sql'])) {
+                $this->qbcustom->addColumn("".$value['sql'] . "", $key);
+            }
+        }
+
         $this->lazyloading($this->entity, $this->qbcustom, $this->order_by, $this->id_lang);
+
+        // 'tablehead' ajoute ici, calcule par
+        // le MEME headerbuilder() que render() (page complete) - une seule
+        // source de verite pour la fleche de tri, qui lit deja
+        // Request::get('order')/'orderjoin'. Seule la ligne d'en-tetes ($theader['th']) est
+        // renvoyee, jamais $theader['thf'] (la ligne de filtre) : mesure
+        // avant d'ecrire, comme demande - remplacer le thead ENTIER
+        // detruirait les <input> de la ligne de filtre et leur valeur
+        // tapee en cours (un champ non encore soumis, dans un autre champ
+        // que celui qui a declenche la requete), puisque le nouveau HTML
+        // serveur ne connait que ce qui a ete reellement soumis dans
+        // l'URL de CETTE requete, pas la frappe en cours ailleurs dans le
+        // formulaire.
+        $theader = $this->headerbuilder();
 
         if (!$this->listentity) {
 
             return [
-                'tablebody' => \Genesis::getView('default.table', ['data'=>false]),
+                'tablebody' => $this->emptyStateRow(),
+                'tablehead' => $theader['th'],
                 'tablepagination' => $this->paginationbuilder()
             ];
 
         }
 
-        if ($datatablemodel)
-            $this->datatablemodel = $datatablemodel;
+        if(Request::get('dexport') == 1){
+            $this->exportCsv();
+        }
 
         if ($this->template) {
             $column = null;
@@ -617,9 +782,37 @@ EOF;
 
         return [
             'tablebody' => $this->tablebodybuilder(),
+            'tablehead' => $theader['th'],
             'tablepagination' => $this->paginationbuilder()
         ];
 
+    }
+
+    /**
+     * seul endroit qui construit l'etat vide - appele
+     * par render() (page complete) et getTableRest() (reponse AJAX de
+     * recherche/pagination/tri), qui en avaient chacun leur propre version
+     * auparavant (render() ne mettait rien, getTableRest() appelait
+     * une vue dont la condition etait inversee et dont la vraie table etait
+     * commentee - au total, rien ne s'affichait jamais dans les deux cas).
+     * Distingue liste reellement vide / recherche sans resultat via
+     * Request::get('dfilters') - "on" seulement quand ddatatable.search()
+     * a ete declenche (etabli en lisant ddatatable.js : le formulaire de
+     * recherche inclut toujours un champ cache dfilters=on, soumis
+     * uniquement par le bouton "search", jamais par une simple pagination).
+     */
+    private function emptyStateRow()
+    {
+        $colspan = count($this->datatablemodel);
+        if ($this->groupaction)
+            $colspan++;
+        if ($this->enablecolumnaction)
+            $colspan++;
+
+        return \Genesis::getView('default.table', [
+            'colspan' => $colspan,
+            'searched' => Request::get('dfilters') == 'on',
+        ]);
     }
 
     private function headerbuilder()
@@ -642,12 +835,15 @@ EOF;
             if (!isset($valuetd["value"]))
                 $valuetd["value"] = $key;
 
+            if (!isset($valuetd["directive"]))
+                $valuetd["directive"] = "";
+
             $value = $valuetd["value"];
             if (is_callable($value)) {
 
-                $thf[] = '<th > </th>';
+                $thf[] = '<th '.$valuetd["directive"].' > </th>';
 
-                $th[] = '<th>' . $valuetd['header'] . $thforder . '</th>';
+                $th[] = '<th '.$valuetd["directive"].'>' . $valuetd['header'] . $thforder . '</th>';
                 continue;
             }
             if (!isset($valuetd["order"]))
@@ -671,7 +867,6 @@ EOF;
 
                 if ($valuetd["order"]) {
                     $thforder = 'orderjoin=' . $value;
-                    //$thforder = '<div class="torder"><i onclick="ddatatable.orderasc(\'orderjoin=' . $value . '\')" class="fa fa-angle-up"></i> <i onclick="ddatatable.orderdesc(\'orderjoin=' . $value . '\')" class="fa fa-angle-down"></i></div>';
                 }
                 //$fields[] = str_replace(".", "-", $value) . ":join";
             } else {
@@ -687,16 +882,46 @@ EOF;
 
                 if ($valuetd["order"])
                     $thforder = 'order=' . $value;
-                //$thforder = '<div class="torder"><i onclick="ddatatable.orderasc(\'order=' . $value . '\')" class="fa fa-angle-up"></i> <i onclick="ddatatable.orderdesc(\'order=' . $value . '\')" class="fa fa-angle-down"></i></div>';
 
                 //$fields[] = $value . ":attr";
             }
-            $thf[] = '<th >' . $thfvalue . '</th>';
+            $thf[] = '<th '.$valuetd["directive"].'>' . $thfvalue . '</th>';
 
-            if ($valuetd["order"])
-                $th[] = '<th style="cursor: pointer;" onclick="ddatatable.toggleorder(\'' . $this->class . '\', \'' . $thforder . '\')" ><div style=" display: flex; align-content: center">' . $valuetd['header'] . ' <i class="fa fa-arrow-down" ></i><i class="fa fa-arrow-up" ></i></div></th>';
-            else
-                $th[] = '<th >' . $valuetd['header'] . ' </th>';
+            if ($valuetd["order"]) {
+                // une seule fleche, qui reflete l'etat
+                // REELLEMENT lisible au moment de ce rendu (pas devinee) :
+                // ddatatable.js envoie "&order=value asc"/"&orderjoin=value
+                // asc" en parametre GET brut (pas "dsort"/"dsortjoin", les
+                // seuls noms que Lazyloading.php lit explicitement) - ce
+                // sont les extract(Request::$uri_get_param) de
+                // Lazyloading.php:300 qui recuperent "order"/"orderjoin"
+                // sous forme de variable locale $order/$orderjoin. $order
+                // (pas $orderjoin) est la seule des deux reinjectee dans la
+                // requete SQL (orderby($order)) : le tri par colonne jointe
+                // (orderjoin=) est donc deja silencieusement inoperant cote
+                // SQL avant meme ce correctif - mesure, signale au rapport,
+                // pas corrige (Lazyloading.php : lecture seule).
+                //
+                // Second etabli avant d'ecrire : ce theader n'est rendu
+                // qu'une fois par page (render()) - toggleorder()/orderasc()/
+                // orderdesc() (ddatatable.js, lecture seule) ne remplacent
+                // jamais que le <tbody> de la reponse AJAX, et ne changent
+                // jamais l'URL affichee - la fleche ci-dessous est donc
+                // exacte pour CE rendu (reflete fidelement order/orderjoin
+                // si deja present dans l'URL chargee), mais ne se mettra
+                // JAMAIS a jour visuellement apres un clic tant que
+                // ddatatable.js ne renvoie pas aussi un theader - a traiter
+                // cote JavaScript. Pas une fausse indication :
+                // une indication exacte mais qui restera presque toujours
+                // neutre en pratique, et dite comme telle.
+                $dv_sorticon = 'fa-sort';
+                $dv_requestorder = isset($join[1]) ? \Request::get('orderjoin') : \Request::get('order');
+                if ($dv_requestorder && stripos(trim($dv_requestorder), $value . ' ') === 0) {
+                    $dv_sorticon = (stripos($dv_requestorder, 'desc') !== false) ? 'fa-sort-down' : 'fa-sort-up';
+                }
+                $th[] = '<th style="cursor: pointer;" '.$valuetd["directive"].' onclick="ddatatable.toggleorder(\'' . $this->class . '\', \'' . $thforder . '\')" ><div style="display: flex; align-items: center">' . $valuetd['header'] . ' <i class="fa ' . $dv_sorticon . '" ></i></div></th>';
+            } else
+                $th[] = '<th '.$valuetd["directive"].'>' . $valuetd['header'] . ' </th>';
 
         }
 
@@ -707,7 +932,9 @@ EOF;
             if ($this->enablecolumnaction)
                 $thf[] = '<th>'
                     . '<input name="dfilters" value="on" hidden >'
-                    . '<button onclick="ddatatable.search(\'' . $this->classname . '\', this)" class="' . $this->btnsearch_class . '" >' . t("search") . '</button> <button id="dcancel-search" onclick="ddatatable.cancelsearch()" type="reset" class="btn btn-light hidden" hidden >cancel</button></th>';
+                    . '<button onclick="ddatatable.search(\'' . $this->class . '\', this)" class="' . $this->btnsearch_class . '" >' . t("search") . '</button> <button id="dcancel-search" onclick="ddatatable.cancelsearch()" type="reset" class="btn btn-light hidden" hidden >cancel</button>
+                    <button onclick="ddatatable.exportData(\'' . $this->class . '\', this)" class="' . $this->btnsearch_class . '" >' . t("export") . '</button>
+                    </th>';
 
             return ["th" => '<tr>' . implode(" ", $th) . '</tr>',
                 "thf" => '<tr class="th-filter">' . implode(" ", $thf) . '</tr>'];
@@ -904,18 +1131,23 @@ EOF;
         foreach ($this->listentity as $entity) {
             $tr = [];
             $entityarray = (array)$entity;
+            
+            $this->entity_id = $entity->getId();
+            if(is_array($this->entity_id)){
+                $this->entity_id = implode(",", $this->entity_id);
+            }
 
             if ($this->groupaction) {
                 $checkmethod = 'isSelectable'; // must return a boolean
                 if (method_exists($entity, $checkmethod)) {
                     if (call_user_func(array($entity, $checkmethod)))
-                        $tr[] = '<td><input name="' . $this->group_field_name . '[]" value="' . $entity->getId() . '" type="checkbox" class="dcheckbox" ></td>';
+                        $tr[] = '<td><input name="' . $this->group_field_name . '[]" value="' . $this->entity_id . '" type="checkbox" class="dcheckbox" ></td>';
                     else
                         $tr[] = '<td></td>';
                 } elseif ($this->isRadio)
-                    $tr[] = '<td><input name="' . $this->group_field_name . '" value="' . $entity->getId() . '" type="radio" class="dcheckbox" ></td>';
+                    $tr[] = '<td><input name="' . $this->group_field_name . '" value="' . $this->entity_id . '" type="radio" class="dcheckbox" ></td>';
                 else
-                    $tr[] = '<td><input name="' . $this->group_field_name . '[]" value="' . $entity->getId() . '" type="checkbox" class="dcheckbox" ></td>';
+                    $tr[] = '<td><input name="' . $this->group_field_name . '[]" value="' . $this->entity_id . '" type="checkbox" class="dcheckbox" ></td>';
 
             }
 
@@ -926,7 +1158,26 @@ EOF;
                  * therefore reset it with the instance of id_land
                  */
                 \DBAL::$id_lang_static = $this->id_lang;
+                $tdcontent = "";
+                $param = [];
+                // but if dev set get the will call custom get[Get]
+                if (isset($valuetd["get"])) {
+                    $value = $valuetd["get"];
 
+                    if (isset($valuetd["param"]))
+                        $param = $valuetd["param"];
+
+                    if (is_callable($value)) {
+                        if ($param)
+                            $tdcontent = $value($entity, $param);
+                        else
+                            $tdcontent = $value($entity);
+
+                        $tr[] = "<td>" . $tdcontent . "</td>";
+
+                        continue;
+                    }
+                }
                 if (!isset($valuetd["value"])) {
                     /**
                      * issue: here I tried to test a value set as null and the isset consider those king of $variable
@@ -937,16 +1188,23 @@ EOF;
                      * Nb: at the moment I wrote the comment I defined a getter for the null attribute to avoid notice
                      * while datatable is rendering
                      */
-                    if (isset($entity->{$attrib})) {
-                        $tr[] = "<td>" . $entity->{$attrib} . "</td>";
-                    } else {
-                        $attrs = explode(".", $attrib);
-                        if (count($attrs) > 1) {
-                            $tr[] = "<td>" . $entity->{$attrs[0]}->{$attrs[1]} . "</td>"; // maybe we can activate debug mode so that when we are on this we show a notice!
-                        } else
-                            $tr[] = "<td>" . $entity->{$attrib} . "</td>"; // maybe we can activate debug mode so that when we are on this we show a notice!
+                    $attrs = explode(".", $attrib);
+                    if (count($attrs) > 1) {
+                        $tr[] = "<td>" . $entity->{$attrs[0]}->{$attrs[1]} . "</td>"; // maybe we can activate debug mode so that when we are on this we show a notice!
+                    } else { //if (($entity->{$attrib}))
+                        $attribcontent = $entity->{$attrib};
+                        // ETAPE V : une colonne sans "value" explicite qui pointe vers une
+                        // colonne traduite (dvtranslated_columns) contient un tableau par
+                        // langue - meme resolution que pour le chemin get<Value>() plus bas
+                        // (sinon : "Array to string conversion" + cellule affichant "Array").
+                        if (is_array($attribcontent) && $this->entity->dvtranslate) {
+                            $attribcontent = $attribcontent[$iso_code] ?? '';
+                        }
+                        $tr[] = "<td>" . $attribcontent . "</td>";
                     }
+
                     continue;
+
                 }
 
                 if (is_callable($valuetd["value"])) {
@@ -973,26 +1231,6 @@ EOF;
                 if (count($pipe) > 1) {
                     $value = $pipe[0];
                     $format = $pipe[1];
-                }
-
-                $tdcontent = "";
-                $param = [];
-                // but if dev set get the will call custom get[Get]
-                if (isset($valuetd["get"]))
-                    $value = $valuetd["get"];
-
-                if (isset($valuetd["param"]))
-                    $param = $valuetd["param"];
-
-                if (is_callable($value)) {
-                    if ($param)
-                        $tdcontent = $value($entity, $param);
-                    else
-                        $tdcontent = $value($entity);
-
-                    $tr[] = "<td>" . $tdcontent . "</td>";
-
-                    continue;
                 }
 
                 $join = explode(".", $value);
@@ -1104,7 +1342,7 @@ EOF;
             if ($this->noidentity)
                 $tb[] = '<tr  title="' . $this->classname.'#" ' . $trattr . ' >' . implode(" ", $tr) . '</tr>';
             else
-                $tb[] = '<tr id="' . $entity->getId() . '" title="' . $this->classname.'#'.$entity->getId() . '" ' . $trattr . ' >' . implode(" ", $tr) . '</tr>';
+                $tb[] = '<tr id="' . $this->entity_id . '" title="' . $this->classname.'#'.$this->entity_id . '" ' . $trattr . ' >' . implode(" ", $tr) . '</tr>';
 
         }
 

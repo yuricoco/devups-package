@@ -1,7 +1,8 @@
 {
-  "id": 5,
-  "name": "devupsfront",
-  "project": "devups",
-  "nbent": 1,
-  "listentity": []
+    "id": 5,
+    "name": "devupsfront",
+    "label": "Devups Front",
+    "project": "devups",
+    "nbent": 1,
+    "listentity": []
 }

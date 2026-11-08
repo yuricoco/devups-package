@@ -1,1 +1,9 @@
-{"id":1,"name":"ModuleAdmin","project":"admin","nbent":10,"listentity":[]}
+{
+    "id": 1,
+    "name": "ModuleAdmin",
+    "label": "Administration",
+    "icon": "fas fa-user-shield",
+    "project": "admin",
+    "nbent": 10,
+    "listentity": []
+}

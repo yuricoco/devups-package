@@ -50,6 +50,21 @@ class Dvups_admin extends Model implements JsonSerializable
     protected $password;
 
     /**
+     * ETAPE K.3 : hash (sha256) du token "remember me" courant, jamais le
+     * token en clair ni le mot de passe. Null quand "remember me" n'est pas
+     * actif (deconnexion, changement de mot de passe, jamais active).
+     * @Column(name="remember_token_hash", type="string" , length=255 , nullable=true )
+     * @var string
+     * */
+    protected $remember_token_hash;
+
+    /**
+     * @Column(name="remember_token_expires_at", type="datetime" , nullable=true )
+     * @var string
+     * */
+    protected $remember_token_expires_at;
+
+    /**
      * @ManyToOne(targetEntity="\Dvups_role")
      * @var \Dvups_role
      */
@@ -155,7 +170,94 @@ class Dvups_admin extends Model implements JsonSerializable
 
     public function setPassword($password)
     {
-        $this->password = $password;
+        $this->password = $password ? dv_hash_password($password) : $password;
+    }
+
+    /**
+     * ETAPE K.1 : verifie un mot de passe EN CLAIR contre le hash stocke.
+     * Accepte encore l'ancien format sha1() et, dans ce cas uniquement,
+     * remplace transparentement le hash stocke par password_hash() (puis
+     * sauvegarde) - aucune reinitialisation forcee pour l'administrateur.
+     */
+    public function verifyPassword(string $password): bool
+    {
+        $upgraded = false;
+        $ok = dv_verify_password($password, $this->password, $upgraded);
+        if ($ok && $upgraded) {
+            $this->password = dv_hash_password($password);
+            $this->__update();
+        }
+        return $ok;
+    }
+
+    /**
+     * Change le mot de passe apres verification de l'ancien. Retourne false
+     * si l'ancien mot de passe est incorrect (rien n'est modifie), true
+     * sinon. Invalide au passage le "remember me" courant - un cookie vole
+     * avant le changement de mot de passe ne doit plus donner acces apres.
+     *
+     * NB : methode appelee par Dvups_adminFrontController::updateAction()
+     * mais qui n'existait pas auparavant (bug preexistant, jamais exerce
+     * par un test) - ajoutee ici dans le cadre de l'ETAPE K.1.
+     */
+    public function updatePassword(string $oldpwd, string $newpwd): bool
+    {
+        if (!$this->verifyPassword($oldpwd))
+            return false;
+
+        $this->setPassword($newpwd);
+        $this->clearRememberToken();
+        return true;
+    }
+
+    public function getRememberTokenHash()
+    {
+        return $this->remember_token_hash;
+    }
+
+    public function getRememberTokenExpiresAt()
+    {
+        return $this->remember_token_expires_at;
+    }
+
+    /**
+     * ETAPE K.3 : genere un nouveau token "remember me" (jamais le meme que
+     * l'ancien - rotation a chaque usage), en stocke uniquement le hash
+     * (sha256) et une expiration, et renvoie le token EN CLAIR (destine au
+     * cookie, jamais persiste tel quel).
+     */
+    public function issueRememberToken(int $ttlSeconds = 30 * 24 * 3600): string
+    {
+        $token = bin2hex(random_bytes(32));
+        $this->remember_token_hash = hash('sha256', $token);
+        $this->remember_token_expires_at = date('Y-m-d H:i:s', time() + $ttlSeconds);
+        $this->__update();
+        return $token;
+    }
+
+    /**
+     * Verifie un token "remember me" EN CLAIR recu via cookie. Refuse (et ne
+     * consomme rien) si le token ne correspond pas ou si l'expiration est
+     * passee - l'appelant est responsable de retirer le cookie dans ce cas.
+     */
+    public function verifyRememberToken(string $token): bool
+    {
+        if (!$this->remember_token_hash || !$this->remember_token_expires_at)
+            return false;
+        if (strtotime($this->remember_token_expires_at) < time())
+            return false;
+        return hash_equals($this->remember_token_hash, hash('sha256', $token));
+    }
+
+    /** Invalide le token "remember me" courant (deconnexion, changement de mot de passe). */
+    public function clearRememberToken(): void
+    {
+        $this->remember_token_hash = null;
+        $this->remember_token_expires_at = null;
+        // __update() sans argument (chemin DBAL::updateDbal()) ignore les
+        // proprietes null lors de la construction du SET - passer les
+        // colonnes explicitement est le seul moyen d'ecrire NULL en base.
+        $this->__update(['remember_token_hash' => null, 'remember_token_expires_at' => null]);
     }
 
     function setDvups_role($dvups_role)
@@ -205,7 +307,7 @@ class Dvups_admin extends Model implements JsonSerializable
     function resetCredential()
     {
         $password = $this->generatePassword();
-        $this->setPassword(sha1($password));
+        $this->setPassword($password);
 //        $dvups_admin->setLogin();
         $this->generateLogin($this->getName());
 
@@ -217,6 +319,7 @@ class Dvups_admin extends Model implements JsonSerializable
 //        ];
     }
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return [

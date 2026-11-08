@@ -1,6 +1,10 @@
 <?php
 
 
+/**
+ * @MappedSuperclass
+ * Colonnes heritees par les entites qui etendent cette classe.
+ */
 class UserCore extends \Model implements JsonSerializable
 {
 
@@ -58,13 +62,83 @@ class UserCore extends \Model implements JsonSerializable
      **/
     public $activationcode;
     /**
-     * @Column(name="activationcode_expired_at", type="date", nullable=true)
+     * ETAPE L.1 : type="datetime", pas "date" - l'expiration (defaut 15
+     * min, ACTIVATION_CODE_TTL_MINUTES) a besoin d'une precision a la
+     * minute, qu'une colonne DATE (sans heure) ne peut pas porter.
+     * @Column(name="activationcode_expired_at", type="datetime", nullable=true)
      * @var string
      **/
     protected $activationcode_expired_at;
 
+    public function getActivationcodeExpiredAt()
+    {
+        return $this->activationcode_expired_at;
+    }
+
     /**
-     * @Column(name="last_login", type="date"  , nullable=true)
+     * ETAPE P.1 : jeton dedie a la reinitialisation de mot de passe -
+     * distinct du code court d'activation (activationcode, garde pour
+     * l'activation de compte et le SMS). Seul le hash (sha256) du jeton
+     * est stocke, jamais le jeton en clair.
+     * @Column(name="reset_token_hash", type="string", length=255, nullable=true)
+     * @var string
+     **/
+    protected $reset_token_hash;
+
+    /**
+     * @Column(name="reset_token_expired_at", type="datetime", nullable=true)
+     * @var string
+     **/
+    protected $reset_token_expired_at;
+
+    /**
+     * ETAPE P.1 : genere un jeton aleatoire cryptographiquement sur
+     * (random_bytes(32), encode en base64url), stocke seulement son hash
+     * sha256 avec une expiration courte (defaut 30 min,
+     * RESET_PASSWORD_TOKEN_TTL_MINUTES) et usage unique (voir
+     * clearResetPasswordToken()). Un nouvel appel ecrase le hash
+     * precedent, invalidant implicitement tout jeton emis plus tot pour ce
+     * compte. Retourne le jeton EN CLAIR - a transmettre une seule fois
+     * (lien email), jamais journalise ni renvoye par l'API.
+     */
+    public function setResetPasswordToken(): string
+    {
+        $token = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
+        $this->reset_token_hash = hash('sha256', $token);
+        $this->reset_token_expired_at = date("Y-m-d H:i:s", strtotime("+" . RESET_PASSWORD_TOKEN_TTL_MINUTES . " minutes"));
+        return $token;
+    }
+
+    /**
+     * Verifie le jeton EN CLAIR recu (lien email) contre le hash stocke,
+     * sans le consommer : true si le hash correspond et que le jeton n'a
+     * pas expire.
+     */
+    public function verifyResetPasswordToken(string $token): bool
+    {
+        if (!$this->reset_token_hash || $token === '')
+            return false;
+        if (!hash_equals($this->reset_token_hash, hash('sha256', $token)))
+            return false;
+        if (!$this->reset_token_expired_at || strtotime($this->reset_token_expired_at) < time())
+            return false;
+        return true;
+    }
+
+    /**
+     * Invalide le jeton de reinitialisation en attente (usage unique apres
+     * un reset reussi, ou mot de passe change par un autre moyen -
+     * changepassword(), resetCredential() - pendant qu'un jeton etait
+     * actif).
+     */
+    public function clearResetPasswordToken(): void
+    {
+        $this->reset_token_hash = null;
+        $this->reset_token_expired_at = null;
+    }
+
+    /**
+     * @Column(name="last_login", type="datetime"  , nullable=true)
      * @var date
      **/
     protected $last_login;
@@ -104,11 +178,12 @@ class UserCore extends \Model implements JsonSerializable
             return t("Fomat de l'adresse email invalide");
         }
 
-        $nb = User::where("email", $email);
-        if ($nb->count()) {
-            if ($nb->first()->getId() != $this->id)
-                return t("a user with this :attribute already exist", ["attribute" => "email"]);
+        $exist = User::where("email", $email)->firstOrNull();
+        if ($exist) {
+            if ($exist->getId() != $this->id)
+                return t("Cette adresse mail existe déjà",);
         }
+
         $this->email = $email;
     }
 
@@ -119,10 +194,10 @@ class UserCore extends \Model implements JsonSerializable
 
         $phonenumber = \DClass\lib\Util::sanitizePhonenumber($phonenumber, $this->country->phonecode);
 
-        $nb = User::where("phonenumber", $phonenumber);
-        if ($nb->count()) {
-            if ($nb->first()->getId() != $this->id)
-                return t("a user with this :attribute already exist", ["attribute" => "phonenumber"]);
+        $exist = User::where("phonenumber", $phonenumber)->firstOrNull();
+        if ($exist) {
+            if ($exist->getId() != $this->id)
+                return t("Ce numéro de téléphone existe déjà");
         }
         $this->phonenumber = $phonenumber;
     }
@@ -132,14 +207,31 @@ class UserCore extends \Model implements JsonSerializable
         if(!$password)
             return null;
 
-        $this->password = sha1($password);
+        $this->password = dv_hash_password($password);
     }
     public function setResetpassword ($password)
     {
         if(!$password)
             return null;
 
-        $this->password = sha1($password);
+        $this->password = dv_hash_password($password);
+    }
+
+    /**
+     * ETAPE K.1 : verifie un mot de passe EN CLAIR contre le hash stocke.
+     * Accepte encore l'ancien format sha1() et, dans ce cas uniquement,
+     * remplace transparentement le hash stocke par password_hash() (puis
+     * sauvegarde) - aucune reinitialisation forcee pour l'utilisateur.
+     */
+    public function verifyPassword(string $password): bool
+    {
+        $upgraded = false;
+        $ok = dv_verify_password($password, $this->password, $upgraded);
+        if ($ok && $upgraded) {
+            $this->password = dv_hash_password($password);
+            $this->__update();
+        }
+        return $ok;
     }
 
     public function setTelephone($telephone)
@@ -156,6 +248,18 @@ class UserCore extends \Model implements JsonSerializable
                 return t("a user with this :attribute already exist", ["attribute" => "telephone"]);
         }
         $this->telephone = $telephone;*/
+    }
+
+
+    public function setUpdatePassword($pwd)
+    {
+        if ($pwd)
+            $this->password = dv_hash_password($pwd);
+    }
+
+    public function setCountry_iso($iso_code)
+    { 
+        $this->country = Country::where("iso", $iso_code)->first(); 
     }
 
     /**
@@ -231,13 +335,6 @@ class UserCore extends \Model implements JsonSerializable
 
     public static $paramsynch;
 
-    public function jsonSerialize()
-    {
-
-//        if (Request::get("synchro", null)) {
-            return $this->mapAvailableData($this);
-//        }// TODO: Change the autogenerated stub
-    }
 
 
 

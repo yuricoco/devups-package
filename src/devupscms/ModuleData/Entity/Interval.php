@@ -60,6 +60,7 @@ class Interval extends Model implements JsonSerializable
 
     // getter and setter
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return [

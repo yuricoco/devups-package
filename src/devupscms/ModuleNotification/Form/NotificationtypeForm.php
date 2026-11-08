@@ -15,13 +15,30 @@ class NotificationtypeForm extends FormManager
         return $fb;
     }
 
+    /**
+     * Entites proposees comme cible d'un type de notification : toutes les
+     * entites enregistrees dans dvups_entity (donc celles de l'application).
+     */
+    public static function entityOptions(): array
+    {
+        try {
+            $names = array_map(function ($entity) {
+                return $entity->name;
+            }, Dvups_entity::allrows());
+            sort($names);
+            return $names;
+        } catch (\Throwable $e) {
+            return ['user'];
+        }
+    }
+
     public function buildForm()
     {
 
         $this->fields['entity'] = [
             "label" => t('Entity'),
             "type" => FORMTYPE_SELECT,
-            "options" => FormManager::key_as_value(['chapter', 'post', 'postcomment', 'user', 'comicbook']),
+            "options" => FormManager::key_as_value(self::entityOptions()),
             "value" => $this->notificationtype->entity,
         ];
         $this->fields['_key'] = [

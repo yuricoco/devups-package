@@ -45,6 +45,7 @@ Usage:
 
         $commend[] = "install                 // create database, create database schema and create master admin ";
         $commend[] = "dvups_:update           // update right of master admin on new modules and entities ";
+        $commend[] = "rights:sync             // sync dvups_action from every entity's declared/default actions ";
 
         echo "\n\t -> ".implode("\n\t -> ", $commend);
         
@@ -108,7 +109,7 @@ Usage:
         foreach ($modulecore->listentity as $entity) {
             // generator::entity()
             $moduleentities[] = $entity->name;
-            if ($entity->name == strtolower($entityname)) {
+            if (strtolower($entity->name) == strtolower($entityname)) {
                 $entitycore = $entity;
                 break;
             }
@@ -125,7 +126,7 @@ Usage:
     }
 
     /**
-     * 
+     *
      * @param type $namespace
      */
     public static function component($project) {
@@ -146,7 +147,7 @@ Usage:
     }
 
     /**
-     * 
+     *
      * @param type $namespace
      */
     public static function module($project, $namespace) {
@@ -177,7 +178,7 @@ Usage:
     }
 
     /**
-     * 
+     *
      * @param type $namespace
      */
     public static function __moduleendless($project, $namespace) {
@@ -269,7 +270,7 @@ Usage:
     }
 
     /**
-     * 
+     *
      * @param type $namespace
      */
     public static function views($namespace, $project) {
@@ -280,7 +281,7 @@ Usage:
     }
 
     /**
-     * 
+     *
      * @param type $namespace
      */
     public static function core($namespace, $sync = false) {
@@ -315,7 +316,7 @@ Usage:
     }
 
     /**
-     * 
+     *
      * @param type $namespace
      */
     public static function table($namespace, $project) {
@@ -351,7 +352,7 @@ Usage:
     }
 
     /**
-     * 
+     *
      * @param type $namespace
      */
     public static function form($namespace, $project) {
@@ -384,7 +385,7 @@ Usage:
     }
 
     /**
-     * 
+     *
      * @param type $namespace
      */
     public static function entity($namespace, $project) {
@@ -407,7 +408,7 @@ Usage:
     }
 
     /**
-     * 
+     *
      * @param type $namespace
      */
     public static function crud($namespace, $project) {
@@ -453,7 +454,7 @@ Usage:
     }
 
     /**
-     * 
+     *
      * @param type $namespace
      */
     private static function __entity($entity, $project, $setdependance = false, $crud = ['lang' => true, 'entity' => true, 'table' => true, 'ctrl' => true, 'form' => true, 'views' => false, 'detailwidget' => false]) {
@@ -499,11 +500,13 @@ Usage:
 
         $name = strtolower($entity->name);
 
-        $entitycore = fopen('Core/' . ucfirst($name) . 'Core.json', 'w');
-        $contenu = json_encode($entity);
-        fputs($entitycore, $contenu);
-
-        fclose($entitycore);
+        // indente + non-echappe, meme forme
+        // que les 29 module<x>Core.json re-indentes a l'etape 4c du 26/10 -
+        // sans JSON_UNESCAPED_SLASHES/JSON_UNESCAPED_UNICODE, les namespaces
+        // (contiennent des \) et les libelles accentues deviendraient
+        // illisibles (\\ partout, é au lieu de e).
+        $contenu = json_encode($entity, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        GeneratorFileGuard::writeEntityCoreJson('Core/' . ucfirst($name) . 'Core.json', $contenu);
 
         chdir('../');
     }
@@ -554,7 +557,7 @@ Usage:
     }
 
     /**
-     * 
+     *
      * @param type $namespace
      */
     public static function __module($module, $setdependance = true) {
@@ -606,7 +609,7 @@ Usage:
 
             $modulecore = fopen(strtolower($module->name) . 'Core.json', 'w');
 
-            $contenu = json_encode($module);
+            $contenu = json_encode($module, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             fputs($modulecore, $contenu);
 
             fclose($modulecore);
@@ -637,9 +640,7 @@ class $repertoire extends ModuleController
 
 }";
 
-        $moddepend = fopen($repertoire.".php", "w");
-        fputs($moddepend, $moduleclass);
-        fclose($moddepend);
+        GeneratorFileGuard::write($repertoire.".php", $moduleclass);
 
         // on sort du module
         chdir('../');
@@ -675,9 +676,7 @@ class $repertoire extends ModuleController
 
         $package .= "require '$module->name.php';\n";
 
-        $moddepend = fopen($filename, "w");
-        fputs($moddepend, $package);
-        fclose($moddepend);
+        GeneratorFileGuard::write($filename, $package);
 
         chdir("../");
     }
@@ -718,12 +717,21 @@ class $repertoire extends ModuleController
     }
 
     private static function index($module, $modulelistentity) {
+        // Ecrit l'ancien patron index.php par module. Le routage passe
+        // desormais par admin/index.php : ne pas rappeler sans besoin.
         $repertoire = ucfirst($module->name);
         chdir($repertoire);
 
-        $root = fopen('.htaccess', 'w');
+        $htaccess = "# Le code PHP du module n'est jamais execute directement : seuls index.php
+# et services.php restent joignables. Les ressources statiques (Resource/js,
+# css, images) restent servies normalement.
+<FilesMatch \"\\.php$\">
+    Require all denied
+</FilesMatch>
+<FilesMatch \"^(index|services)\\.php$\">
+    Require all granted
+</FilesMatch>
 
-        $htaccess = "\n
 RewriteEngine On
 
 RewriteCond %{REQUEST_FILENAME} !-d
@@ -735,15 +743,11 @@ RewriteRule ^(.+)$ index.php?url=$1 [QSA,L]
 </IfModule>
                 \n";
 
-        fputs($root, $htaccess);
-        fclose($root);
-
-
-        $root = fopen('index.php', 'w');
+        GeneratorFileGuard::write('.htaccess', $htaccess);
 
         $contenu = "<?php
             //" . $module->name . "
-        
+
         require '../../../admin/header.php';
         global \$app;
 if (isset(\$_SERVER['PATH_INFO']) && strpos(\$_SERVER['PATH_INFO'], '/api/') === 0) {
@@ -759,8 +763,7 @@ die;
 
         $contenu .= "";
 
-        fputs($root, $contenu);
-        fclose($root);
+        GeneratorFileGuard::write('index.php', $contenu);
 
         chdir('../');
     }
@@ -798,10 +801,16 @@ die;
     require 'Controller/" . $name . "Controller.php';\n";
         //}
 
-        //$filename = strtolower(str_replace('/', '.', $module->name));
-        $moddepend = fopen($filename, $mode);
-        fputs($moddepend, $package);
-        fclose($moddepend);
+        // mode "a+" (fichier present, pas de
+        // --rewrite) ne perd rien par construction - seul le mode "w" (fichier
+        // absent ou --rewrite explicite) passe par la garde.
+        if ($mode === "w") {
+            GeneratorFileGuard::write($filename, $package);
+        } else {
+            $moddepend = fopen($filename, $mode);
+            fputs($moddepend, $package);
+            fclose($moddepend);
+        }
 
         chdir("../");
 
@@ -815,13 +824,11 @@ die;
         }
         chdir($repertoire);
 
-        $services = fopen('services.php', 'w');
-
         $contenu = "<?php
             //" . $module->name . "
-		
+
         require '../../../admin/header.php';
-        
+
 header(\"Access-Control-Allow-Origin: *\");
 //header('Content-Type: application/json');
 
@@ -831,8 +838,7 @@ die;
 
 ";
 
-        fputs($services, $contenu);
-        fclose($services);
+        GeneratorFileGuard::write('services.php', $contenu);
 
         // on sort du module
         chdir('../');

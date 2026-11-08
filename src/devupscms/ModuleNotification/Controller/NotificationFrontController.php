@@ -20,14 +20,13 @@ class NotificationFrontController extends \dclass\devups\Controller\FrontControl
      */
     public function index()
     {
-        $qb = Notification::initQb();
+        $qb = Notification::initQb()->with('notificationtype', ['_key']);
 
         return $qb->lazyloading(function (\dclass\devups\Datatable\Lazyloading $ll) {
             $ll->append('nbunread', Notification::where("user_id", Auth::$user_id)
                 ->where("status", "<", 1)
                 ->count());
         });
-
     }
 
     /**
@@ -38,16 +37,41 @@ class NotificationFrontController extends \dclass\devups\Controller\FrontControl
     public function notified()
     {
 
-//        $ids = Request::post("ids");
+        //        $ids = Request::post("ids");
         return Notification::where("user_id", Auth::$user_id)
             ->where('this.status', "=", -1)
-//        where("this.id")
-//            ->in($ids)
+            //        where("this.id")
+            //            ->in($ids)
             ->update([
                 "status" => '0',
                 "viewedat" => date('Y-m-d H:i:s'),
             ]);
+    }
 
+    /**
+     * @Auth(authorized=1)
+     * @PUT(path='/readall')
+     * @return array
+     */
+    public function readall()
+    {
+        Notification::where("user_id", Auth::$user_id)
+            ->where('this.status', "<", 1)
+            ->update([
+                "status" => 1,
+                "viewedat" => date('Y-m-d H:i:s'),
+            ]);
+        return ["success" => true];
+    }
+
+    /**
+     * @Auth(authorized=1)
+     * @PUT(path='/:id')
+     * @return array
+     */
+    public function update($id)
+    {
+        return parent::updateCore($id);
     }
 
     /**
@@ -71,11 +95,11 @@ class NotificationFrontController extends \dclass\devups\Controller\FrontControl
                     "ping" => 0
                 ]);*/
 
-        return array('success' => true,
+        return array(
+            'success' => true,
             'notifications' => $notifications,
             'unreaded' => $unreaded,
-            'detail' => '');
-
+            'detail' => ''
+        );
     }
-
 }

@@ -37,7 +37,7 @@ class EntityCollection{
         }
         
         /**
-         * 
+         *
          * @param type $listentity
          * @param type $listentity2 the second list
          * @param type $cmp the attribut to compare ( id by default )
@@ -62,7 +62,7 @@ class EntityCollection{
         
         /**
          * the function check the greates list then do the difference between it and the lower.
-         * 
+         *
          * @param type $listentity
          * @param type $listentity2 the second list
          * @param type $cmp the attribut to compare ( id by default )

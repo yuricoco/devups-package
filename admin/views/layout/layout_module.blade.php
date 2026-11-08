@@ -12,23 +12,8 @@
 @section('content')
 
     <!--begin::Toolbar-->
-    @include("default.toolbar")
-    <ul class="nav nav-justified">
-        <li class="nav-item">
-            <a class="nav-link active"
-               href="<?= $moduledata->route() ?>">
-                <i class="metismenu-icon"></i> <span>Dashboard</span>
-            </a>
-        </li>
-        @foreach ($moduledata->dvups_entity as $entity)
-            <li class="nav-item">
-                <a class="nav-link active"
-                   href="<?=  $entity->route() ?>">
-                    <i class="metismenu-icon"></i> <span><?= $entity->getLabel() ?></span>
-                </a>
-            </li>
-        @endforeach
-    </ul>
+    @include("default.moduleheaderwidget")
+
     <hr>
     <!--end::Toolbar-->
     @yield("content_module")

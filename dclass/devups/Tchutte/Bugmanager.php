@@ -54,7 +54,7 @@ class Bugmanager {
         * Cast an object into a different class.
         *
         * Currently this only supports casting DOWN the inheritance chain,
-        * that is, an object may only be cast into a class if that class 
+        * that is, an object may only be cast into a class if that class
         * is a descendant of the object's current class.
         *
         * This is mostly to avoid potentially losing data by casting across

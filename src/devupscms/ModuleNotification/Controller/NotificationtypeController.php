@@ -29,9 +29,9 @@ class NotificationtypeController extends Controller{
     public function formView($id = null)
     {
         $notificationtype = new Notificationtype();
-        $action = Notificationtype::classpath("services.php?path=notificationtype.create");
+        $action = __env . ("admin/api/notificationtype/create");
         if ($id) {
-            $action = Notificationtype::classpath("services.php?path=notificationtype.update&id=" . $id);
+            $action = __env . ("admin/api/notificationtype/update?id=" . $id);
             $notificationtype = Notificationtype::find($id);
         }
 

@@ -66,13 +66,33 @@ class Router // extends Request
     public static function getPathInfo()
     {
 
-        if (isset($_SERVER['PATH_INFO']))
+        if (isset($_SERVER['PATH_INFO']) && $_SERVER['PATH_INFO']) {
             $path_info = $_SERVER['PATH_INFO'];
-        elseif (isset($_GET['url']))
+        } elseif (isset($_SERVER['REQUEST_URI'])) {
+            $requestUri = $_SERVER['REQUEST_URI'];
+            // Remove query string
+            if (($pos = strpos($requestUri, '?')) !== false) {
+                $requestUri = substr($requestUri, 0, $pos);
+            }
+
+            // Get base directory
+            $baseDir = dirname($_SERVER['SCRIPT_NAME']);
+            $baseDir = str_replace('\\', '/', $baseDir); // for Windows
+            if ($baseDir === '/') {
+                $baseDir = '';
+            }
+
+            // Remove baseDir from requestUri
+            if ($baseDir && strpos($requestUri, $baseDir) === 0) {
+                $requestUri = substr($requestUri, strlen($baseDir));
+            }
+
+            $path_info = $requestUri;
+        } elseif (isset($_GET['url'])) {
             $path_info = "/" . $_GET['url'];
-        elseif (self::$uri == '/admin/')
+        } elseif (self::$uri == '/admin/') {
             $path_info = "/";
-        elseif (isset($_SERVER['QUERY_STRING'])) {
+        } elseif (isset($_SERVER['QUERY_STRING'])) {
             $path_info = "/" . str_replace('url=', '', explode('&', $_SERVER['QUERY_STRING'])[0]);
             //$path_info = "/" . $_GET['url'];
 
@@ -82,8 +102,10 @@ class Router // extends Request
 
             if ($path_info)*/
             $path_info = null;
-
         }
+
+        if ($path_info)
+            $path_info = explode('?', $path_info)[0];
 
         self::$path_info = $path_info;
     }
@@ -95,18 +117,17 @@ class Router // extends Request
 
         if (self::$path_info && strpos(self::$path_info, '/api/') === 0) {
             (new WebService('hello'))->runServe();
-        } else
-            (new \App('hello'))->run();
+        } else (new \App('hello'))->run();
         die;
     }
 
     public static function startAdmin()
     {
         self::getPathInfo();
-        if (self::$path_info && strpos(self::$path_info, '/api/') === 0) {
+        if (self::$path_info && str_contains(self::$path_info, '/api/')) {
+            self::$path_info = str_replace('/admin/api/', '/api/', self::$path_info);
             (new AdminService('hello'))->manageServe('');
-        } else
-            (new Admin('dashboard'))->manage();
+        } else (new Admin('dashboard'))->manage();
         die;
     }
 
@@ -160,6 +181,19 @@ class Router // extends Request
         $function = implode('', array_map('ucfirst', explode('-', str_replace('_', '-', self::$path))));
         $function .= "View";
 
+
+        if (!method_exists($this, $function)) {
+
+            if (!isset($this->append_routes[Request::getpath()])) {
+                if (__prod)
+                    Genesis::render('404');
+                else
+                    var_dump(" You may create method " . " " . $function . " in entity. ");
+                die;
+            } else
+                $function = $this->append_routes[Request::getpath()];
+        }
+
         if (!method_exists($this, $function)) {
             if (__prod)
                 Genesis::render('404');
@@ -168,8 +202,8 @@ class Router // extends Request
             die;
         }
 
-//        $lines = file(ROOT."cache/routes.php");
-//        array_splice($lines, 1, 0, "new content");
+        //        $lines = file(ROOT."cache/routes.php");
+        //        array_splice($lines, 1, 0, "new content");
 
         self::$route_builder['method'] = $function;
         self::$route_builder['ctrl'] = 'App';
@@ -178,7 +212,6 @@ class Router // extends Request
         } catch (Exception $e) {
             echo $e->getMessage();
         }
-
     }
 
     public function runCache($url)
@@ -214,18 +247,16 @@ class Router // extends Request
             $admin = getadmin();
             if (isset($metadata["dclass"])) {
                 global $viewdir, $moduledata;
-//                $entity = Dvups_entity::getbyattribut('this.name',
-//                    str_replace('-', '_', $metadata["dclass"]));
-                $viewdir[] = '';//$entity->dvups_module->hydrate()->moduleRoot() . 'Resource/views';
+                //                $entity = Dvups_entity::getbyattribut('this.name',
+                //                    str_replace('-', '_', $metadata["dclass"]));
+                $viewdir[] = ''; //$entity->dvups_module->hydrate()->moduleRoot() . 'Resource/views';
 
-                $moduledata = '';//$entity->dvups_module;
-                $moduledata->dvups_entity = '';//$admin->dvups_role->collectDvups_entityOfModule($moduledata);
+                $moduledata = ''; //$entity->dvups_module;
+                $moduledata->dvups_entity = ''; //$admin->dvups_role->collectDvups_entityOfModule($moduledata);
 
                 Request::$uri_get_param["dclass"] = $metadata["dclass"];
                 self::$class_name = $metadata["dclass"];
             }
-
-
         } else if (isset($metadata["@auth"])) {
             $methodView = explode("@", $metadata["@auth"]['method']);
             $ctrl = $methodView[0];
@@ -273,7 +304,7 @@ class Router // extends Request
 
         $methoparams = [];
         $reflection = new ReflectionAnnotatedClass($ctrl);
-        $method_object = $reflection->getMethod($method);//
+        $method_object = $reflection->getMethod($method); //
         $mparams = $method_object->getParameters();
 
         if (!($metadata['params'])) {
@@ -294,7 +325,6 @@ class Router // extends Request
             $metadata['params'] = array_keys($methoparams);
             self::$routes[$url] = $metadata;
             file_put_contents(ROOT . "cache/routes.json", json_encode(self::$routes));
-
         } else {
 
             if (!$mparams) {
@@ -324,9 +354,14 @@ class Router // extends Request
             header("Access-Control-Allow-Credentials: true"); // Autoriser les credentials (cookies, tokens)
         }
 
-// 🔥 Ajouter les headers autorisés ici
+        // 🔥 Ajouter les headers autorisés ici
         header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-        header("Access-Control-Allow-Headers: Authorization, Auth, Columns, common, Content-Type, X-Requested-With");
+        // X-Customer-Auth (P2-07) : jeton du portail client, jamais sur
+        // Authorization/Auth - voir CustomerAuth::verify() et
+        // docs/DECISIONS.md D-028 pour le pourquoi (Auth::execute() est
+        // appele sans condition sur ces deux en-tetes par runServe()
+        // ci-dessous, avant meme le dispatch de la route).
+        header("Access-Control-Allow-Headers: Authorization, Auth, X-Customer-Auth, Columns, Dlang, common, Content-Type, X-Requested-With");
 
         // Gérer les requêtes OPTIONS (préflight)
         if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
@@ -335,9 +370,10 @@ class Router // extends Request
         }
 
         if (isset($_SERVER['HTTP_COLUMNS'])) {
-
-            Request::$uri_header_param = json_decode($_SERVER['HTTP_COLUMNS'], true);
-
+            Request::$uri_header_param['dcolumns'] = json_decode($_SERVER['HTTP_COLUMNS'], true);
+        }
+        if (isset($_SERVER['HTTP_DLANG'])) {
+            Request::$uri_header_param['dlang'] = $_SERVER['HTTP_DLANG'];
         }
 
         //we initialize the session_user for the life cycle
@@ -345,17 +381,20 @@ class Router // extends Request
         $result = $Auth->execute();
         if (is_object($result)) {
             Router::$route_builder['auth'] = true;
-            Request::$uri_get_param['user_id'] = $result->userId;
+            Request::$uri_get_param['session_user_id'] = $result->userId;
         }
         // require_once ROOT.'cache/routes.php';
         self::$api_route = true;
 
-        self::$path = Request::getpath();
+        // dv_dump(self::$path_info);
+        self::$path = str_replace("/api/", "", self::$path_info); //Request::getpath();
         $path = explode("/", trim(self::$path, '/'));
 
 
-        if (count($path) >= 2 && in_array($path[0],
-                ['create', 'upload', 'detail', 'read', 'update', 'delete', 'lazyloading'])) {
+        if (count($path) >= 2 && in_array(
+            $path[0],
+            ['create', 'upload', 'detail', 'read', 'update', 'delete', 'lazyloading']
+        )) {
             self::$path = $path[0];
             Request::$uri_get_param["path"] = $path[0];
             Request::$uri_get_param["dclass"] = $path[1];
@@ -371,9 +410,8 @@ class Router // extends Request
             try {
                 Genesis::json_encode(\dclass\devups\Controller\FrontController::frontServe($path[0], $this));
             } catch (Exception $e) {
-//                    self::$path = $path[0];
+                //                    self::$path = $path[0];
                 Genesis::json_encode($e->getMessage());
-
             }
         } else {
             self::$path = $path[0];
@@ -393,7 +431,6 @@ class Router // extends Request
                     Genesis::json_encode(" You may create method " . " " . $function . " in entity. ");
             } else
                 $function = $this->append_routes[Request::getpath()];
-
         }
 
         try {
@@ -406,29 +443,26 @@ class Router // extends Request
                 'detail' => $exception->getMessage(),
             ]);*/
         }
-
     }
 
     public final function manage()
     {
 
         self::$admin_route = true;
-//        self::getPathInfo();
-// move comment scope to enable authentication
+        //        self::getPathInfo();
+        // move comment scope to enable authentication
 
         $this->url = self::$path_info;
-        if (!strpos(self::$path_info, '/admin/'))
-            $routmap = explode("/", (self::$path_info));
-        else
-            $routmap = explode("/", trim(self::$path_info, "/"));
+        $routmap = explode("/", trim(self::$path_info, "/"));
+        if ($routmap[0] !== "admin") {
+            $routmap = ["admin", ...$routmap];
+        }
         $nbmap = count($routmap);
         self::$path = $routmap[$nbmap - 1];
 
-//        dv_dump(self::$path_info, self::$path);
-        if (!isset($_SESSION[ADMIN]) && ( self::$path != 'connexion' || self::$path != 'connexion-action')) {
+        if (!isset($_SESSION[ADMIN]) && (self::$path != 'connexion-action')) {
             //$token = sha1(\DClass\lib\Util::randomcode());
             header("location: " . __env . 'admin/login.php');
-
         }
 
         if (self::$path_info == '/' || !self::$path_info) {
@@ -451,17 +485,16 @@ class Router // extends Request
 
                 $global_config = require ROOT . 'config/dvups_configurations.php';
                 $entity = $global_config['' . Request::$uri_get_param['dclass']];
-//                dv_dump($entity, Request::$uri_get_param['dclass']);
-//                $entity = Dvups_entity::where("this.url", Request::get("dclass"))->firstOrNull();
+                //                dv_dump($entity, Request::$uri_get_param['dclass']);
+                //                $entity = Dvups_entity::where("this.url", Request::get("dclass"))->firstOrNull();
 
                 if ($entity) {
 
                     \dclass\devups\Controller\Controller::views($this, $entity);
                     die();
                 }
-            }
-            else if ($nbmap >= 3) {
-                if ($nbmap === 3 )
+            } else if ($nbmap >= 3) {
+                if ($nbmap === 3)
                     self::$path = 'dashbaord';
                 else
                     self::$path = $routmap[$nbmap - 1];
@@ -473,21 +506,18 @@ class Router // extends Request
                 $global_config = require ROOT . 'config/module_configurations.php';
                 if (isset($global_config[$routmap[2]])) {
                     $module = $global_config[$routmap[2]];
-                    $module['path'] = $routmap[1] . '/' . $routmap[2]."/";
+                    $module['path'] = $routmap[1] . '/' . $routmap[2] . "/";
 
                     \dclass\devups\Controller\Controller::viewsModule($this, $module);
                     die();
-
                 }
-            }
-            else {
+            } else {
                 self::$path = $routmap[$nbmap - 1];
                 Request::$uri_get_param['path'] = self::$path;
             }
 
             /*header('HTTP/1.0 400 Bad Request path not correct');
             die;*/
-
         }/**/
 
         $function = implode('', array_map('ucfirst', explode('-', str_replace('_', '-', self::$path))));
@@ -506,7 +536,6 @@ class Router // extends Request
 
         //$reflection = new ReflectionAnnotatedClass($named);
         $this->mapFunction($named, $function);
-
     }
 
     public function manageServe($default_route)
@@ -552,8 +581,8 @@ class Router // extends Request
 
                 $global_config = require ROOT . 'config/dvups_configurations.php';
                 $entity = $global_config["" . Request::$uri_get_param["dclass"]];
-//                $entity = Dvups_entity::where("this.url", $path[0])
-//                    ->orwhere("this.name", $path[0])->firstOrNull();
+                //                $entity = Dvups_entity::where("this.url", $path[0])
+                //                    ->orwhere("this.name", $path[0])->firstOrNull();
 
                 if ($entity)
                     Genesis::json_encode(\dclass\devups\Controller\Controller::serve($this, $entity));
@@ -576,7 +605,6 @@ class Router // extends Request
         try {
             $this->mapFunction($named, $function);
         } catch (Exception $exception) {
-
         }
 
         /*if( !isset($this->routes[$_SERVER['REQUEST_METHOD']])){
@@ -598,7 +626,7 @@ class Router // extends Request
     {
 
         $reflection = new ReflectionAnnotatedClass($classname);
-        $method = $reflection->getMethod($function);//
+        $method = $reflection->getMethod($function); //
         $mparams = $method->getParameters();
 
         $methoparams = [];
@@ -636,8 +664,8 @@ class Router // extends Request
         } else {
 
             $methodView = false;
-//            http_response_code(405);
-//            return array('details' => "Request method {$this->request_method} not allowed for this route");
+            //            http_response_code(405);
+            //            return array('details' => "Request method {$this->request_method} not allowed for this route");
 
         }
 
@@ -655,31 +683,30 @@ class Router // extends Request
         }
         self::$route_builder['request_method'] = $this->request_method;
 
-//        self::cacheRoute($this->url, $classname . '@' . $function, array_keys($methoparams), self::$route_builder['auth'], self::$route_builder['request_method']);
+        //        self::cacheRoute($this->url, $classname . '@' . $function, array_keys($methoparams), self::$route_builder['auth'], self::$route_builder['request_method']);
 
         if (!$mparams) {
 
             $this->{$function}();
             die;
-
         }
 
         call_user_func_array(array($this, $function), $methoparams);
-
     }
 
     public static function cacheRoute($path, $methodview, $params = [], $auth = false, $request_method = "GET")
     {
 
-//
+        //
 
-//        if (__prod)
-            return null;
+        //        if (__prod)
+        return null;
 
         $route = [
-            'method' => $methodview, 'params' => $params,
+            'method' => $methodview,
+            'params' => $params,
         ];
-        if (Request::$uri_get_route_param)// ["route"]
+        if (Request::$uri_get_route_param) // ["route"]
             $route["route_params"] = array_keys(Request::$uri_get_route_param);
         if (isset(Request::$uri_get_param["path"]))
             $route["path"] = Request::$uri_get_param["path"];
@@ -701,8 +728,8 @@ class Router // extends Request
         self::$routes['/' . $path] = $route;
         // Convertir le tableau en une chaîne de PHP valide
         $phpContent = "<?php\n\nreturn " . var_export(self::$routes, true) . ";\n";
-//        file_put_contents(ROOT . "cache/routes.json", json_encode(self::$routes));
-//        if (!file_exists(ROOT . "cache/routes.php"))
+        //        file_put_contents(ROOT . "cache/routes.json", json_encode(self::$routes));
+        //        if (!file_exists(ROOT . "cache/routes.php"))
         file_put_contents(ROOT . "cache/routes.php", $phpContent);
         //file_put_contents(ROOT."cache/routes.php", "<?php \n".print_r(self::$routes, true));
 
@@ -716,45 +743,18 @@ class Router // extends Request
         return $this->namedRoutes[$name]->getUrl($params);
     }
 
-    public function authorization()
-    {
+    // Router::authorization() a ete supprimee (T90) : aucun appelant dans
+    // tout le depot (le chemin reel d'authentification est Auth::execute(),
+    // appele en tete de runServe() ; le controle d'entite est
+    // FrontController::authorization($classname, $method), une methode
+    // differente malgre le nom identique). Cette methode utilisait en outre
+    // l'ancienne signature positionnelle de firebase/php-jwt 5.x
+    // (JWT::decode($jwt, $secret, $hashArray)), incompatible avec la
+    // version 6.x installee (JWT::decode($jwt, new Key($secret, $alg))) :
+    // tout appel aurait leve une TypeError immediate. Du code mort qui
+    // ressemble a de la securite est pire que pas de code du tout.
 
-        if (!isset($_SERVER['HTTP_AUTHORIZATION'])) {
-            header('HTTP/1.0 400 Bad Request AUTHORIZATION not found');
-            exit;
-        }
+    public static function needAuth($message = "") {}
 
-        if (!preg_match('/Bearer\s(\S+)/', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
-            header('HTTP/1.0 400 Bad Request');
-            echo 'Token not found in request';
-            exit;
-        }
-        $this->jwt = $matches[1];
-        if (!$this->jwt) {
-            // No token was able to be extracted from the authorization header
-            header('HTTP/1.0 400 Bad Request');
-            exit;
-        }
-        $hash = ['HS512'];
-        $token = JWT::decode($this->jwt, jwt_secret_Key, $hash);
-        $now = new DateTimeImmutable();
-        $serverName = __server;
-
-        if ($token->iss !== $serverName ||
-            $token->nbf > $now->getTimestamp() ||
-            $token->exp < $now->getTimestamp()) {
-            header('HTTP/1.1 401 Unauthorized');
-            exit;
-        }
-    }
-
-    public static function needAuth($message = "")
-    {
-
-    }
-
-    public static function needUnAuth()
-    {
-    }
-
+    public static function needUnAuth() {}
 }

@@ -26,22 +26,56 @@ class UserTable extends Datatable
 
         $this->base_url = __env . "admin/";
         $this->order_by = " this.id desc ";
+        $this->qbcustom->with('country', ['name']);
         $this->datatablemodel = [
             'id' => ['header' => t('#'),],
-            'src_profile' => ['header' => t('Profile'),'value'=>'src:profile'],
+            'src_profile' => ['header' => t('Profile'), 'value' => 'src:profile'],
+            //            'firstname' => ['header' => t('Firstname'),],
+            'is_activated' => ['header' => t('Activated'),],
             'username' => ['header' => t('Username'),],
             'email' => ['header' => t('Email'),],
-            'country.nicename' => ['header' => t('Pays'),],
+            'country.name' => ['header' => t('Pays'),],
             'phonenumber' => ['header' => t('Phonenumber'),],
             //'lang' => ['header' => t('Lang'),],
             'created_at' => ['header' => t('Cree le'),],
-//            'role.name' => ['header' => t('Role'),],
+            'updated_at' => ['header' => t('Last Update'), 'order' => true],
         ];
 
-        $this->addcustomaction(function ($item){
-           return \dclass\devups\model\Dbutton::link('Detail',
-               User::classview('user/detail?id='.$item->id), 'btn btn-info')
-               ->render();
+        $this->addcustomaction(function ($item) {
+            return \dclass\devups\model\Dbutton::link(
+                'Detail',
+                User::classview('user/detail?id=' . $item->id),
+                'btn btn-info'
+            )
+                ->render();
+        });
+
+        return $this;
+    }
+    public function builddashboardtable()
+    {
+
+        $this->enabletopaction = false;
+        $this->groupaction = false;
+        $this->enablefilter(false);
+        $this->base_url = __env . "admin/";
+        $this->order_by = " this.id desc ";
+        $this->datatablemodel = [
+            'id' => ['header' => t('#'),],
+            'username' => ['header' => t('Username'),],
+            'email' => ['header' => t('Email'),],
+            'created_at' => ['header' => t('Cree le'), 'order' => true,],
+        ];
+
+        $this->disableDefaultaction();
+        $this->actionDropdown = false;
+        $this->addcustomaction(function ($item) {
+            return \dclass\devups\model\Dbutton::link(
+                'Detail',
+                User::classview('user/detail?id=' . $item->id),
+                'btn btn-info'
+            )
+                ->render();
         });
 
         return $this;
@@ -55,15 +89,11 @@ class UserTable extends Datatable
             ['label' => t('email'), 'value' => 'email'],
             ['label' => t('sexe'), 'value' => 'sexe'],
             ['label' => t('phonenumber'), 'value' => 'phonenumber'],
-            ['label' => t('password'), 'value' => 'password'],
             ['label' => t('resettingpassword'), 'value' => 'resettingpassword'],
             ['label' => t('is_activated'), 'value' => 'is_activated'],
-            ['label' => t('activationcode'), 'value' => 'activationcode'],
             ['label' => t('birthdate'), 'value' => 'birthdate'],
-            ['label' => t('creationdate'), 'value' => 'creationdate'],
             ['label' => t('lang'), 'value' => 'lang'],
             ['label' => t('username'), 'value' => 'username'],
-            ['label' => t('has_shop'), 'value' => 'has_shop']
         ];
         // TODO: overwrite datatable attribute for this view
         return $this;
@@ -80,7 +110,5 @@ class UserTable extends Datatable
                 default:
                     return $this->buildindextable();
             }
-
     }
-
 }

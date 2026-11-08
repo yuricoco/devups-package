@@ -113,7 +113,7 @@ Usage:
     }
 
     /**
-     * 
+     *
      * @param type $namespace
      */
     public static function component($project) {
@@ -134,7 +134,7 @@ Usage:
     }
 
     /**
-     * 
+     *
      * @param type $namespace
      */
     public static function module($project, $namespace) {
@@ -156,7 +156,7 @@ Usage:
     }
 
     /**
-     * 
+     *
      * @param type $namespace
      */
     public static function __moduleendless($project, $namespace) {
@@ -174,7 +174,7 @@ Usage:
     }
 
     /**
-     * 
+     *
      * @param type $namespace
      */
     public static function views($namespace, $project) {
@@ -185,7 +185,7 @@ Usage:
     }
 
     /**
-     * 
+     *
      * @param type $namespace
      */
     public static function genesis($namespace, $project) {
@@ -196,7 +196,7 @@ Usage:
     }
 
     /**
-     * 
+     *
      * @param type $namespace
      */
     public static function controller($namespace, $project) {
@@ -207,7 +207,7 @@ Usage:
     }
 
     /**
-     * 
+     *
      * @param type $namespace
      */
     public static function form($namespace, $project) {
@@ -218,7 +218,7 @@ Usage:
     }
 
     /**
-     * 
+     *
      * @param type $namespace
      */
     public static function entity($namespace, $project, $package) {
@@ -229,7 +229,7 @@ Usage:
     }
 
     /**
-     * 
+     *
      * @param type $namespace
      */
     public static function crud($namespace, $project, $package) {
@@ -240,7 +240,7 @@ Usage:
     }
 
     /**
-     * 
+     *
      * @param type $namespace
      */
     private static function __entity($entity, $project, $package, $setdependance = false,
@@ -254,7 +254,7 @@ Usage:
 
         $repertoire = ucfirst(__Generatorjava::$modulecore->name);
 
-//        if (!file_exists($repertoire)) {            
+//        if (!file_exists($repertoire)) {
         //__Generatorjava::__module(__Generatorjava::$modulecore, $setdependance);
 //        }
 
@@ -319,7 +319,7 @@ Usage:
     }
 
     /**
-     * 
+     *
      * @param type $namespace
      */
     public static function __module($module, $setdependance = true) {

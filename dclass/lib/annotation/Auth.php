@@ -30,7 +30,11 @@ class Auth extends Annotation
     {
 
         if (!isset($_SERVER['HTTP_AUTHORIZATION']) && !isset($_SERVER['HTTP_AUTH'])) {
-            header('HTTP/1.0 400 Bad Request AUTHORIZATION not found');
+            // Pas de header() ici : ce service se contente de SIGNALER
+            // l'echec, il ne decide pas du statut HTTP (un header() pose ici
+            // ecraserait le 401 de l'appelant). C'est l'appelant qui pose le
+            // statut : Request::FrontController() pour le style REST dedie,
+            // WebService::systemServe() pour le style generique.
             return ([
                 'success' => false,
                 'detail' => "Bad Request AUTHORIZATION or AUTH not found",
@@ -135,6 +139,26 @@ class Auth extends Annotation
                 'detail' => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Variante stricte de decodeJWT() : leve sur tout jeton absent, mal
+     * forme, invalide ou expire, au lieu de retourner silencieusement un
+     * tableau d'echec que l'appelant peut oublier de verifier.
+     *
+     * decodeJWT() garde son contrat de retour. A utiliser pour tout code
+     * neuf qui decode un JWT hors du flux d'autorisation par annotation
+     * (@Auth(authorized=1), qui passe par execute(), pas par ici).
+     *
+     * @throws \Throwable si $jwt n'est pas une chaine non vide, ou si
+     *         JWT::decode() echoue (signature, expiration, format...)
+     */
+    public static function decodeJWTOrFail($jwt): stdClass
+    {
+        if (!is_string($jwt) || $jwt === '') {
+            throw new \UnexpectedValueException('Jeton absent ou invalide');
+        }
+        return JWT::decode($jwt, new \Firebase\JWT\Key(jwt_secret_Key, 'HS512'));
     }
 
     public static function getJWT(\User $user){

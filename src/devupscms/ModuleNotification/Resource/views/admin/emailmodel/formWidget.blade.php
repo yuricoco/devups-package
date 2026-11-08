@@ -1,5 +1,5 @@
 <?php //use dclass\devups\Form\Form; ?>
-<?php //Form::addcss(Reportingmodel ::classpath('Ressource/js/emailmodel')) ?>
+<?php //Form::addcss(Reportingmodel ::classpath('Resource/js/emailmodel')) ?>
 
 <?= Form::open($emailmodel, ["action" => "$action", "method" => "post"], true) ?>
 

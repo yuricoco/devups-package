@@ -57,7 +57,7 @@ use SimpleXMLElement;
  * echo 'Sheet Name 2 = '.$xlsx->sheetName(1);
  *
  * Example 7: getCell (very slow)
- * echo $xlsx->getCell(1,'D12'); // reads D12 cell from second sheet
+ * echo $xlsx->getCell(1,''); // reads cell from second sheet
  *
  * Example 8: read data
  * if ( $xlsx = SimpleXLSX::parseData( file_get_contents('http://www.example.com/example.xlsx') ) ) {
@@ -1148,7 +1148,7 @@ class SimpleXLSX
      * VERY SLOW! Use ->rows() or ->rowsEx()
      *
      * @param int $worksheetIndex
-     * @param string|array $cell ref or coords, D12 or [3,12]
+     * @param string|array $cell ref or coords or [3,12]
      *
      * @return mixed Returns NULL if not found
      */

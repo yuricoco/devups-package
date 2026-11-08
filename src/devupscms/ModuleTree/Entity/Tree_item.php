@@ -38,11 +38,37 @@ class Tree_item extends Model implements JsonSerializable
      **/
     protected $main;
     /**
+     * Decision du proprietaire (2026-11-03) : cette
+     * colonne est POLYVALENTE PAR CONCEPTION, son format se definit PAR
+     * USAGE (ex. setParents_id()/getParents_id() : ids separes par des
+     * espaces). Il n'y a donc PAS de format unique a faire respecter.
+     *
+     * CONSEQUENCE OBLIGATOIRE : aucun accesseur generique ne doit en
+     * presumer le format. Mesure en base le 2026-11-04 : sur les 95 items
+     * reels, `chain` contient aussi bien des listes d'ids (aucune
+     * actuellement) que du texte libre sans rapport avec un parcours
+     * d'arbre (ex. item id 67, arbre "configuration" :
+     * "Achat automatique apres les pages d'extrait" ; item id 91, arbre
+     * "network" : "fb"). Un lecteur qui presumerait un format casse sur
+     * ces lignes reelles (ex. une virgule ou un espace dans le texte libre
+     * fait exploser un explode() + whereIn() generique - voir l'ancienne
+     * getParentsCatTree(), retiree pour cette raison,.
+     *
+     * Avant d'ecrire un nouveau lecteur de `chain` : rattache-le
+     * explicitement a L'USAGE qui ecrit ce format precis (comme
+     * getParents_id() le fait pour le sien), jamais une methode partagee
+     * qui s'appliquerait a tout item de tout arbre.
+     *
      * @Column(name="chain", type="text"  , nullable=true)
      * @var text
      **/
     protected $chain;
 
+    /**
+     * @Column(name="icon", type="text" , nullable=true )
+     * @var string
+     **/
+    protected $icon;
     /**
      * @Column(name="image", type="string" , length=255, nullable=true )
      * @var string
@@ -72,14 +98,76 @@ class Tree_item extends Model implements JsonSerializable
         $this->tree = new Tree();
     }
 
+    /**
+     * Nom de l'arbre de CET item, lu directement par
+     * jointure SQL plutot que via $this->tree->name : selon le chemin
+     * d'appel (find() simple, hydrateWithJson, ...), la relation n'est
+     * pas toujours hydratee avec son nom. Fiable dans __insert/__update
+     * (apres ecriture, id garanti) et __delete (avant suppression).
+     */
+    private function currentTreeName(): ?string
+    {
+        if (!$this->id) {
+            return $this->tree && $this->tree->name ? $this->tree->name : null;
+        }
+        $stmt = \Model::pdo()->prepare(
+            'SELECT t.name FROM tree_item ti JOIN tree t ON t.id = ti.tree_id WHERE ti.id = ?'
+        );
+        $stmt->execute([$this->id]);
+        $name = $stmt->fetchColumn();
+        return $name !== false ? $name : null;
+    }
+
+    public function __insert()
+    {
+        $id = parent::__insert();
+        $treeName = $this->currentTreeName();
+        if ($treeName) {
+            Tree::markDirty($treeName);
+        }
+        return $id;
+    }
+
+    public function __update($arrayvalues = null, $seton = null, $case = null, $defauljoin = true)
+    {
+        $result = parent::__update($arrayvalues, $seton, $case, $defauljoin);
+        $treeName = $this->currentTreeName();
+        if ($treeName) {
+            Tree::markDirty($treeName);
+        }
+        return $result;
+    }
+
+    public function __delete($exec = true)
+    {
+        $treeName = $this->currentTreeName();
+        $result = parent::__delete($exec);
+        if ($treeName) {
+            Tree::markDirty($treeName);
+        }
+        return $result;
+    }
+
+    /**
+     * Deux defauts empiles, les deux mesures avant
+     * correction :
+     * - mainmenu() prend un NOM D'ARBRE en premier argument, pas une
+     *   colonne : l'appel passait "this.position" (ne correspond a aucun
+     *   arbre reel), donc $ti etait TOUJOURS null et la branche de repli
+     *   ci-dessous TOUJOURS prise. Corrige en "position", le nom de
+     *   l'arbre reel (id 6, verifie en base) ;
+     * - Tree::where("name", ...) est ambigu (jointure de traduction de
+     *   Tree, colonne "name" partagee avec dvups_lang) - qualifie en
+     *   "this.name" (voie A, voir protocole.
+     */
     public static function position($ref)
     {
-        $ti = self::mainmenu("this.position")->andwhere("this.slug", $ref)
+        $ti = self::mainmenu("position")->andwhere("this.slug", $ref)
             ->firstOrNull();
         // dv_dump($ti);
         if (!$ti) {
             //return new Tree_item();
-            $tree = Tree::where("name", "position")->firstOrNull();
+            $tree = Tree::where("this.name", "position")->firstOrNull();
             if (!$tree) {
                 $tree = new Tree();
                 $tree->setName(["en" => "position", "fr" => "position"]);
@@ -99,18 +187,30 @@ class Tree_item extends Model implements JsonSerializable
     {
         //if (!$ti) {
         //return new Tree_item();
-        $tree = Tree::where("name", $treename)->firstOrNull();
+        // Tree::where("name", ...) ambigu - qualifie
+        // (voie A, voir protocole.
+        $tree = Tree::where("this.name", $treename)->firstOrNull();
         if (!$tree) {
             $tree = new Tree();
             $tree->name = $treename;
             $tree->__insert();
         }
-        foreach ($tree_items as $item) {
+        foreach ($tree_items as $i => $item) {
             $ti = new Tree_item();
-            $ti->name = $item['name'];
+            foreach ($item as $key => $value) {
+                $ti->{$key} = $value;
+            }
+            if (is_array($item['name']))
+                $ti->name = $item['name'];
+            else
+                $ti->name = [
+                    'fr' => $item['name'],
+                    'en' => $item['name']
+                ];
+
             $ti->main = 1;
-            $ti->slug = $item['slug'];
             $ti->tree = $tree;
+            $ti->position = $i;
             $ti->__insert();
         }
         //}
@@ -163,16 +263,33 @@ class Tree_item extends Model implements JsonSerializable
         return Dfile::fileadapter($url, $this->image);
     }
 
-    public function jsonMini()
+    /**
+     * $level (1 = racine) et $branch (nom du
+     * palier correspondant dans tree.branches, ou null si l'arbre n'en a
+     * pas) sont calcules par Tree::buildCacheNode(), seul appelant de
+     * cette methode dans tout le depot (mesure par grep avant d'etendre
+     * jsonMini() elle-meme plutot que d'ajouter ces cles ailleurs).
+     * Additif : aucune des cles existantes ne change.
+     */
+    public function jsonMini(int $level = 1, ?string $branch = null)
     {
         return [
             'id' => $this->id,
             'src_image' => $this->srcImage(),
             'name' => $this->name,
             'slug' => $this->slug,
+            'position' => (int)$this->position,
+            'content' => $this->content,
+            'parent_id' => $this->parent_id,
+            'main' => $this->main,
+            'status' => $this->status,
+            'chain' => $this->chain,
+            'level' => $level,
+            'branch' => $branch,
         ];
     }
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
 
@@ -192,6 +309,12 @@ class Tree_item extends Model implements JsonSerializable
         }
 
         return [
+            ... parent::jsonSerialize(),
+            'count_children' => $countchildren,
+            'children' => $children,
+            'src_image' => $this->srcImage(),
+        ];
+        return [
                 'id' => $this->id,
                 'src_image' => $this->srcImage(),
                 'name' => $this->name,
@@ -202,7 +325,7 @@ class Tree_item extends Model implements JsonSerializable
                 'main' => $this->main,
                 'status' => $this->status,
                 'chain' => $this->chain,
-                'content_id' => $this->getCmstext()->getId(),
+                'content_id' => $this->getCmscontent()->getId(),
                 'count_children' => $countchildren,
                 'children' => $children,
                 'in_company' => $this->in_company,
@@ -225,11 +348,21 @@ class Tree_item extends Model implements JsonSerializable
             ->get();
     }
 
+    /**
+     * L'ancienne version concatenait $slug directement
+     * dans une sous-requete SQL (injection). Remplace par une requete
+     * preparee qui resout les ids, puis ->in() sur un tableau (qb_sanitize
+     * applique a chaque valeur) - aucune valeur n'est plus concatenee.
+     */
     public static function childrenOf(string $slug, $id_lang = null)
     {
+        $stmt = \Model::pdo()->prepare('SELECT id FROM tree_item WHERE slug = ?');
+        $stmt->execute([$slug]);
+        $parentIds = $stmt->fetchAll(\PDO::FETCH_COLUMN) ?: [0];
+
         return self::select()
             ->where("this.parent_id")
-            ->in(" select id from tree_item where slug = '$slug' ")
+            ->in($parentIds)
             ->setLang($id_lang)
             ->orderby("this.position")
             ->get();
@@ -287,14 +420,14 @@ class Tree_item extends Model implements JsonSerializable
 
     }
 
-    public function getParentsCatTree()
-    {
-        $categorytree = [];
-        if ($this->chain)
-            $categorytree = self::whereIn("id", explode(",", $this->chain))->get();
-
-        return $categorytree;
-    }
+    /**
+     * getParentsCatTree() retiree : accesseur
+     * generique qui presumait un format (explode(",") puis explode(" "),
+     *) sur une colonne desormais actee comme polyvalente par
+     * conception (voir la doc de $chain plus haut). Elle explosait avec une
+     * erreur SQL quand `chain` contenait du texte libre (apostrophe non
+     * echappee par whereIn()).
+     */
 
     public function ofSameTree()
     {
@@ -308,12 +441,11 @@ class Tree_item extends Model implements JsonSerializable
      */
     public static function mainmenu($tree = "menu", $id_lang = null)
     {
-        return self::initQb()
+        return self::select("*", Dvups_lang::defaultLang()->id)
             //->leftjoin(Tree::class)
             //->leftjoinrecto(Tree_lang::class, Tree::class)
             ->where("tree.name", $tree)
-            ->where("this.main", 1)
-            ->setLang($id_lang);
+            ->where("this.main", 1)->setLang($id_lang);
     }
 
     /**
@@ -323,8 +455,10 @@ class Tree_item extends Model implements JsonSerializable
     public static function mainmenus($trees = ["menu"], $id_lang = null)
     {
         //join(Tree::class)->
+        // "main" ambigu (colonne partagee avec
+        // dvups_lang via la jointure de traduction) - qualifie (voie A).
         return self::where("tree.name")->in($trees)
-            ->andwhere("main", 1)
+            ->andwhere("this.main", 1)
             ->setLang($id_lang);
     }
 
@@ -336,16 +470,16 @@ class Tree_item extends Model implements JsonSerializable
     {
         //join(Tree::class, null, $id_lang)->
         return self::where("tree.name", $tree)
-            ->andwhere("main", 1)
-            ->orderby("position")
+            ->andwhere("this.main", 1)
+            ->orderby("this.position")
             ->setLang($id_lang)
             //->limit(5)
             ->get();
     }
 
-    public function getCmstext()
+    public function getCmscontent()
     {
-        return Cmstext::where($this)
+        return Cmscontent::where($this)
             ->first();
     }
 

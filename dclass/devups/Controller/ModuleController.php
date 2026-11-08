@@ -24,6 +24,25 @@ class ModuleController  extends Router
         $this->ctrl = new Controller();
     }
 
+    // sidebar.blade.php:63 genere admin/<projet>/<module>/dashboard
+    // pour TOUS les modules, mais seuls ModuleTree et ModuleNotification exposent
+    // reellement dashboardView() - les 16 autres Module<X>.php (sur 19 avec fichier)
+    // exposent layoutView(). Request::Module() cherche "<segment>View" et meurt
+    // proprement (var_dump+die) si la methode manque - mais comme dashboardView()
+    // est desormais heritee par les 29 modules, ce garde-fou ne se declenche plus
+    // pour ce cas precis : le repli doit donc vivre ici. Les deux modules qui
+    // definissent leur propre dashboardView() l'emportent naturellement (regle de
+    // resolution de methode PHP usuelle, rien a faire de special).
+    public function dashboardView()
+    {
+        if (method_exists($this, 'layoutView')) {
+            $this->layoutView();
+        } else {
+            var_dump(" You may create method " . " layoutView in " . get_class($this) . ". ");
+            die;
+        }
+    }
+
     /*public abstract function web();
     public abstract function services();
     public abstract function webservices();*/

@@ -22,15 +22,20 @@ class Country extends \Model implements JsonSerializable
      **/
     protected $iso;
     /**
+     * ETAPE V : valeur par defaut '' (pas null) - la colonne SQL est
+     * NOT NULL mais CountryForm ne collecte pas iso3/numcode (seul
+     * Country::seed() les renseigne depuis database/seed/countries.php) :
+     * creer un pays depuis l'ecran admin levait "Column 'iso3' cannot be
+     * null" (SQLSTATE 23000) a chaque fois.
      * @Column(name="iso3", type="string" , length=255 )
      * @var string
      **/
-    protected $iso3;
+    protected $iso3 = '';
     /**
      * @Column(name="numcode", type="string" , length=255 )
      * @var string
      **/
-    protected $numcode;
+    protected $numcode = '';
     /**
      * @Column(name="phonecode", type="integer"  )
      * @var integer
@@ -45,6 +50,9 @@ class Country extends \Model implements JsonSerializable
 
     public function __construct($id = null)
     {
+        // ETAPE J.2 : reactive - CountryForm declare bien le champ
+        // nicename avec "lang" => true (traduit, comme Cmscontent), mais
+        // sans ce flag l'entite ne liait jamais Country_lang.
         $this->dvtranslate = true;
         $this->dvtranslated_columns = ["nicename"];
         if ($id) {
@@ -55,22 +63,6 @@ class Country extends \Model implements JsonSerializable
     public function getId()
     {
         return $this->id;
-    }
-
-    /**
-     * @return Continent
-     */
-    public function getContinent()
-    {
-        return $this->continent;
-    }
-
-    /**
-     * @param Continent $continent
-     */
-    public function setContinent(Continent $continent)
-    {
-        $this->continent = $continent;
     }
 
     public function getName()
@@ -119,6 +111,7 @@ class Country extends \Model implements JsonSerializable
         $this->iso = $iso;
     }
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return [
@@ -128,11 +121,6 @@ class Country extends \Model implements JsonSerializable
             'phonecode' => $this->phonecode,
             'status' => $this->status,
         ];
-    }
-
-    public function tvas()
-    {
-        return $this->__hasmany(Tva::class);
     }
 
     public function showFlag()
@@ -145,9 +133,44 @@ class Country extends \Model implements JsonSerializable
         return Country::where("iso", self::current())->__getOne();
     }
 
+    /**
+     * ETAPE J.3 : donnee de reference (iso2, iso3, name, phonecode), via
+     * database/seed/countries.php. Idempotent : met a jour les pays deja
+     * presents (identifies par leur iso2) plutot que d'en creer un doublon.
+     *
+     * @return array{created: int, updated: int, total: int}
+     */
+    public static function seed(): array
+    {
+        $rows = require ROOT . 'database/seed/countries.php';
+        $created = 0;
+        $updated = 0;
+        foreach ($rows as [$iso2, $iso3, $name, $phonecode]) {
+            $country = Country::where("iso", $iso2)->__getOne();
+            if (!$country) {
+                $country = new Country();
+                $created++;
+            } else {
+                $updated++;
+            }
+            $country->setIso($iso2);
+            $country->iso3 = $iso3;
+            $country->numcode = $iso3;
+            $country->setName($name);
+            $country->setPhonecode($phonecode);
+            $country->setStatus(1);
+            if ($country->getId()) {
+                $country->__update();
+            } else {
+                $country->__insert();
+            }
+        }
+        return ['created' => $created, 'updated' => $updated, 'total' => count($rows)];
+    }
+
     public static function current()
     {
-        $ip = \DClass\lib\Util::getIp();
+        $ip = \DClass\lib\Util::get_IP_address();
         if (!isset($_SESSION["client_ip"])) {
             $_SESSION["client_ip"] = $ip;
         }
@@ -172,7 +195,7 @@ class Country extends \Model implements JsonSerializable
         $output = NULL;
 
         if (!$ip)
-            $ip = \DClass\lib\Util::getIp($ip, $deep_detect);
+            $ip = \DClass\lib\Util::get_IP_address();
 
         $purpose = str_replace(array("name", "\n", "\t", " ", "-", "_"), NULL, strtolower(trim($purpose)));
         $support = array("country", "countrycode", "state", "region", "city", "location", "address");

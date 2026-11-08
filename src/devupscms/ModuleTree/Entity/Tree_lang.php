@@ -19,4 +19,9 @@ class Tree_lang extends \Dv_langCore
      */
     public $tree;
 
+    public function __construct($id = null){
+        $this->tree = new Tree();
+        $this->lang = new Dvups_lang();
+    }
+
 }

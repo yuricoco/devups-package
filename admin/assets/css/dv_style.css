@@ -5,7 +5,10 @@
 }
 .dv_datatable th{position: relative;}
 /*.dv_datatable tr.th-filter th{padding: 0px !important;}*/
-.dv_datatable .torder{z-index: 3; position: absolute; top:0; right: 0; padding: 15px 12px}
+/* [datatable-point1] .torder retiree (etablie morte au chantier precedent,
+   confirme a celui-ci : les deux generateurs HTML commentes qui portaient
+   cette classe dans Datatable.php (dclass/) sont supprimes - le tri a une
+   seule fleche conditionnelle a sa place, voir headerbuilder()). */
 .dv_datatable .loader{
     position: absolute;
     top: 0;
@@ -17,7 +20,10 @@
     text-align: center;
     color: white;
     font-size: 50px;
-    background: rgba(51,122,183,0.3);
+    /* [datatable-point4] rgba(51,122,183,0.3) (bleu Bootstrap 3) signale au
+       chantier precedent, tranche a celui-ci : --dv-color-primary, meme
+       opacite. */
+    background: rgba(var(--dv-color-primary-rgb), 0.3);
 }
 /*.dv_datatable_container .card-header-tab{
     position: sticky;
@@ -34,41 +40,62 @@
     width: calc(100%)!important;
 }
 .app-main__outer  .app-wrapper-footer{
-    left: 280px;
-    width: calc(100% - 280px)!important;
+    left: var(--dv-sidebar-width);
+    width: calc(100% - var(--dv-sidebar-width))!important;
 }
 
+/* [datatable-point4] whitesmoke (#f5f5f5, ici et sur .dv_datatable thead
+   plus bas) signale au chantier precedent, tranche a celui-ci :
+   --dv-color-bg-app (#f1f4f6) - une ligne collee doit lire "hors de la
+   carte", pas introduire un troisieme gris. */
 .dv_datatable_container .align-items-start{
     position: sticky;
     padding: 5px;
-    top: 60px;
-    background: whitesmoke;
+    top: var(--dv-header-height);
+    background: var(--dv-color-bg-app);
     z-index: 100;
 }
+/* [backoffice-socle6-point2c] thead etait sticky avec son top commente -
+   sans top, un sticky s'ancre a 0 et glisse SOUS l'en-tete fixe de
+   l'application. Le 98px commente etait la bonne idee mal posee : measure,
+   pas devine, .align-items-start (juste au-dessus du thead dans le flux)
+   mesure 43.1875px de haut (padding 5px inclus, verifie via
+   getBoundingClientRect() sur une page reelle) - le thead doit donc
+   s'ancrer a la hauteur d'en-tete PLUS cette hauteur-la, pas a la hauteur
+   d'en-tete seule (qui le ferait chevaucher la ligne de filtre, toujours
+   sticky juste au-dessus). 44px = 43.1875 arrondi au pixel superieur. */
 .dv_datatable thead{
     position: sticky;
-    /*top: 98px;*/
-    background: whitesmoke;
+    /* top: calc(var(--dv-header-height) + 44px); */
+    background: var(--dv-color-bg-app);
     z-index: 10;
 }
 
+/* [formengine-point5] largeurs fixes (800px, deux fois) remplacees par
+   une largeur plafonnee. Mesure du lien avant de corriger, comme
+   demande : a 390px, la modale ne deborde PAS aujourd'hui - une regle
+   max-width:100% deja presente ailleurs (pas dans ce fichier, lue via
+   getComputedStyle, source non identifiee avec certitude - vraisemblablement
+   SweetAlert2 ou main.css, tous deux lecture seule) plafonne deja le
+   800px fixe. Le defaut "zone grise" du chantier du socle ne se
+   reproduit pas ici (verifie point 0). Corrige quand meme, pour ne
+   plus dependre d'une regle externe non identifiee avec certitude : si
+   elle venait a changer ou disparaitre, le 800px fixe redeviendrait un
+   vrai debordement sans que ce fichier le sache. Les deux regles
+   couvrent les DEUX conteneurs de modale (#dialog-container de
+   layout.blade.php ET Datatable::dialogBox(), lecture seule cette
+   fois-ci - verifie : dialogBox() ne porte aucune largeur en dur dans
+   son propre HTML, elle herite entierement de ces deux regles). */
 .dv_modal{
-    width: 800px; background: transparent; display: block; min-height: 50px; padding-top: 80px;
+    width: 100%; max-width: 800px; background: transparent; display: block; min-height: 50px; padding-top: 80px;
     transition: .5s;
 }
 .dv_modal .box-container{
-    width: 800px;
+    width: 100%; max-width: 800px;
 }
 
 .app-main__inner {
     padding-bottom: 50px !important;
-}
-
-.dv_datatable .torder{
-    position: absolute;
-    bottom: .5em;
-    display: block;
-    opacity: .3;
 }
 .app-sidebar .scrollbar-sidebar {
     overflow: auto;
@@ -78,14 +105,14 @@
 }
 .fixed-sidebar .app-main .app-main__outer {
      z-index: 9;
-     padding-left: 250px;
+     padding-left: var(--dv-sidebar-width);
  }
 .app-sidebar {
-    width: 250px;
+    width: var(--dv-sidebar-width);
     display: flex;
     z-index: 11;
     overflow: hidden;
-    min-width: 250px;
+    min-width: var(--dv-sidebar-width);
 }
 .form-control {
     display: block;
@@ -96,6 +123,94 @@
 }
 .dropdown-item {
     white-space: inherit;
+}
+
+/* [formengine-point2] dv_label : 0 occurrence dans les trois feuilles
+   chargees (main.css, dv_style.css, dv_theme.css) avant cette regle - le
+   libelle heritait du <td> qui le contient, meme poids/couleur/taille que
+   la valeur juste a cote. Poids plus marque (600, aucun jeton de poids
+   n'existe, valeur standard non inventee au sens d'une couleur) ; couleur
+   du texte explicite (le jeton, pas une nouvelle couleur) ; espacement
+   sous le libelle via --dv-spacer (inerte dans le gabarit en tableau
+   actuel - un <td> n'a rien en dessous du libelle dans sa propre cellule
+   - prend effet si le gabarit passe en blocs, voir point 1). */
+.dv_label {
+    font-weight: 600;
+    color: var(--dv-color-text);
+    margin-bottom: calc(var(--dv-spacer) / 4);
+    display: inline-block;
+}
+/* [formengine-point2] l'asterisque d'obligation : etait un caractere nu
+   dans le texte du libelle, sans couleur, sans separation visuelle de
+   contexte. Colore (--dv-color-danger, le jeton du theme) ; aria-hidden
+   pose cote PHP (FormFactory.php) - l'information d'obligation vient
+   desormais de l'attribut required pose sur le controle lui-meme. */
+.dv_required {
+    color: var(--dv-color-danger);
+    margin-left: .2em;
+}
+
+/* [formengine-point1] gabarit en blocs - remplace <table class='table'>.
+   Un conteneur par champ (.dv_field), libelle a cote de la valeur au-dessus
+   du seuil mobile, empile en dessous (meme seuil que les captures du
+   chantier precedent, 390px vs 1440px - Bootstrap "sm", deja la convention
+   utilisee ailleurs dans ce depot, voir d-sm-flex). Bordure de separation
+   legere a la place des bordures de table retirees (--dv-color-border,
+   le jeton du theme). */
+.dv_form_rows {
+    padding: calc(var(--dv-spacer) / 2) 0;
+}
+.dv_field {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--dv-spacer);
+    padding: calc(var(--dv-spacer) / 2) var(--dv-spacer);
+    border-bottom: 1px solid var(--dv-color-border);
+}
+.dv_field_label {
+    flex: 0 0 30%;
+    max-width: 30%;
+    padding-top: .375rem;
+}
+.dv_field_value {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.dv_field_lang {
+    margin-bottom: calc(var(--dv-spacer) / 2);
+}
+.dv_field_lang:last-child {
+    margin-bottom: 0;
+}
+@media (max-width: 576px) {
+    .dv_field {
+        flex-direction: column;
+        gap: calc(var(--dv-spacer) / 4);
+    }
+    .dv_field_label,
+    .dv_field_value {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+    .dv_field_label {
+        padding-top: 0;
+    }
+}
+
+/* [formengine-closeout-point6a] bouton d'envoi : primaire (--dv-color-
+   primary deja fourni par .btn-primary de main.css, pas touche ici) ;
+   pleine largeur seulement sous le seuil mobile - une modale etroite
+   justifie btn-block, une page large non. */
+.dv_submit {
+    display: block;
+    width: 100%;
+    margin: var(--dv-spacer);
+}
+@media (min-width: 577px) {
+    .dv_submit {
+        display: inline-block;
+        width: auto;
+    }
 }
 
 /*****************/
@@ -135,7 +250,18 @@
     content: "";
     display: inline-block;
     border-radius: 50%;
-    border: 4px solid #004282;
-    -webkit-animation: loading 400ms linear infinite;
+    /* [datatable-point4] #004282 signale au chantier precedent, tranche a
+       celui-ci : --dv-color-primary. */
+    border: 4px solid var(--dv-color-primary);
+    /* [backoffice-socle6-point2c] -webkit-animation referencait un keyframe
+       "loading" qui n'existe nulle part (ni main.css, ni dv_style.css,
+       ni ailleurs dans admin/assets - verifie) ; "spin", lui, est bien
+       defini dans main.css. Mesure, pas suppose : sur tout navigateur qui
+       comprend la propriete standard animation (effectivement tous les
+       navigateurs actuels, webkit ou non), la ligne standard valide
+       l'emportait deja sur la ligne -webkit- invalide - le chargeur
+       tournait donc deja dans la quasi-totalite des cas, pas "la moitie".
+       Corrige quand meme : les deux lignes doivent dire la meme chose. */
+    -webkit-animation: spin 400ms linear infinite;
     animation: spin 400ms linear infinite;
 }

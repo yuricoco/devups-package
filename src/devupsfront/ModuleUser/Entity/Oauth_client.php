@@ -21,6 +21,11 @@ class Oauth_client extends Model implements JsonSerializable
      **/
     protected $client;
     /**
+     * @Column(name="name", type="string" , length=155 , nullable=true)
+     * @var string
+     **/
+    protected $name;
+    /**
      * @Column(name="user_ext_id", type="string" , length=55 )
      * @var string
      **/
@@ -45,14 +50,5 @@ class Oauth_client extends Model implements JsonSerializable
         return $this->id;
     }
 
-    public function jsonSerialize()
-    {
-        return [
-            'id' => $this->id,
-            'client' => $this->client,
-            'user_ext_id' => $this->user_ext_id,
-            'user_id' => $this->user_id,
-        ];
-    }
 
 }

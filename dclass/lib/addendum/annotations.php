@@ -196,14 +196,17 @@
 			return $this->annotations->getAllAnnotations($restriction);
 		}
 		
+		#[\ReturnTypeWillChange]
 		public function getConstructor() {
 			return $this->createReflectionAnnotatedMethod(parent::getConstructor());
 		}
 		
+		#[\ReturnTypeWillChange]
 		public function getMethod($name) {
 			return $this->createReflectionAnnotatedMethod(parent::getMethod($name));
 		}
 		
+		#[\ReturnTypeWillChange]
 		public function getMethods($filter = -1) {
 			$result = array();
 			foreach(parent::getMethods($filter) as $method) {
@@ -212,10 +215,12 @@
 			return $result;
 		}
 		
+		#[\ReturnTypeWillChange]
 		public function getProperty($name) {
 			return $this->createReflectionAnnotatedProperty(parent::getProperty($name));
 		}
 		
+		#[\ReturnTypeWillChange]
 		public function getProperties($filter = -1) {
 			$result = array();
 			foreach(parent::getProperties($filter) as $property) {
@@ -224,6 +229,7 @@
 			return $result;
 		}
 		
+		#[\ReturnTypeWillChange]
 		public function getInterfaces() {
 			$result = array();
 			foreach(parent::getInterfaces() as $interface) {
@@ -232,6 +238,7 @@
 			return $result;
 		}
 		
+		#[\ReturnTypeWillChange]
 		public function getParentClass() {
 			$class = parent::getParentClass();
 			return $this->createReflectionAnnotatedClass($class);
@@ -278,6 +285,7 @@
 			return $this->annotations->getAllAnnotations($restriction);
 		}
 		
+		#[\ReturnTypeWillChange]
 		public function getDeclaringClass() {
 			$class = parent::getDeclaringClass();
 			return new ReflectionAnnotatedClass($class->getName());
@@ -312,6 +320,7 @@
 			return $this->annotations->getAllAnnotations($restriction);
 		}
 		
+		#[\ReturnTypeWillChange]
 		public function getDeclaringClass() {
 			$class = parent::getDeclaringClass();
 			return new ReflectionAnnotatedClass($class->getName());

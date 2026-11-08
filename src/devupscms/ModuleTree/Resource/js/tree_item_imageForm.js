@@ -33,8 +33,8 @@ Vue.component("tree_item_image", {
             .on('drop',  (e) => {
                 droppedFiles = e.originalEvent.dataTransfer.files;
 
-                model.init("dv_image");
-                //ddatatable.init("dv_image");
+                model.init("tree_item_image");
+                //ddatatable.init("tree_item_image");
 
                 for (var i = 0; i < droppedFiles.length; i++) {
                     var file = droppedFiles[i];
@@ -44,8 +44,7 @@ Vue.component("tree_item_image", {
                     fd.append("name", file.name);
 
                     $.notify("Uploading " + file.name, "info")
-                    // Drequest.init($("#dv_table").data("route") + "services.php?path=chapter.scanpages" + param)
-                    Drequest.adminApi("tree-item-image/upload?tree_item_id=" + this.tree_item.id)
+                                        Drequest.adminApi("tree-item-image/upload?tree_item_id=" + this.tree_item.id)
                         .data(fd)
                         .post((response) => {
                             console.log(response);

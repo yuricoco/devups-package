@@ -32,9 +32,9 @@ class NotificationController extends Controller
     public function formView($id = null)
     {
         $notification = new Notification();
-        $action = Notification::classpath("services.php?path=notification.create");
+        $action = __env . ("admin/api/notification/create");
         if ($id) {
-            $action = Notification::classpath("services.php?path=notification.update&id=" . $id);
+            $action = __env . ("admin/api/notification/update?id=" . $id);
             $notification = Notification::find($id);
         }
 

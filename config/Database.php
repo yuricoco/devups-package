@@ -12,34 +12,38 @@
  * @author yuri coco
  */
 class Database {
-	
+
     protected $link;
     protected $dbname;
-	
+
     public function __construct() {
-        
+
         $user = dbuser;
         $pass = dbpassword;
         $dsn = 'mysql:host='.dbhost.';dbname='. dbname;
         $this->dbname = dbname;
-        
+
         try {
-                $this->link = new PDO($dsn, $user, $pass);
+            $this->link = new PDO($dsn, $user, $pass);
         } catch (PDOException $e) {
-                //die( "Erreur ! : ". $e->getMessage() );
-                $this->exist = false;
-                // connexion à Mysql sans base de données
-                $pdo = new PDO('mysql:host=localhost', $user, $pass);
+            //die( "Erreur ! : ". $e->getMessage() );
+            $this->exist = false;
+            // connexion à Mysql sans base de données
+            $pdo = new PDO('mysql:host=' . dbhost, $user, $pass);
 
-                // création de la requête sql
-                // on teste avant si elle existe ou non (par sécurité)
-                $requete = "CREATE DATABASE IF NOT EXISTS `".dbname."` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci";
+            // création de la requête sql
+            // on teste avant si elle existe ou non (par sécurité)
+            $requete = "CREATE DATABASE IF NOT EXISTS `".dbname."` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci";
 
-                // on prépare et on exécute la requête
-                $pdo->prepare($requete)->execute();
+            // on prépare et on exécute la requête
+            $pdo->prepare($requete)->execute();
 
+        } finally {
+//            echo ' - new DB - ';
+            // Fermeture de la connexion
+//            $this->link = null;
         }
-        
+
     }
 
     /**

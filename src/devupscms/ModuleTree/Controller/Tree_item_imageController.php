@@ -29,9 +29,9 @@ class Tree_item_imageController extends Controller{
     public function formView($id = null)
     {
         $tree_item_image = new Tree_item_image();
-        $action = Tree_item_image::classpath("services.php?path=tree_item_image.create");
+        $action = __env . ("admin/api/tree_item_image/create");
         if ($id) {
-            $action = Tree_item_image::classpath("services.php?path=tree_item_image.update&id=" . $id);
+            $action = __env . ("admin/api/tree_item_image/update?id=" . $id);
             $tree_item_image = Tree_item_image::find($id);
         }
 

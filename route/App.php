@@ -2,20 +2,20 @@
 
 // namespace route;
 
-use BarcodeBakery\Common\BCGColor;
-use BarcodeBakery\Common\BCGDrawing;
 use DClass\lib\Util;
 use Genesis as g;
-//use LoginController;
-//use Request;
-//use Router;
-//use User;
 
 /**
- * this class refer to the front pages. each method represent a page. where we can add js css and some other parameter
- * such as meta titel, title and so on
+ * @OA\Info(
+ *   title="Devups API",
+ *   version="1.0.0",
+ *   description="Documentation des WebServices de Devups."
+ * )
  *
- * Class App
+ * @OA\Server(
+ *   url="https://monsite.com/api",
+ *   description="Serveur principal"
+ * )
  */
 class App extends Router
 {
@@ -36,9 +36,11 @@ class App extends Router
 
     public static $meta_seo_local = "fr_FR";
 
-    public static $meta_seo_title = "3ag edition";
-    public static $meta_seo_image = "https://3ag-edition.com/web/img/3ag.png";
-    public static $meta_seo_description = "3ag édition Maison d'édition  de bandes dessinées camerounaise, publier sa bande dessinée au cameroun devient facile et accessible, bande dessinée camerounaise, maison d'édition camerounaise, un éditeur de bande dessinée (manga, comics, ...) au cameroun ouvert au monde. Site de lecture en ligne de bandes dessinnées.";
+    public static $meta_seo_title = PROJECT_NAME;
+    public static $meta_seo_image = __env . "logo.png";
+    public static $meta_seo_description = "";
+
+    public $append_routes = [];
 
     public function __construct($route)
     {
@@ -65,7 +67,6 @@ class App extends Router
         self::$jsfiles[] = CLASSJS . "dform.js";
         self::$cssfiles[] = assets . "css/dv_style.css";
         self::$cssfiles[] = assets . "css/stylesheet.css";
-
     }
 
     public static function isGuest()
@@ -81,7 +82,6 @@ class App extends Router
         }
 
         return true;
-
     }
 
     public static function needUnAuth()
@@ -90,36 +90,16 @@ class App extends Router
             redirect(route("home"));
             die;
         }
-
     }
-
-    public function connectView()
-    {
-
-        if (getadmin()->getId()) {
-
-            $user = User::find(Request::get("user_id"));
-            LoginController::initSession($user);
-
-            redirect(route("home"));
-        } else
-            redirect(route("404"));
-
-    }
-
+ 
+    /*
+     *
+     */
     public function helloView()
     {
-
+ 
         g::render("hello", []);
     }
 
-
-    /**
-     * @MethodView(path="about-us")
-     */
-    public function aboutUsView()
-    {
-        //Genesis::render("_setting", []);
-    }
 
 }

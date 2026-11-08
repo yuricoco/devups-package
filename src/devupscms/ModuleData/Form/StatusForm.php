@@ -19,7 +19,7 @@ class StatusForm extends FormManager
     {
 
 
-        $this->fields['entityid'] = [
+        $this->fields['entity'] = [
             "label" => t('Entity'),
             "type" => FORMTYPE_SELECT,
             "value" => $this->status->entity,
@@ -29,7 +29,7 @@ class StatusForm extends FormManager
         $this->fields['color'] = [
             "label" => t('status.color'),
             "type" => FORMTYPE_TEXT,
-            "directive" => ["class"=> "form-control color_picker", "autocomplete"=>"off"],
+            "directive" => ["class" => "form-control color_picker", "autocomplete" => "off"],
             "value" => $this->status->color,
         ];
 
@@ -52,17 +52,15 @@ class StatusForm extends FormManager
             "value" => $this->status->position,
         ];
 
-        $this->addcss(__admin.'plugins/colorpicker/css/evol-colorpicker.min');
-        $this->addjs(__admin.'plugins/colorpicker/js/evol-colorpicker.min');
+        $this->addcss(__admin . 'plugins/colorpicker/css/evol-colorpicker.min');
+        $this->addjs(__admin . 'plugins/colorpicker/js/evol-colorpicker.min');
         $this->addjs(Status::classpath('Resource/js/statusForm'));
 
         return $this;
-
     }
 
     public static function renderWidget($id = null, $action = "create")
     {
         Genesis::renderView("status.formWidget", self::getFormData($id, $action));
     }
-
 }

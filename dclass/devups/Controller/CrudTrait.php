@@ -8,7 +8,25 @@ use Request;
 trait CrudTrait
 {
 
+    /**
+     * Garde unique can('action', self::$classname) pour toutes les actions
+     * CRUD generees. Si refuse : code HTTP 403 pose (l'appelant choisit
+     * comment repondre, JSON ou sortie directe + die pour les vues HTML).
+     */
+    private function forbidIfCannot(string $action): bool
+    {
+        if (can($action, self::$classname))
+            return false;
+        http_response_code(403);
+        return true;
+    }
+
     public function listView($next = 1, $per_page = 10){
+
+        if ($this->forbidIfCannot('read')) {
+            echo json_encode(['success' => false, 'detail' => t('Action non autorisee')]);
+            die;
+        }
 
         $this->datatable = self::$tablename::init(new self::$classname)->buildindextable();
 
@@ -23,6 +41,9 @@ trait CrudTrait
 
     public function datatable($next, $per_page) {
 
+        if ($this->forbidIfCannot('read'))
+            return ['success' => false, 'detail' => t('Action non autorisee')];
+
         return ['success' => true,
             'datatable' => self::$tablename::init(new self::$classname())->router()->getTableRest(),
         ];
@@ -31,10 +52,13 @@ trait CrudTrait
 
     public function formView($id = null)
     {
+        if ($this->forbidIfCannot('read'))
+            return ['success' => false, 'detail' => t('Action non autorisee')];
+
         $dvups_lang = new self::$classname();
-        $action = self::$classname::classpath('services.php?path='.self::$entityname.'.create');
+        $action = __env . 'admin/api/' . self::$entityname . '/create';
         if ($id) {
-            $action = self::$classname::classpath('services.php?path='.self::$entityname.'.update&id=' . $id);
+            $action = __env . 'admin/api/' . self::$entityname . '/update?id=' . $id;
             $dvups_lang = self::$classname::find($id);
         }
 
@@ -54,6 +78,9 @@ trait CrudTrait
     }
 
     public function createAction($dvups_lang_form = null ){
+        if ($this->forbidIfCannot('create'))
+            return ['success' => false, 'detail' => t('Action non autorisee')];
+
         extract($_POST);
 
         $dvups_lang = $this->form_fillingentity(new self::$classname(), $dvups_lang_form);
@@ -73,6 +100,9 @@ trait CrudTrait
     }
 
     public function updateAction($id, $dvups_lang_form = null){
+        if ($this->forbidIfCannot('update'))
+            return ['success' => false, 'detail' => t('Action non autorisee')];
+
         extract($_POST);
 
         $dvups_lang = $this->form_fillingentity(new self::$classname($id), $dvups_lang_form);
@@ -95,6 +125,10 @@ trait CrudTrait
 
     public function detailView($id)
     {
+        if ($this->forbidIfCannot('read')) {
+            echo json_encode(['success' => false, 'detail' => t('Action non autorisee')]);
+            die;
+        }
 
         $this->entitytarget = self::$classname;
         $this->title = "Detail ".self::$classname;
@@ -110,6 +144,8 @@ trait CrudTrait
     }
 
     public function deleteAction($id){
+        if ($this->forbidIfCannot('delete'))
+            return ['success' => false, 'detail' => t('Action non autorisee')];
 
         self::$classname::find($id)->__delete();
 
@@ -120,6 +156,8 @@ trait CrudTrait
 
     public function deletegroupAction($ids)
     {
+        if ($this->forbidIfCannot('delete'))
+            return ['success' => false, 'detail' => t('Action non autorisee')];
 
         self::$classname::where("id")->in($ids)->delete();
 

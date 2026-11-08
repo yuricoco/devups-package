@@ -10,6 +10,15 @@ class AdminTemplateGenerator extends DvAdmin
         $this->traitement = new Traitement();
     }
 
+    // les deux methodes ci-dessous relisaient
+    // chacune un tableau $actionclass en dur ('edit'=>'...btn-warning',
+    // 'show'=>'...btn-info', 'delete'=>'...btn-danger') pour retraduire
+    // $el["class"] - un mot-cle semantique ("edit"/"show"/"delete") pose
+    // par Datatable.php. $el["class"] porte desormais directement la
+    // vraie classe Bootstrap (voir Datatable::__construct(), ou elle
+    // vient de $this->btnedit_class/btnview_class/btndelete_class, donc
+    // d'une seule source) - plus besoin de retraduire quoi que ce soit ici,
+    // $el["class"] s'utilise tel quel.
     static function dt_btn_action_builder($rowaction, $customrowactions)
     {
         $act = '';
@@ -18,9 +27,6 @@ class AdminTemplateGenerator extends DvAdmin
         }
         foreach ($rowaction as $el) {
             if (is_array($el)) {
-
-                if (isset($actionclass[$el["class"]]))
-                    $el["class"] = $actionclass[$el["class"]];
 
                 $act .= '<button type="button" class="' . $el["class"] . '" ' . $el["action"] . ' >' . $el["content"] . '</button>';
 
@@ -37,9 +43,6 @@ EOF;
     static function dt_btn_action($rowaction, $customrowactions, $actionDropdown, $mainaction)
     {
 
-        $actionclass = ['edit' => "mb-2 mr-2 btn btn-warning",
-            'show' => "mb-2 mr-2 btn btn-info", 'delete' => "mb-2 mr-2 btn btn-danger",];
-
         $act = "";
 
         if (!$actionDropdown) {
@@ -50,10 +53,11 @@ EOF;
             foreach ($rowaction as $el) {
                 if (is_array($el)) {
 
-                    if (isset($actionclass[$el["class"]]))
-                        $el["class"] = $actionclass[$el["class"]];
-
-                    $act .= '<button type="button" class="' . $el["class"] . '" ' . $el["action"] . ' >' . $el["content"] . '</button>';
+                    // mb-2 mr-2 preserves tels
+                    // quels (c'etait deja l'espacement de l'ancien tableau
+                    // $actionclass en dur) - seule la couleur change de
+                    // source.
+                    $act .= '<button type="button" class="' . $el["class"] . ' mb-2 mr-2" ' . $el["action"] . ' >' . $el["content"] . '</button>';
 
                 } else {
                     $act .= $el;
@@ -72,10 +76,7 @@ EOF;
 
             if (is_array($el)) {
 
-                if (isset($actionclass[$el["class"]]))
-                    $el["class"] = $actionclass[$el["class"]];
-
-                $act .= '<li class="nav-item"><button type="button" class="' . $el["class"] . ' btn-block" ' . $el["action"] . ' >' . $el["content"] . '</button></li>';
+                $act .= '<li class="nav-item"><button type="button" class="' . $el["class"] . ' mb-2 mr-2 btn-block" ' . $el["action"] . ' >' . $el["content"] . '</button></li>';
 
             } else {
                 $act .= $el;
@@ -84,12 +85,30 @@ EOF;
 
         if (is_array($mainaction)) {
 
-//                if (isset($actionclass[$mainaction["class"]]))
-//                    $mainaction["ctlass"] = $actionclass[$mainaction["class"]];
-
-            $mainaction = '<button type="button" class="btn btn-warning" ' . $mainaction["action"] . ' >' . $mainaction["content"] . '</button>';
+            // mainaction["class"] (deja la
+            // vraie classe Bootstrap, voir Datatable::__construct()) prend
+            // le relais du "btn btn-warning" fige en dur - le bouton
+            // principal de chaque ligne (le plus repete du back-office)
+            // n'est plus orange par cablage.
+            $mainaction = '<button type="button" class="' . $mainaction["class"] . '" ' . $mainaction["action"] . ' >' . $mainaction["content"] . '</button>';
 
             }
+        // le menu ci-dessous portait
+        // style="...transform: translate3d(-131px, 33px, 0px)" - retire.
+        // Mesure avant de trancher, aux deux largeurs, sur une ligne du
+        // haut ET du bas, par clic reel (pas suppose) : le style en dur
+        // se faisait deja ecraser par le JS du dropdown Bootstrap des
+        // l'ouverture reelle (computed transform mesure "none" juste
+        // apres le clic, jamais la valeur figee) - et SA PRESENCE causait
+        // un leger debordement a droite (+9px hors viewport a 1440px, sur
+        // la premiere ligne) que son retrait fait disparaitre (teste en
+        // supprimant l'attribut avant le clic : menu entierement dans le
+        // viewport). A 390px, aucune difference mesuree avec ou sans.
+        // Retrait verifie strictement benefique ou neutre a chaque mesure,
+        // jamais nuisible - Popper.js n'est pas charge dans ce
+        // back-office, le
+        // positionnement automatique vient de la classe Bootstrap pure
+        // .dropdown-menu-right, pas de Popper.
         return <<<EOF
 <div class="btn-group d-inline-block dropdown">
     $mainaction
@@ -97,7 +116,7 @@ EOF;
     <button type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" class="btn-shadow dropdown-toggle btn btn-light">
         <i class="fa fa-angle-down"></i>
     </button>
-    <div tabindex="-1" role="menu" aria-hidden="true" class="dropdown-menu dropdown-menu-right" x-placement="bottom-end" style="position: absolute; will-change: transform; top: 0px; left: 0px; transform: translate3d(-131px, 33px, 0px);">
+    <div tabindex="-1" role="menu" aria-hidden="true" class="dropdown-menu dropdown-menu-right">
         <ul class="nav flex-column"> $act </ul>
     </div>
     </div>

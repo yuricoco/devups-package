@@ -10,18 +10,7 @@ use Push_subscriptionTable;
 use Request;
 use User;*/
 
-use Google\Auth\Credentials\ServiceAccountCredentials;
-use Google\Auth\CredentialsLoader;
-use Google\Auth\Middleware\AuthTokenMiddleware;
-use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Client;
 use Minishlink\WebPush\VAPID;
-use Minishlink\WebPush\WebPush;
-
-// use sngrl\PhpFirebaseCloudMessaging\Client;
-use sngrl\PhpFirebaseCloudMessaging\Message;
-use sngrl\PhpFirebaseCloudMessaging\Recipient\Device;
-use sngrl\PhpFirebaseCloudMessaging\Notification;
 use dclass\devups\Controller\Controller;
 
 /**
@@ -30,23 +19,61 @@ use dclass\devups\Controller\Controller;
 class Push_subscriptionFrontController extends \dclass\devups\Controller\FrontController
 {
 
+    /** Reservee a l'administration : seul le back-office peut l'appeler. */
+    private static function denyUnlessAdmin(): ?array
+    {
+        if (Router::$admin_route === true) {
+            return null;
+        }
+        http_response_code(403);
+        return ['success' => false, 'detail' => 'reserved to the administration'];
+    }
+
     /**
+     * Restreinte au demandeur. L'administration ne passe pas par
+     * ici (voir PUSH-NOTES.md - mesure, pas suppose) : elle a son
+     * propre Push_subscriptionController, une classe distincte.
+     *
+     * @Auth(authorized=1)
+     * @GET
+     * @return Lazyloading|QueryBuilder
+     * @throws ReflectionException
+     */
+     public function index(){
+
+            $qb = Push_subscription::initQb()->where('this.user_id', (int)Auth::$user_id);
+
+            return $qb->lazyloading();
+
+    }
+
+    /**
+     * Le proprietaire vient de la session, jamais du corps - meme
+     * classe de defaut fermee ailleurs le 16/10. Liste blanche : seul
+     * `auth_token` est accepte du client (`content_type` n'est lu par
+     * aucun code d'envoi - mesure, voir PUSH-NOTES.md - exclu par
+     * prudence). `subscription_type`/`status` poses explicitement par le
+     * serveur, jamais par le client.
+     *
      * @Auth(authorized=1)
      * @POST(path='/register')
      * @return array
      */
     public function register()
     {
-        $subscription = Request::raw()['push_subscription'];
-        // $user = User::find(Request::get('id'));
+        $raw = Request::raw()['push_subscription'] ?? [];
+        $data = array_intersect_key($raw, array_flip(['auth_token']));
+        $data['user_id'] = (int)Auth::$user_id;
+        $data['subscription_type'] = 'user';
+        $data['status'] = 1;
+
         $exist = Push_subscription::where(
             [
-                //'endpoint' => $subscription['endpoint'],
-                'auth_token' => $subscription['auth_token'],
-                'user_id' => $subscription['user_id'],
+                'auth_token' => $data['auth_token'] ?? null,
+                'user_id' => $data['user_id'],
             ])->firstOrNull();
         if (!$exist)
-            $exist = Push_subscription::create((array)$subscription);
+            $exist = Push_subscription::create($data);
         /*else
             $exist->__update([
                 'public_key' => $subscription['public_key'],
@@ -60,12 +87,22 @@ class Push_subscriptionFrontController extends \dclass\devups\Controller\FrontCo
     }
 
     /**
+     * Reservee a l'administration, pas retiree - voir
+     * PUSH-NOTES.md pour le choix entre les deux. Reecrit la paire de
+     * cles VAPID dans Configuration (invaliderait toute souscription web
+     * existante) ; VAPID est abandonne (designb) mais aucun appelant
+     * n'a ete trouve nulle part dans ce depot.
+     *
      * Generate public and private key for pushnotification then save to the configuration table
      * @return array
      * @throws ErrorException
      */
     public function generateKey()
     {
+        if ($denied = self::denyUnlessAdmin()) {
+            return $denied;
+        }
+
         $data = VAPID::createVapidKeys();
 
         Configuration::set('VAPID_PUBLIC_KEY', $data['publicKey']);
@@ -88,101 +125,4 @@ class Push_subscriptionFrontController extends \dclass\devups\Controller\FrontCo
         ];
     }
 
-    public function pushNotificaiton(\User $user)
-    {
-        $webPush = new WebPush([
-            'VAPID' => [
-                'subject' => 'mailto:' . sm_from,
-                'publicKey' => Configuration::get('VAPID_PUBLIC_KEY'),
-                'privateKey' => Configuration::get('VAPID_PRIVATE_KEY'),
-            ],
-        ]);
-        //$user = User::find(Request::get('id'));
-        $subscriptions = Push_subscription::where(
-            [
-                'subscription_type' => 'user',
-                'subscription_id' => $user->id,
-            ])->get();
-
-        foreach ($subscriptions as $subscription) {
-            $webPush->queueNotification($subscription,
-                json_encode([
-                    'message' => 'Bonjour les gens',
-                    'title' => 'Mon titre'
-                ])
-            );
-        }
-        $data = null;
-        foreach ($webPush->flush() as $report) {
-            $endpoint = $report->getRequest()->getUri()->__toString();
-            if ($report->isSuccess()) {
-                $data = ("[v] Le message bien été envoyé {$endpoint}.");
-            } else {
-                $data = ("[x] Impossible d'envoyer le message {$endpoint}=> [$report->getReason()}");
-            }
-            Emaillog::create([
-                "object" => "push notification",
-                "log" => $data,
-            ]);
-        }
-        return $data;
-    }
-
-    /**
-     * @param User|null $user the receiver of the push notification
-     * @param $message
-     * @param $link
-     * @param $icon
-     * @return array
-     */
-    public function cloudMessagingPush(\User $user = null, $message, $link = "", $icon = null)
-    {
-
-//        if (!__prod)
-//            return [];
-
-        if ($user)
-            $subscriptions = Push_subscription::where(
-                [
-                    'subscription_type' => 'user',
-                    'subscription_id' => $user->id,
-                ])->get();
-        else
-            $subscriptions = Push_subscription::where(
-                [
-                    'subscription_type' => 'user',
-                ])->get();
-
-        if (file_exists(ROOT . fcm_jwt_auth_file)) {
-
-// define the scopes for your API call
-            $scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
-
-// Créer des credentials à partir du fichier de compte de service
-            $credentials = new ServiceAccountCredentials($scopes, ROOT . fcm_jwt_auth_file);
-
-// Générer le token d'accès
-            $this->token = $credentials->fetchAuthToken()['access_token'];
-        }
-        foreach ($subscriptions as $subscription) {
-            $this->fcmPushNotification(
-                $subscription->auth_token, $message, $link, $icon);
-            //$message->addRecipient(new sngrl\PhpFirebaseCloudMessaging\Recipient\Device($subscription->auth_token));
-        }
-
-
-        /*$response = $client->send($message);
-        $responseData = $response->json();*/
-
-        return [
-            'subscriptions' => $subscriptions,
-        ];
-
-    }
-
-    public function testPushNotif($id)
-    {
-        $sub = Push_subscription::find($id);
-        return $this->cloudMessagingPush(User::find($sub->subscription_id), 'test push notification');
-    }
 }

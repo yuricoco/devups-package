@@ -13,13 +13,33 @@ use Doctrine\ORM\EntityManager;
  */
 class DBAL extends Database
 {
+    /**
+     * Cle UNIQUE du cache de connexion
+     * ($pdocache global). Avant ce correctif, la cle etait $this->objectName
+     * (nom de l'entite passee au constructeur) - `new DBAL()` sans argument
+     * (chemin de Model::__insert()/__update()) tombait sur la cle `null`,
+     * tandis que `new QueryBuilder($entity)` (chemin de Model::find(),
+     * QueryBuilder etend DBAL et transmet l'entite au parent) tombait sur le
+     * nom de la classe reelle - autant de cles que d'entites lues plus une
+     * pour toutes les ecritures confondues, verifie empiriquement par
+     * spl_object_id() : Agency::find() et Service::find() donnaient deja
+     * deux connexions PDO distinctes entre elles, et une troisieme distincte
+     * pour toute ecriture. Une seule connexion pour tout le projet : la cle
+     * ne doit plus jamais varier avec l'entite traitee.
+     */
+    private const SHARED_CONNECTION_KEY = '__dbal_shared_connection__';
 
     protected $defaultjoin = "";
     public $custom_columns = "";
     public $custom_columns_array = [];
     public $custom_column_keys = [];
     protected $collect = [];
+    public $_join_table = [];
     public $_with = [];
+    public $_without = [];
+    public $_with_lang = [];
+    public $_query_values = [];
+    public $_query_params = [];
     /**
      *
      * @var type
@@ -29,7 +49,7 @@ class DBAL extends Database
 
     /**
      *
-     * @var type
+     * @var string
      */
     protected $objectName;
     protected $table;
@@ -100,22 +120,55 @@ class DBAL extends Database
      * @var type
      */
     protected $entity_link_list;
-    protected $entity_link_map_list;
+    protected $fieldNames;
+    protected $associations;
     private $iterat;
     private $update = false;
 
     public function __construct($object = null, $id_lang = null)
     {
 
-        parent::__construct();
-//        global $em;
-//        $this->em = $em;
-
         $this->id_lang = $id_lang;
         $this->instanciateVariable($object);
+        //        echo "DBAL ".$this->objectName;
+
+        global $pdocache;
+        if (isset($pdocache[self::SHARED_CONNECTION_KEY]))
+            $this->link = $pdocache[self::SHARED_CONNECTION_KEY];
+        else {
+            parent::__construct();
+            $pdocache[self::SHARED_CONNECTION_KEY] = $this->link;
+        }
+        //        global $em;
+        //        $this->em = $em;
+
     }
 
-//    public static function getEntityManager() {
+    /**
+     * Connexion PDO UNIQUE, partagee par toute lecture et toute
+     * ecriture passant par DBAL/QueryBuilder/Model - jamais une seconde
+     * connexion fabriquee a cote. Doctrine (`getEntityManager()`) ne sert
+     * qu'a la lecture de metadonnees (mapping des entites, migrations de
+     * schema) : il n'execute aucune requete metier dans ce framework, sa
+     * propre connexion reste donc volontairement separee et n'a pas a
+     * apparaitre ici.
+     *
+     * Construit paresseusement au premier appel (comme toute utilisation
+     * normale de DBAL), puis relit du meme cache `$pdocache` que le
+     * constructeur - un seul et meme objet PDO pour toute la duree de la
+     * requete, quel que soit l'appelant (verifie par spl_object_id() depuis
+     * plusieurs FrontController et depuis Model::find()/->__insert()).
+     */
+    public static function pdo(): \PDO
+    {
+        global $pdocache;
+        if (!isset($pdocache[self::SHARED_CONNECTION_KEY])) {
+            new self();
+        }
+        return $pdocache[self::SHARED_CONNECTION_KEY];
+    }
+
+    //    public static function getEntityManager() {
     public static function getEntityManager()
     {
         global $enittycollection;
@@ -154,12 +207,12 @@ class DBAL extends Database
             'user' => dbuser,
             'password' => dbpassword,
             'host' => dbhost,
+            'charset' => 'utf8mb4', // T93 : sinon Doctrine cree toute nouvelle table en utf8mb3
             //    'path' => __DIR__ . '/db.sqlite',
         );
 
         // obtaining the entity manager
         return EntityManager::create($conn, $config);
-
     }
 
 
@@ -175,7 +228,7 @@ class DBAL extends Database
 
     public function is_doctrine_entity($className)
     {
-//        $this->em = $this->getEntityManager();
+        //        $this->em = $this->getEntityManager();
         return !$this->em->getMetadataFactory()->isTransient("\\" . $className);
     }
 
@@ -246,13 +299,12 @@ class DBAL extends Database
 
                     $query = $this->link->prepare($sql);
                     $success = $query->execute() or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values, $entityTable));
-
+                    $this->link = null;
                 } else {
 
                     $keyvalue[strtolower(get_class($entity)) . "_id"] = $entity->getId();
                     $keyvalue[$this->table . "_id"] = $this->object->getId();
                     DBAL::_createDbal($entityTable, $keyvalue);
-
                 }
 
                 if ($persistecollection) {
@@ -299,9 +351,7 @@ class DBAL extends Database
                         }
 
                         $sql .= "delete from " . $entityTable . "  where " . $entityName . "_id = " . $entity->getId() . " and " . $this->objectName . "_id = $id; ";
-
                     }
-
                 }
             } else {
                 $success = TRUE;
@@ -310,8 +360,9 @@ class DBAL extends Database
 
         if ($sql != "") {
 
-            $query = $this->link->prepare($sql);
-            $success = $query->execute() or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql));
+            $success = $this->executeDbal($sql);
+            //            $success = $query->execute() or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql));
+            //            $this->link = null;
         }
         return $success;
     }
@@ -370,7 +421,7 @@ class DBAL extends Database
 
             $qb = new QueryBuilder($collection);
             $qb->select()
-                ->where("this.id")//$collectionName .
+                ->where("this.id") //$collectionName .
                 ->in(
                     (new QueryBuilder(new $incollectionof))->select($collectionName . "_id")
                         ->where($entity)
@@ -381,7 +432,6 @@ class DBAL extends Database
                 return $qb->get();
             else
                 return $qb;
-
         } else {
             $objectName = strtolower(get_class($entity));
 
@@ -427,40 +477,18 @@ class DBAL extends Database
      * @param \stdClass $object
      * @return int l'id de l'entité persisté
      */
-    public function insertserialiseDbal($object, $listentity)
+    public function insertBulk($object = null, $listentity = [])
     {
         if ($object)
             $this->instanciateVariable($object);
 
-        foreach ($listentity as $entity) {
-            $objectarray = (array)$entity;
-            $objectvalue = array_values($objectarray);
-            $rowvalue = [];
-            foreach ($objectarray as $key => $value) {
-                if (is_object($value) and get_class($value) != 'DateTime')
-                    $rowvalue[] = $value->getId();
-                elseif (is_object($value) and get_class($value) == 'DateTime') {
-                    //$rowvalue[] = $value->getDate();
-                    //echo "entre la";
-                    $date = array_values((array)$value);
-                    $rowvalue[] = $date[0];
-                } else
-                    $rowvalue[] = $value;
-            }
-
-            $finalvalue[] = "(''" . implode(",", $rowvalue) . ")";
-        }
-        $parameterQuery = 'id';
-
-        for ($i = 1; $i < $this->nbVar; $i++) {
-            $parameterQuery .= ',' . $this->objectVar[$i];
-        }
-
-        $sql = "insert into `" . $this->table . "` (" . $parameterQuery . ")  values ";
+        $sql = "INSERT INTO `" . $this->table . '` ( `' . implode('` ,`', $this->objectVar) . "`)  VALUES ";
         //$sql = "insert into ".$this->objectName." value ";
-        $sql .= implode(",", $finalvalue) . ';';
+        $sql .= implode(",", $this->_query_values) . ';';
+        //        dv_dump($sql, $this->_query_params);
+        $result = $this->executeDbal($sql, $this->_query_params, self::$INSERT);
         //die(var_dump($sql));
-        return $sql;
+        return $result;
     }
 
     /**
@@ -508,10 +536,16 @@ class DBAL extends Database
         return $sql;
     }
 
+    private $fetch_option = PDO::FETCH_DEFAULT;
     public static $NOTHING = 0;
     public static $INSERT = 1;
+    public static $UPDATE = 1.1;
+    public static $DELETE = -1;
     public static $FETCHALL = 2;
-    public static $FETCHALLROWS = 5;
+    public static $FETCHROW = 7;
+    public static $FETCHNAMEDS = 8;
+    public static $FETCHALLOBJECT = 5;
+    public static $FETCHCOLUMN = 6;
     public static $FETCHOBJECT = 3;
     public static $FETCH = 4;
 
@@ -527,68 +561,83 @@ class DBAL extends Database
 
         try {
             $query = $this->link->prepare($sql);
-            $return = $query->execute($values) ;
+            $return = $query->execute($values);
 
-        }catch (Exception $exception){
-            /*if (__prod){
-                Emaillog::create([
-                    "object" => $query->errorInfo(),
-                    "log" => "$sql Error detail: ".json_encode($values),
-                ]);
-            }*/
+            if ($action == self::$NOTHING) {
+                // nothing
 
-            /*$de =  new \dclass\devups\Tchutte\DBALException($exception->getMessage(), $exception->getCode());
-            $de->sql = $sql;
-            $de->param = $values;
-            throw $de;*/
-            if ($force || __prod) {
-                throw $exception;
+                if (dbtransaction) {
+                    $bd_dump = new DB_dumper();
+                    $bd_dump->transaction($this->table, $sql, $values);
+                }
+            } elseif ($action == self::$FETCH) {
+
+                //                try {
+                $return = $query->fetch($this->fetch_option);
+                /*} catch (Exception $exception) {
+                    if (__prod)
+                        return $this->object;
+
+                    die(Bugmanager::getError(__CLASS__, __METHOD__, $exception->getMessage(), $query->errorInfo(), $sql, $values));
+                }*/
+                //$return = 33;
+            } elseif ($action == self::$INSERT) {
+                if (count($this->identifier) > 1) {
+                    //dump($this->identifier);
+                    $return = $this->identifier;
+                } else {
+                    $req = $this->link->prepare("select @@IDENTITY as id");
+                    $req->execute();
+                    $id = $req->fetch() or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values));
+                    $return = $id['id'];
+                    if ($this->object){
+                        $this->object->setId($id['id']);
+                        $this->object->dvserialised['id'] = $id['id'];
+                    }
+                }
+                if (dbtransaction) {
+                    $bd_dump = new DB_dumper();
+                    $bd_dump->transaction($this->table, $sql, $values, $return);
+                }
+            } elseif ($action == self::$UPDATE) {
+
+                if (dbtransaction) {
+                    $bd_dump = new DB_dumper();
+                    $bd_dump->transaction($this->table, $sql, $values);
+                }
+            } elseif ($action == self::$DELETE) {
+
+                if (dbtransaction) {
+                    $bd_dump = new DB_dumper();
+                    $bd_dump->transaction($this->table, $sql, $values);
+                }
+            } elseif ($action == self::$FETCHALL) {
+                $return = $query->fetchAll($this->fetch_option);
+            } elseif ($action == self::$FETCHROW) {
+
+                $return = $query->fetch(PDO::FETCH_NAMED);
+            } elseif ($action == self::$FETCHCOLUMN) {
+
+                $return = $query->fetchColumn(); // or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql));
+            } elseif ($action == self::$FETCHOBJECT) {
+                $return = $query->fetchObject($this->objectName);
+            } elseif ($action == self::$FETCHALLOBJECT) {
+
+                $return = $query->fetchAll($this->fetch_option, $this->objectName);
             }
 
-            dv_dump($exception, $query->errorInfo(), $sql, $values);
-            // Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values);
+            return $return;
+        } catch (\dclass\devups\Tchutte\DBALException $exception) {
+            throw $exception;
+        } catch (\Throwable $exception) {
+            // Jamais de dump + die : l'appelant (controleur, API, test) doit
+            // pouvoir intercepter l'erreur. Hors production, le message porte
+            // la requete et ses parametres.
+            throw \dclass\devups\Tchutte\DBALException::fromThrowable($exception, $sql, (array)$values);
+        } finally {
+            // Fermeture de la connexion
+            $this->link = null;
         }
-//        if(!$return["success"])
-//            return $return;
-
-        if ($action == self::$NOTHING) {
-            // nothing
-            if (dbtransaction) {
-                $bd_dump = new DB_dumper();
-                $bd_dump->transaction($this->table, $sql, $values);
-            }
-        } elseif ($action == self::$FETCH) {
-            //$return = $query->fetch() or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values));
-            try {
-                $return = $query->fetch();
-            }catch (Exception $exception){
-                if (__prod)
-                    return $this->object;
-
-                die(Bugmanager::getError(__CLASS__, __METHOD__, $exception->getMessage(), $query->errorInfo(), $sql, $values));
-            }
-            //$return = 33;
-        } elseif ($action == self::$INSERT) {
-            if (dbtransaction) {
-                $bd_dump = new DB_dumper();
-                $bd_dump->transaction($this->table, $sql, $values);
-            }
-            if (count($this->identifier) > 1){
-                //dump($this->identifier);
-                $return = true;
-            }else {
-                $req = $this->link->prepare("select @@IDENTITY as id");
-                $req->execute();
-                $id = $req->fetch() or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values));
-                $return = $id['id'];
-            }
-        } elseif ($action == self::$FETCHALL) {
-            $return = $query->fetchAll();// or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql));
-        } elseif ($action == self::$FETCHOBJECT) {
-            $return = $query->fetchObject($this->objectName) or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values));
-        }
-
-        return $return;
     }
 
     /**
@@ -608,11 +657,11 @@ class DBAL extends Database
         $parameterQuery = ':' . implode(", :", $this->objectVar);
 
         $sql = " INSERT INTO `" . $this->table . "` (`" . strtolower(implode('` ,`', $this->objectVar)) . "`) 
-        VALUES (" . strtolower($parameterQuery) . ")";
+        VALUES (" . strtolower($parameterQuery) . ");
+        ";
 
         $id = $this->executeDbal($sql, $this->objectKeyValue, 1);
         // dv_dump($id, $sql, $this->objectKeyValue);
-        $this->object->setId($id);
 
         // implement translation if anabled in class
         if ($this->object->dvtranslate) {
@@ -635,7 +684,16 @@ class DBAL extends Database
                 }
                 $keyvalue["lang_id"] = $lang->getId();
                 $keyvalue[$this->table . "_id"] = $id;
-                DBAL::_createDbal($this->table . "_lang", $keyvalue);
+                // ETAPE V : _createDbal() utilise ce premier argument comme
+                // un NOM DE CLASSE PHP (getClassMetadata(), new $object) -
+                // $this->table est TOUJOURS en minuscules (strtolower()),
+                // alors que la classe compagnon reelle garde la casse de la
+                // classe entite (ex. Country -> Country_lang, jamais
+                // country_lang) ; l'autoload composer (classmap) echoue sur
+                // la version minuscule si la classe n'a pas deja ete chargee
+                // par ailleurs ("Class 'xxx_lang' does not exist" - trouve
+                // en executant Country::seed() pour de vrai, ETAPE V.3).
+                DBAL::_createDbal($this->objectName . "_lang", $keyvalue);
             }
         }
 
@@ -643,9 +701,9 @@ class DBAL extends Database
             $this->manyToManyAdd($id, false, null);
         }
 
-        $eventListners = \dclass\devups\Controller\Controller::$eventListners["after"]["create"];
+        //        $eventListners = \dclass\devups\Controller\Controller::$eventListners["after"]["create"];
 
-        if (isset($eventListners[$this->objectName])) {
+        /*if (isset($eventListners[$this->objectName])) {
             $methods = $eventListners[$this->objectName];
             foreach ($methods as $method) {
                 if (is_array($method))
@@ -653,21 +711,22 @@ class DBAL extends Database
                 else
                     $this->object->{$method}();
             }
-        }
+        }*/
 
-        if ($this->object->dvtranslate) {
-            foreach ($this->object->dvtranslated_columns as $column){
+        /*if ($this->object->dvtranslate) {
+            foreach ($this->object->dvtranslated_columns as $column) {
                 if (isset($this->object->{$column}[$this->id_lang]))
                     $this->object->{$column} = $this->object->{$column}[$this->id_lang];
             }
         }
         if ($this->entity_link_list) {
-            foreach ($this->object->dvtranslated_columns as $column){
+            foreach ($this->object->dvtranslated_columns as $column) {
                 if (isset($this->object->{$column}[$this->id_lang]))
                     $this->object->{$column} = $this->object->{$column}[$this->id_lang];
             }
-        }
-        return $this->object->getId();
+        }*/
+        return $id;
+        //        return $this->object->getId();
     }
 
     /**
@@ -695,45 +754,58 @@ class DBAL extends Database
                 unset($objarray[$key]);
             }
 
-            $id = self::_createAction($table, $objarray);
+            $id = self::_createAction($table, $objarray, $objectinst);
             $objarray = $keyvalue;
-            $langs = Dvups_lang::allrows();
-            foreach ($langs as $lang) {
+            // ETAPE I.4 : cache des langues ACTIVES (Dvups_lang::cachedActiveDlangs(),
+            // meme cache que lang.php/dv_valid_lang() - cf. ETAPE H) plutot
+            // que Dvups_lang::all() (une requete SQL a chaque creation d'une
+            // entite traduite). Le cache est un tableau plat iso_code<->id
+            // (iso_code => id, iso_code.'/' => id, id => iso_code) : on ne
+            // retient que les entrees iso_code => id (cle string, qui ne finit
+            // pas par '/').
+            $activeLangs = Dvups_lang::cachedActiveDlangs();
+            foreach ($activeLangs as $iso => $langId) {
+                if (!is_string($iso) || substr($iso, -1) === '/')
+                    continue;
+
                 $keyvalue = [];
                 foreach ($objectinst->dvtranslated_columns as $key) {
                     if (!isset($objarray[$key]))
                         continue;
 
-                    if (isset($objarray[$key][$lang->getIso_code()]))
-                        $keyvalue[$key] = $objarray[$key][$lang->getIso_code()];
+                    if (isset($objarray[$key][$iso]))
+                        $keyvalue[$key] = $objarray[$key][$iso];
                     else
-                        $keyvalue[$key] = $id . "_" . $lang->getIso_code();
-                    // $this->object->{$key} = $objarray[$key][$lang->getIso_code()];
+                        $keyvalue[$key] = $id . "_" . $iso;
                 }
-                $keyvalue["lang_id"] = $lang->getId();
+                $keyvalue["lang_id"] = $langId;
                 $keyvalue[$table . "_id"] = $id;
-                self::_createAction($table . "_lang", $keyvalue);
+                self::_createAction($table . "_lang", $keyvalue, $objectinst);
             }
-
-        }else{
+        } else {
             /*$objectvar = array_keys($keyvalue);
             $parameterQuery = ':' . implode(", :", $objectvar);
             $sql = "INSERT INTO `" . $table . "` (`" . strtolower(implode('` ,`', $objectvar)) . "`) VALUES (" . strtolower($parameterQuery) . ")";
 
             $db = new DBAL();
             $id = $db->executeDbal($sql, $keyvalue, 1);*/
-            $id = self::_createAction($table, $keyvalue);
+            $id = self::_createAction($table, $keyvalue, $objectinst);
         }
-        return  $id;
+        return $id;
     }
 
-    private static function _createAction($table, $keyvalue){
+    private static function _createAction($table, $keyvalue, $objectinst = null)
+    {
         $objectvar = array_keys($keyvalue);
         $parameterQuery = ':' . implode(", :", $objectvar);
         $sql = "INSERT INTO `" . $table . "` (`" . strtolower(implode('` ,`', $objectvar)) . "`) ";
         $sql .= " VALUES (" . strtolower($parameterQuery) . ")";
 
-        $db = new DBAL();
+        // todo: avoid instance here due to direct insertion
+
+        //        dv_dump( $objectinst );
+        $db = new DBAL($objectinst);
+        //        $db->object = $objectinst;
         return $db->executeDbal($sql, $keyvalue, 1);
     }
 
@@ -744,57 +816,44 @@ class DBAL extends Database
      * @param \stdClass $object l'entité a persister
      * @param array $change_collection Autorise la modification de la collection d'objet en bd true par defaut
      * @return \stdClass
+     * @throws Exception
      */
     public function updateDbal($object = null)
     {
 
         global $_ENTITY_COLLECTION;
 
+        $this->action = 'update';
         if ($object):
             $this->instanciateVariable($object);
         endif;
+        //        dv_dump($this->objectVar);
+        $parameterQuery = [];
+        foreach ($this->objectVar as $var) {
+            $parameterQuery[] = ' `' . $var . '`= :' . $var;
+        }
+        if (count($parameterQuery) === 0)
+            throw new \Exception("Empty parameters");
 
-        $this->update = true;
-        //$parameterQuery = '`' . implode("`= :".$this->objectVar.", `", $this->objectVar);
+        $sql = " UPDATE `" . $this->table . "` SET " . strtolower(implode(',', $parameterQuery)) . " WHERE 1 ";
 
-        $values = $this->objectValue;
         if ($this->identifier) {
-            $parameterQuery = [];
-            for ($i = 0; $i < $this->nbVar; $i++) {
-                if (in_array($this->objectVar[$i], $this->identifier))
-                    continue;
-
-                $parameterQuery[] = ' `' . $this->objectVar[$i] . '`= :' . $this->objectVar[$i];
+            //            for ($i = 0; $i < $this->nbVar; $i++) {
+            //                if (in_array($this->objectVar[$i], $this->identifier))
+            //                    continue;
+            foreach ($this->identifier as $key => $idf) {
+                $sql .= " AND $key = :$key ";
+                $this->objectKeyValue[$key] = $idf;
             }
-            $sql = " UPDATE `" . $this->table . "` SET " . strtolower(implode(',', $parameterQuery)) . " WHERE 1 ";
-            foreach ($this->identifier as $idf){
-                $sql .= " AND $idf = :$idf ";
-            }
-        }else {
-
-            $parameterQuery = '`' . $this->objectVar[1] . '`= :' . $this->objectVar[1];
-            for ($i = 2; $i < $this->nbVar; $i++) {
-                $parameterQuery .= ', `' . $this->objectVar[$i] . '`= :' . $this->objectVar[$i];
-            }
-            array_splice($values, 0, 1);
-            $values[] = $this->objectValue[0];
-
-
-            $sql = " UPDATE `" . $this->table . "` SET " . strtolower($parameterQuery) . " WHERE id = :id ";
+        } else {
+            $this->objectKeyValue['id'] = $this->instanceid;
+            $sql .= " AND id = :id ";
         }
-        try {
+        //        try {
 
-            $query = $this->link->prepare($sql);
-            $result = $query->execute($this->objectKeyValue);
-
-        }catch (Exception $e){
-            dv_dump( $sql, $values, $query->errorInfo());
-//            (Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values))
-        }
-        if (dbtransaction) {
-            $bd_dump = new DB_dumper();
-            $bd_dump->transaction($this->table, $sql, $values);
-        }
+        //            $query = $this->link->prepare($sql);
+        //            $result = $query->execute($this->objectKeyValue);
+        $result = $this->executeDbal($sql, $this->objectKeyValue, self::$UPDATE);
 
         // implement translation if anabled in class
         if ($this->object->dvtranslate) {
@@ -825,7 +884,6 @@ class DBAL extends Database
                     $this->updateLangValue($keyvalue, $parameterQuery, $lang->getId());
                 }
             }
-
         }
 
         $this->manyToManyDelete($this->objectValue[0], $_ENTITY_COLLECTION);
@@ -849,7 +907,6 @@ class DBAL extends Database
                 WHERE lang_id = :lang_id AND {$this->table}_id = :{$this->table}_id ";
 
         (new DBAL())->executeDbal($sql, $keyvalue, DBAL::$NOTHING);
-
     }
 
     /**
@@ -865,13 +922,12 @@ class DBAL extends Database
         $parameterQuery = [];
         $objectvar = array_keys($keyvalue);
         foreach ($objectvar as $v)
-            $parameterQuery[] = '`'.$v.'` = :'.$v;
+            $parameterQuery[] = '`' . $v . '` = :' . $v;
 
         $sql = " UPDATE `" . strtolower($object) . "` SET " . strtolower(implode(', ', $parameterQuery)) . " WHERE 1 $where ";
 
         $db = new DBAL();
         return $db->executeDbal($sql, $keyvalue, 1);
-
     }
 
     /**
@@ -885,14 +941,13 @@ class DBAL extends Database
     {
 
         $values = [];
-//        $objectvar = array_keys($keyvalue);
-//        $parameterQuery = ':' . implode(", :", $objectvar);
+        //        $objectvar = array_keys($keyvalue);
+        //        $parameterQuery = ':' . implode(", :", $objectvar);
 
-        $sql = " DELETE FROM `" . strtolower($object) . "` WHERE ".$where;
+        $sql = " DELETE FROM `" . strtolower($object) . "` WHERE " . $where;
 
         $db = new DBAL();
         return $db->executeDbal($sql, [], 1);
-
     }
 
     /**
@@ -942,7 +997,6 @@ class DBAL extends Database
             $columns .= ", `" . $thislang . "`.`" . implode("`, $thislang.`", $object->dvtranslated_columns) . "`";
             $join .= " left join $thislang on $thislang.{$this->table}_id = `{$this->table}`.id ";
             $where .= " and $thislang.lang_id = {$this->id_lang} ";
-
         }
 
         $select = "select $columns from `" . $this->table . '`';
@@ -951,7 +1005,6 @@ class DBAL extends Database
             $where .= ' and `' . $this->table . '`.deleted_at is null ';
 
         return $this->__findOne($select . $join . $where, array($this->objectValue[0]), $collection, $recursif);
-
     }
 
     public function deleteDbal($object = null, $force = false)
@@ -962,30 +1015,17 @@ class DBAL extends Database
         endif;
 
         if ($this->softdelete && $force == false)
-            $sql = "update `" . $this->table . "` set deleted_at = NOW() where id = ?";
+            $sql = "UPDATE `" . $this->table . "` SET deleted_at = NOW() WHERE id = ?";
         else
-            $sql = "delete from `" . $this->table . "` where id = ?";
+            $sql = "DELETE FROM `" . $this->table . "` WHERE id = ?";
 
-        try {
-
-            $query = $this->link->prepare($sql);
-            $retour = $query->execute(array($this->instanceid));
-
-            if (dbtransaction) {
-                $bd_dump = new DB_dumper();
-                $bd_dump->transaction($this->table, $sql, array($this->objectValue[0]));
-            }
-
-            return $retour;
-        }catch (Exception $e){
-            dv_dump($e,__CLASS__, __METHOD__, __LINE__, $sql, array($this->objectValue[0]));
-        }
-
+        return $this->executeDbal($sql, [$this->instanceid], self::$DELETE);
     }
 
     protected function __count($sql, $values = [])
     {
 
+        return $this->executeDbal($sql, $values, self::$FETCHCOLUMN);
         $query = $this->link->prepare($sql);
         $query->execute($values) or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values));
 
@@ -993,7 +1033,8 @@ class DBAL extends Database
     }
 
 
-    private function extractNestedData(string $className, array $data): array {
+    private function extractNestedData(string $className, array $data): array
+    {
         $prefix = strtolower($className) . '_';
         $filteredData = [];
 
@@ -1006,49 +1047,71 @@ class DBAL extends Database
         return $filteredData;
     }
 
-    private function dbrow($flowBD)
+    private function dbrow($flowBD, $global_config = [])
     {
 
-        if ($this->object->dvtranslate && !$this->id_lang) {
-            $flowBD = (object)$flowBD;
-            $this->getLangValues($flowBD, $this->object->dvtranslated_columns);
-            $flowBD = (array)$flowBD;
-        }
-
-       /* $classname = get_class($this->object);
-        $instance = new $classname;
-        $instance->loadData($flowBD);
-        dv_dump($this->_with);
-        foreach ($this->_with as $entity){
-            $classname = ucfirst($entity);
-            $imbric = new $classname;
-            dv_dump($this->extractNestedData($entity, $flowBD));
-            $instance->{"$entity"} = $imbric->loadData($this->extractNestedData($entity, $flowBD));
-            ///$flowBD->{"$entity"}->hydrate($this->id_lang);
-        }
-
-        dv_dump($instance, $classname, $flowBD);*/
-
-//        $object_array = (array)$this->object;
-        /*if ($this->object->dvtranslated_columns) {
-            $object_array += array_combine($this->object->dvtranslated_columns, $this->object->dvtranslated_columns);
-        }*/
+        // if ($this->object->dvtranslate && !$this->id_lang) {
+        //     $flowBD = (object)$flowBD;
+        //     $this->getLangValues($flowBD, $this->object->dvtranslated_columns);
+        //     $flowBD = (array)$flowBD;
+        // }
 
         $classname = get_class($this->object);
         $instance = new $classname;
-        $flowBD = $instance->hydrateData($flowBD, $this->id_lang,
-            $this->table, $this->custom_column_keys, $this->_with);
 
-        foreach ($this->_with as $entity => $columns){
-            if (!$columns || $columns === '*')
-                $flowBD->{"$entity"} = ucfirst($entity)::find($flowBD->{$entity."_id"}, $this->id_lang);
+        //        if ($this->table == 'postimage')
+        $flowBD = $instance->hydrateData(
+            $flowBD,
+            $this->id_lang,
+            $this->_without,
+            $this->custom_column_keys,
+            $this->_with_lang
+        );
+
+        foreach ($this->_with as $entity => $columns) {
+            if (!$columns || $columns === '*' || is_callable($columns)) {
+                // todo: why not do this : $classname = get_class($this->object->{$entity});
+                extract(EntityCore::parseEntity($entity));
+                $cname = $entity;
+                $entity = $classentity;
+                if (!isset($global_config[ucfirst($entity)]))
+                    continue;
+                //                $entity = $global_config[ucfirst($entity)];
+                //                $flowBD->{"$entity"} = $global_config[ucfirst($entity)]['namespace_name']::find($flowBD->{$entity . "_id"}, $this->id_lang);
+
+                if (is_callable($columns)) {
+                    $entity_config = $global_config[ucfirst($classentity)];
+                    $entity_magic = $entity_config['namespace_name'];
+                    if($cname != $entity)
+                        $valuedata = $columns($flowBD);
+                    else if (isset($flowBD->{$entity . "_id"}))
+                        $valuedata = $columns($entity_magic::whereId($flowBD->{$entity . "_id"}));
+                    else
+                        $valuedata = $columns($entity_magic::where($this->objectName . "_id", $flowBD->{"id"}));
+                } else {
+                    $entity_magic = $global_config[ucfirst($classentity)]['namespace_name'];
+                    if ($flowBD->{$entity . "_id"}) {
+                        $q = $entity_magic::whereId($flowBD->{$entity . "_id"});
+
+                        foreach ($relations as $relation => $cols) {
+
+                            $q->with($relation, $cols);
+                        }
+                        $valuedata = $q->first($this->id_lang);
+                    } else
+                        $valuedata = new $entity_magic();
+                    // dv_dump($entity, $valuedata);
+                }
+                $flowBD->{"$cname"} = $valuedata;
+                $flowBD->dvserialised[$cname] = $flowBD->{"$cname"};
+            }
             ///$flowBD->{"$entity"}->hydrate($this->id_lang);
         }
 
         $flowBD->dvold = clone $flowBD;
-//        foreach ($this->_with as $entity){
-//            $flowBD->{"$entity"}->hydrate($this->id_lang);
-//        }
+        //        foreach ($this->_with as $entity){
+        //            $flowBD->{"$entity"}->hydrate($this->id_lang);
+        //        }
 
         $flowBD->dvfetched = true;
         $flowBD->dvinrelation = true;
@@ -1056,14 +1119,8 @@ class DBAL extends Database
             $flowBD->dvtranslate = true;
             $flowBD->dvtranslated_columns = $this->object->dvtranslated_columns;
         }
-        //var_dump($callables);
-//        foreach ($callables as $cn => $val){
-//            $flowBD->{strtolower($cn)} = function () use ($cn, $val){
-//                return $cn::findrow($val);
-//            };
-//        }
+        $flowBD->dvpersistence = [];
         return $flowBD;
-
     }
 
     /**
@@ -1076,41 +1133,31 @@ class DBAL extends Database
     protected function __findOneRow($sql, $values = [])
     {
 
-        try {
-            $req = $this->link->prepare($sql);
-            $req->execute($values);
-        }catch (Exception $e){
-            if (__prod) {
-                return [
-                    'success' => false,
-                    'detail' => $e->getMessage(),
-                ];
-            }
-            dv_dump(__CLASS__, __METHOD__, __LINE__, $e->getMessage(), $sql, $values);
-        }
-
         if (empty($this->entity_link_list) and empty($this->objectCollection)) {
-            $flowBD = $req->fetchObject($this->objectName);
 
+            $flowBD = $this->executeDbal($sql, $values, self::$FETCHOBJECT);
             if (!$flowBD)
                 return null;
-                //return new $this->objectName;
 
             if ($this->object->dvtranslate) {
                 $this->getLangValues($flowBD, $this->object->dvtranslated_columns);
                 $flowBD->dvtranslated_columns = $this->object->dvtranslated_columns;
             }
+
+            $flowBD->dvfetched = true;
+            $flowBD->dvold = clone $flowBD;
             return $flowBD;
         }
 
-        $flowBD = $req->fetch(PDO::FETCH_NAMED);
+        $this->fetch_option = PDO::FETCH_NAMED;
+        $flowBD = $this->executeDbal($sql, $values, self::$FETCH);
 
         if (!$flowBD) {
             return null;
         }
 
-        return $this->dbrow($flowBD);
-
+        global $global_config;
+        return $this->dbrow($flowBD, $global_config);
     }
 
     public function getLangValues(&$flowBD, $columns)
@@ -1121,25 +1168,35 @@ class DBAL extends Database
             return null;
 
         // var_dump($flowBD->id);
-        $sql = " SELECT a." . implode(', a.', $columns) . ", dl.iso_code FROM {$this->table }_lang a 
+        $sql = " SELECT a." . implode(', a.', $columns) . ", dl.iso_code FROM {$this->table}_lang a
             LEFT JOIN  dvups_lang dl ON dl.id = a.lang_id
-            WHERE {$this->table }_id = {$flowBD->id} ";
+            WHERE {$this->table}_id = {$flowBD->id} ";
 
         $values = (new DBAL())->executeDbal($sql, [], DBAL::$FETCHALL);
 
         /*$sql = " SELECT * FROM dvups_lang  ";
         $langs = (new DBAL())->executeDbal($sql, [], DBAL::$FETCHALL);*/
 
+        // this code add dvserialised in data of entities with dvtranslate = true
+        // but it is important for deep hydrate when entity with dvtranslate = true is an imbricated entity
+        // find the way to handle it better.
         foreach ($columns as $item) {
             $flowBD->{$item} = [];
+            // dvserialised[$item] must be reset too: the main select already aliases
+            // a GROUP_CONCAT('[iso_code]value...') string into this same column name,
+            // so without this reset the per-lang merge below tries to offset-write
+            // into that string instead of a fresh array.
+            $flowBD->dvserialised[$item] = [];
 
             if ($values)
                 foreach ($values as $value) {
                     $flowBD->{$item}[$value['iso_code']] = $value[$item];
+                    $flowBD->dvserialised[$item][$value['iso_code']] = $value[$item];
                 }
             else
                 foreach (['fr', 'en'] as $value) {
                     $flowBD->{$item}[$value] = "";
+                    $flowBD->dvserialised[$item][$value] = "";
                 }/*foreach ($langs as $value) {
                     $flowBD->{$item}[$value['iso_code']] = "";
                 }*/
@@ -1158,18 +1215,24 @@ class DBAL extends Database
     protected function __findOne($sql, $values = [], $collection = false, $recursif = true)
     {
 
-        $req = $this->link->prepare($sql);
-        $req->execute($values) or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__,$req->errorInfo(), $sql, $values));
+        //        $req = $this->link->prepare($sql);
+        //        $req->execute($values) or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $req->errorInfo(), $sql, $values));
 
-        $arrayReturn = $this->listeEntity;
+        //        $arrayReturn = $this->listeEntity;
 
         if (empty($this->entity_link_list) and empty($this->objectCollection))
-            $flowBD = $req->fetchObject($this->objectName);
-        elseif ($arrayReturn)
-            $flowBD = $this->djoin($req->fetch(PDO::FETCH_NAMED), $this->object, true, $recursif);
-        else
-            $flowBD = $this->djoin($req->fetch(PDO::FETCH_NAMED), $this->object, $collection, $recursif);
+            $flowBD = $this->executeDbal($sql, $values, self::$FETCHOBJECT);
+        //            $flowBD = $req->fetchObject($this->objectName);
+        /*elseif ($arrayReturn) {
+            $flowBD = $this->executeDbal($sql, $values, self::$FETCHROW);
+            $flowBD = $this->djoin($flowBD, $this->object, true, $recursif);
+        }*/
+        else {
 
+            $this->fetch_option = PDO::FETCH_NAMED;
+            $rows = $this->executeDbal($sql, $values, self::$FETCH);
+            $flowBD = $this->djoin($rows, $this->object, $collection, $recursif);
+        }
         if (!$flowBD)
             $flowBD = $this->object;
 
@@ -1188,32 +1251,33 @@ class DBAL extends Database
      */
     protected function __findAllRow($sql, $values = [], $callbackexport = null)
     {
-        $result = [];
-        try {
+        /*$result = [];
+        try {*/
 
-            $query = $this->link->prepare($sql);
-            $query->execute($values) or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values));
+        //            $query = $this->link->prepare($sql);
+        //            $query->execute($values) or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values));
 
-            if (is_callable($callbackexport)) {
-                $rows = $query->fetchAll(PDO::FETCH_NAMED);
-                foreach ($rows as $row) {
-                    $callbackexport($row, $this->objectName);
-                }
-                return true;
+        if (is_callable($callbackexport)) {
+            $this->fetch_option = PDO::FETCH_NAMED;
+            $rows = $this->executeDbal($sql, $values, self::$FETCHALL);
+            foreach ($rows as $row) {
+                $callbackexport($row, $this->objectName);
             }
-
-//            if (empty($this->entity_link_list) and empty($this->objectCollection))
-//                return $query->fetchAll(PDO::FETCH_CLASS, $this->objectName);
-
-            $rows = $query->fetchAll(PDO::FETCH_NAMED);
-
-            return $rows;
-        }catch (Exception $exception){
-
-            dv_dump($exception, $query->errorInfo(), $sql, $values);
-            return [];
+            return true;
         }
 
+        //            if (empty($this->entity_link_list) and empty($this->objectCollection))
+        //                return $query->fetchAll(PDO::FETCH_CLASS, $this->objectName);
+
+        $this->fetch_option = PDO::FETCH_NAMED;
+        $rows = $this->executeDbal($sql, $values, self::$FETCHALL);
+
+        return $rows;
+        /* } catch (Exception $exception) {
+
+             dv_dump($exception, $query->errorInfo(), $sql, $values);
+             return [];
+         }*/
     }
 
     /**
@@ -1226,35 +1290,37 @@ class DBAL extends Database
     protected function __findAll($sql, $values = [], $callbackexport = null)
     {
         $result = [];
-        $query = $this->link->prepare($sql);
-        try {
-            $query->execute($values);// or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values));
-        }catch (Exception $exception){
-            dump($sql, $values,
-                $exception->getMessage()
-            );
-            $calledfrom = debug_backtrace();
-            dv_dump($calledfrom);
-        }
-//        $flowBD = $query->fetchAll(PDO::FETCH_CLASS);
+
         if (is_callable($callbackexport)) {
 
-            $rows = $query->fetchAll(PDO::FETCH_NAMED);
+            $this->fetch_option = PDO::FETCH_NAMED;
+            $rows = $this->executeDbal($sql, $values, self::$FETCHALL);
             foreach ($rows as $row) {
                 $callbackexport($row, $this->objectName);
             }
             return true;
         }
 
-        if (empty($this->entity_link_list) and empty($this->objectCollection) && !$this->object->dvtranslate)
-            return $query->fetchAll(PDO::FETCH_CLASS, $this->objectName);
+        /* if (empty($this->entity_link_list) and empty($this->objectCollection) && !$this->object->dvtranslate) {
+             $this->fetch_option = PDO::FETCH_CLASS;
+             return  $this->executeDbal($sql, $values, self::$FETCHALLOBJECT);
+             foreach ($data as $i => $row) {
+                 $data[$i]->dvserialised = $row;
+             }
 
-//        $rows = $query->fetchAll(PDO::FETCH_GROUP);
-//        dv_dump($rows);
-        $rows = $query->fetchAll(PDO::FETCH_NAMED);
+             dv_dump($data);
+             return $data;
+ //            return $query->fetchAll(PDO::FETCH_CLASS, $this->objectName);
+         }*/
 
+        //        $rows = $query->fetchAll(PDO::FETCH_GROUP);
+
+        $this->fetch_option = PDO::FETCH_NAMED;
+        $rows = $this->executeDbal($sql, $values, self::$FETCHALL);
+
+        global $global_config;
         foreach ($rows as $row) {
-            $result[] = $this->dbrow($row);
+            $result[] = $this->dbrow($row, $global_config);
         }
 
         return $result;
@@ -1270,21 +1336,16 @@ class DBAL extends Database
         try {
 
             $query = $this->link->prepare($sql);
-            $query->execute($values) ;
-
-        }catch (Exception $e){
-            //or die(Bugmanager::getError(__CLASS__, __METHOD__, __LINE__, $query->errorInfo(), $sql, $values))
-            dump($sql, $values,
-                $e->getMessage()
-            );
-            $calledfrom = debug_backtrace();
-            dv_dump($calledfrom);
+            $query->execute($values);
+        } catch (\Throwable $e) {
+            throw \dclass\devups\Tchutte\DBALException::fromThrowable($e, $sql, (array)$values);
         }
 
         if (is_callable($callback)) {
             $retour = [];
             $i = 0;
             $arg = \DClass\lib\Util::get_func_argNames($callback);
+
             while ($row = $query->fetch(PDO::FETCH_NAMED)) {
                 $row = $this->dbrow($row);
                 //$row = $this->djoin($row, $this->object, false, false);
@@ -1302,20 +1363,21 @@ class DBAL extends Database
 
                 $i++;
             }
-//            while ($row = $query->fetch(PDO::FETCH_OBJ)) {
-//                $callback($row);
-//            }
+            //            while ($row = $query->fetch(PDO::FETCH_OBJ)) {
+            //                $callback($row);
+            //            }
             if (!$return_collection)
                 return;
-        }
-        elseif (empty($this->entity_link_list))
-            $retour = $query->fetchAll(PDO::FETCH_CLASS, $this->objectName);
-        elseif ($arraybd = $query->fetchAll(PDO::FETCH_NAMED)) {
+        } elseif (empty($this->entity_link_list)) {
+            $this->fetch_option = PDO::FETCH_CLASS;
+            return $this->executeDbal($sql, $values, self::$FETCHALLOBJECT);
+            //            $retour = $query->fetchAll(PDO::FETCH_CLASS, $this->objectName);
+        } elseif ($arraybd = $query->fetchAll(PDO::FETCH_NAMED)) {
             return $arraybd;
         } else
             $retour = array();
 
-//            $this->ResetObject();
+        //            $this->ResetObject();
         return $retour;
     }
 
@@ -1372,7 +1434,7 @@ class DBAL extends Database
         }
 
         foreach ($object_array as $key => $value) {
-//                    $imbricateindex = 0;
+            //                    $imbricateindex = 0;
 
             $k = str_replace(get_class($object), '', $key);
             $k = str_replace('*', '', $k);
@@ -1386,7 +1448,8 @@ class DBAL extends Database
 
                     $attclassname = strtolower(get_class($value));
 
-                    if (isset($this->entity_link_list[$attclassname . ":" . $key])
+                    if (
+                        isset($this->entity_link_list[$attclassname . ":" . $key])
                         && $key == substr($key2, 0, -3)
                         //&& $this->entity_link_list[$attclassname.":".$key] == $attclassname.":".substr($key2, 0, -3)
                     ) {
@@ -1444,7 +1507,6 @@ class DBAL extends Database
                     }
                 }
             }
-
         }
 
         $object_array["dvinrelation"] = true;
@@ -1476,12 +1538,13 @@ class DBAL extends Database
         $object_array = $this->orm($flowBD, $object, 0, $recursif, $collection);
 
         return Bugmanager::cast((object)$object_array, get_class($object));
-
     }
 
     public $hasrelation = false;
     public $objectKeyValue = [];
     public $identifier = [];
+    public $action = '';
+    public $has_multiple_identifier = false;
 
     public function setClassname($objectname)
     {
@@ -1490,6 +1553,75 @@ class DBAL extends Database
         $this->objectName = $array[count($array) - 1];
         $this->table = strtolower($this->objectName);
         return $this;
+    }
+
+    private function mappingProd($object, $objectarray)
+    {
+
+        global $em;
+
+        $this->object = $object;
+        $this->softdelete = $object->dvsoftdelete;
+
+        $this->objectName = get_class($object);
+
+        $metadata = $em->getClassMetadata("\\" . $this->objectName);
+
+        $this->table = $metadata->table["name"];
+
+        $this->fieldNames = $metadata->fieldNames;
+        $this->associations = array_keys($metadata->associationMappings);
+
+        if ($this->action === 'update') {
+            $keys = $object->entityKeyUpdate($this->fieldNames, $this->associations, $metadata->identifier);
+
+            if (count($metadata->identifier) > 1)
+                foreach ($metadata->identifier as $ident) {
+                    //                    if (key_exists($ident . '_id', $keys))
+                    $this->identifier[$ident . '_id'] = $object->{$ident . '_id'};
+                    //                    $keys[$ident . '_id'] = $object->{$ident . '_id'};
+                }
+            else {
+                //                $keys["id"] = $object->id;
+                $this->instanceid = $object->id;
+            }
+        } else {
+            $keys = $object->entityKey($this->fieldNames, $this->associations, $this->_without);
+
+            $this->identifier = [];
+            if (key_exists("id", $keys))
+                $this->instanceid = $keys["id"];
+            else {
+                foreach ($metadata->identifier as $ident) {
+                    if (key_exists($ident . '_id', $keys))
+                        $this->identifier[$ident . '_id'] = $keys[$ident . '_id'] ?? null;
+                }
+            }
+        }
+
+        foreach ($metadata->associationMappings as $key => $maps) {
+
+            //var_dump($val);
+            $classnamespace = explode("\\", $maps['targetEntity']);
+            $classnamespace = strtolower($classnamespace[count($classnamespace) - 1]);
+            $this->entity_link_list[($classnamespace . ":" . $key)] = $objectarray[$key];
+            // fix issue while creating an entity then try to access a foreign key user this->key_id. previously throw an exception
+            // $this->object->{$key . '_id'} = $val->getId();
+
+        }
+
+        foreach ($object->dv_collection as $key) {
+
+            $val = $object->{$key};
+            if (is_array($val))
+                $this->objectCollection[] = $val;
+        }
+
+        $this->objectVar = array_keys($keys);
+        $this->objectValue = array_values($keys);
+        $this->objectKeyValue = $keys;
+        $this->hasrelation = !empty($this->entity_link_list);
+        $this->nbVar = count($this->objectVar);
     }
 
     /**
@@ -1508,78 +1640,9 @@ class DBAL extends Database
         $this->objectCollection = [];
         $this->objectKeyValue = [];
         $this->select = false;
-
         if (is_object($object)) {
-            $objectarray = (array) $object;
-            $this->object = $object;
-            $this->softdelete = $object->dvsoftdelete;
-
-            $this->objectName = get_class($object);
-
-            $metadata = $em->getClassMetadata("\\" . $this->objectName);
-
-            $this->table = $metadata->table["name"];
-//            if ($this->table == 'session')
-//                dv_dump('dd');
-
-            $this->identifier = $metadata->identifier;
-            if (count($metadata->identifier) > 1){
-                $this->identifier = [];
-                foreach ($metadata->identifier as $id){
-                    $this->identifier[] = $id."_id";
-                }
-            }
-            /*if ($this->table == "product_storage") {
-                $metadata = $em->getClassMetadata("\\Product_storage");
-                dv_dump($metadata);
-            }*/
-            $fieldNames = $metadata->fieldNames;
-            $assiactions = array_keys($metadata->associationMappings);
-
-            if (!$this->tableExists($this->table)) {
-                echo $this->table . " table not exist";
-                die;
-//                if ($metadata = $em->getClassMetadata("\\" . $this->objectName)) {
-//                    $this->table = strtolower($metadata->table['name']);
-//                }
-            }
-            $keys = [];
-            $keys = $object->entityKey($fieldNames);
-            // dv_dump($keys, array_keys($fieldNames));
-            if (isset($keys["id"]))
-                $this->instanceid = $object->getId();
-
-            foreach ($object->dv_collection as $key) {
-
-                $val = $object->{$key};
-                if (is_array($val))
-                    $this->objectCollection[] = $val;
-            }
-            // var_dump($objectarray);
-            foreach ($assiactions as $key) {
-                if (!isset($objectarray[$key]))
-                    die(var_dump($key." must be set as public in class ".$this->objectName." "));
-
-                $val = $objectarray[$key];
-                if (is_object($val)) {
-                //var_dump($val);
-                    $classnamespace = explode("\\", get_class($val) );
-                    $classnamespace = $classnamespace[count($classnamespace)-1];
-                $this->entity_link_list[strtolower( $classnamespace. ":" . $key)] = $val;
-                $this->entity_link_map_list[strtolower($classnamespace)] = $key;
-                $keys[$key . '_id'] = $val->getId();
-                // fix issue while creating an entity then try to access a foreign key user this->key_id. previously throw an exception
-                $this->object->{$key . '_id'} = $val->getId();
-                }
-            }
-
-            $this->objectVar = array_keys($keys);
-            $this->objectValue = array_values($keys);
-            $this->objectKeyValue = $keys;
-            $this->hasrelation = !empty($this->entity_link_list);
-            $this->nbVar = count($this->objectVar);
-
-
+            $objectarray = (array)$object;
+            $this->mappingProd($object, $objectarray);
         }
     }
 
@@ -1622,5 +1685,4 @@ class DBAL extends Database
             return false;
         }
     }
-
 }

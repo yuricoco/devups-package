@@ -1,22 +1,47 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
+<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <!-- iso-8859-1  -->
     <meta name="author" content="spacekola">
-    <title class="mdi mdi-sort-variant">Dashboard | Dvups Admin</title>
+    <?php
+    // le <title> etait fixe en dur pour les 29
+    // modules et tous leurs ecrans - deux onglets ouverts etaient
+    // indiscernables. @yield('title')/@section('title') ne suffit pas ici :
+    // Chaque module a sa propre copie de admin/layout.blade.php avec un
+    // @section('title') generique : le titre est donc calcule ici depuis
+    // $moduledata, global peuple pour chaque rendu (Controller::views()/
+    // viewsModule()).
+    // Le nom d'entite n'a pas d'equivalent global : repli par lecture de
+    // l'URL (admin/<projet>/<Module>/<entite>/<chemin>, le segment 4),
+    // absent pour un tableau de bord de module (4 segments, pas 5).
+    global $moduledata;
+    $dv_title_bits = [];
+    $dv_uri_path = parse_url(\Router::$uri ?? ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
+    $dv_uri_segments = array_values(array_filter(explode('/', trim((string) $dv_uri_path, '/'))));
+    if (isset($dv_uri_segments[3]) && !in_array(strtolower($dv_uri_segments[3]), ['dashboard', 'layout'], true)) {
+        $dv_title_bits[] = ucfirst($dv_uri_segments[3]);
+    }
+    if (isset($moduledata) && is_array($moduledata)) {
+        $dv_title_bits[] = $moduledata['label'] ?? ($moduledata['name'] ?? null);
+    }
+    $dv_title_bits = array_filter($dv_title_bits);
+    $dv_title = $dv_title_bits ? implode(' · ', $dv_title_bits) : 'Dashboard';
+    $dv_title .= ' | ' . PROJECT_NAME;
+    ?>
+    <title><?= htmlspecialchars($dv_title) ?></title>
     <meta charset="utf-8">
     <link href="<?= __admin; ?>images/favicon.png" rel="icon">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta http-equiv="Content-Language" content="en">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, shrink-to-fit=no"/>
-    <meta name="description" content="This is an example dashboard created using build-in elements and components.">
+          content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
+    <meta name="description" content="<?= PROJECT_NAME ?> — back-office d'administration">
     <meta name="msapplication-tap-highlight" content="no">
     <!-- inject:css -->
     <link rel="stylesheet" href="<?= __env; ?>admin/main.css">
     <link rel="stylesheet" href="<?= assets ?>plugins/sweetalert2/sweetalert2.min.css">
 
+    <link rel="stylesheet" href="<?= assets; ?>css/dv_theme.css">
     <link rel="stylesheet" href="<?= assets; ?>css/dv_style.css">
 
     @yield('cssimport')
@@ -33,9 +58,6 @@
 
         var _admin_id = '{{getadmin()->id}}';
         var _role = '{{getadmin()->dvups_role->name}}';
-        /*
-        var _local_content = = Local_contentController::getdatajs() ?>;
-         */
     </script>
 </head>
 

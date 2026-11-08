@@ -1,0 +1,24 @@
+# ETAPE P.2 : analyse statique de surface (niveau 0) - trouve les classes
+# et methodes qui n'existent plus apres un renommage (meme famille de bug
+# que \DClass\lib\Util::getIp() -> Util::get_IP_address(), corrige dans ce
+# meme commit). `composer phpstan` pour la lancer.
+#
+# Beaucoup de "Call to an undefined method" releves par ce niveau sont de
+# FAUX positifs : ce framework resout largement ses methodes par
+# convention a l'execution (magie via call_user_func('get' . ucfirst($x)),
+# traits non vus par phpstan dans certains contextes generiques, etc.) -
+# chaque signalement doit etre verifie a la main avant correction (voir
+# TODO.md, section ETAPE P.2, pour le detail de ce qui a ete corrige ici).
+parameters:
+    level: 0
+    paths:
+        - src
+        - dclass
+        - route
+        - config
+        - documentation
+    excludePaths:
+        - vendor/*
+        - cache/*
+        - dclass/lib/addendum/*
+    checkMissingIterableValueType: false

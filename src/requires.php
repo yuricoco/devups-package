@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by PhpStorm.
  * User: Aurelien Atemkeng
@@ -9,21 +10,15 @@
 require 'devups/ModuleConfig/devups.moduleconfig.php';
 require 'devups/ModuleAdmin/devups.moduleadmin.php';
 require 'devups/ModuleLang/devups.modulelang.php';
+require 'devups/ModuleLog/devups.modulelog.php';
 //require 'devups/ModuleWebservice/devups.modulewebservice.php';
 
 require 'devupscms/ModuleNotification/devupscms.modulenotification.php';
 require 'devupscms/ModulePushNotification/devupscms.modulepushnotification.php';
 require 'devupscms/ModuleTree/devupscms.moduletree.php';
-require 'devupscms/ModuleGallery/devupscms.modulegallery.php';
 require 'devupscms/ModuleCms/devupscms.modulecms.php';
 require 'devupscms/ModuleData/devupscms.moduledata.php';
 require 'devupscms/ModuleReporting/devupscms.modulereporting.php';
-require 'devupscms/ModuleLocation/marketplace.modulelocation.php';
+require 'devupscms/ModuleLocation/devupscms.modulelocation.php';
 
-require 'devupsfront/ModuleUser/devupsfront.moduleuser.php';
-
-//require 'devupstuto/ModuleStock/devupstuto.modulestock.php';
-
-
-
-
+require 'devupsfront/ModuleUser/devupsfront.moduleuser.php'; 

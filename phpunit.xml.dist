@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Suite de tests Devups.
+
+    composer test                 # tout
+    composer test:unit            # sans base de donnees
+    composer test:integration     # base de test (creee automatiquement)
+    composer test:e2e             # serveur HTTP local demarre automatiquement
+
+    La base de test est DEDIEE (DB_NAME ci-dessous) : elle est videe et
+    recreee a chaque execution. Ne jamais y pointer une base reelle.
+    Surcharger ces valeurs dans un phpunit.xml local (ignore par git) ou via
+    des variables d'environnement.
+
+    LANG_DIR (traductions, lang.php) est defini par tests/bootstrap.php, pas
+    ici : un dossier TEMPORAIRE (hors du depot), recree a chaque execution,
+    jamais les fichiers versionnes lang/*.php. getenv() (donc LANG_DIR) est
+    transmis au serveur e2e (tests/Support/HttpServer.php).
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="tests/bootstrap.php"
+         colors="true"
+         cacheDirectory=".phpunit.cache"
+         failOnWarning="true"
+         failOnNotice="true"
+         failOnDeprecation="false"
+         displayDetailsOnTestsThatTriggerWarnings="true"
+         displayDetailsOnTestsThatTriggerNotices="true"
+         displayDetailsOnIncompleteTests="true"
+         displayDetailsOnSkippedTests="true">
+    <testsuites>
+        <testsuite name="unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="integration">
+            <directory>tests/Integration</directory>
+        </testsuite>
+        <testsuite name="e2e">
+            <directory>tests/E2E</directory>
+        </testsuite>
+    </testsuites>
+    <php>
+        <!-- constantes pilotees par l'environnement (voir config/constante.example.php) -->
+        <env name="DEVUPS_CONSTANTS" value="config/constante.example.php" force="false"/>
+        <env name="APP_NAME" value="Devups Test" force="false"/>
+        <env name="APP_URL" value="http://127.0.0.1" force="false"/>
+        <env name="APP_PORT" value=":8765" force="false"/>
+        <env name="APP_PROD" value="false" force="false"/>
+        <env name="DB_HOST" value="127.0.0.1" force="false"/>
+        <env name="DB_NAME" value="devups_phpunit" force="false"/>
+        <env name="DB_USER" value="root" force="false"/>
+        <env name="DB_PASSWORD" value="" force="false"/>
+        <env name="JWT_SECRET" value="phpunit-secret-key-0123456789abcdef0123456789" force="false"/>
+        <env name="MAIL_FROM" value="no-reply@devups.test" force="false"/>
+        <env name="CRON_TOKEN" value="phpunit" force="false"/>
+        <!-- ETAPE P.3 : IP fixe de "proxy de confiance" pour UtilClientIpTest -
+             TRUSTED_PROXIES reste vide par defaut en production (config/constante.example.php) -->
+        <env name="TRUSTED_PROXIES" value="203.0.113.9" force="false"/>
+    </php>
+    <source>
+        <include>
+            <directory suffix=".php">dclass/devups</directory>
+            <directory suffix=".php">src</directory>
+        </include>
+    </source>
+</phpunit>

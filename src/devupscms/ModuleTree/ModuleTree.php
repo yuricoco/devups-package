@@ -29,7 +29,7 @@ class ModuleTree extends ModuleController
     public function dashboardView()
     {
         Controller::$jsfiles[] = __admin.'plugins/vue.min.js';
-        Controller::$cssfiles[] = Dv_image::classpath('Resource/css/image.css');
+        Controller::$cssfiles[] = Tree::classpath('Resource/css/image.css');
         Controller::$jsfiles[] = Tree::classpath('Resource/js/treeForm.js');
         Controller::$jsfiles[] = Tree::classpath('Resource/js/tree_item_imageForm.js');
         Controller::$jsfiles[] = Tree::classpath('Resource/js/tree_itemManager.js');

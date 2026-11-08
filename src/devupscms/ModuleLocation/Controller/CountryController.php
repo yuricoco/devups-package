@@ -29,9 +29,9 @@ class CountryController extends Controller{
     public function formView($id = null)
     {
         $country = new Country();
-        $action = Country::classpath("services.php?path=country.create");
+        $action = __env . ("admin/api/country/create");
         if ($id) {
-            $action = Country::classpath("services.php?path=country.update&id=" . $id);
+            $action = __env . ("admin/api/country/update?id=" . $id);
             $country = Country::find($id);
         }
 

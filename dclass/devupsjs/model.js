@@ -114,7 +114,7 @@ var model = {
         model.modalbox.find(".swal2-modal").css('display', "none");
         this.init();
     },
-    notifyoptions : {
+    notifyoptions: {
         "closeButton": true,
         "debug": false,
         "newestOnTop": false,
@@ -131,7 +131,7 @@ var model = {
         "showMethod": "fadeIn",
         "hideMethod": "fadeOut"
     },
-    notify(message, state, title = ""){
+    notify(message, state, title = "") {
         $.notify(message, state)
         return 0;
         toastr.options = this.notifyoptions;
@@ -146,9 +146,9 @@ var model = {
         else
             toastr.success(message, title);
     },
-    generatecache : function (el, entity) {
+    generatecache: function (el, entity) {
         model.addLoader($(el))
-        Drequest.adminApi('generateConstantes?entity_name='+entity).get((response)=>{
+        Drequest.adminApi('generateConstantes?entity_name=' + entity).get((response) => {
             console.log(response)
             alert(response.detail)
             model.removeLoader()
@@ -160,7 +160,7 @@ var model = {
 
         //ddatatable.urlparam += param;
         this._showmodal();
-        Drequest.adminApi(this.entity + "/form" + ddatatable.urlparam+param)
+        Drequest.adminApi(this.entity + "/form?1" + ddatatable.urlparam + param)
             .get(function (response) {
                 console.log(response)
                 databinding.checkrenderform(response);
@@ -199,7 +199,7 @@ var model = {
         //string..replace(regex, '-')
 
         var fd = new FormData();
-        fd.append(this.entity +'_form['+$(el).attr('name')+']', el.files[0])
+        fd.append(this.entity + '_form[' + $(el).attr('name') + ']', el.files[0])
         //model.request(this.entity + "._edit")
         $(el).attr("disabled", true);
         $(el).replaceWith('<span class="spinner-border spinner-border-sm mr-2" role="status"></span>');
@@ -225,13 +225,13 @@ var model = {
     },
     _delete: function (id, entity, el, callback) {
         model.init(entity)
-        this.addLoader($(el))
         var $tr = $(el).parents("tr");
         var $td = $(el).parents("td");
 
         if (!confirm('Voulez-vous Supprimer?')) return false;
 
-        Drequest.adminApi(this.entity + "/delete?1"+ ddatatable.urlparam)
+        this.addLoader($(el))
+        Drequest.adminApi(this.entity + "/delete?1" + ddatatable.urlparam)
             .param({
                 id: id
             })
@@ -278,7 +278,7 @@ var model = {
             var $inputs = $(row).find('input');
             var $textareas = $(row).find('textarea');
 
-            var value = {fr: $textareas.eq(1).val(), en: $textareas.eq(0).val()}
+            var value = { fr: $textareas.eq(1).val(), en: $textareas.eq(0).val() }
 
             formentity[$inputs.eq(0).val()] = value;
         })
@@ -385,7 +385,7 @@ var model = {
                 text: tagoption.text[model.options.lang],
             }));
             component.find("input").val(tagoption.text[model.options.lang]);
-        }else
+        } else
             component.find("select").html($('<option>', {
                 value: tagoption.value,
                 text: tagoption.text,
@@ -403,7 +403,7 @@ var model = {
         var component = $(el).parents(".dv-autocomplete"),
             options = component.data("options"),
             value = el.value,
-            _param = {"dfilters": "on"};
+            _param = { "dfilters": "on" };
 
         model.options = options
         if (value.length < 3) {
@@ -442,7 +442,7 @@ var model = {
         }
         console.log(options, value);
         if (!options.base_url)
-            options.base_url = __env+"api/lazyloading." + options.entity
+            options.base_url = __env + "api/lazyloading." + options.entity
 
         Drequest.init(options.base_url)
             .param(_param)
@@ -571,8 +571,8 @@ var model = {
     getformfield: function (field) {
         return $("input[name='" + this.entity + "_form[" + field + "]']");
     },
-    modalbox : $("#dialog-container"),
-    modalboxcontainer : $("#dialog-container").find(".box-container .card-body"),
+    modalbox: $("#dialog-container"),
+    modalboxcontainer: $("#dialog-container").find(".box-container .card-body"),
     init: function (entity, el) {
 
         if (!entity)

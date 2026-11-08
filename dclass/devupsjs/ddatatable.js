@@ -53,7 +53,7 @@ var ddatatable = {
         model.init(classname)
 
         model._showmodal();
-        Drequest.init( __env+"admin/api/dvups-entity/form-export-view?entity="+classname)
+        Drequest.init( __env+"admin/api/configuration/form-export-view?entity="+classname)
             //.param({path: this.entity + "._new"})
             .toFormdata({filters :  "dfilters=on&next="+this.currentpage + "&per_page=" +
                     this.per_page + (this.searchparam == 'undefined' ? "" : this.searchparam)
@@ -74,7 +74,7 @@ var ddatatable = {
         model.init(classname)
 
         model._showmodal();
-        Drequest.init( __env+"admin/api/dvups-entity/form-import-view?entity="+classname)
+        Drequest.init( __env+"admin/api/configuration/form-import-view?entity="+classname)
             .get(function (response) {
                 console.log(response)
                 databinding.checkrenderform(response);
@@ -199,20 +199,43 @@ var ddatatable = {
     callback: function (response) {
         console.log(response);
     },
-    orderingup: true,
+    // orderingup etait un seul drapeau GLOBAL,
+    // pas un etat par colonne : cliquer la colonne A (asc) puis la
+    // colonne B faisait juste basculer le drapeau, donc B partait en
+    // desc des son premier clic, sans rapport avec B elle-meme. Remplace
+    // par orderState, un etat par entite ET par colonne : premier clic
+    // sur une colonne = ascendant, un second clic sur la MEME colonne =
+    // descendant, un clic sur une AUTRE colonne = ascendant sur
+    // celle-la (et l'ancienne redevient neutre, puisque son icone est
+    // recalculee par le serveur a partir de l'URL reellement envoyee -
+    // une seule source de verite, voir headerbuilder()).
+    orderState: {},
     toggleorder(entity, param) {
         ddatatable.init(entity);
         this.setloader();
-        this.orderingup = !this.orderingup;
-        if (this.orderingup)
-            this.order = "&" + param + " asc";
-        else
-            this.order = "&" + param + " desc";
+
+        if (!this.orderState[entity] || this.orderState[entity].param !== param) {
+            this.orderState[entity] = {param: param, direction: 'asc'};
+        } else {
+            this.orderState[entity].direction = (this.orderState[entity].direction === 'asc') ? 'desc' : 'asc';
+        }
+        this.order = "&" + param + " " + this.orderState[entity].direction;
 
         console.log(this.geturl());
         $.get(this.geturl(), (response) => {
             console.log(response);
             ddatatable.dtinstance.find("#dv_table").find("tbody").html(response.datatable.tablebody);
+            // seule la ligne d'en-tetes est
+            // remplacee (response.datatable.tablehead, construite par
+            // headerbuilder() cote serveur) - jamais la ligne de filtre
+            // (tr.th-filter), pour ne pas effacer une saisie de recherche
+            // en cours dans un autre champ (mesure avant d'ecrire : un
+            // remplacement du thead entier perd ces valeurs, puisque le
+            // serveur ne connait que ce qui a ete reellement soumis dans
+            // l'URL de cette requete).
+            if (response.datatable.tablehead) {
+                ddatatable.dtinstance.find("#dv_table thead tr:not('.th-filter')").replaceWith(response.datatable.tablehead);
+            }
             removeloader();
         }, 'json').fail(function (resultat, statut, erreur) {
             console.log(statut, erreur);
@@ -220,6 +243,12 @@ var ddatatable = {
             databinding.bindmodal(resultat.responseText);
         });
     },
+    // orderasc()/orderdesc() : cherche, aucun
+    // appelant trouve nulle part (le seul HTML qui les invoquait etait le
+    // generateur de .torder, commente dans Datatable.php, retire) - code mort, non modifiees (pas de bug a
+    // corriger dans du code qui ne s'execute jamais ; les fonctionnalites
+    // equivalentes vivent dans toggleorder() ci-dessus, le seul chemin
+    // reellement cliquable).
     orderasc: function (entity, param) {
         console.log(param);
         this.setloader();

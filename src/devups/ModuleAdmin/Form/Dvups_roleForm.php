@@ -39,12 +39,21 @@ class Dvups_roleForm extends FormManager
     public static function renderWidget($dvups_role, $action = "create")
     {
         $data = compact("dvups_role", "action");
-        $data["rights"] = Dvups_right::all();
 
         $data["configs"] = Core::buildOriginCore();
         $data["components"] = $data["dvups_role"]->getAttribute("components");
         $data["modules"] = $data["dvups_role"]->getAttribute("modules");
         $data["entities"] = $data["dvups_role"]->getAttribute("entities");
+
+        $data["actionsByEntity"] = [];
+        foreach (Dvups_action::all() as $dvups_action)
+            $data["actionsByEntity"][$dvups_action->entity][] = $dvups_action;
+        ksort($data["actionsByEntity"]);
+
+        $data["grantedActionIds"] = [];
+        if ($dvups_role->getId())
+            foreach (Dvups_privilege::where('dvups_role_id', $dvups_role->getId())->get() as $dvups_privilege)
+                $data["grantedActionIds"][] = $dvups_privilege->dvups_action->getId();
 
         return g::getView("admin.dvups_role.formWidgetGroup", $data);
         /*return [

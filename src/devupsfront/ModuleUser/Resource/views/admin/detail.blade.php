@@ -9,7 +9,7 @@
                 <div class="card-header-tab card-header">
                     <div class="card-header-title">
                         <i class="header-icon lnr-rocket icon-gradient bg-tempting-azure"> </i>
-                        {{$user->firstname}}
+                        {{$user->username}}
                     </div>
                     <div class="btn-actions-pane-right">
                         <div class="nav">
@@ -19,38 +19,44 @@
                 </div>
                 <div class="card-body">
 
+                    <table class="table">
+                        <tr>
+                            <th>Email</th>
+                            <td>:  {{$user->email}}</td>
+                        </tr>
+                        <tr>
+                            <th>Tel</th>
+                            <td>:  {{$user->phonenumber}}</td>
+                        </tr>
+                        <tr>
+                            <th>{{ t('Active') }}</th>
+                            <td>:  {{ $user->is_activated ? t('Oui') : t('Non') }}</td>
+                        </tr>
+                        <tr>
+                            <th>{{ t('Derniere connexion') }}</th>
+                            <td>:  {{ $user->last_login }}</td>
+                        </tr>
+                    </table>
+
                 </div>
 
             </div>
         </div>
 
         <div class="col-lg-6 col-md-12  stretch-card">
-            <h3>Diponibility</h3>
-            {!! DisponibilityTable::init(new Disponibility())->buildusertable()
-->setModel("user")
-->addFilterParam($user)
-->Qb(Disponibility::where($user))
-->render() !!}
-
-            <h3>Service_price</h3>
-            {!! Service_priceTable::init(new Service_price())->buildusertable()
-->setModel("user")
-->addFilterParam($user)
-->Qb(Service_price::where($user))
-->render() !!}
+            <h3>Test Push notifications</h3>
+            {!! Push_subscriptionTable::init(new Push_subscription())
+                ->Qb(function($query) use ($user){
+                return $query->where('this.user_id', $user->id);
+            })
+            ->addFilterParam('dfilters', "on")
+            ->addFilterParam('user.id:eq', $user->id)
+            ->addFilterParam('tablemodel', 'dashboard')
+            ->buildindextable()
+            ->render()
+                !!}
         </div>
     </div>
-    <div class="row">
-        <div class="col-lg-12 col-md-12  stretch-card">
-            <h3>Schedule</h3>
-            {!! ScheduleTable::init(new Schedule())->buildusertable( )
-->setModel("user")
-->addFilterParam("provider_id",$user->id)
-->render() !!}
-
-        </div>
-    </div>
-
 @endsection
 
 @section("jsimport")

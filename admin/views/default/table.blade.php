@@ -1,19 +1,14 @@
-@if($data)
-    <div id="dv_table" data-entity="{{$class}}" class="text-center">la liste est vide</div>
-@else
-    {{--<div id="dv_{{$this->class}}_table" class="dv_datatable_container dt-bootstrap4 card">
-        <div class="  {{$this->responsive}}">
-            <table id="dv_table" {{$lang}}
-            data-perpage="{{$this->per_page}}"
-                   data-filterparam="{{$filterParam}}"
-                   data-route="{{$this->base_url}}"
-                   data-entity="{{$this->class}}"
-                   class="dv_datatable {{$this->table_class}}">
-                <thead>{{$theader['th']}}{{$theader['thf']}}</thead>
-                <tbody>{{$tbody}}</tbody>
-                <tfoot>{{$newrows }}</tfoot>
-            </table>
-        </div>
-        <div class="card-footer">{{$this->paginationbuilder()}}</div>
-    </div>--}}
-@endif
+{{--
+    Seul endroit qui rend l'etat vide d'une datatable, appele par
+    Datatable::render() (page complete) et Datatable::getTableRest()
+    (reponse AJAX de recherche/pagination/tri).
+--}}
+<tr class="dv_empty_state">
+    <td colspan="{{ $colspan }}" class="text-center text-muted" style="padding: 2rem 1rem;">
+        @if ($searched)
+            {{ t('Aucun résultat pour cette recherche.') }}
+        @else
+            {{ t('Aucun élément pour l\'instant.') }}
+        @endif
+    </td>
+</tr>

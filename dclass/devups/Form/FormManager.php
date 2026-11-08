@@ -30,6 +30,8 @@ define('FORMTYPE_EMAIL', 'email');
 define('FORMTYPE_NUMBER', 'number');
 define('FORMTYPE_PASSWORD', 'password');
 define('FORMTYPE_INJECTION', 'injection');
+// Non gere par FormFactory::__renderForm() (rendu vide en prod, commentaire
+// HTML en dev). Conserve car public ; a implementer ou retirer.
 define('FORMTYPE_INJECT_COLLECTIONFORM', 'injectioncollection');
 
 define('FH_TYPE', 'type');
@@ -64,14 +66,22 @@ abstract class FormManager
 
     public function __construct($entity, $action = "")
     {
+        global $global_config;
         $this->formaction = $action;
         $this->formbutton = $action ? true : false;
         $this->entity = $entity;
         $this->classname = get_class($entity);
-        $this->name = strtolower(get_class($entity));
+        $dentity = $global_config[$this->classname];
+        $this->name = strtolower($dentity['name']);
         $this->js = [];
         $this->css = [];
 //        $this->dventity = Dvups_entity::getbyattribut("this.name", $this->classname);
+        
+        /*
+         *
+         *
+         *
+         */
 
     }
 
@@ -136,7 +146,7 @@ abstract class FormManager
     public static function printHtmlForm($entitycore, $rootdir)
     {
 
-        $fichier = fopen($rootdir . '/Ressource/html/' . ucfirst($entitycore->name) . '.html', 'w');
+        $fichier = fopen($rootdir . '/Resource/html/' . ucfirst($entitycore->name) . '.html', 'w');
         fputs($fichier, FormFactory::__renderForm($entitycore));
         fclose($fichier);
 
@@ -148,7 +158,7 @@ abstract class FormManager
             $filename = explode("\src", str_replace(get_called_class().".php", "", $reflection->getFilename()));
             $filename = explode("\\", $filename[1]);
 
-            return __env . "src/" .$filename[1]."/". $filename[2] ."/Ressource/js/" . $js;
+            return __env . "src/" .$filename[1]."/". $filename[2] ."/Resource/js/" . $js;
         }*/
 
     static function Options_ToCollect_Helper($value, $entity, $currentcollection, $enablecollectionforminjection = false)
@@ -245,9 +255,23 @@ abstract class FormManager
 //                    }
             } else {
                 if (method_exists($entity, 'get' . ucfirst($value)))
-                    $key_value[call_user_func(array($entity, 'get' . ucfirst($key)))] = call_user_func(array($entity, 'get' . ucfirst($value)));
+                    $label = call_user_func(array($entity, 'get' . ucfirst($value)));
                 else
-                    $key_value[$entity->{$key}] = $entity->{$value};
+                    $label = $entity->{$value};
+
+                // ETAPE V : $value peut designer une colonne traduite
+                // (dvtranslated_columns) - son getter (ou son attribut brut)
+                // renvoie alors un tableau par langue, pas une chaine. Sans
+                // cette resolution, FormFactory::__select() concatene ce
+                // tableau dans le HTML du <option> ("Warning: Array to
+                // string conversion" + markup casse, ex. CmsresourceForm
+                // qui liste les Cmscontent par titre).
+                if (is_array($label) && !empty($entity->dvtranslated_columns)) {
+                    $iso = \Dvups_lang::currentLang()->getIso_code();
+                    $label = $label[$iso] ?? reset($label);
+                }
+
+                $key_value[call_user_func(array($entity, 'get' . ucfirst($key)))] = $label;
             }
             $entitylist2[call_user_func(array($entity, 'getId'))] = $entity;
         }
@@ -263,7 +287,7 @@ abstract class FormManager
     {
         $key_value = [];
         foreach ($array as $item) {
-            $key_value[$item] = t("option." . $item, $item);
+            $key_value[$item] = $item;
         }
         return $key_value;
     }

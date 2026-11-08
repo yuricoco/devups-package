@@ -1,8 +1,14 @@
 <?php
 
 
+/**
+ * @MappedSuperclass
+ * Colonnes heritees par les entites qui etendent cette classe.
+ */
 class Dv_langCore extends \stdClass
 {
+
+    use ModelTrait;
 
     /**
      * @Id @ManyToOne(targetEntity="\Dvups_lang")

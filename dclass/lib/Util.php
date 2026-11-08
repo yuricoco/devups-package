@@ -8,6 +8,7 @@
 
 namespace DClass\lib;
 
+use DOMDocument;
 use ReflectionFunction;
 use Request;
 
@@ -117,9 +118,9 @@ class Util
     /**
      * @param mixed
      */
-    public static function randomcode($length = 8)
+    public static function randomcode($length = 8, $list = "0123456789abcdefghijklmnopqrstvwxyzABCDEFGHIJKLMNOPQRSTVWXYZ+-@%*$")
     {
-        $list = "0123456789abcdefghijklmnopqrstvwxyzABCDEFGHIJKLMNOPQRSTVWXYZ+-@%*$";
+
         mt_srand((double)microtime() * 1000000);
         $password = "";
         while (strlen($password) < $length) {
@@ -154,14 +155,39 @@ class Util
         return strtolower($str);
     }
 
-    public static function setcookie($key, $value)
+    public static function setcookie($key, $value, $expireseconds = null)
     {
-        setcookie($key, $value, time() + 365 * 24 * 3600, null, null, false, true); // On écrit un cookie
+        // ETAPE K.3 : Secure si la requete est en HTTPS (jamais force a vrai
+        // en clair, pour ne pas casser le cookie en dev/http local),
+        // SameSite=Lax - cf. l'option "samesite" du tableau d'options
+        // (seule forme qui le permette ; l'ancienne signature positionnelle
+        // de setcookie() n'a pas de parametre SameSite).
+        setcookie($key, $value, [
+            'expires' => time() + ($expireseconds ?? 365 * 24 * 3600),
+            'path' => '/',
+            'secure' => self::isHttps(),
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
     }
 
     public static function clearcookie($key)
     {
-        setcookie($key, null, -1, null, null, false, true);
+        setcookie($key, null, [
+            'expires' => -1,
+            'path' => '/',
+            'secure' => self::isHttps(),
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+    }
+
+    public static function isHttps(): bool
+    {
+        if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            return true;
+        return ($_SERVER['SERVER_PORT'] ?? null) == 443
+            || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? null) === 'https';
     }
 
     public static function dateadd($duration, $period, $from)
@@ -224,11 +250,42 @@ class Util
         return str_replace(' ', '_', $str); // supprime les autres caractères
     }
 
-    public static function arrayToPhpFile($array, $filename, $folder = 'cache/'){
+    public static function arrayToPhpFile($array, $filename, $folder = 'cache/')
+    {
+        // $filename est interpole
+        // dans un chemin disque. Generique (appele aussi par Core.php avec
+        // des litteraux fixes, et par Tree::rebuildCacheFiles() avec
+        // "<name>.<iso>" / "<name>_references.<iso>"), donc on refuse ici
+        // tout nom hors d'un alphabet sans danger - jamais un nettoyage
+        // silencieux. Le point est autorise comme separateur de SEGMENT
+        // (ex. "gender.fr") mais deux points consecutifs (".." - traversee
+        // de chemin) sont rejetes, de meme qu'un point en tete/en queue.
+        if (!preg_match('/^[A-Za-z0-9_\-]+(\.[A-Za-z0-9_\-]+)*$/', $filename)) {
+            throw new \InvalidArgumentException(
+                "Util::arrayToPhpFile() : nom de fichier refuse (\"" . $filename . "\") - " .
+                "seuls lettres, chiffres, '_', '-' et '.' (comme separateur de segment, jamais '..') sont autorises."
+            );
+        }
         $phpContent = "<?php\n\nreturn " . var_export($array, true) . ";\n";
 //        file_put_contents(ROOT . "cache/routes.json", json_encode(self::$routes));
 //        if (!file_exists(ROOT . "cache/routes.php"))
-        file_put_contents(ROOT . $folder."$filename.php", $phpContent);
+
+        // Ecriture atomique : un require() concurrent sur
+        // le fichier final ne doit jamais tomber sur un contenu tronque.
+        // On ecrit dans un fichier temporaire du MEME dossier (tmpfile()
+        // dans un autre dossier risquerait un rename() inter-volume, qui
+        // n'est pas atomique), puis rename() - atomique sur un meme
+        // systeme de fichiers, aussi bien POSIX que Windows/NTFS.
+        $targetPath = ROOT . $folder . "$filename.php";
+        $tmpPath = $targetPath . '.' . uniqid('tmp_', true);
+        $written = file_put_contents($tmpPath, $phpContent);
+        if ($written === false) {
+            throw new \RuntimeException("Util::arrayToPhpFile() : ecriture du fichier temporaire impossible (\"$tmpPath\").");
+        }
+        if (!rename($tmpPath, $targetPath)) {
+            @unlink($tmpPath);
+            throw new \RuntimeException("Util::arrayToPhpFile() : rename() a echoue (\"$tmpPath\" -> \"$targetPath\").");
+        }
     }
 
     // camalcasing
@@ -415,14 +472,77 @@ class Util
 
     }
 
+    /**
+     * ETAPE P.3 : seule fonction a interroger pour l'IP du client (utilisee
+     * par RateLimiter et Country). Les en-tetes transmis par le client
+     * (X-Forwarded-For et assimiles) ne sont dignes de confiance QUE si la
+     * requete vient elle-meme d'un proxy de confiance (REMOTE_ADDR dans
+     * TRUSTED_PROXIES, .env, vide par defaut) - sinon n'importe qui peut
+     * forger ces en-tetes pour usurper une IP et contourner le
+     * RateLimiter (ou se faire passer pour un autre pays).
+     */
+    public static function get_IP_address()
+    {
+        $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? null;
+
+        if ($remoteAddr !== null && self::isTrustedProxy($remoteAddr)) {
+            foreach (array(
+                         'HTTP_CLIENT_IP',
+                         'HTTP_X_FORWARDED_FOR',
+                         'HTTP_X_FORWARDED',
+                         'HTTP_X_CLUSTER_CLIENT_IP',
+                         'HTTP_FORWARDED_FOR',
+                         'HTTP_FORWARDED',
+                     ) as $key) {
+                if (array_key_exists($key, $_SERVER) && ($ip = self::firstValidPublicIp($_SERVER[$key])) !== null)
+                    return $ip;
+            }
+        }
+
+        return $remoteAddr !== null ? self::firstValidPublicIp($remoteAddr) : null;
+    }
+
+    /**
+     * Premiere IP publique valide d'une liste separee par des virgules
+     * (format de X-Forwarded-For), ou null si aucune.
+     */
+    private static function firstValidPublicIp($headerValue)
+    {
+        foreach (explode(',', (string)$headerValue) as $candidate) {
+            $candidate = trim($candidate); // Just to be safe
+
+            if (filter_var($candidate,
+                    FILTER_VALIDATE_IP,
+                    FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)
+                !== false) {
+
+                return $candidate;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * true si $ip figure dans TRUSTED_PROXIES (liste separee par des
+     * virgules, .env - vide par defaut : aucun proxy de confiance, donc
+     * aucun en-tete X-Forwarded-For pris en compte tant que ce n'est pas
+     * configure explicitement).
+     */
+    private static function isTrustedProxy($ip): bool
+    {
+        if ($ip === null || $ip === '')
+            return false;
+
+        $trusted = array_filter(array_map('trim', explode(',', TRUSTED_PROXIES)));
+        return in_array($ip, $trusted, true);
+    }
     public static function getTimezone()
     {
+        if (!IPGEOLOCATION_API_KEY)
+            return 'UTC';
 
-        $adresseIP = $_SERVER['REMOTE_ADDR']; // Remplacez par l'adresse IP de l'utilisateur '104.26.3.192'; //
-        $apiKey = "8f67b514f5b0437882f3dff272373e2d"; // Remplacez par votre clé d'API réelle
-        // 8f67b514f5b0437882f3dff272373e2d
-
-        $url = "https://api.ipgeolocation.io/timezone?apiKey=$apiKey&ip=$adresseIP";
+        $adresseIP = $_SERVER['REMOTE_ADDR'];
+        $url = "https://api.ipgeolocation.io/timezone?apiKey=" . IPGEOLOCATION_API_KEY . "&ip=$adresseIP";
 
         $response = file_get_contents($url);
         $data = json_decode($response, true);
@@ -430,4 +550,148 @@ class Util
         return $data['timezone'] ?? 'UTC';
 
     }
+
+    public static function getLitteralDAte($date, $lang = 'fr')
+    {
+        if (!$date)
+            return "";
+
+        if ($lang == 'en') {
+            return date("l", strtotime($date)) . ' ' . date(' M, Y', strtotime($date));
+
+        } else {
+            $jours = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+            $mois = ["", "janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+
+//            $jour = $jours[date('w', strtotime($date))];
+            $numJour = date("d", strtotime($date));
+            $moisTxt = $mois[date("n", strtotime($date))];
+            $annee = date("Y", strtotime($date));
+            return " $numJour $moisTxt $annee";
+
+        }
+    }
+
+    public static function parseTranslate($text, $l = null) {
+        $result = [];
+        if (!$text)
+            return null;
+
+        // Regex : capture "etranslate_xx" puis le texte jusqu'au prochain "etranslate_yy"
+        preg_match_all('/etranslate_(\w+)\s+([\s\S]*?)(?=etranslate_\w+|$)/', $text, $matches, PREG_SET_ORDER);
+
+        foreach ($matches as $match) {
+            $lang = trim($match[1]);      // ex: "fr"
+            $content = trim($match[2]);   // le texte associé
+            $result[$lang] = $content;
+            if ($l)
+                return $content;
+        }
+
+        if (count($result))
+            return $result;
+        return null;
+    }
+
+    public static function getTranslation($html, $lang){
+        // Expression régulière pour extraire le bloc désiré
+        $pattern = '/\[etranslate_' . preg_quote($lang, '/') . '\](.*?)(?=\[etranslate_|$)/s';
+
+        if (preg_match($pattern, $html, $matches)) {
+            $content = trim($matches[1]);
+        } else {
+            // Si la langue demandée n'existe pas, on tente de prendre le premier bloc trouvé
+            if (preg_match('/\[etranslate_\w+\](.*?)(?=\[etranslate_|$)/s', $html, $fallback)) {
+                $content = trim($fallback[1]);
+            } else {
+                // Aucun bloc trouvé
+                return $html;
+            }
+        }
+        return $content;
+    }
+
+    /**
+     * Extrait le contenu HTML d'une langue spécifique à partir d'un texte multi-langues
+     * structuré avec des blocs :
+     * [etranslate_fr] ... [etranslate_en] ...
+     *
+     * @param string $html  Le contenu complet (contenant tous les blocs de langue)
+     * @param string | array $lang  Langue désirée (ex: "fr" ou "en")
+     * @return string | array       Le contenu HTML du bloc correspondant
+     */
+    public static function parseTranslateHtml($html, $lang = ['fr', 'en'])
+    {
+        if (!$html)
+            return null;
+        // Nettoyage d'encodage
+        $html = trim($html);
+
+        if (is_string($lang))
+            return self::getTranslation($html, $lang);
+
+        $content = [];
+        foreach ($lang as $l) {
+            $content[$l] = self::getTranslation($html, $l);
+        }
+        return $content;
+
+    }
+
+    public static  function convertCase(string $string, string $to = 'camel'): string {
+        switch ($to) {
+            case 'camel':
+                $str = str_replace(['-', '_'], ' ', strtolower($string));
+                $str = lcfirst(str_replace(' ', '', ucwords($str)));
+                return $str;
+
+            case 'pascal':
+                $str = str_replace(['-', '_'], ' ', strtolower($string));
+                $str = str_replace(' ', '', ucwords($str));
+                return $str;
+
+            case 'snake':
+                $str = preg_replace('/([a-z])([A-Z])/', '$1_$2', $string);
+                return strtolower(str_replace('-', '_', $str));
+
+            case 'kebab':
+                $str = preg_replace('/([a-z])([A-Z])/', '$1-$2', $string);
+                return strtolower(str_replace('_', '-', $str));
+
+            default:
+                return $string;
+        }
+    }
+
+    public static function fileToBase64(string $file): string
+    {
+        if (!file_exists($file))
+            return '';
+        return 'data:image/png;base64,' . base64_encode(file_get_contents($file));
+    }
+
+    public static function toHours($duration, $unit)
+    {
+        $unit = strtolower($unit);
+        switch ($unit) {
+            case 'minutes':
+            case 'min':
+                return round($duration / 60, 1);
+            case 'week':
+            case 'weeks':
+            case 'semaines':
+                return $duration * 7 * 24;
+            case 'day':
+            case 'days':
+            case 'jours':
+                return $duration * 24;
+            case 'month':
+            case 'months':
+            case 'mois':
+                return $duration * 30 * 24;
+            default:
+                return $duration;
+        }
+    }
+
 }

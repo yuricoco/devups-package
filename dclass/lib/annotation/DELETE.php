@@ -10,7 +10,7 @@ class DELETE extends \Api
     public function execute(\Router &$route)
     {
 
-        $routeParams = Route::parseRoute($this->name . $this->path, str_replace('/api','',Request::geturi()));
+        $routeParams = Route::parseRoute($this->name . $this->path, str_replace('/api','',Router::$path_info));
         unset($routeParams['path']);
 
         if ($routeParams === null) {

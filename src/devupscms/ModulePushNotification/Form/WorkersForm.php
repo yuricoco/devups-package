@@ -1,13 +1,13 @@
-<?php 
+<?php
 
-        
+
 use Genesis as g;
 
 class WorkersForm extends FormManager{
 
     public $workers;
 
-    public static function init(\Workers $workers, $action = ""){
+    public static function init(\devupscms\ModulePushNotification\Entity\Workers $workers, $action = ""){
         $fb = new WorkersForm($workers, $action);
         $fb->workers = $workers;
         return $fb;
@@ -15,47 +15,46 @@ class WorkersForm extends FormManager{
 
     public function buildForm()
     {
-    
-        
+
+
             $this->fields['queue'] = [
-                "label" => t('workers.queue'), 
+                "label" => t('workers.queue'),
 "type" => FORMTYPE_TEXT,
-            "value" => $this->workers->queue, 
+            "value" => $this->workers->queue,
         ];
 
             $this->fields['payload'] = [
-                "label" => t('workers.payload'), 
+                "label" => t('workers.payload'),
 "type" => FORMTYPE_TEXT,
-            "value" => $this->workers->payload, 
+            "value" => $this->workers->payload,
         ];
 
             $this->fields['type'] = [
-                "label" => t('workers.type'), 
+                "label" => t('workers.type'),
 "type" => FORMTYPE_TEXT,
-            "value" => $this->workers->type, 
+            "value" => $this->workers->type,
         ];
 
             $this->fields['callback'] = [
-                "label" => t('workers.callback'), 
+                "label" => t('workers.callback'),
 "type" => FORMTYPE_TEXT,
-            "value" => $this->workers->callback, 
+            "value" => $this->workers->callback,
         ];
 
             $this->fields['log'] = [
-                "label" => t('workers.log'), 
+                "label" => t('workers.log'),
 "type" => FORMTYPE_TEXT,
-            "value" => $this->workers->log, 
+            "value" => $this->workers->log,
         ];
 
-           
+
         return  $this;
-    
+
     }
 
     public static function renderWidget($id = null, $action = "create")
     {
         Genesis::renderView("workers.formWidget", self::getFormData($id, $action));
     }
-    
+
 }
-    

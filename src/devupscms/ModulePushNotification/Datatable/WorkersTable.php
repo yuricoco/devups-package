@@ -1,51 +1,56 @@
-<?php 
+<?php
 
 
 use dclass\devups\Datatable\Datatable as Datatable;
 
-class WorkersTable extends Datatable{
-    
+class WorkersTable extends Datatable
+{
+
 
     public function __construct($workers = null, $datatablemodel = [])
     {
         parent::__construct($workers, $datatablemodel);
     }
 
-    public static function init(\Workers $workers = null){
-    
+    public static function init(\devupscms\ModulePushNotification\Entity\Workers $workers = null)
+    {
+
         $dt = new WorkersTable($workers);
         $dt->entity = $workers;
-        
+
         return $dt;
     }
 
-    public function buildindextable(){
+    public function buildindextable()
+    {
 
-        $this->base_url = __env."admin/";
+        $this->base_url = __env . "admin/";
+        $this->order_by = 'this.id desc';
         $this->datatablemodel = [
-'id' => ['header' => t('#'),], 
-'queue' => ['header' => t('Queue'),], 
-'payload' => ['header' => t('Payload'),], 
-'type' => ['header' => t('Type'),], 
-'callback' => ['header' => t('Callback'),], 
-'log' => ['header' => t('Log'),]
-];
+            'id' => ['header' => t('#'),],
+            'created_at' => ['header' => t('CreatedAt'),],
+            'timer' => ['header' => t('Timer (minutes)'),],
+            'type' => ['header' => t('Type'),],
+            'payload' => ['header' => t('Payload'),],
+            'callback' => ['header' => t('Callback'),],
+            'log' => ['header' => t('Log'),]
+        ];
 
         $this->addcustomaction(function ($item) {
             return "<button class='btn btn-info btn-block' type='button' onclick='testPush($item->id,this)' >Test</button>";
         });
         return $this;
     }
-    
+
     public function builddetailtable()
     {
         $this->datatablemodel = [
-['label' => t('queue'), 'value' => 'queue'], 
-['label' => t('payload'), 'value' => 'payload'], 
-['label' => t('type'), 'value' => 'type'], 
-['label' => t('callback'), 'value' => 'callback'], 
-['label' => t('log'), 'value' => 'log']
-];
+            ['label' => t('queue'), 'value' => 'queue'],
+            ['label' => t('payload'), 'value' => 'payload'],
+            ['label' => t('type'), 'value' => 'type'],
+            ['label' => t('callback'), 'value' => 'callback'],
+            ['label' => t('log'), 'value' => 'log']
+        ];
         // TODO: overwrite datatable attribute for this view
         return $this;
     }
@@ -61,7 +66,5 @@ class WorkersTable extends Datatable{
                 default:
                     return $this->buildindextable();
             }
-
     }
-    
 }

@@ -19,13 +19,6 @@ class CountryForm extends FormManager
     {
 
 
-        $this->fields['continent.id'] = [
-            "label" => t('Continent'),
-            "type" => FORMTYPE_SELECT,
-            "placeholder" => "--- continent ---",
-            "options" => FormManager::Options_Helper("name", Continent::allrows("name")),
-            "value" => $this->country->continent->getId(),
-        ];
 
         $this->fields['name'] = [
             "label" => t('country.name'),

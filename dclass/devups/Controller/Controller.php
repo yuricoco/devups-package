@@ -14,6 +14,8 @@ use ReflectionAnnotatedClass;
 use ReflectionClass;
 use Request;
 
+use function PHPUnit\Framework\isEmpty;
+
 /**
  * class Controller 1.0
  *
@@ -36,8 +38,45 @@ class Controller
     protected $entity = null;
     public $indexView = "default.index";
 
-    public function setEntity($entity){
+    public function setEntity($entity)
+    {
         $this->entity = $entity;
+    }
+
+    /**
+     * Garde can('action', $entity) pour un controleur qui n'utilise pas
+     * CrudTrait (CrudTrait::forbidIfCannot fait la meme chose pour les
+     * controleurs qui l'utilisent). A appeler en debut de methode pour
+     * toute action qui ne passe pas par Request::Controller() - c'est le
+     * cas des routes dispatchees a la main depuis services.php (switch
+     * sur path, appel direct de la methode du controleur).
+     */
+    protected function forbidIfCannotFor(string $action, string $entity): bool
+    {
+        if (can($action, $entity))
+            return false;
+        http_response_code(403);
+        return true;
+    }
+
+    /**
+     * Vrai si l'administrateur actuellement connecte porte le role maitre
+     * "admin" (meme convention que can(), Dvups_role::is('admin')). Sert a
+     * reserver certaines actions sensibles (modifier les privileges d'un
+     * role, changer le role d'un admin) au-dela d'un simple can('update', ..)
+     * qui pourrait avoir ete accorde a un role non maitre.
+     */
+    protected function isMasterAdmin(): bool
+    {
+        if (empty($_SESSION[ADMIN]))
+            return false;
+        $admin = getadmin();
+        if (!$admin || !$admin->getId())
+            return false;
+        $role = $admin->dvups_role;
+        if (!$role || !$role->getId())
+            return false;
+        return $role->hydrate()->is('admin');
     }
 
     /**
@@ -49,7 +88,7 @@ class Controller
 
         global $viewdir;
 
-        $viewdir[] = ROOT.'src/'.$entity['path'] . 'Resource/views';
+        $viewdir[] = ROOT . 'src/' . $entity['path'] . 'Resource/views';
         ///$viewdir[] = $entity->dvups_module->hydrate()->moduleRoot() . 'Resource/views';
 
         //dv_dump($viewdir);
@@ -66,18 +105,17 @@ class Controller
 
         global $viewdir, $moduledata;
 
-        $viewdir[] = ROOT.'src/'.$entity['path'] . 'Resource/views';
+        $viewdir[] = ROOT . 'src/' . $entity['path'] . 'Resource/views';
         //$moduledata = $entity->dvups_module;
-        $ms = require ROOT.'config/module_configurations.php';
+        $ms = require ROOT . 'config/module_configurations.php';
         $moduledata = $ms[$entity['module']];
 
-//        $admin = getadmin();
-//        $moduledata->dvups_entity = $admin->dvups_role->collectDvups_entityOfModule($moduledata);
+        //        $admin = getadmin();
+        //        $moduledata->dvups_entity = $admin->dvups_role->collectDvups_entityOfModule($moduledata);
 
         //dv_dump($viewdir);
         $ctrl = ucfirst($entity['name']) . "Controller";
-        return Request::Controller( $route , Request::get('path'), $ctrl);
-
+        return Request::Controller($route, Request::get('path'), $ctrl);
     }
     /**
      * this method is used by devups from the admin/services.php file to manage router as we use to do at the front App.php
@@ -88,12 +126,11 @@ class Controller
 
         global $viewdir, $moduledata;
 
-        $viewdir[] = ROOT.'src/'.$module['path'] . 'Resource/views';
+        $viewdir[] = ROOT . 'src/' . $module['path'] . 'Resource/views';
         $moduledata = $module;
 
         $ctrl = ucfirst($module['name']) . "";
-        return Request::Module( $route , Request::get('path'), $ctrl);
-
+        return Request::Module($route, Request::get('path'), $ctrl);
     }
 
     public function __construct()
@@ -103,7 +140,6 @@ class Controller
         self::$tablename = self::$classname . "Table";
         self::$formname = self::$classname . "Form";
         self::$ctrlname = self::$classname . "Ctrl";
-
     }
 
     /**
@@ -140,7 +176,6 @@ class Controller
             $eventcollector[$classname] = [$method];
 
         self::$eventListners["after"]["create"] = $eventcollector;
-
     }
 
     public static function getclassname($public_access = [])
@@ -150,20 +185,20 @@ class Controller
 
         // we first check if the entity is in the public access list then try to shown all the available entity
         // this is the first level security for webservice. the secon one will be the auth with annotation.
-        if (!isset($public_access[$classname])){
+        if (!isset($public_access[$classname])) {
             /*echo json_encode([
                 "success" => false,
                 "message" => "entity " . $classname . " not found",
                 "available" => \Dvups_entity::whereIn("this.name", $public_access)->get(),
             ]);
             die;*/
-            throw new Exception("entity " . $classname . " has no public access or has not been found", 22 );
+            throw new Exception("entity " . $classname . " has no public access or has not been found", 22);
         }
         // if the entity is available for webservice we check if it is stored in the database
-//        $exist = \Dvups_entity::where("this.name", $classname)->count();
+        //        $exist = \Dvups_entity::where("this.name", $classname)->count();
 
-        $global_config = require ROOT.'config/dvups_configurations.php';
-        if (!isset($global_config["".ucfirst($classname)])) {
+        $global_config = require ROOT . 'config/dvups_configurations.php';
+        if (!isset($global_config["" . ucfirst($classname)])) {
             /*echo json_encode([
                 "success" => false,
                 "message" => "entity " . $classname . " not found",
@@ -173,7 +208,7 @@ class Controller
             ]);
             die;*/
             header('HTTP/1.0 500 Server error');
-            throw new Exception("entity " . $classname . " not found in \$global_config", 22 );
+            throw new Exception("entity " . $classname . " not found in \$global_config", 22);
         }
 
         // if everything is OK we set the classname and start the next process.
@@ -204,10 +239,12 @@ class Controller
     {
         $classname = strtolower(get_class($entity));
 
-        return array('success' => true, // pour le restservice
+        return array(
+            'success' => true, // pour le restservice
             'classname' => $classname,
             'listEntity' => [$entity],
-            'detail' => '');
+            'detail' => ''
+        );
     }
 
     /**
@@ -242,6 +279,7 @@ class Controller
 
         $classname = self::$entityname;
         if (isset($_FILES[$classname . '_form'])) {
+
             if ($object->getId()) {
                 $object = $object->hydrate();
             }
@@ -257,15 +295,14 @@ class Controller
             if (!$data) {
                 return $object;
             }
-
         } elseif ($object->getId()) {
-//            if($object->dvtranslate)
-//                $object = $object->__show($deeper, \Dvups_lang::defaultLang()->getId());
-//            else
-            $object = $object->hydrate();
+            //            if($object->dvtranslate)
+            //                $object = $object->__show($deeper, \Dvups_lang::defaultLang()->getId());
+            //            else
+            //$object = $object->hydrate();
         }
         if (!$data) {
-            return $object->hydrate();
+            return $object; //->hydrate();
         }
 
         global $_ENTITY_FORM;
@@ -278,13 +315,13 @@ class Controller
             $object->setCreatedAt(date(\DClass\lib\Util::dateformat));
 
 
-//            if($jsondata){
-//                $object_array = Controller::formWithJson ($object, $jsondata, $change_collection_adresse);
-//            }else{
+        //            if($jsondata){
+        //                $object_array = Controller::formWithJson ($object, $jsondata, $change_collection_adresse);
+        //            }else{
         $this->entity = $object;
 
         return $this->formWithPost($object);
-//            }
+        //            }
 
     }
 
@@ -294,7 +331,7 @@ class Controller
      * @return mixed
      * @throws \ReflectionException
      */
-    private function formWithPost(\Model $object)
+    private function formWithPost(\stdClass $object)
     {
         global $_ENTITY_FORM;
         global $_ENTITY_COLLECTION;
@@ -318,12 +355,23 @@ class Controller
         $fieldNames = array_keys($metadata->fieldNames);
         $fieldNames = array_merge($fieldNames, $object->dvtranslated_columns);
         $associationMappings = $metadata->associationMappings;
+        $classname = strtolower($classlang);
+        if (isset($_FILES[$classname . '_form'])) {
 
-        foreach ($associationMappings as $key => $association){
-            $key_form = $key.'.id';
+            foreach ($_FILES[$classname . "_form"]['name'] as $key_form => $value_form) {
+                if (!method_exists($object, 'upload' . ucfirst($key_form))) {
+                    $this->error[$key_form] = " You may create method " . 'upload' . ucfirst($key_form) . " in entity. ";
+                    continue;
+                }
+                $object->{'upload' . ucfirst($key_form)}();
+                //self::addEventListenerBeforeCreate(get_class($this->entity), 'upload' . ucfirst($key_form));
+            }
+        }
+        foreach ($associationMappings as $key => $association) {
+            $key_form = $key . '.id';
             $ent = $global_config[$association['targetEntity']];
             if (ucfirst($association['fieldName']) != $ent['name']) {
-                $key_form = strtolower($ent['name'].'\\'.$key . '.id');
+                $key_form = strtolower($ent['name'] . '\\' . $key . '.id');
             }
 
             if (!array_key_exists($key_form, $_ENTITY_FORM))
@@ -334,11 +382,14 @@ class Controller
 
             $value_form = $_ENTITY_FORM[$key_form];
             $currentfieldsetter = 'set' . ucfirst($association['fieldName']);
-            if (!is_numeric($value_form)) {
-                continue;
-            }
 
             $value2 = new $association['targetEntity'];
+
+            if (!is_numeric($value_form)) {
+                $object->{$key} = $value2;
+                unset($_ENTITY_FORM[$key_form]);
+                continue;
+            }
 
             $value2->setId($value_form);
 
@@ -442,16 +493,14 @@ class Controller
                     $_ENTITY_COLLECTION[]["toadd"] = true;
 
                 if ($todrop) {
-                    $_ENTITY_COLLECTION[]["todrop"] = $oldselection;//array_values($todrop);
+                    $_ENTITY_COLLECTION[]["todrop"] = $oldselection; //array_values($todrop);
                 }
 
                 if (!method_exists($object, $currentfieldsetter)) {
                     $this->error[$key] = " You may create method " . $currentfieldsetter . " in entity. ";
                 } elseif ($error = call_user_func(array($object, $currentfieldsetter), $collection))
                     $this->error[$key] = $error;
-
-            }
-            else {
+            } else {
 
                 /*if (strpos($key_form, ".id")) {
                     // && is_object ($value['options'][0])
@@ -466,18 +515,17 @@ class Controller
 
 
                 } else { */
-                    if (!method_exists($object, $currentfieldsetter)) {
-                        if (in_array($key, $fieldNames))
-                            $object->{$key} = $_ENTITY_FORM[$key];
-                        else
-                            $this->error[$key] = " You may create method " . $currentfieldsetter . " in entity. ";
-                    } elseif ($error = call_user_func(array($object, $currentfieldsetter), $_ENTITY_FORM[$key]))
-                        $this->error[$key] = $error;
-                    //}
+                if (!method_exists($object, $currentfieldsetter)) {
+                    if (in_array($key, $fieldNames))
+                        $object->{$key} = $_ENTITY_FORM[$key];
+                    else
+                        $this->error[$key] = " You may create method " . $currentfieldsetter . " in entity. ";
+                } elseif ($error = call_user_func(array($object, $currentfieldsetter), $_ENTITY_FORM[$key]))
+                    $this->error[$key] = $error;
+                //}
 
-//                }
+                //                }
             }
-
         }
 
         return $object;
@@ -489,19 +537,27 @@ class Controller
      * @param $jsonform
      * @param bool $deeper
      * @return null
+     * @throws Exception
      */
     public function hydrateWithJson($object, $jsonform, $deeper = false)
     {
 
-        if ($object->getId()) {
-            $object = $object->hydrate();
-        }
-
         $this->entity = $object;
         global $em;
         $classlang = get_class($object);
-        $metadata = $em->getClassMetadata( $classlang);
-        //dv_dump($metadata);
+        $metadata = $em->getClassMetadata($classlang);
+
+        if (count($metadata->identifier) > 1) {
+            foreach ($metadata->identifier as $identifier) {
+                if (!isset($jsonform[$identifier . '.id']) && !$object->{$identifier}->id) {
+                    throw new Exception("Undefined identifier key '$identifier' verify your submited data");
+                }
+            }
+            //            $object->hydrate();
+        } else if ($object->getId()) {
+            $object = $object->hydrate();
+        }
+
         $associationMappings = ($metadata->associationMappings);
         $fieldNames = array_keys($metadata->fieldNames);
         $fieldNames = array_merge($fieldNames, $object->dvtranslated_columns);
@@ -548,31 +604,35 @@ class Controller
 
                 if (!method_exists($this->entity, $currentfieldsetter)) {
                     $object->{$entitname} = $value2;
+                    $this->entity->dvserialised[$entitname.'_id'] = $value;
+                    // $this->entity->dvserialised[$entitname] = $value2;
+                    //                    $this->entity->dvpersistence['this.'.$entitname.'_id'] = $value;
                     //$this->error[$field] = " You may create method " . $setter . " in entity ";
                 } elseif ($error = call_user_func(array($this->entity, $currentfieldsetter), $value2->hydrate(false)))
                     $this->error[$field] = $error;
-
-            }
-            else {
+            } else {
                 if (!method_exists($this->entity, $setter)) {
-                    if (in_array($field, $fieldNames))
+                    if (in_array($field, $fieldNames)) {
                         $this->entity->{$field} = $value;
-//                    else
-//                        $this->error[$field] = " You may create method " . $setter . " in entity. ";
-                } elseif ($error = call_user_func(array($this->entity, $setter), $value))
+                        //                        if (in_array($field, $this->entity->dvtranslated_columns))
+                        //                            $this->entity->dvpersistence['this.'.$field] = $value;
+                        $this->entity->dvserialised[$field] = $value;
+                    }
+                    continue;
+                    //                    else
+                    //                        $this->error[$field] = " You may create method " . $setter . " in entity. ";
+                } elseif ($error = call_user_func(array($this->entity, $setter), $value)) {
                     $this->error[$field] = $error;
+                    continue;
+                }
+                //                $this->entity->dvpersistence['this.'.$field] = $this->entity->{$field};
             }
-
         }
 
         return $this->entity;
-
     }
 
-    private function hydrateEntity($field, $value, $meta, $imbricate)
-    {
-
-    }
+    private function hydrateEntity($field, $value, $meta, $imbricate) {}
 
     public static function renderController($view, $resultCtrl)
     {
@@ -599,7 +659,8 @@ class Controller
             }
         }
 
-        \Genesis::renderView($this->indexView,
+        \Genesis::renderView(
+            $this->indexView,
             \Response::$data + $data
         );
         die;
@@ -609,21 +670,25 @@ class Controller
     {
 
         if ($return)
-            return array('success' => true, // pour le restservice
+            return array(
+                'success' => true, // pour le restservice
                 'title' => $this->title, // pour le web service
                 'entity' => $this->entitytarget, // pour le web service
                 'datatabledetailhtml' => $datatablehtml, // pour le web service
                 'datatablemodel' => $datatablemodel, // pour le web service
-                'detail' => '');
+                'detail' => ''
+            );
 
-        \Genesis::renderView('default.detail',
-            array('success' => true, // pour le restservice
+        \Genesis::renderView(
+            'default.detail',
+            array(
+                'success' => true, // pour le restservice
                 'title' => $this->title, // pour le web service
                 'entity' => $this->entitytarget, // pour le web service
                 'datatabledetailhtml' => $datatablehtml,
-                'detail' => '')
+                'detail' => ''
+            )
         );
-
     }
 
     public static function render($view, $data = [])
@@ -656,7 +721,7 @@ class Controller
             header('location: ' . $data['redirect']);
         }
 
-        $data["moduledata"] = $moduledata;//Genesis::top_action($action, $classroot);
+        $data["moduledata"] = $moduledata; //Genesis::top_action($action, $classroot);
 
         $blade = new Blade($viewdir, ROOT . "cache/views");
         echo $blade->view()->make($view, $data)->render();
@@ -671,14 +736,23 @@ class Controller
         $entity = $newclass::find($id);
         $entity->setId(null);
         $entity->__insert();
-        return array('success' => true,
+        return array(
+            'success' => true,
             $classname => $entity,
             'tablerow' => $newclasstable::init()->buildindextable()->getSingleRowRest($entity),
-            'detail' => '');
-
+            'detail' => ''
+        );
     }
 
-    public function lazyloading($entity, $qb, $sort = ''){
+    public function lazyloading($entity, $qb = null, $sort = '')
+    {
+        // Compatibilite : d'anciens controleurs appellent encore
+        // lazyloading($entity, $next, $per_page) ; la pagination est lue dans
+        // la requete par Lazyloading, seul un QueryBuilder est transmis.
+        if (!$qb instanceof \QueryBuilder)
+            $qb = null;
+        if (!is_string($sort))
+            $sort = '';
 
         $ll = new \dclass\devups\Datatable\Lazyloading($entity);
         $ll->start(new QueryBuilder($entity));
@@ -687,5 +761,4 @@ class Controller
     }
 
     public static $classname;
-
 }

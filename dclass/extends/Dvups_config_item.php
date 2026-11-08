@@ -1,6 +1,10 @@
 <?php
 
 
+/**
+ * @MappedSuperclass
+ * Colonnes heritees par les entites qui etendent cette classe.
+ */
 class Dvups_config_item extends Model implements JsonSerializable
 {
 
@@ -101,6 +105,7 @@ class Dvups_config_item extends Model implements JsonSerializable
         $this->name = $name;
     }
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return [

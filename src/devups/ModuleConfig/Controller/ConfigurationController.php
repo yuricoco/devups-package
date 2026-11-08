@@ -5,11 +5,11 @@ use dclass\devups\Controller\Controller;
 
 class ConfigurationController extends Controller{
 
-    public function listView($next = 1, $per_page = 10){
+    public function listView(){
 
         $this->datatable = ConfigurationTable::init(new Configuration())->buildindextable();
 
-        self::$jsfiles[] = Configuration::classpath('Ressource/js/configurationCtrl.js');
+        self::$jsfiles[] = Configuration::classpath('Resource/js/configurationCtrl.js');
 
         $this->entitytarget = 'Configuration';
         $this->title = "Manage Configuration";
@@ -18,12 +18,29 @@ class ConfigurationController extends Controller{
 
     }
 
-    public function datatable($next, $per_page) {
+    public function datatable() {
     
         return ['success' => true,
-            'datatable' => ConfigurationTable::init(new Configuration())->buildindextable()->getTableRest(),
+            'datatable' => ConfigurationTable::init(new Configuration())->router()->getTableRest(),
         ];
         
+    }
+
+    public function formView($id = null)
+    {
+        $configuration = new Configuration();
+        $action = __env.("admin/api/configuration/create");
+        if ($id) {
+            $action = __env.("admin/api/configuration/update?id=" . $id);
+            $configuration = Configuration::find($id);
+        }
+
+        return ['success' => true,
+            'form' => ConfigurationForm::init($configuration, $action)
+                ->buildForm()
+                ->addDformjs()
+                ->renderForm(),
+        ];
     }
 
     public function createAction($configuration_form = null ){
@@ -84,17 +101,20 @@ class ConfigurationController extends Controller{
     }
     
     public function deleteAction($id){
-      
-            Configuration::delete($id);
+    
+        $configuration = Configuration::find($id);
+        $configuration->__delete();
+        
         return 	array(	'success' => true, 
-                        'detail' => ''); 
+                        'detail' => t('Item deleted successfully'));
+                         
     }
     
 
     public function deletegroupAction($ids)
     {
 
-        Configuration::delete()->where("id")->in($ids)->exec();
+        Configuration::where("this.id")->in($ids)->delete();
 
         return array('success' => true,
                 'detail' => ''); 

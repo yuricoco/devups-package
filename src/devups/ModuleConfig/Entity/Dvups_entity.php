@@ -52,6 +52,7 @@ class Dvups_entity extends Dvups_config_item implements JsonSerializable
     {
         $this->id = $id;
     }
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return [
@@ -78,8 +79,12 @@ class Dvups_entity extends Dvups_config_item implements JsonSerializable
 
     public function alert()
     {
+        // ETAPE M.2 : Notificationbroadcasted (ancien nom de l'entite
+        // Notification, jamais nettoye lors du renommage - cette methode
+        // n'etait d'ailleurs jamais requise par le module, donc toujours
+        // en erreur fatale "classe introuvable" si appelee) -> Notification::of().
         if ($this->enablenotification == 1)
-            return Notificationbroadcasted::of($this->name);
+            return Notification::of($this->name);
     }
 
     public static function describe($table)

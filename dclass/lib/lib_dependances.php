@@ -1,6 +1,6 @@
 <?php
 
-/* 
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -19,6 +19,7 @@ require __DIR__ . '/annotation/POST.php';
 require __DIR__ . '/annotation/PUT.php';
 require __DIR__ . '/annotation/DELETE.php';
 require __DIR__ . '/DMail.php';
+require __DIR__ . '/DPdf.php';
 
-require __DIR__ . '/php-qrcode/qrcode.php';
+//require __DIR__ . '/php-qrcode/qrcode.php';
 

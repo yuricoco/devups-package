@@ -93,7 +93,7 @@ Vue.component("tree_itemForm", {
     },
     template: `
         
-        <div class="panel">
+        <div style="position: sticky; top:0;" class="panel">
             <div class="card-header ">Edit item #{{tree_item.id}}</div>
             <div class="card-body">
                 <form id="frmEdit" class="form-horizontal">
@@ -103,6 +103,10 @@ Vue.component("tree_itemForm", {
                             <li class="nav-item">
                                 <a class="nav-link active" id="home-tab" data-toggle="tab" href="#general-tab" role="tab"
                                    aria-controls="home" aria-selected="true">General</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="i-tab" data-toggle="tab" href="#icon-tab" role="tab"
+                                   aria-controls="content" aria-selected="false">Icon</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" id="cont-tab" data-toggle="tab" href="#content-tab" role="tab"
@@ -181,7 +185,8 @@ Vue.component("tree_itemForm", {
                                 
                             </div>
                             
-                            <div class="tab-pane fade" id="content-tab" role="tabpanel" aria-labelledby="content-tab">
+                            <div class="tab-pane fade" id="content-tab" role="tabpanel"
+                             aria-labelledby="content-tab">
                             
                                 <div class="panel">
                                     <ul class="nav nav-tabs" id="myCTab" role="tablist">
@@ -213,6 +218,15 @@ Vue.component("tree_itemForm", {
                                      </div>
                                 </div>
                                 
+                <a :href="contenturl" target="_blank" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> advanced content
+                </a>
+                            </div>
+                            
+                            <div class="tab-pane fade" id="icon-tab" role="tabpanel"
+                             aria-labelledby="icon-tab">
+                             <i>generalement du contenu svg</i>
+                             <textarea class="form-control"  v-model="tree_item.icon" id="icon"   rows="10"></textarea>
                             </div>
                             
                             <div class="tab-pane fade" id="image-tab" role="tabpanel" aria-labelledby="profile-tab">
@@ -222,10 +236,6 @@ Vue.component("tree_itemForm", {
                         </div>
                     </div>
                 </form>
-                        
-                <a :href="contenturl" target="_blank" class="btn btn-primary">
-                    <i class="fas fa-edit"></i> advanced content
-                </a>
                 
             </div>
             <div class="card-footer">
@@ -320,7 +330,7 @@ Vue.component("childrenTree", {
             chain: [],
         }
     },
-    props: ["tree_item", "tree", "langs", "index", "nbitem"],
+    props: ["tree_item", "tree", "langs", "level", "index", "nbitem"],
     mounted() {
     },
     methods: {
@@ -410,13 +420,7 @@ Vue.component("childrenTree", {
                        class="btn list-item  text-danger">
                         <i class="fa fa-circle fs10"></i> off
                     </a>
-                    <button v-if="tree_item.children" @click="saveorder()" title="Save Order" type="button"
-                            class="btn btn-info">
-                        <i class="fa fa-exchange-alt"></i> </button>
-                        
-                    <button v-if="tree_item.children" @click="findchildren(tree_item)" type="button"
-                            class="btn btn-info">
-                        <i class="fa fa-copy"></i></button>
+                    
                     <button @click="edit(tree_item)" type="button" class="btn btn-info">
                         <i class="fa fa-edit"></i></button>
                     <button @click="_delete(tree_item, index)" type="button" class="btn btn-danger">
@@ -424,7 +428,22 @@ Vue.component("childrenTree", {
 
                 </span>
             </div>
-            <ul class="sortableLists list-group">  
+             <div class="d-flex justify-content-between align-center mt-3">
+               <small class="text-info" v-if="tree.branches.length < (level+1)">
+               Specifier le <b>nom de la branche b{{level+1}}</b> dans votre arbre pour pouvoir creer des sous elements</small>
+                   <template  v-else  >
+           <a @click="findchildren(tree_item)" class=" text-decoration-none " data-toggle="collapse" :href="'#collapse'+tree_item.id" 
+              role="button" aria-expanded="false" :aria-controls="'collapse'+tree_item.id">
+                <b> Liste des {{tree.branches[level]}}      <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+              </b> </a>
+              
+                    <button vif="tree_item.nb_children > 1" @click="saveorder()" title="Save Order" type="button"
+                            class="btn btn-info">
+                        <i class="fa fa-exchange-alt"></i>  Save Order </button>
+                        </template>
+                            
+</div>
+            <ul :id="'collapse'+tree_item.id" class="collapse sortableLists list-group">  
                 <li is="addchild"
                     v-bind:key="tree_item.id+'addchild'" 
                     :parent="tree_item" :tree="tree" class="list-group-item"></li>
@@ -433,6 +452,7 @@ Vue.component("childrenTree", {
                     v-bind:key="child.id" :tree="tree"  
                     :tree_item="child" 
                     :langs="langs" 
+                    :level="level + 1" 
                     :nbitem="children.length" 
                     :index="$index" 
                     class="list-group-item"></li>
@@ -620,6 +640,16 @@ Vue.component("tree_item", {
             return filtered;
         },
 
+        updateCache() {
+            Drequest
+                .adminApi("tree/cache?id="+this.tree.id)
+                .get((response) => {
+                console.log(response);
+
+                    $.notify("Cache Updated with success");
+
+            })
+        },
         saveorder() {
             // this.el =el;
             if (this.tree_items) {
@@ -652,10 +682,17 @@ Vue.component("tree_item", {
                                 <div class="topbar-left">
                                     <ol class="breadcrumb">
                                         <li class="breadcrumb-link">
-                                            <strong class="">{{tree.name}} | </strong>
+                                            <strong class=""> Liste des {{tree.name}}  </strong>
+                                            
+                        <button @click="saveorder()" type="button" class="btn btn-info">
+                            <i class="fa fa-exchange-alt"></i> Save Order
+                        </button>
+                        <button @click="updateCache()" type="button" class="btn btn-info">
+                            <i class="fa fa-exchange-alt"></i> Update Cache
+                        </button>  |
                                         </li>
                                         <li class="breadcrumb-link">
-                                            <a @click="init(tree_item, $index)">Main</a>
+                                            <a @click="init(tree_item, 0)">Main</a>
                                         </li>
                                         <li v-for="(cat, $index) in tree_itemtree" class="breadcrumb-link">
                                             <i class="fa fa-angle-right"></i>
@@ -684,11 +721,7 @@ Vue.component("tree_item", {
 
                         <hr>
                     </div>
-                    <div class="card-body">
-                        
-                        <button @click="saveorder()" type="button" class="btn btn-info">
-                            <i class="fa fa-exchange-alt"></i> Save Order
-                        </button>
+                    <div class=" ">                        
                             
                         <ul id="sortable" class="sortableLists list-group">
                                     
@@ -698,6 +731,7 @@ Vue.component("tree_item", {
                             <li is="childrenTree" v-for="(tree_item, $index) in orderedItems"
                                 v-bind:key="tree_item.id" :tree="tree" 
                                 :tree_item="tree_item" 
+                                :level="0" 
                                 :langs="langs" 
                                 :nbitem="orderedItems.length" 
                                 :index="$index" 
@@ -736,12 +770,13 @@ var tree_itemview = new Vue({
         attributes: [],
         role: _role,
         tree: {},
+        branche: '',
         langs: langs,
         treeedit: {name: ''},
-        treeselected: {name: ''},
+        treeselected: {name: '', branches:[]},
     },
     mounted() {
-        Drequest.adminApi("lazyloading/tree").get((response) => {
+        Drequest.adminApi("lazyloading/tree?dfilters=on&dsort=name ASC").get((response) => {
             console.log(response);
             this.trees = response.listEntity;
         })
@@ -754,6 +789,18 @@ var tree_itemview = new Vue({
         init(tree) {
             this.tree = tree;
             console.log("tree_item.getdata client");
+        },
+        addBranche() {
+            this.treeselected.branches.push(this.branche);
+            setTimeout(()=>{
+                this.branche = ""
+            }, 300)
+            console.log("tree_item.getdata client");
+            this.update(this.treeselected)
+        },
+        deleteBranche(index) {
+            this.treeselected.branches.splice(index, 1);
+            this.update(this.treeselected)
         },
         fillData(tree) {
             if (!confirm('Cette action supprimera toutes les donnees dans la table tree et tree_item pour les recreer!'))
@@ -804,7 +851,8 @@ var tree_itemview = new Vue({
                     //.param({id: treeedit.id})
                     .data({
                         tree: {
-                            "name": treeedit.name
+                            "name": treeedit.name,
+                            "branches": treeedit.branches.join(),
                         }
                     })
                     .raw((response) => {

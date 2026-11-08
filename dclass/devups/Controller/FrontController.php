@@ -5,6 +5,7 @@ namespace dclass\devups\Controller;
 
 
 use Auth;
+
 //use Dvups_entity;
 use Dvups_lang;
 use Exception;
@@ -39,7 +40,7 @@ class FrontController extends Controller
     /**
      * @throws Exception
      */
-    public function createCore($persist = true)
+    public function createCore($persist = true, $itemQb = false)
     {
         $classname = self::$entityname;
         // $newclass = ucfirst($classname);
@@ -70,7 +71,7 @@ class FrontController extends Controller
 
                     try {
                         $id = $entity_item->__insert();
-                    }catch (Exception $e){
+                    } catch (Exception $e) {
                         return [
                             'success' => false,
                             'detail' => $e->getMessage(),
@@ -104,7 +105,7 @@ class FrontController extends Controller
 
         try {
             $id = $entity->__insert();
-        }catch (Exception $e){
+        } catch (Exception $e) {
             return [
                 'success' => false,
                 'detail' => $e->getMessage(),
@@ -132,18 +133,99 @@ class FrontController extends Controller
             ];
         }
 
+        if ($itemQb)
+            return array('success' => true,
+            $classname => $newclass::initQb(false)->whereId($id),
+            'detail' => "");
+
         return array('success' => true,
-            $classname => $newclass::find($id),
-            'detail' => '');
+            $classname => $newclass::initQb(false)->whereId($id)->getInstance(),
+            'detail' => "");
 
     }
 
+    /**
+     * Colonne de propriete par entite, utilisee par updateCore(), deleteCore()
+     * et uploadCore() pour verifier que l'utilisateur authentifie (Auth::$user_id)
+     * est bien le proprietaire de la ligne visee.
+     *
+     * Vide par defaut : le framework ne connait aucune entite applicative.
+     * Chaque projet declare les siennes, typiquement dans route/WebService.php :
+     *
+     *     FrontController::setOwnerColumns([
+     *         'post' => 'user_id',
+     *         'follow' => 'follower_id',
+     *     ]);
+     *
+     * Une entite absente de cette table reste protegee par le jeton (toute
+     * ecriture exige une session) mais sans controle de propriete.
+     */
+    private static $ownerColumn = [];
+
+    /**
+     * Declare (ou remplace) les colonnes de propriete des entites.
+     * @param array $map ['entite' => 'colonne']
+     * @param bool $merge fusionner avec la table existante plutot que la remplacer
+     */
+    public static function setOwnerColumns(array $map, bool $merge = true): void
+    {
+        self::$ownerColumn = $merge ? array_merge(self::$ownerColumn, $map) : $map;
+    }
+
+    /** @return array la table entite => colonne de propriete active */
+    public static function getOwnerColumns(): array
+    {
+        return self::$ownerColumn;
+    }
+
+    /**
+     * Verifie que l'utilisateur authentifie est bien le proprietaire de la
+     * ligne $id, pour les entites declarees dans self::$ownerColumn. Ne fait
+     * rien pour une entite non declaree.
+     *
+     * La colonne est lue par une requete dediee (where()->count()) plutot que
+     * sur l'entite hydratee : toutes les entites n'exposent pas leur cle
+     * etrangere comme propriete PHP (seulement la relation).
+     *
+     * Les routes d'administration (Router::$admin_route) ne sont pas
+     * concernees : le back-office n'est pas restreint a "ses propres" lignes,
+     * et Auth::$user_id (identite JWT du front) y est toujours vide.
+     *
+     * @throws Exception si l'entite est declaree et que $id n'appartient pas
+     *         a Auth::$user_id.
+     */
+    private function assertOwnership($id, $classname)
+    {
+        if (Router::$admin_route || !isset(self::$ownerColumn[$classname]) || !$id) {
+            return;
+        }
+
+        $column = self::$ownerColumn[$classname];
+        $newclass = self::$classMagic;
+
+        $owned = $newclass::where(['this.id' => $id, 'this.' . $column => Auth::$user_id])->count();
+
+        if (!$owned) {
+            http_response_code(403);
+            throw new Exception("Vous n'etes pas autorise a modifier cette ressource");
+        }
+    }
+
+    /**
+     * @throws Exception
+     */
     public function uploadCore($id)
     {
 
         $classname = self::$entityname;
         // $newclass = ucfirst($classname);
         $newclass = self::$classMagic;
+
+        try {
+            $this->assertOwnership($id, $classname);
+        } catch (Exception $e) {
+            return ['success' => false, 'detail' => $e->getMessage()];
+        }
 
         $entity = $newclass::find($id, false);
 
@@ -180,7 +262,7 @@ class FrontController extends Controller
 
             Request::$uri_get_param['user_id'] = $this->jwt->userId;
 
-        }else{
+        } else {
             $result = $Auth->execute($this);
             if (is_array($result) && $result['success'] == true)
                 Request::$uri_get_param['user_id'] = $this->jwt->userId;
@@ -198,7 +280,13 @@ class FrontController extends Controller
         // $newclass = ucfirst($classname);
         $newclass = self::$classMagic;
 
-        $entity = new $newclass($id);
+        try {
+            $this->assertOwnership($id, $classname);
+        } catch (Exception $e) {
+            return ['success' => false, 'detail' => $e->getMessage()];
+        }
+
+        $entity = $newclass::find($id);
 
         $rawdata = \Request::raw();
         if (is_null($rawdata)) {
@@ -210,6 +298,7 @@ class FrontController extends Controller
         } else
             $entity = $this->hydrateWithJson($entity, $rawdata[$classname]);
 
+//        dv_dump($entity);
         if ($this->error) {
             return array('success' => false,
                 $classname => $entity,
@@ -218,7 +307,7 @@ class FrontController extends Controller
 
         try {
             $entity->__update();
-        }catch (Exception $e){
+        } catch (Exception $e) {
             return [
                 'success' => false,
                 'detail' => $e->getMessage(),
@@ -247,7 +336,8 @@ class FrontController extends Controller
         }
 
         return array('success' => true,
-            $classname => $entity,
+//            $classname => $entity,
+            $classname => $newclass::initQb(false)->whereId($id)->getInstance(),
             'detail' => '');
 
     }
@@ -261,8 +351,17 @@ class FrontController extends Controller
         //$newclass = ucfirst($classname);
 
         try {
+            $this->assertOwnership($id, $classname);
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'detail' => $e->getMessage(),
+            ];
+        }
+
+        try {
             $newclass::find($id, false)->__delete();
-        }catch (Exception $e){
+        } catch (Exception $e) {
             return [
                 'success' => false,
                 'detail' => $e->getMessage(),
@@ -286,9 +385,24 @@ class FrontController extends Controller
                 'detail' => '');
 
         return array('success' => true,
-            $classname => $newclass::find($id, false),
+            $classname => self::restrictForRequester($newclass::find($id, false), $id),
             'detail' => '');
 
+    }
+
+    /**
+     * Une entite qui expose restrictToPublicProfile() (ex. User) n'est
+     * renvoyee en entier qu'a son titulaire (Auth::$user_id == $id) et au
+     * back-office ; tout autre demandeur recoit la vue publique.
+     */
+    public static function restrictForRequester($entity, $id = null)
+    {
+        if (!is_object($entity) || !method_exists($entity, 'restrictToPublicProfile') || Router::$admin_route)
+            return $entity;
+        $id = $id ?? (method_exists($entity, 'getId') ? $entity->getId() : null);
+        if (!Auth::$user_id || (string)Auth::$user_id !== (string)$id)
+            $entity->restrictToPublicProfile();
+        return $entity;
     }
 
     public function dcollection()
@@ -354,7 +468,12 @@ class FrontController extends Controller
         $newclass = self::$classMagic;
 
         // new paradigm to override the default method. usefull while doing lazylaoding api call's
-        return $newclass::lazyloading();
+        $result = $newclass::lazyloading();
+        if (is_array($result) && isset($result['listEntity']) && is_iterable($result['listEntity'])) {
+            foreach ($result['listEntity'] as $entity)
+                self::restrictForRequester($entity);
+        }
+        return $result;
 
     }
 
@@ -362,12 +481,12 @@ class FrontController extends Controller
      * this method is used by devups from the admin/services.php file to manage router as we use to do at the front App.php
      * @return false|int|mixed
      */
-    public static function frontServe($classname, $route)
+    public static function frontServe($classname, Router $route)
     {
 
         try {
             self::getclassname($route->public_access);
-        }catch (Exception $e){
+        } catch (Exception $e) {
             throw $e;
         }
 

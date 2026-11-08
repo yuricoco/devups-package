@@ -44,37 +44,12 @@ class Dvups_role extends Model implements JsonSerializable
      * */
     public $entities;
 
-    /**
-     * @var \Dvups_right
-     */
-    public $dvups_right;
-
-    public $dv_collection = [ "dvups_right",];
-
-    public function array_rigth()
-    {
-        $array_rigth = [];
-
-        foreach ($this->rigth as $rigth) {
-            $array_rigth[] = strtolower($rigth->getNom());
-        }
-        return $array_rigth;
-    }
-
     public function __construct($id = null)
     {
 
         if ($id)
             $this->id = $id;
 
-        $this->dvups_right = [];
-
-    }
-
-    function collectDvups_right()
-    {
-        $this->dvups_right = $this->__hasmany('dvups_right', true, false, 1);
-        return $this->dvups_right;
     }
 
     public function getId()
@@ -86,18 +61,20 @@ class Dvups_role extends Model implements JsonSerializable
         return $this->name;
     }
 
+    /**
+     * ETAPE P.2 : manquait - $alias est protected sans accesseur, alors
+     * que Dvups_roleTable::builddetailtable() en a besoin (appel
+     * 'get' . ucfirst('alias') construit dynamiquement par
+     * Datatable::getTableEntityBody()).
+     */
+    public function getAlias()
+    {
+        return $this->alias;
+    }
+
     public function setId($id)
     {
         $this->id = $id;
-    }
-
-    /**
-     *  manyToMany
-     * @return \Dvups_right
-     */
-    function setDvups_right($rigth)
-    {
-        $this->dvups_right = $rigth;
     }
 
     function setModules($dvups_module)
@@ -150,32 +127,13 @@ class Dvups_role extends Model implements JsonSerializable
         return json_decode($this->configs, true) ?? [];
     }
 
-    /**
-     *  manyToMany
-     * @return \Dvups_right
-     */
-    function getDvups_right()
-    {
-        return $this->dvups_right;
-    }
-
-    function addDvups_right(\Dvups_right $dvups_right)
-    {
-        $this->dvups_right[] = $dvups_right;
-    }
-
-    function dropDvups_rightCollection()
-    {
-        $this->dvups_right = EntityCollection::entity_collection('dvups_right');
-    }
-
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return [
             'id' => $this->id,
             'name' => $this->name,
             'alias' => $this->alias,
-            'dvups_right' => $this->dvups_right,
         ];
     }
 
@@ -202,6 +160,59 @@ class Dvups_role extends Model implements JsonSerializable
         if ($admin->dvups_role->hydrate()->is("admin"))
             return '<button onclick="model.updateprivilege(this)"  class=\'btn btn-info\'> ' . t("Update Privilege") . ' </button>';
 
+    }
+
+    /**
+     * Droits d'un role, compiles une seule fois en cache/rights/<id>.php :
+     * ['EntiteExacte' => ['action' => true, ...], ...] (entity et action
+     * tels que declares dans dvups_action, par Dvups_action::sync()).
+     * clearRightsCache() invalide ce fichier, a appeler apres toute
+     * modification des privileges du role (voir Dvups_privilegeController).
+     */
+    public static function compiledRights(int $roleId): array
+    {
+        $path = self::rightsCachePath($roleId);
+        if (file_exists($path))
+            return require $path;
+
+        $rights = self::buildRights($roleId);
+
+        if (!is_dir(dirname($path)))
+            mkdir(dirname($path), 0777, true);
+        file_put_contents($path, "<?php\nreturn " . var_export($rights, true) . ";\n");
+
+        return $rights;
+    }
+
+    public static function clearRightsCache(int $roleId = null): void
+    {
+        if ($roleId !== null) {
+            @unlink(self::rightsCachePath($roleId));
+            return;
+        }
+        foreach (glob(ROOT . 'cache/rights/*.php') ?: [] as $file)
+            @unlink($file);
+    }
+
+    private static function rightsCachePath(int $roleId): string
+    {
+        return ROOT . 'cache/rights/' . $roleId . '.php';
+    }
+
+    private static function buildRights(int $roleId): array
+    {
+        $rows = Model::pdo()->prepare(
+            'SELECT a.entity, a.action FROM dvups_privilege p
+             INNER JOIN dvups_action a ON a.id = p.dvups_action_id
+             WHERE p.dvups_role_id = :role_id'
+        );
+        $rows->execute(['role_id' => $roleId]);
+
+        $rights = [];
+        foreach ($rows->fetchAll(\PDO::FETCH_ASSOC) as $row)
+            $rights[$row['entity']][$row['action']] = true;
+
+        return $rights;
     }
 
 }
