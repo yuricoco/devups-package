@@ -395,6 +395,118 @@ decommenter le DROP de `imagecms`).
 
 ---
 
+## Phase 7 (Mots de passe) - ETAPE K
+
+### K.1/K.2 - password_hash()/password_verify(), migration transparente : FAITS
+
+- Phase : K.1/K.2
+- `dv_hash_password()`/`dv_verify_password()` (`dclass/dvups_functions.php`,
+  meme pattern que `dv_valid_lang()` de l'ETAPE H) : `dv_verify_password()`
+  detecte un hash `password_hash()` valide via
+  `password_get_info($hash)['algoName'] !== 'unknown'` (attention :
+  `['algo']` est `null`, PAS `0`, pour un hash inconnu - premiere version
+  buggee, cassait TOUTE connexion admin/e2e, corrigee avant commit). A
+  defaut, retombe sur l'ancien format (40 hex, sha1()), compare en temps
+  constant (`hash_equals`) - migration TRANSPARENTE, sans reinitialisation
+  forcee : `$upgraded` (parametre par reference) indique a l'appelant de
+  remplacer le hash par `password_hash()` et sauvegarder.
+- `Dvups_admin::verifyPassword()`/`setPassword()` et
+  `UserCore::verifyPassword()`/`setPassword()`/`setResetpassword()`/
+  `setUpdatePassword()` : mis a jour.
+- Tous les points de connexion/changement de mot de passe (admin et user,
+  controller + frontcontroller) faisaient une recherche SQL
+  `WHERE password = sha1(...)` - remplacee par une recherche par
+  identifiant SEUL puis `verifyPassword()` en PHP (necessaire : sha1() est
+  deterministe et permettait cette recherche directe, `password_hash()`
+  ne l'est pas, le sel est different a chaque hash).
+- `Dvups_admin::updatePassword($old, $new)` ajoutee : appelee par
+  `Dvups_adminFrontController::updateAction()` mais n'existait pas (bug
+  preexistant, jamais exerce par aucun test avant K.1) - corrigee au
+  passage.
+- `password` reste `VARCHAR(255)` pour `dvups_admin` et `user` (bcrypt
+  ~60 caracteres, argon2id jusqu'a ~97) : AUCUN agrandissement de colonne
+  necessaire, contrairement a ce qui etait anticipe dans la consigne.
+- Fichiers : `dclass/dvups_functions.php`, `dclass/extends/UserCore.php`,
+  `src/devups/ModuleAdmin/Entity/Dvups_admin.php`,
+  `src/devups/ModuleAdmin/Controller/Dvups_adminController.php`,
+  `src/devups/ModuleAdmin/Controller/Dvups_adminFrontController.php`,
+  `src/devupsfront/ModuleUser/Controller/UserFrontController.php`.
+
+### K.3 - "remember me" sans mot de passe dans le cookie : FAIT
+
+- Phase : K.3
+- Avant : le cookie `ADMIN_pwd` contenait directement `$admin->getPassword()`
+  (le hash du mot de passe, autrefois sha1() - un cookie vole = mot de
+  passe vole, puisque sha1() sans sel se reutilise tel quel). Remplace par
+  `ADMIN_remember` : un token aleatoire (`random_bytes(32)`), dont seul le
+  hash (sha256) et une expiration sont stockes en base
+  (`Dvups_admin::issueRememberToken()`/`verifyRememberToken()`/
+  `clearRememberToken()`, nouvelles colonnes `remember_token_hash`/
+  `remember_token_expires_at`, migration ecrite - voir plus bas).
+- Rotation a chaque usage reussi (`restartsessionAction()`, appelee a
+  chaque requete admin via `admin/header.php`) : l'ancien token devient
+  immediatement invalide, meme s'il a ete intercepte ("vole"). Invalide
+  aussi a la deconnexion (`deconnexionAction()`) et au changement de mot
+  de passe (`changepassword()`, `changepwAction()`,
+  `Dvups_admin::updatePassword()`).
+- `DClass\lib\Util::setcookie()`/`clearcookie()` : `Secure` si la requete
+  est en HTTPS (`Util::isHttps()`, jamais force en clair pour ne pas
+  casser le cookie en dev/http local), `HttpOnly` (deja present),
+  `SameSite=Lax` (absent avant - necessite la forme "tableau d'options"
+  de `setcookie()`, l'ancienne signature positionnelle n'a pas de
+  parametre SameSite).
+- Fichiers : `src/devups/ModuleAdmin/Entity/Dvups_admin.php`,
+  `src/devups/ModuleAdmin/Controller/Dvups_adminController.php`,
+  `dclass/lib/Util.php`,
+  `database/migration/2026_11_08_phase7_password_hash.sql`.
+
+### K.4 - audit sha1()/md5() restants : FAIT
+
+- Phase : K.4
+- Recherche (grep) de tout usage de `sha1(`/`md5(` restant dans le code
+  applicatif (hors tests, qui testent legitimement contre le format de
+  seed existant) :
+  - **Traite (K.1)** : toutes les comparaisons de mot de passe
+    (admin et user) - voir ci-dessus.
+  - `User::setActivationcode()`/plusieurs endroits de
+    `UserFrontController.php` (activation de compte, changement de
+    telephone) : `sha1()` d'un code d'activation a 6 chiffres
+    (`User::generatecode()`). **Severite faible** - NON traite (hors
+    perimetre explicite de K, qui ne porte que sur les mots de passe) :
+    le code source a seulement 10^6 combinaisons, un hash plus robuste
+    (password_hash()) n'apporterait aucune resistance supplementaire a
+    une attaque par force brute sur un espace aussi petit - le risque
+    reel serait plutot l'absence de limitation de tentatives, non
+    adressee ici non plus (hors perimetre).
+  - `Dfile.php::hashname()` (`sha1($this->name . $timestamp())`) :
+    genere un nom de fichier UNIQUE, pas un secret. **Sans objet**.
+  - `Log.php::fingerprint()` (`sha1(...)` de class/file/line/message) :
+    cle de deduplication de logs, pas un secret. **Sans objet**.
+  - `Router.php` et `Dvups_adminTable.php` : code COMMENTE (jamais
+    execute). **Sans objet**.
+- Conclusion : plus aucun usage de sha1()/md5() pour un secret
+  (mot de passe, token de session, cle API) dans le code execute, hormis
+  le cas documente des codes d'activation (hors perimetre, severite
+  faible, raison donnee ci-dessus).
+
+### K.5 - tests : FAIT
+
+- Phase : K.5
+- `tests/Integration/PasswordHashMigrationTest.php` : login avec un hash
+  legacy sha1() qui reussit ET remplace le hash par `password_hash()` ;
+  mauvais mot de passe rejete SANS modifier le hash stocke ; les
+  nouveaux mots de passe (admin et user) sont bien en `password_hash()`,
+  jamais en sha1().
+- `tests/Integration/RememberMeTest.php` : token "remember me" emis puis
+  verifie ; le cookie n'est jamais le mot de passe ni son hash ; rotation
+  invalide l'ancien token (scenario "token vole puis rejoue") ; token
+  expire rejete ; deconnexion et changement de mot de passe invalident le
+  token.
+- Suite complete verte : 224 tests, 642 assertions, 3 incomplete
+  (inchangees, sans rapport avec Phase 7).
+
+---
+
 ## Traductions non encore faites (lang:missing, en.php)
 
 `php devups lang:missing` (execute sur le vrai dossier `lang/`, pas sur
