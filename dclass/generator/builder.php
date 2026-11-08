@@ -749,7 +749,28 @@ if (isset($argv[2]) && substr($argv[2], 0, 2) !== '--') {
         case 'rights:sync':
             $result = Dvups_action::sync();
             echo $result['created'] . "/" . $result['total'] . " action(s) synchronisee(s) ("
-                . $result['created'] . " creee(s), le reste deja en base).";
+                . $result['created'] . " creee(s), le reste deja en base).\n";
+
+            // ETAPE V.4 : trouve en testant l'application reelle - le menu
+            // lateral (sidebar.blade.php) ne lit jamais dvups_action /
+            // config/dvups_configurations.php directement, il lit
+            // Dvups_role::getConfigs() (colonne `configs`, un JSON
+            // materialise par Dvups_role::updateConfigs(), jusqu'ici
+            // uniquement appele - et sauvegarde - quand un role est cree ou
+            // modifie depuis l'ecran Roles). Sans ce rafraichissement ici,
+            // tout changement de dvups_action (nouvelle action creee par ce
+            // sync, ou action retiree par une migration de nettoyage)
+            // restait invisible dans le menu de TOUS les roles existants
+            // jusqu'a leur prochaine sauvegarde manuelle via l'ecran Roles.
+            $rolesRefreshed = 0;
+            $roleIds = Model::pdo()->query('SELECT id FROM dvups_role')->fetchAll(\PDO::FETCH_COLUMN);
+            foreach ($roleIds as $roleId) {
+                $role = (new Dvups_role((int)$roleId))->hydrate();
+                $role->updateConfigs();
+                $role->__update();
+                $rolesRefreshed++;
+            }
+            echo $rolesRefreshed . " role(s) : menu rafraichi (Dvups_role::configs).\n";
             break;
 
         case 'lang:scan':
