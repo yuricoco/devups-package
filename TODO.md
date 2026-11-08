@@ -329,6 +329,72 @@ decommenter le DROP de `imagecms`).
 
 ---
 
+## Phase 5 (Localisation) - ETAPE J
+
+### J.1/J.2 - ne conserver que Country, reparer sa traduction : FAITS
+
+- Phase : J.1/J.2
+- Supprimes entierement (entites, formulaires, datatables, controllers,
+  Core JSON, JS, routes de `services.php`, requires du module) :
+  `Continent`, `Department`, `District`, `Region`, `Town`.
+- `Continent` a ete retire avec les autres (pas seulement les 4 demandes
+  explicitement) : `Country::getContinent()`/`setContinent()`
+  referencaient une propriete `$continent` jamais declaree ni mappee
+  (pas d'annotation `@ManyToOne`, pas de cle `relation` dans
+  `CountryCore.json`) - preuve que `Country` n'avait aucune dependance
+  reelle a `Continent`, code mort. `Country::tvas()` (classe `Tva`
+  inexistante dans tout le depot) retire au passage.
+- Recherche (grep) sur tout le depot : aucun autre module (user, address,
+  ...) ne reference `Continent`/`Department`/`District`/`Region`/`Town`.
+  Les deux seules occurrences residuelles du texte "Region"/"Town" hors
+  du module sont un commentaire (`FormFactory.php`, exemple historique)
+  et la bibliotheque vendor jVectorMap (`admin/assets/scripts/main.js`,
+  `Region` au sens generique de la carte) - sans rapport.
+- Le formulaire `country/form` et sa traduction sont repares :
+  `Country::__construct()` avait bien `$this->dvtranslate = true;
+  $this->dvtranslated_columns = ["nicename"];` dans le code mais ces
+  deux lignes etaient COMMENTEES - cause exacte du KNOWN_BROKEN "Location
+  : traduction de Country a reactiver". Reactivees (decommentees).
+  `Country_lang` existait deja correctement (colonne `nicename`,
+  `@Id @ManyToOne(targetEntity="\Country")`).
+- Les 9 entrees `KNOWN_BROKEN` correspondantes retirees de
+  `tests/E2E/AdminScreensTest.php` (4 ecrans supprimes x2 list/form, et
+  `country/form` desormais corrige - verifie vert par la suite e2e).
+- Fichiers : `src/devupscms/ModuleLocation/Entity/Country.php`,
+  `src/devupscms/ModuleLocation/devupscms.modulelocation.php`,
+  `src/devupscms/ModuleLocation/services.php`,
+  `config/dvups_configurations.php`, `config/module_configurations.php`,
+  `tests/E2E/AdminScreensTest.php`, et les 38 fichiers supprimes du
+  module (Controller/Core/Datatable/Entity/Form/Resource-js).
+
+### J.3/J.4 - migration DROP, seed Country, tests : FAITS
+
+- Phase : J.3/J.4
+- Migration (ECRITE, PAS EXECUTEE)
+  `database/migration/2026_11_08_phase5_location_drop.sql` : `DROP TABLE`
+  de `department`, `district`, `region`, `town`, `continent`.
+- Recherche de colonnes de cle etrangere `department_id`/`district_id`/
+  `region_id`/`town_id`/`continent_id` dans tout le depot (grep) : AUCUNE
+  trouvee - documente explicitement dans le commentaire du script, rien
+  d'autre a retirer ailleurs.
+- Donnee de reference `Country` : `database/seed/countries.php` (iso2,
+  iso3, nom, indicatif telephonique - environ 195 pays), chargee par
+  `Country::seed()` (idempotent : met a jour une ligne existante,
+  identifiee par son iso2, plutot que d'en creer un doublon). Exposee via
+  la commande CLI `php devups location:seed` (`dclass/generator/builder.php`).
+- `.gitignore` : exception `!/database/seed/` ajoutee (meme pattern que
+  `!/database/migration/`), ce repertoire contenant du code source
+  versionne (donnee de reference), pas une donnee d'execution generee.
+- Test : `tests/Integration/LocationSeedTest.php` - peuplement initial
+  (un pays par ligne du seed) puis relance idempotente (aucune creation,
+  uniquement des mises a jour, le total de lignes ne double pas).
+- Fichiers : `database/migration/2026_11_08_phase5_location_drop.sql`,
+  `database/seed/countries.php`, `src/devupscms/ModuleLocation/Entity/Country.php`
+  (methode `seed()`), `dclass/generator/builder.php` (case `location:seed`),
+  `tests/Integration/LocationSeedTest.php`, `.gitignore`.
+
+---
+
 ## Traductions non encore faites (lang:missing, en.php)
 
 `php devups lang:missing` (execute sur le vrai dossier `lang/`, pas sur
