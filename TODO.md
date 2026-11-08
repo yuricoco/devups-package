@@ -1406,3 +1406,328 @@ P, 288 a la fin des ETAPES Q et R) - **0 echec**, les 2 memes
   chaque etape concernee).
 - Aucun blocage technique connu, aucune tache de ce chantier laissee
   inachevee.
+
+---
+
+## ETAPE S (Audit des secrets codes en dur)
+
+- Recherche (grep) de cles/mots de passe/tokens litteraux dans le code
+  versionne (hors `.env`/`config/constante.php`, deja gitignores).
+- Trouve et corrige : `Util::getTimezone()` utilisait une cle d'API
+  ipgeolocation.io en clair - deplacee vers `IPGEOLOCATION_API_KEY`
+  (`.env`), vide par defaut comme les autres integrations tierces
+  optionnelles (FCM, Google, VAPID) ; retombe sur `'UTC'` sans appel
+  HTTP si la cle n'est pas configuree. Fonction jamais appelee ailleurs
+  dans le depot (code mort), aucun test ni appelant a adapter. Commit
+  `be09ecc`.
+- `composer test` vert (288 tests, 0 echec).
+- Fichiers : `dclass/lib/Util.php`, `.env.example`,
+  `config/constante.example.php`.
+
+## ETAPE T (Suppression securisee de imagecms/dv_image)
+
+- Les DROP `imagecms`/`dv_image`/`tree_item_image.image_id` restaient
+  commentes depuis l'ETAPE I (reprise de donnees non encore validee -
+  voir "Ce qui reste avant publication" ci-dessus). Remplaces par une
+  migration PHP AUTO-VALIDANTE
+  (`database/migration/2026_11_08_phase4_drop_old_images.sql` ->
+  `..._phase4_drop_old_images.php`) : ne supprime les anciennes tables
+  que si la reprise est verifiee complete par comptage
+  (`cmsresource >= imagecms`, aucune `tree_item_image` avec
+  `image_id` sans sa colonne `image` deja remplie) ; sinon leve une
+  `RuntimeException` avec les comptages en clair, SANS rien supprimer.
+  Idempotente (no-op si deja jouee ou si rien a reprendre).
+- `MigrationRunner::run()` durci en consequence : capture desormais
+  l'exception d'une migration et la reporte dans `result['failed']`
+  au lieu de la laisser remonter en fatal (arrete le lot proprement,
+  `builder.php` affiche la ligne `[ECHEC]`) - necessaire pour qu'une
+  migration qui se juge elle-meme non sure a l'execution stoppe sans
+  planter tout le processus CLI.
+- Test : `tests/Integration/CmsOldImageTablesDropTest.php` - reprise
+  complete -> tables supprimees ; reprise incomplete -> echec, rien
+  supprime ; aucune donnee a reprendre -> no-op ; rejouer apres coup
+  sans effet.
+- `composer test` : 293 tests, 1391 assertions, vert. Commit `90bc9b6`.
+- Fichiers : `database/migration/2026_11_08_phase4_drop_old_images.php`
+  (nouveau), `database/migration/2026_11_08_phase4_cms_rename.sql`
+  (DROP retires, deplaces), `dclass/devups/Migration/MigrationRunner.php`,
+  `tests/Integration/CmsOldImageTablesDropTest.php`,
+  `tests/Integration/CmsMigrationTest.php` (commentaires ajustes).
+
+## ETAPE U (Audit des secrets dans l'historique git)
+
+- Recherche de secrets (cles API, mots de passe, tokens) dans
+  l'historique git complet (`git log -p`, tous les commits), pas
+  seulement l'etat courant du depot (deja couvert par l'ETAPE S).
+- Resultat : **propre** - aucun secret reel trouve commite a un
+  moment quelconque de l'historique (les cles deplacees a l'ETAPE S
+  n'avaient jamais ete commitees en clair avec une vraie valeur de
+  production, seul un placeholder documentaire l'avait ete).
+- Consigne respectee : **aucune reecriture d'historique** (pas de
+  `filter-repo`/`filter-branch`/rebase) - sans objet puisqu'aucun
+  secret n'y figure, mais note explicitement ici car la consigne
+  l'interdisait de toute facon.
+- Aucun commit (rien a corriger) - audit uniquement.
+
+## ETAPE V (Migration et test de la base de dev reelle)
+
+Objectif : jouer pour de vrai, sur la base de developpement reelle
+(pas la base de test isolee `devups_phpunit`), tout ce que les ETAPES
+precedentes n'avaient fait que sur des bases jetables/de test, puis
+tester l'application de bout en bout (navigateur + HTTP reel) pour
+trouver les bugs qu'aucun test automatise ne pouvait voir (donnees
+reelles, volume reel, parcours utilisateur reel). Consigne respectee
+tout au long : **aucune suppression de donnee au-dela de ce que les
+migrations elles-memes font** - tout ce que j'ai cree moi-meme pour
+tester (lignes, fichiers) a ete nettoye apres coup ; les donnees
+pre-existantes n'ont jamais ete touchees.
+
+### V.1 - Sauvegarde
+
+- Dump complet de la base de dev reelle AVANT toute migration :
+  `C:\spacekola\backups\devupstest_bd_20261108_115419.sql`.
+
+### V.2 - Migration (dry-run puis execution reelle)
+
+- `php devups migrate --dry-run` echouait avant meme d'atteindre
+  `MigrationRunner` ("ERROR : projectCore '--dry-run' not found") -
+  le dispatcher CLI resolvait toujours `argv[2]` comme un nom de
+  projet avant de regarder la commande demandee. Corrige en ignorant
+  tout `argv[2]` commencant par `--`. Test
+  `tests/Integration/CliMigrateFlagTest.php`. Commit `d0dbda1`.
+- Executee pour de vrai : `phase5_location_drop.sql`
+  (`department`/`district`/`region`/`town`/`continent`) echouait sur
+  le premier `DROP TABLE` (erreur 1451, FK) - ces 4 tables ont des
+  cles etrangeres ENTRE ELLES, jamais vues par le grep original (qui
+  cherchait des references depuis d'autres modules). Reordonne
+  (district, town, department, region, continent). Test
+  `tests/Integration/LocationDropMigrationTest.php`. Commit `a0a6f66`.
+- `database/migration/2026_11_08_phase4_drop_old_images.php` (ETAPE T)
+  rejouee pour de vrai sur la base de dev : reprise verifiee complete,
+  `imagecms`/`dv_image`/`tree_item_image.image_id` supprimes sans
+  incident.
+- Toutes les migrations en attente desormais jouees et marquees dans
+  `dvups_migration` sur la base de dev reelle ; `php devups
+  migrate:status` confirme : plus aucune migration en attente.
+
+### V.3 - Commandes post-migration (rights:sync, location:seed, lang:missing, diff de schema)
+
+- `php devups location:seed` plantait au premier pays :
+  "Class 'country_lang' does not exist" - `DBAL::createDbal()`
+  construisait le nom de la classe compagnon via `$this->table`
+  (toujours en minuscules) au lieu de `$this->objectName` (casse
+  correcte), ce que l'autoload composer (classmap, sensible a la
+  casse) n'accepte que si la classe a deja ete chargee par ailleurs -
+  jamais le cas en CLI "frais", toujours le cas dans la suite de tests
+  (masquant le bug depuis l'origine). Corrige au seul appel concerne.
+  Nettoyage : 1 ligne `country` dupliquee (artefact du plantage avant
+  correctif, sans ligne `country_lang` associee) retiree ; les 195
+  pays du seed verifies ensuite presents sans doublon. Test
+  `tests/Integration/LocationSeedTest.php` renforce. Commit `1443b86`.
+- `php devups rights:sync` execute sans erreur.
+- `php devups lang:missing` : voir ETAPE O, deja a jour, confirme
+  toujours 271 cles manquantes dans `lang/en.php` (donnee pre-existante,
+  pas un bug, pas retraitee ici).
+- Diff de schema reel (`doctrine orm:schema-tool:update --dump-sql`
+  contre les entites actuelles) : `ImageCore` (herite par `Cmsresource`
+  et `Tree_item_image`) declare une colonne `extensionnpm` jamais
+  ajoutee par `2026_11_08_phase4_cms_rename.sql` - absente de
+  `cmsresource` (table neuve) ET de `tree_item_image` (l'`ALTER TABLE`
+  ajoutait les autres colonnes d'`ImageCore` mais pas celle-ci). Sans
+  elle, tout `INSERT`/`UPDATE` Doctrine sur ces entites aurait echoue
+  ("Unknown column 'extensionnpm'") - `Tree_item_image::uploadImage()`
+  ecrit meme explicitement dans cette propriete. Nouvelle migration
+  additive (nullable), jouee sur la base de dev reelle. Test
+  `tests/Integration/ImageExtensionColumnMigrationTest.php`. Commit
+  `5019007`.
+- Apres cette migration, diff de schema refait : plus aucun ecart
+  entre les entites et le schema reel.
+
+### V.4 - Test de bout en bout de l'application reelle (navigateur + HTTP)
+
+Balayage systematique de tous les ecrans liste/formulaire back-office,
+puis test manuel CRUD (creation/modification/suppression) par entite,
+puis des parcours front/API (inscription, activation, connexion/JWT,
+confidentialite du profil, reinitialisation de mot de passe,
+notifications). **9 bugs reels** trouves et corriges (en plus des 2
+ci-dessus, V.3), chacun avec son test de non-regression :
+
+1. **Menu lateral** : la rubrique "Langues" affichait encore
+   `Local_content`/`Local_content_key`/`Page_mapped` (retires du code
+   en Phase 3) - cliquer dessus plantait (`Router.php`,
+   "Undefined array key"). Deux causes : des fichiers `*Core.json`
+   orphelins jamais supprimes avec le module, ET
+   `php devups rights:sync` qui ne rafraichissait jamais le cache de
+   menu materialise par role (`Dvups_role::getConfigs()`/
+   `updateConfigs()`, jusqu'ici uniquement sauvegarde depuis l'ecran
+   Roles) - toute action ajoutee/retiree restait invisible/visible a
+   tort dans le menu de tous les roles existants. `rights:sync` appelle
+   desormais `updateConfigs()`+`__update()` sur chaque role. Nettoyage
+   complementaire : migration retirant les lignes `dvups_action`
+   orphelines (`Local_content`, `Local_content_key`, `Page_mapped`,
+   `Request_history`, `Imagecms`, `Dv_image`). Tests
+   `tests/Integration/OrphanActionsCleanupMigrationTest.php` et
+   `CliRightsSyncRefreshesRoleMenuTest.php`. Commit `d947593`.
+2. **`country/list` en 500 des que la table a des lignes** (masque
+   jusqu'ici : `AdminScreensTest` teste cet ecran mais `country` reste
+   toujours vide dans la suite automatisee) - deux bugs empiles :
+   `CountryTable` referencait encore `continent.name` (relation
+   retiree a l'ETAPE J, "Call to a member function hydrate() on
+   null"), puis, une fois corrige, `CountryTable::init()` construisait
+   `new CountryTable()` SANS l'entite (assignee seulement apres coup) -
+   `Datatable::__construct()` ne calcule `$this->class` (utilise par
+   `can()`) que si l'entite est passee AU CONSTRUCTEUR, provoquant un
+   `TypeError`. Test `tests/E2E/CountryListWithDataTest.php`
+   (seede `Country::seed()` avant d'appeler l'ecran, pour exercer
+   reellement ce chemin). Commit `8d1bccc`.
+3. **Cmscontent/Notificationtype : "Array to string conversion" +
+   "Array" affiche dans les colonnes traduites** - `Datatable.php`
+   (rendu ligne par ligne, chemin "attribut direct") ne resolvait
+   jamais les colonnes `dvtranslated_columns` (tableau par langue) en
+   l'absence d'un `value` explicite - meme resolution que celle deja
+   utilisee ailleurs dans le meme fichier, appliquee ici aussi. Test
+   `tests/E2E/CmscontentListWithTranslatedTitleTest.php`. Commit
+   `b66d5ca`.
+4. **Formulaire Cmsresource : dropdown Cmscontent corrompu** (HTML
+   echappe visible a l'ecran, "Array to string conversion" dans
+   `FormFactory.php`) - `FormManager::Options_Helper()` (construit les
+   `<option>` d'un `<select>`) ne resolvait pas non plus un libelle
+   issu d'une colonne traduite. Meme resolution ajoutee. Commit
+   `0bb3a6b`.
+5. **Upload d'image Cmsresource : warning puis 500 fatal** - deux
+   causes : `Cmsresource::uploadImage()` donnait la priorite a
+   `$url['file']['imagesize']` (le tableau brut de `getimagesize()`)
+   plutot qu'a `$url['file']['size']` (scalaire) pour la colonne
+   `size` (float) - "Array to string conversion" au INSERT ; puis,
+   masque par ce premier warning, `Datatable::getSingleRowRest()`
+   (rendu de la ligne apres creation) attrapait `catch(\Exception)`
+   un appel de methode sur `null` (`$this->qbcustom` jamais initialise
+   quand le controleur appelle `XTable::init()` SANS argument, pattern
+   commun a de nombreux controleurs) - en PHP8 c'est un `\Error`, pas
+   une `\Exception`, donc non rattrape : fatal 500 a CHAQUE creation/
+   modification reussie passant par ce chemin, potentiellement sur de
+   nombreuses entites. Corrige a la source (`catch(\Throwable)`,
+   conforme a l'intention du fallback deja ecrit juste en dessous) -
+   corrige la classe de bug pour tous les appelants, pas seulement
+   Cmsresource. Test `tests/E2E/CmsresourceImageUploadTest.php`
+   (upload reel via `CURLFile`/multipart). Commit `0bb3a6b`.
+6. **Tree : bouton "Creer" casse** (`GET /admin/api/null/form` ->
+   avertissements PHP + dump de debogage au lieu du formulaire) -
+   `TreeTable::init()` construisait `new TreeTable()` SANS argument du
+   tout (pas meme une assignation a posteriori), meme classe de bug
+   que le point 2 ci-dessus mais plus severe (le bouton lui-meme est
+   casse, pas seulement les droits par ligne). Confirme par un balayage
+   systematique (script, pas manuel) des ~25 ecrans liste du
+   back-office : **seul** `Tree` etait touche. Test
+   `tests/E2E/TreeListCreateButtonTest.php`. Commit `4c23822`.
+7. **Creation d'un pays depuis l'ecran admin : 500** ("Column 'iso3'
+   cannot be null") - `CountryForm` ne collecte ni `iso3` ni
+   `numcode` (seul `Country::seed()` les renseigne), mais les colonnes
+   SQL sont `NOT NULL`. Corrige par une valeur par defaut `''` sur les
+   deux proprietes. Test `tests/E2E/CountryCreateViaFormTest.php`.
+   Commit `245cc48`.
+8. **Mot de passe SMTP reel affiche en clair** sur les ecrans
+   `Reportingmodel`/`Emaillog` (panneau d'aide integre,
+   `layout.blade.php` echoeait `{{sm_password}}` - la vraie valeur de
+   `config/constante.php`, pas un exemple) a tout admin connecte -
+   fuite de credentials reelle, trouvee en testant l'ecran reel.
+   Masque (`'********'`) ; le reste du panneau (host/port/from) n'est
+   pas sensible et reste affiche pour l'aide integree. Test
+   `tests/E2E/ReportingmodelListDoesNotLeakSmtpPasswordTest.php`
+   (compare au mot de passe reel SANS jamais l'afficher ni le
+   journaliser). Commit `c483172`.
+9. **`/api/user/authentification` : "Undefined array key 'login'"**
+   (avertissement PHP) sur toute tentative de connexion sans `login`
+   (ou `password`) dans le corps POST - accede sans repli avant la
+   validation `empty($login)` juste en dessous. Corrige
+   (`?? null`). Tests
+   `tests/E2E/UserAuthentificationMissingFieldsTest.php`. Commit
+   `c6db527`.
+
+Couverture additionnelle (pas de bug trouve, comportement verifie
+correct de bout en bout, tests ajoutes pour le figer) :
+
+- Connexion -> JWT -> `/api/user/:id` (profil public SANS email/
+  telephone pour un tiers non authentifie, profil complet pour le
+  titulaire via son JWT, mecanisme `restrictForRequester()`/
+  `restrictToPublicProfile()` deja en place) -> `/api/user/me` ->
+  `/api/user/notifications`, de bout en bout sur l'endpoint HTTP reel.
+- Reinitialisation de mot de passe par jeton (`ETAPE P.1`) : jeton a
+  usage unique (une seconde tentative avec le meme jeton echoue),
+  ancien mot de passe invalide apres reset, JWT emis en reponse -
+  verifie via l'endpoint reel `/api/user/resetpassword` (jeton genere
+  directement par `User::setResetPasswordToken()` pour un utilisateur
+  SANS email, afin de ne jamais declencher un vrai envoi SMTP -
+  `issueResetPasswordToken()` ne tente l'envoi que si `$user->email`
+  est renseigne).
+- Configuration (admin) : suppression via l'ecran reel verifiee
+  effective en base (pas seulement une reponse `{"success":true}` -
+  piege initial : le bouton "Supprimer" depend d'un `confirm()`
+  JavaScript que l'automatisation du navigateur supprime
+  silencieusement, et le mauvais couple methode HTTP/parametres peut
+  rendre un succes illusoire sans rien supprimer).
+- `role`, `privileges`, `admin`, `configuration`, `tree`/
+  `tree_item_image`, `country`, `notificationtype` : CRUD
+  (creation/modification/suppression) verifie manuellement sans
+  erreur serveur au-dela des bugs listes ci-dessus.
+
+Deliberement NON exerce en direct (risque reseau/effet de bord) :
+inscription (`/api/user/registration`) et activation de compte
+(`activateaccount()`, qui envoie INCONDITIONNELLEMENT un mail de
+bienvenue sur succes, sans le garde `if ($user->email)` utilise par le
+reset de mot de passe) - declencheraient un vrai envoi SMTP vers un
+hote de messagerie a l'allure de production
+(`mail.3ag-edition.com`), de comportement reseau incertain dans cet
+environnement sandbox. Cette logique reste couverte par les tests
+d'integration pre-existants qui tournent contre la base de test isolee
+(`UserActivationTest`, `RegistrationCodeTest`, `PasswordResetTokenTest`,
+`RememberMeTest`), inchanges et toujours verts.
+
+### Points notes mais non corriges (severite faible, pour une prochaine session)
+
+- **Swagger / documentation API** : le menu deroulant des serveurs
+  affiche le port `3333` alors que le serveur de dev reel tourne sur
+  `3031` - cosmetique, n'empeche pas d'utiliser Swagger UI (changer le
+  serveur manuellement dans le menu deroulant suffit).
+- **Upload d'image 1x1 pixel** : `imagealphablending(): Argument #1
+  ($image) must be of type GdImage, bool given` (500) - probable
+  edge-case de la bibliotheque de redimensionnement sur une image
+  exceptionnellement minuscule, non reproduit avec une image 10x10.
+  Peu susceptible d'affecter un usage admin reel (aucun admin
+  n'uploade une image 1x1).
+- **Creation d'un `Reportingmodel` depuis l'ecran admin** : un essai a
+  produit une erreur cote client "[object Object]" sans aucune erreur
+  serveur journalisee ni ligne orpheline en base - tres probablement
+  un champ requis ("Type de modele de rapport") non rempli de ma part
+  plutot qu'un bug de l'application ; non confirme comme un bug reel,
+  pas repris faute de temps - a reverifier en remplissant le
+  formulaire completement avant de conclure.
+
+### Etat final des tests et de la base
+
+- `composer test` : **313 tests, 1487 assertions, 0 echec**, les 2
+  memes "incomplete" documentees depuis l'ETAPE N
+  (`Dvups_log`/`Emaillog`, ecrans lecture seule par design) - vert a
+  chaque commit de cette etape, comme exige.
+- Base de dev reelle : toutes les migrations jouees, schema aligne
+  avec les entites (diff de schema vide), menu/role a jour,
+  `country` seede (195 pays). Aucune donnee pre-existante supprimee -
+  seules mes propres lignes/fichiers de test ont ete nettoyes au fur
+  et a mesure.
+- Sauvegarde prise avant toute migration :
+  `C:\spacekola\backups\devupstest_bd_20261108_115419.sql`.
+- Secrets : ETAPES S (code courant) et U (historique git) toutes
+  deux traitees - aucun secret reel trouve dans l'historique,
+  aucune reecriture d'historique effectuee.
+
+### Ce qui reste (hors perimetre de cette etape, note pour memoire)
+
+- Le port Swagger (3333 vs 3031) et l'edge-case d'upload 1x1 pixel
+  ci-dessus - cosmetique/tres faible severite, non corriges.
+- Le formulaire `Reportingmodel` a reverifier (voir ci-dessus) - pas
+  confirme comme un bug.
+- Les 271 cles manquantes de `lang/en.php` (ETAPE O, pre-existant,
+  pas un bug).
+- Le tag/release git `v7.0.0` (ETAPE R) reste volontairement NON cree.
+- La publication GitHub (`yuricoco/devups-package`, branche
+  `release/v7`, PR) reste a faire - prochaine etape.
