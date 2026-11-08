@@ -12,15 +12,17 @@
 -- necessaire : le schema est recree automatiquement a partir des
 -- entites (tests/bootstrap.php).
 --
--- IMPORTANT : la table `cmsresource` creee ci-dessous reste VIDE apres
--- ce script - elle doit etre peuplee depuis `imagecms JOIN dv_image`
--- (le mapping colonne a colonne est direct : dv_image.image/uploaddir/
--- size/width/height -> cmsresource.image/uploaddir/size/width/height,
--- imagecms.cmstext_id -> cmsresource.cmscontent_id) avant le DROP de
--- `imagecms` plus bas. Ce script ne fait PAS cette migration de
--- donnees automatiquement : a verifier et executer a la main (le
--- nombre de lignes migrees doit correspondre au nombre de lignes
--- imagecms existantes) avant de decommenter le DROP.
+-- ETAPE I : ce script REPREND maintenant les donnees (INSERT INTO
+-- cmsresource ... SELECT ... FROM imagecms JOIN dv_image, puis UPDATE
+-- tree_item_image ... FROM dv_image) - les fichiers physiques restent
+-- a l'endroit ou ils sont deja sur le disque : chaque ligne copiee
+-- garde son `uploaddir` D'ORIGINE (celui ecrit par l'ancien Dv_image),
+-- jamais force a "cms/"/"treeitem/" (les chemins par defaut utilises
+-- pour les NOUVEAUX uploads par Cmsresource::uploadImage()/
+-- Tree_item_image::uploadImage()) - aucun deplacement de fichier n'est
+-- donc necessaire. Seuls les DROP (`imagecms`, `dv_image`) restent
+-- commentes : a decommenter a la main, apres avoir verifie les
+-- comptages ci-dessous sur l'environnement concerne.
 
 RENAME TABLE cmstext TO cmscontent;
 RENAME TABLE cmstext_lang TO cmscontent_lang;
@@ -45,11 +47,21 @@ CREATE TABLE `cmsresource` (
   CONSTRAINT `fk_cmsresource_cmscontent` FOREIGN KEY (`cmscontent_id`) REFERENCES `cmscontent` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- A decommenter UNE FOIS la migration de donnees imagecms->cmsresource
--- verifiee (voir avertissement en tete de fichier) :
--- INSERT INTO cmsresource (cmscontent_id, reference, name, image, uploaddir, size, width, height, created_at, updated_at)
---   SELECT ic.cmstext_id, di.reference, di.name, di.image, di.uploaddir, di.size, di.width, di.height, di.created_at, di.updated_at
---   FROM imagecms ic JOIN dv_image di ON di.id = ic.image_id;
+-- Comptage AVANT reprise (a executer et noter a la main) :
+-- SELECT COUNT(*) AS avant_imagecms FROM imagecms;
+
+INSERT INTO cmsresource (cmscontent_id, reference, name, image, uploaddir, size, width, height, created_at, updated_at)
+  SELECT ic.cmstext_id, di.reference, di.name, di.image, di.uploaddir, di.size, di.width, di.height, di.created_at, di.updated_at
+  FROM imagecms ic JOIN dv_image di ON di.id = ic.image_id;
+
+-- Comptage APRES reprise : doit etre IDENTIQUE au comptage "avant" -
+-- sinon NE PAS decommenter le DROP ci-dessous (des lignes imagecms
+-- n'ont pas trouve leur dv_image correspondant - jointure INNER JOIN
+-- ci-dessus, donc silencieusement ignorees plutot qu'en erreur).
+-- SELECT COUNT(*) AS apres_cmsresource FROM cmsresource;
+
+-- A decommenter UNIQUEMENT une fois les deux comptages ci-dessus
+-- verifies egaux :
 -- DROP TABLE imagecms;
 
 CREATE TABLE `cmscomment` (
@@ -89,21 +101,29 @@ ALTER TABLE tree_item_image
   ADD COLUMN `width` float DEFAULT NULL AFTER `size`,
   ADD COLUMN `height` float DEFAULT NULL AFTER `width`;
 
--- A decommenter UNE FOIS la migration de donnees image_id->colonnes
--- directes verifiee (meme precaution qu'imagecms->cmsresource plus
--- haut : comparer le nombre de lignes tree_item_image.image_id NOT
--- NULL avant/apres) :
--- UPDATE tree_item_image ti
---   JOIN dv_image di ON di.id = ti.image_id
---   SET ti.reference = di.reference, ti.name = di.name, ti.image = di.image,
---       ti.uploaddir = di.uploaddir, ti.size = di.size, ti.width = di.width,
---       ti.height = di.height;
+-- Comptage AVANT reprise (a executer et noter a la main) :
+-- SELECT COUNT(*) AS avant_tree_item_image_avec_image FROM tree_item_image WHERE image_id IS NOT NULL;
+
+UPDATE tree_item_image ti
+  JOIN dv_image di ON di.id = ti.image_id
+  SET ti.reference = di.reference, ti.name = di.name, ti.image = di.image,
+      ti.uploaddir = di.uploaddir, ti.size = di.size, ti.width = di.width,
+      ti.height = di.height;
+
+-- Comptage APRES reprise : doit etre IDENTIQUE au comptage "avant" -
+-- sinon NE PAS retirer la colonne image_id ni decommenter le DROP
+-- dv_image ci-dessous.
+-- SELECT COUNT(*) AS apres_tree_item_image_avec_image FROM tree_item_image WHERE image IS NOT NULL;
+
+-- A decommenter UNIQUEMENT une fois le comptage ci-dessus verifie egal
+-- (le nom de la contrainte FK varie selon l'environnement - a adapter,
+-- cf. SHOW CREATE TABLE tree_item_image) :
 -- ALTER TABLE tree_item_image DROP FOREIGN KEY <nom_contrainte_image_id>;
 -- ALTER TABLE tree_item_image DROP COLUMN image_id;
 
--- A decommenter UNIQUEMENT une fois les deux migrations de donnees
+-- A decommenter UNIQUEMENT une fois les DEUX reprises de donnees
 -- ci-dessus (imagecms->cmsresource ET tree_item_image.image_id ->
--- colonnes directes) verifiees et executees - plus aucun code ne lit
--- `dv_image` apres l'ETAPE G.4, mais la table peut encore contenir des
--- fichiers references nulle part ailleurs :
+-- colonnes directes) verifiees egales par leurs comptages - plus aucun
+-- code ne lit `dv_image` apres l'ETAPE G.4, mais la table peut encore
+-- contenir des fichiers references nulle part ailleurs :
 -- DROP TABLE dv_image;
