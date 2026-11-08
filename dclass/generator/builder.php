@@ -777,6 +777,43 @@ if (isset($argv[2])) {
             }
             break;
 
+        case 'api:doc':
+            // ETAPE N.1 : meme generateur que documentation/api.php (parsing
+            // statique, aucune classe PHP chargee) - ecrit un instantane a
+            // la racine du projet.
+            require_once __DIR__ . '/OpenApiGenerator.php';
+            $spec = dv_build_openapi_spec(ROOT);
+            $outFile = ROOT . 'openapi.json';
+            file_put_contents($outFile, json_encode($spec, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+            echo "openapi.json genere (" . count($spec['paths']) . " chemin(s)) : $outFile\n";
+            break;
+
+        case 'doc:guide':
+            // ETAPE N.2 : meme generateur que documentation/guide.php - ecrit
+            // une page HTML statique par module/entite sous documentation/guide/.
+            require_once __DIR__ . '/DocGuideGenerator.php';
+            $guideData = dv_build_doc_guide(ROOT);
+            $guideDir = ROOT . 'documentation/guide';
+            if (!is_dir($guideDir))
+                mkdir($guideDir, 0777, true);
+
+            $pageCount = 0;
+            foreach ($guideData['components'] as $component) {
+                foreach ($component['modules'] as $module) {
+                    $modDir = $guideDir . '/' . $component['name'] . '/' . $module['name'];
+                    if (!is_dir($modDir))
+                        mkdir($modDir, 0777, true);
+
+                    foreach ($module['entities'] as $entity) {
+                        $page = dv_render_doc_guide_entity_page($guideData, $entity);
+                        file_put_contents($modDir . '/' . $entity['key'] . '.html', $page);
+                        $pageCount++;
+                    }
+                }
+            }
+            echo $pageCount . " page(s) de guide generee(s) sous documentation/guide/\n";
+            break;
+
         default :
             __Generator::help();
             break;
