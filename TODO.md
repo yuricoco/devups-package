@@ -692,6 +692,52 @@ tous termines et testes.
 - Tests : `tests/Integration/CmsPhase4Test.php`,
   `tests/E2E/CmscontentEditPageTest.php`.
 
+**Securite langue - ETAPE H** : terminee.
+- `dv_valid_lang()`/`dv_lang_file_path()` : validation centrale (format
+  `^[a-z]{2}$` + langue active, defense en profondeur via `realpath()`)
+  utilisee par `local()`, `setlang()`, `lang.php`, `t_lang()` - toute
+  valeur invalide retombe sur `__lang`, jamais un chemin hors de
+  `lang/` ni une erreur 500. Regression (double declaration de classe,
+  bare `require` vs `require_once`) decouverte et corrigee en testant.
+- H.4 : audit du depot pour tout `require`/`include`/`file_get_contents`
+  construit a partir d'une entree utilisateur/BD - deux points reels
+  trouves et corriges (`Dfile::uploadchunk`, code mort ; et
+  `ReportingmodelController::loadContent`/`saveContent`, admin
+  uniquement, `basename()` ajoute par precaution).
+- Tests : `tests/Unit/LangSecurityTest.php`,
+  `tests/E2E/LangSecurityTest.php` (traversee de repertoire, injection
+  `<script>` dans un lien genere).
+
+**Phase 4 (CMS), fin des migrations - ETAPE I** : terminee.
+- Migration CMS completee avec une vraie reprise de donnees
+  (`imagecms`→`cmsresource`, colonnes d'image de `tree_item_image`),
+  comptages avant/apres en commentaire, DROP toujours commentes ;
+  verifiee par un test d'integration qui recree l'ANCIEN schema sur une
+  base dediee et execute le script reel.
+- `DBAL::_createDbal()` (chemin `Model::create()`) utilisait
+  `Dvups_lang::all()` (TOUTES les langues) au lieu du cache des langues
+  ACTIVES attendu depuis l'ETAPE E.7 - corrige et teste.
+
+**Phase 5 (Localisation) - ETAPE J** : terminee.
+- Seul `Country` conserve ; `Continent`/`Department`/`District`/
+  `Region`/`Town` retires entierement (aucune dependance reelle, grep a
+  l'appui) ; traduction de `Country` reparee (flag `dvtranslate`
+  commente par erreur) ; migration DROP ecrite (non executee) ; donnee
+  de reference (`database/seed/countries.php`, `php devups
+  location:seed`, idempotent).
+
+**Phase 7 (Mots de passe) - ETAPE K** : terminee.
+- `password_hash()`/`password_verify()` pour `Dvups_admin` et `User`,
+  migration transparente d'un ancien hash sha1() au prochain login
+  reussi (bug de detection `password_get_info()['algo']` - `null`, pas
+  `0` - decouvert et corrige en testant, cassait toute connexion
+  admin/e2e). "Remember me" : le cookie ne contient plus jamais le mot
+  de passe ni son hash, mais un token aleatoire dont seul le hash est
+  stocke en base, avec expiration, rotation a chaque usage et
+  invalidation a la deconnexion/au changement de mot de passe.
+  `Dvups_admin::updatePassword()` (bug preexistant, methode manquante)
+  corrigee au passage. Aucun agrandissement de colonne necessaire.
+
 ## Migrations a executer manuellement, dans l'ordre
 
 Aucune de ces migrations n'a ete executee par cette session (regle :
@@ -724,6 +770,26 @@ executer dans cet ordre sur chaque environnement concerne :
    desormais supprime du code, plus rien ne lit `dv_image`, mais ce
    DROP reste une suppression de donnees a verifier manuellement avant
    execution, jamais automatique.
+6. `database/migration/2026_11_08_phase5_location_drop.sql` (**DROP**
+   `department`, `district`, `region`, `town`, `continent` -
+   destructeur de donnees ; exporter si des donnees existantes doivent
+   etre conservees, voir commentaire en tete du fichier ; aucune colonne
+   de cle etrangere trouvee ailleurs dans le depot, Phase 5/ETAPE J.3).
+   Apres cette migration (ou directement, Country ne depend pas des
+   tables retirees) : peupler `country` avec
+   `php devups location:seed` (non destructeur, idempotent).
+7. `database/migration/2026_11_08_phase7_password_hash.sql` (**ALTER**
+   `dvups_admin` - ajoute `remember_token_hash`/
+   `remember_token_expires_at`, aucune donnee existante modifiee ni
+   supprimee, Phase 7/ETAPE K.3). Les mots de passe sha1() existants
+   ne sont PAS transformes par cette migration : ils le sont
+   automatiquement, un par un, par le code applicatif au prochain login
+   reussi de chaque compte (voir ETAPE K.1) - rien a executer pour ca.
+
+**Destructrices de donnees (a valider avec precaution)** : #2, #3, #4
+(DROP+CREATE, exporter l'historique si besoin), #5 (DROP final commente,
+a decommenter apres verification manuelle), #6. Toutes les autres (#1,
+#7) sont des ALTER/CREATE additifs, sans perte de donnees.
 
 Sur l'environnement de test (`devups_phpunit`), aucune de ces
 migrations n'est necessaire : le schema est recree automatiquement a
@@ -736,15 +802,19 @@ chaque run par Doctrine SchemaTool a partir des entites
 (ETAPE D : commit `d1f25e3` ; E.1-E.6 : `e5a9863` ; E.7-E.8 : `597cdd6` ;
 F.1 : `696cbc5` ; F.2 : `92af6d2` ; README : `e55cf7c` ; lang:scan +
 plan G : `5f04c6c` ; ETAPE G.1-G.3/G.5 : `368172a` ; ETAPE G.4 :
-`d1a45b6` ; docs G.4 : `606c6d6`) - a la fin de la session :
-**180 tests, 0 echec, 12 "incomplete"** documentes et assumes dans
-`tests/E2E/AdminScreensTest.php::KNOWN_BROKEN` (tous concernent
-`ModuleLocation` (9, "seul Country est conserve"/"traduction a
-reactiver"), `Notificationbroadcasted` (1, entite absente),
-`Dvups_log`/`Emaillog` (2, ecrans lecture seule par design) - aucun ne
-concerne plus le CMS ni ModuleGallery, tous deux entierement traites a
-l'ETAPE G. La baisse de 183 a 180 tests entre G.1-G.3 et G.4 s'explique
-uniquement par la disparition des ecrans `dv-image/list` et
-`dv-image/form` du generateur `AdminScreensTest::screens()`, qui
-derive ses cas de `config/dvups_configurations.php` - `Dv_image` n'y
-figure plus apres la suppression de ModuleGallery.
+`d1a45b6` ; docs G.4 : `606c6d6` ; ETAPE H.1-H.3 : `559f73d` ; H.4 :
+`291590e` ; ETAPE I.1-I.3 : `8deef0b` ; I.4 : `ac2a2c5` ; ETAPE J.1/J.2 :
+`41ae28c` ; J.3/J.4 : `af651ba` ; ETAPE K.1-K.3 : `7e01572`) - a la fin
+de la session : **224 tests, 642 assertions, 0 echec, 3 "incomplete"**
+documentes et assumes dans
+`tests/E2E/AdminScreensTest.php::KNOWN_BROKEN` (`Notificationbroadcasted`,
+entite absente ; `Dvups_log`/`Emaillog`, ecrans lecture seule par
+design) - les 9 entrees `ModuleLocation` ("seul Country est conserve"/
+"traduction a reactiver") de la session precedente ont ete retirees a
+l'ETAPE J (ecrans supprimes ou corriges). La hausse de 180 a 224 tests
+entre la fin de l'ETAPE G et la fin de cette session vient des tests
+ajoutes aux ETAPES H (`LangSecurityTest` unit+e2e), I
+(`CmsMigrationTest`, `DbalTranslatedCreateTest`), J (`LocationSeedTest`)
+et K (`PasswordHashMigrationTest`, `RememberMeTest`), moins la
+disparition de 8 des 9 ecrans Location (`department`/`district`/
+`region`/`town`, list+form) du generateur `AdminScreensTest::screens()`.
