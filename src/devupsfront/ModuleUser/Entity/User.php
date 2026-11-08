@@ -64,7 +64,16 @@ class User extends UserCore implements JsonSerializable, NotificationSerialize
     {
 
         $this->activationcode = sha1($activationcode);
-        $this->activationcode_expired_at = date("Y-m-d H:i:s", strtotime("+3 hours", strtotime(date("Y-m-d H:i:s"))));
+        // ETAPE L.1 : expiration courte et configurable (defaut 15 min,
+        // ACTIVATION_CODE_TTL_MINUTES) - auparavant fixee a +3 heures et,
+        // de toute facon, jamais verifiee nulle part (voir
+        // UserFrontController::checkActivationCode()).
+        $this->activationcode_expired_at = date("Y-m-d H:i:s", strtotime("+" . ACTIVATION_CODE_TTL_MINUTES . " minutes"));
+        // Un nouveau code annule les echecs comptabilises contre l'ancien.
+        if ($this->id) {
+            foreach (['activateaccount', 'reset_password', 'change_telephone'] as $purpose)
+                (new \RateLimiter($purpose . ':' . $this->id, ACTIVATION_CODE_TTL_MINUTES * 60, RATE_LIMIT_CODE_MAX_ATTEMPTS))->clear();
+        }
     }
 
     /**

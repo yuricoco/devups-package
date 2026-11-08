@@ -62,10 +62,18 @@ class UserCore extends \Model implements JsonSerializable
      **/
     public $activationcode;
     /**
-     * @Column(name="activationcode_expired_at", type="date", nullable=true)
+     * ETAPE L.1 : type="datetime", pas "date" - l'expiration (defaut 15
+     * min, ACTIVATION_CODE_TTL_MINUTES) a besoin d'une precision a la
+     * minute, qu'une colonne DATE (sans heure) ne peut pas porter.
+     * @Column(name="activationcode_expired_at", type="datetime", nullable=true)
      * @var string
      **/
     protected $activationcode_expired_at;
+
+    public function getActivationcodeExpiredAt()
+    {
+        return $this->activationcode_expired_at;
+    }
 
     /**
      * @Column(name="last_login", type="datetime"  , nullable=true)
