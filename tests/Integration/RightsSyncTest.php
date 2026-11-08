@@ -38,4 +38,20 @@ final class RightsSyncTest extends DatabaseTestCase
         $row = \Dvups_action::where('entity', 'Dvups_role')->andwhere('action', 'custom_manual')->firstOrNull();
         $this->assertNotNull($row);
     }
+
+    /**
+     * ETAPE P.6 : Documentation/read (acces au Swagger back-office,
+     * route\Admin::apidocsView()) n'a pas d'entite/datacore propre - une
+     * action "virtuelle" (Dvups_action::VIRTUAL_ACTIONS) declaree et
+     * synchronisee comme n'importe quelle autre, pour etre attribuable a
+     * un role.
+     */
+    public function testSyncDeclaresTheDocumentationReadVirtualAction(): void
+    {
+        \Dvups_action::sync();
+
+        $row = \Dvups_action::where('entity', 'Documentation')->andwhere('action', 'read')->firstOrNull();
+        $this->assertNotNull($row);
+        $this->assertTrue((bool)$row->getId());
+    }
 }
