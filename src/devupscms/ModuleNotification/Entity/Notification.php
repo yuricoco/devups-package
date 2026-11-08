@@ -305,6 +305,27 @@ class Notification extends Model implements JsonSerializable
     }
 
     /**
+     * Garde une seule entree par methode depreciee pour toute la duree de
+     * la requete (ETAPE P.5 : "@deprecated + Log::info au premier appel"),
+     * plutot qu'un Log::info a chaque notification envoyee.
+     */
+    private static $loggedDeprecations = [];
+
+    private static function logDeprecatedOnce(string $method, string $replacement): void
+    {
+        if (isset(self::$loggedDeprecations[$method]))
+            return;
+        self::$loggedDeprecations[$method] = true;
+        \Log::info("Notification::{$method}() est depreciee, utiliser {$replacement} - voir TODO.md (ETAPE P.5).");
+    }
+
+    /**
+     * @deprecated ETAPE P.5 : API historique, generique (entite
+     * quelconque, contenu multilingue depuis Notificationtype, SMS/push) -
+     * conservee car toUser()/toAdmin()/toRole() (API simple, un seul
+     * destinataire User|Dvups_admin, contenu via t()) ne couvrent pas ce
+     * cas d'usage ; la migrer aurait perdu SMS/push pour les 2 appelants
+     * restants (UserFrontController::changetelephone(), Push_emailController).
      * @param $entity
      * @param $event
      * @param array $params
@@ -312,6 +333,7 @@ class Notification extends Model implements JsonSerializable
      */
     public static function on($entity, $event, $sendsms = false, $session = "user")
     {
+        self::logDeprecatedOnce('on', 'toUser()/toAdmin()/toRole()');
 
         global $global_config;
         self::$send_sms = $sendsms;
@@ -355,7 +377,7 @@ class Notification extends Model implements JsonSerializable
         if ($push)
             self::$send_push = true;
 
-        self::braodcast($this, $mb, $params, $push);
+        self::broadcast($this, $mb, $params, $push);
 
         return $this;
     }
@@ -547,7 +569,18 @@ class Notification extends Model implements JsonSerializable
         }
     }
 
+    /**
+     * @deprecated ETAPE P.5 : faute de frappe historique - utiliser
+     * broadcast(). Alias conserve (send() et d'anciens appelants externes
+     * possibles) - la logique vit desormais dans broadcast().
+     */
     public static function braodcast($notification, $receivers, $params, $next = null)
+    {
+        self::logDeprecatedOnce('braodcast', 'broadcast()');
+        return self::broadcast($notification, $receivers, $params, $next);
+    }
+
+    public static function broadcast($notification, $receivers, $params, $next = null)
     {
 
         if (!is_array($receivers))
