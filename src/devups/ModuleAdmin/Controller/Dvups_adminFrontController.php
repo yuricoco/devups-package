@@ -25,7 +25,7 @@ class Dvups_adminFrontController extends \Dvups_adminController
         $dvups_admin = $this->hydrateWithJson(new \Dvups_admin(), $rawdata["admin"]);
 
         $password = $dvups_admin->generatePassword();
-        $dvups_admin->setPassword(sha1($password));
+        $dvups_admin->setPassword($password);
         $dvups_admin->setLogin($dvups_admin->generateLogin());
 
         $id = $dvups_admin->__insert();
@@ -83,21 +83,19 @@ class Dvups_adminFrontController extends \Dvups_adminController
     public function connexionAction($login = false, $password = false)
     {
         $login = Request::post('login');
-        $password = sha1(Request::post('password'));
+        $password = Request::post('password');
 
         $user = \Dvups_admin::select()
-            ->where('password', "=", $password)
-            ->andwhere('login', "=", $login)
+            ->where('login', "=", $login)
             ->__getOne();
 
-        if (!$user->getId()) {
+        if (!$user->getId() || !$user->verifyPassword($password)) {
 
             $user = \Dvups_admin::select()
-                ->where('password', "=", $password)
-                ->andwhere('email', "=", $login)
+                ->where('email', "=", $login)
                 ->__getOne();
 
-            if (!$user->getId())
+            if (!$user->getId() || !$user->verifyPassword($password))
                 return array("success" => false,
                     "error" => 'Login et/ou mot de passe incorrecte');
 
@@ -167,7 +165,7 @@ class Dvups_adminFrontController extends \Dvups_adminController
 
         }
         $password = $dvups_admin->generatePassword();
-        $dvups_admin->setPassword(sha1($password));
+        $dvups_admin->setPassword($password);
 //        $dvups_admin->setLogin();
         $dvups_admin->generateLogin($dvups_admin->getName());
 
@@ -190,8 +188,9 @@ class Dvups_adminFrontController extends \Dvups_adminController
 
         $dvups_admin = Dvups_admin::find($id);
 
-        if (sha1($oldpwd) == $dvups_admin->getPassword()) {
-            $dvups_admin->__update("password", sha1($newpwd))->exec();
+        if ($dvups_admin->verifyPassword($oldpwd)) {
+            $dvups_admin->clearRememberToken();
+            $dvups_admin->__update("password", dv_hash_password($newpwd))->exec();
             return array('success' => true, // pour le restservice
                 'detail' => 'Mot de passe mise a jour avec success');
         } else {

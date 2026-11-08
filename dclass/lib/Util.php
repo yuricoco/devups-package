@@ -155,14 +155,39 @@ class Util
         return strtolower($str);
     }
 
-    public static function setcookie($key, $value)
+    public static function setcookie($key, $value, $expireseconds = null)
     {
-        setcookie($key, $value, time() + 365 * 24 * 3600, null, null, false, true); // On écrit un cookie
+        // ETAPE K.3 : Secure si la requete est en HTTPS (jamais force a vrai
+        // en clair, pour ne pas casser le cookie en dev/http local),
+        // SameSite=Lax - cf. l'option "samesite" du tableau d'options
+        // (seule forme qui le permette ; l'ancienne signature positionnelle
+        // de setcookie() n'a pas de parametre SameSite).
+        setcookie($key, $value, [
+            'expires' => time() + ($expireseconds ?? 365 * 24 * 3600),
+            'path' => '/',
+            'secure' => self::isHttps(),
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
     }
 
     public static function clearcookie($key)
     {
-        setcookie($key, null, -1, null, null, false, true);
+        setcookie($key, null, [
+            'expires' => -1,
+            'path' => '/',
+            'secure' => self::isHttps(),
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+    }
+
+    public static function isHttps(): bool
+    {
+        if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            return true;
+        return ($_SERVER['SERVER_PORT'] ?? null) == 443
+            || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? null) === 'https';
     }
 
     public static function dateadd($duration, $period, $from)

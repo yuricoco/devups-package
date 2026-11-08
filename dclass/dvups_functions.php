@@ -270,4 +270,43 @@ function get_string_between($string, $start, $end){
 
 // langt() retiree (Phase 3, Langues) : remplacee par t_lang($cle, $iso, $params)
 // (lang.php), qui lit lang/<iso>.php au lieu de paires fr/en codees en dur.
+
+/**
+ * ETAPE K.1 (Phase 7, Mots de passe) : hash d'un mot de passe EN CLAIR pour
+ * stockage. A utiliser partout ou un mot de passe est defini/modifie
+ * (creation, reset, changement) - plus jamais sha1()/md5() pour un secret.
+ */
+function dv_hash_password(string $password): string
+{
+    return password_hash($password, PASSWORD_DEFAULT);
+}
+
+/**
+ * Verifie un mot de passe EN CLAIR contre un hash stocke en base.
+ *
+ * Accepte aussi l'ancien format sha1() (40 caracteres hexadecimaux) pour
+ * permettre une migration TRANSPARENTE au prochain login reussi, sans
+ * reinitialisation forcee : $upgraded (parametre par reference) est mis a
+ * true si et seulement si le hash fourni est l'ancien format ET que le mot
+ * de passe est correct - l'appelant doit alors remplacer le hash stocke par
+ * dv_hash_password($password) et sauvegarder l'entite (voir
+ * Dvups_admin::verifyPassword()/UserCore::verifyPassword()).
+ */
+function dv_verify_password(string $password, ?string $hash, bool &$upgraded = false): bool
+{
+    $upgraded = false;
+    if ($password === '' || !$hash)
+        return false;
+
+    $info = password_get_info($hash);
+    if ($info['algoName'] !== 'unknown')
+        return password_verify($password, $hash);
+
+    if (preg_match('/^[a-f0-9]{40}$/i', $hash) && hash_equals($hash, sha1($password))) {
+        $upgraded = true;
+        return true;
+    }
+
+    return false;
+}
 // Voir web/views/mails/{invitation,otp,welcome}.blade.php.

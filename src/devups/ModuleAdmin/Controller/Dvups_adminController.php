@@ -21,7 +21,7 @@ class Dvups_adminController extends Controller
 
         $dvups_admin = Dvups_admin::find($id);
         $password = $dvups_admin->generatePassword();
-        $dvups_admin->setPassword(sha1($password));
+        $dvups_admin->setPassword($password);
 //        $dvups_admin->setLogin();
         $dvups_admin->generateLogin();
 
@@ -33,6 +33,15 @@ class Dvups_adminController extends Controller
     public function deconnexionAction()
     {
 
+        // ETAPE K.3 : invalide le token "remember me" cote serveur AVANT de
+        // detruire la session - un cookie vole ne doit plus jamais pouvoir
+        // relancer une session apres une deconnexion explicite.
+        if (isset($_SESSION[ADMIN])) {
+            $current = unserialize($_SESSION[ADMIN]);
+            if ($current instanceof Dvups_admin && $current->getId())
+                Dvups_admin::find($current->getId())->clearRememberToken();
+        }
+
         $_SESSION[ADMIN] = array();
         unset($_SESSION[LANG]);
         unset($_SESSION[ADMIN]);
@@ -43,7 +52,7 @@ class Dvups_adminController extends Controller
         if (isset($_COOKIE[ADMIN])) {
             \DClass\lib\Util::clearcookie(ADMIN);
             \DClass\lib\Util::clearcookie(ADMIN."_login");
-            \DClass\lib\Util::clearcookie(ADMIN."_pwd");
+            \DClass\lib\Util::clearcookie(ADMIN."_remember");
         }
 
         redirect( route('admin/login.php'));
@@ -56,25 +65,29 @@ class Dvups_adminController extends Controller
     static function restartsessionAction()
     {
 
-        if (!isset($_COOKIE[ADMIN]) || !isset($_COOKIE[ADMIN."_login"])  || !isset($_COOKIE[ADMIN."_pwd"]) )
+        if (!isset($_COOKIE[ADMIN]) || !isset($_COOKIE[ADMIN."_login"])  || !isset($_COOKIE[ADMIN."_remember"]) )
             return 0;
 
         if(isset($_SESSION[ADMIN]))
             return 0;
 
-        //$dbal = new DBAL(new User());
-        //$user = $dbal->findOneElementWhereXisY(['user.email', 'user.devupspwd'], [$_COOKIE[USERMAIL], $_COOKIE[USERPASS]]);
+        // ETAPE K.3 : le cookie ne contient plus le hash du mot de passe -
+        // un token aleatoire dont seul le hash (sha256) est compare a celui
+        // stocke en base, avec expiration et rotation a chaque usage.
+        $admin = Dvups_admin::where("this.login", $_COOKIE[ADMIN."_login"])->first();
 
-        $admin = Dvups_admin::where("this.login", $_COOKIE[ADMIN."_login"])
-            ->andwhere('this.password', $_COOKIE[ADMIN."_pwd"])
-            ->first();
-        if ($admin->getId()) {
+        if ($admin->getId() && $admin->verifyRememberToken($_COOKIE[ADMIN."_remember"])) {
 
 //            Dvups_roleController::getNavigationAction($admin);
             $_SESSION[ADMIN] = serialize($admin);
+            $newToken = $admin->issueRememberToken();
+            \DClass\lib\Util::setcookie(ADMIN."_remember", $newToken);
             return 1;
             //header("location: " . __env ."/admin". $url);
         } else {
+            \DClass\lib\Util::clearcookie(ADMIN);
+            \DClass\lib\Util::clearcookie(ADMIN."_login");
+            \DClass\lib\Util::clearcookie(ADMIN."_remember");
             redirect(route("admin/"));
         }
         die;
@@ -87,9 +100,9 @@ class Dvups_adminController extends Controller
         }
         extract($_POST);
 
-        $admin = Dvups_admin::select()->where('login', $login)->andwhere('password', sha1($password))->first();
+        $admin = Dvups_admin::select()->where('login', $login)->first();
 
-        if (!$admin->getId())
+        if (!$admin->getId() || !$admin->verifyPassword($password))
             redirect( __env . "admin/login.php?err=" . 'Login ou mot de passe incorrect.');
 
 //        Dvups_roleController::getNavigationAction($admin);
@@ -104,10 +117,12 @@ class Dvups_adminController extends Controller
         }
 
         if (isset($remember_me)) {
-            //set cookie
+            // ETAPE K.3 : plus jamais le hash du mot de passe en cookie - un
+            // token aleatoire dont seul le hash est stocke en base.
+            $token = $admin->issueRememberToken();
             \DClass\lib\Util::setcookie(ADMIN, 1);
             \DClass\lib\Util::setcookie(ADMIN."_login", $admin->getLogin());
-            \DClass\lib\Util::setcookie(ADMIN."_pwd", $admin->getPassword());
+            \DClass\lib\Util::setcookie(ADMIN."_remember", $token);
         }
 
         //return array('success' => false, "err" => 'Login ou mot de passe incorrect.');
@@ -143,7 +158,7 @@ class Dvups_adminController extends Controller
         }
 
         $password = $dvups_admin->generatePassword();
-        $dvups_admin->setPassword(sha1($password));
+        $dvups_admin->setPassword($password);
         $dvups_admin->setLogin($dvups_admin->generateLogin());
 
         $id = $dvups_admin->__insert();
@@ -271,9 +286,10 @@ class Dvups_adminController extends Controller
         extract($_POST);
         if ($newpwd == $confimnewpwd) {
 
-            if (sha1($currentpwd) == $admin->getPassword()) {
-                $admin->password = sha1($newpwd);
+            if ($admin->verifyPassword($currentpwd)) {
+                $admin->setPassword($newpwd);
                 $admin->firstconnexion = 0;
+                $admin->clearRememberToken();
                 $admin->__update();
 
                 unset($_SESSION[ADMIN]);
@@ -318,8 +334,9 @@ class Dvups_adminController extends Controller
 //        $adminDao = new AdminDAO();
         $dvups_admin = Dvups_admin::find(getadmin()->getId());
         extract($_POST);
-        if (sha1($oldpwd) == $dvups_admin->getPassword()) {
-            $dvups_admin->__update("password", sha1($newpwd));
+        if ($dvups_admin->verifyPassword($oldpwd)) {
+            $dvups_admin->clearRememberToken();
+            $dvups_admin->__update("password", dv_hash_password($newpwd));
             $data = array('success' => true, // pour le restservice
                 'redirect' => Dvups_admin::classpath() . 'dvups-admin/profile?detail=password updated successfully', // pour le web service
                 'detail' => '');

@@ -399,22 +399,25 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
                 ->first();
         } else {
             $user = User::select()
-                ->where('user.password', "=", sha1($password))
-                ->andwhere('user.email', "=", $login)
+                ->where('user.email', "=", $login)
                 ->first();
+            if (!$user->getId() || !$user->verifyPassword($password))
+                $user = new User();
         }
 
         if (!$user->getId()) {
-            $user = User::select()
-                ->where('user.password', "=", sha1($password))
-                ->andwhere('user.phonenumber', "=", $login)
+            $candidate = User::select()
+                ->where('user.phonenumber', "=", $login)
                 ->first();
+            if ($candidate->getId() && $candidate->verifyPassword($password))
+                $user = $candidate;
 
             if (!$user->getId()) {
-                $user = User::select()
-                    ->where('user.password', "=", sha1($password))
-                    ->andwhere('user.username', "=", $login)
+                $candidate = User::select()
+                    ->where('user.username', "=", $login)
                     ->first();
+                if ($candidate->getId() && $candidate->verifyPassword($password))
+                    $user = $candidate;
 
                 if (!$user->getId())
                     return array(
@@ -772,9 +775,9 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
                 'detail' => t("password.notconfirm")
             );
 
-        if (sha1($_POST['currentpassword']) == $user->password) {
+        if ($user->verifyPassword($_POST['currentpassword'])) {
             $user->__update([
-                "password" => sha1($_POST['newpassword'])
+                "password" => dv_hash_password($_POST['newpassword'])
             ]);
             return array(
                 'success' => true,
@@ -839,7 +842,7 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
         $user = User::find(Auth::$user_id);
 
         $password = (Request::post("password"));
-        if ($user->password !== sha1($password))
+        if (!$user->verifyPassword($password))
             return ["success" => false, "detail" => t("Mot de passe incorrect")];
 
         $user->phonecode = Request::post("phonecode");

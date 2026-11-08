@@ -137,14 +137,31 @@ class UserCore extends \Model implements JsonSerializable
         if(!$password)
             return null;
 
-        $this->password = sha1($password);
+        $this->password = dv_hash_password($password);
     }
     public function setResetpassword ($password)
     {
         if(!$password)
             return null;
 
-        $this->password = sha1($password);
+        $this->password = dv_hash_password($password);
+    }
+
+    /**
+     * ETAPE K.1 : verifie un mot de passe EN CLAIR contre le hash stocke.
+     * Accepte encore l'ancien format sha1() et, dans ce cas uniquement,
+     * remplace transparentement le hash stocke par password_hash() (puis
+     * sauvegarde) - aucune reinitialisation forcee pour l'utilisateur.
+     */
+    public function verifyPassword(string $password): bool
+    {
+        $upgraded = false;
+        $ok = dv_verify_password($password, $this->password, $upgraded);
+        if ($ok && $upgraded) {
+            $this->password = dv_hash_password($password);
+            $this->__update();
+        }
+        return $ok;
     }
 
     public function setTelephone($telephone)
@@ -167,7 +184,7 @@ class UserCore extends \Model implements JsonSerializable
     public function setUpdatePassword($pwd)
     {
         if ($pwd)
-            $this->password = (sha1($pwd));
+            $this->password = dv_hash_password($pwd);
     }
 
     public function setCountry_iso($iso_code)
