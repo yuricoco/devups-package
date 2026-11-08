@@ -14,10 +14,13 @@ use PHPUnit\Framework\TestCase;
  * par Doctrine a partir des entites actuelles : cmstext n'y existe
  * plus, le RENAME TABLE du script y echouerait).
  *
- * Les DROP (`imagecms`, `dv_image`) restent commentes dans le fichier
- * (jamais executes, y compris ici) : ce test ne verifie donc que la
- * reprise de donnees (INSERT/UPDATE), pas la suppression des anciennes
- * tables.
+ * Depuis l'ETAPE T, les DROP (`imagecms`, `dv_image`) ne sont plus dans
+ * ce fichier : ils vivent dans la migration suivante,
+ * 2026_11_08_phase4_drop_old_images.php (testee dans
+ * CmsOldImageTablesDropTest), qui verifie elle-meme par comptage que la
+ * reprise ci-dessous est complete avant de supprimer quoi que ce soit.
+ * Ce test-ci ne verifie donc que la reprise de donnees (INSERT/UPDATE),
+ * pas la suppression des anciennes tables.
  */
 final class CmsMigrationTest extends TestCase
 {
@@ -168,10 +171,11 @@ final class CmsMigrationTest extends TestCase
         $apres = (int)$this->pdo->query('SELECT COUNT(*) FROM cmsresource')->fetchColumn();
         $this->assertSame($avant, $apres, 'le comptage avant/apres doit correspondre (aucune ligne perdue ni dupliquee)');
 
-        // imagecms n'est PAS supprimee (DROP reste commente) : la table
-        // d'origine doit encore exister et contenir sa ligne.
+        // imagecms n'est PAS supprimee par CE script (DROP deplace vers
+        // la migration ETAPE T) : la table d'origine doit encore exister
+        // et contenir sa ligne.
         $stillThere = (int)$this->pdo->query('SELECT COUNT(*) FROM imagecms')->fetchColumn();
-        $this->assertSame(1, $stillThere, 'imagecms ne doit pas etre supprimee : le DROP reste commente par securite');
+        $this->assertSame(1, $stillThere, "imagecms ne doit pas etre supprimee par ce script - voir 2026_11_08_phase4_drop_old_images.php");
     }
 
     public function testMigratesTreeItemImageColumnsFromDvImageKeepingTheOriginalUploaddir(): void
@@ -197,9 +201,10 @@ final class CmsMigrationTest extends TestCase
         $apres = (int)$this->pdo->query('SELECT COUNT(*) FROM tree_item_image WHERE image IS NOT NULL')->fetchColumn();
         $this->assertSame($avant, $apres, 'le comptage avant/apres doit correspondre');
 
-        // dv_image n'est PAS supprimee (DROP reste commente).
+        // dv_image n'est PAS supprimee par CE script (DROP deplace vers
+        // la migration ETAPE T).
         $stillThere = (int)$this->pdo->query('SELECT COUNT(*) FROM dv_image')->fetchColumn();
-        $this->assertSame(1, $stillThere, 'dv_image ne doit pas etre supprimee : le DROP reste commente par securite');
+        $this->assertSame(1, $stillThere, "dv_image ne doit pas etre supprimee par ce script - voir 2026_11_08_phase4_drop_old_images.php");
     }
 
     public function testCreatesCmscommentTableReadyToUse(): void

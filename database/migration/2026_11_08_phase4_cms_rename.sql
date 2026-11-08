@@ -20,9 +20,13 @@
 -- jamais force a "cms/"/"treeitem/" (les chemins par defaut utilises
 -- pour les NOUVEAUX uploads par Cmsresource::uploadImage()/
 -- Tree_item_image::uploadImage()) - aucun deplacement de fichier n'est
--- donc necessaire. Seuls les DROP (`imagecms`, `dv_image`) restent
--- commentes : a decommenter a la main, apres avoir verifie les
--- comptages ci-dessous sur l'environnement concerne.
+-- donc necessaire.
+--
+-- ETAPE T : les DROP (`imagecms`, `dv_image`) ne sont PLUS dans ce
+-- fichier - ils sont dans la migration suivante,
+-- 2026_11_08_phase4_drop_old_images.php, qui verifie elle-meme (par
+-- comptage) que la reprise ci-dessous est complete avant de supprimer
+-- quoi que ce soit (echoue sans rien supprimer sinon).
 
 RENAME TABLE cmstext TO cmscontent;
 RENAME TABLE cmstext_lang TO cmscontent_lang;
@@ -55,14 +59,11 @@ INSERT INTO cmsresource (cmscontent_id, reference, name, image, uploaddir, size,
   FROM imagecms ic JOIN dv_image di ON di.id = ic.image_id;
 
 -- Comptage APRES reprise : doit etre IDENTIQUE au comptage "avant" -
--- sinon NE PAS decommenter le DROP ci-dessous (des lignes imagecms
--- n'ont pas trouve leur dv_image correspondant - jointure INNER JOIN
--- ci-dessus, donc silencieusement ignorees plutot qu'en erreur).
+-- sinon des lignes imagecms n'ont pas trouve leur dv_image correspondant
+-- (jointure INNER JOIN ci-dessus, donc silencieusement ignorees plutot
+-- qu'en erreur) ; la migration suivante (ETAPE T) refusera alors de
+-- supprimer `imagecms`.
 -- SELECT COUNT(*) AS apres_cmsresource FROM cmsresource;
-
--- A decommenter UNIQUEMENT une fois les deux comptages ci-dessus
--- verifies egaux :
--- DROP TABLE imagecms;
 
 CREATE TABLE `cmscomment` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -111,19 +112,6 @@ UPDATE tree_item_image ti
       ti.height = di.height;
 
 -- Comptage APRES reprise : doit etre IDENTIQUE au comptage "avant" -
--- sinon NE PAS retirer la colonne image_id ni decommenter le DROP
--- dv_image ci-dessous.
+-- sinon la migration suivante (ETAPE T) refusera de retirer la colonne
+-- image_id et de supprimer `dv_image`.
 -- SELECT COUNT(*) AS apres_tree_item_image_avec_image FROM tree_item_image WHERE image IS NOT NULL;
-
--- A decommenter UNIQUEMENT une fois le comptage ci-dessus verifie egal
--- (le nom de la contrainte FK varie selon l'environnement - a adapter,
--- cf. SHOW CREATE TABLE tree_item_image) :
--- ALTER TABLE tree_item_image DROP FOREIGN KEY <nom_contrainte_image_id>;
--- ALTER TABLE tree_item_image DROP COLUMN image_id;
-
--- A decommenter UNIQUEMENT une fois les DEUX reprises de donnees
--- ci-dessus (imagecms->cmsresource ET tree_item_image.image_id ->
--- colonnes directes) verifiees egales par leurs comptages - plus aucun
--- code ne lit `dv_image` apres l'ETAPE G.4, mais la table peut encore
--- contenir des fichiers references nulle part ailleurs :
--- DROP TABLE dv_image;

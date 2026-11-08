@@ -834,7 +834,10 @@ if (isset($argv[2])) {
             foreach ($result['refused_destructive'] as $file)
                 echo "[REFUSE] " . $file . " - migration destructive non confirmee (--force, ou repondez « oui » a l'invite, hors production).\n";
 
-            if (!$result['ran'] && !$result['refused_destructive'])
+            foreach ($result['failed'] as $entry)
+                echo "[ECHEC] " . $entry['migration'] . " - " . $entry['error'] . "\n";
+
+            if (!$result['ran'] && !$result['refused_destructive'] && !$result['failed'])
                 echo "Aucune migration en attente.\n";
             else
                 echo count($result['ran']) . " migration(s) jouee(s).\n";

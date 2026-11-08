@@ -171,7 +171,7 @@ class MigrationRunner
      * @param array{dir?:string,dry_run?:bool,force?:bool,step?:bool,confirm?:callable} $options
      *        confirm($migration): bool - appele pour une migration destructive hors --force/prod ;
      *        sans callable, une migration destructive non --force est toujours refusee (comportement non-interactif).
-     * @return array{ran:string[],dry_run:array,refused_destructive:string[]}
+     * @return array{ran:string[],dry_run:array,refused_destructive:string[],failed:array}
      */
     public static function run(array $options = []): array
     {
@@ -185,7 +185,7 @@ class MigrationRunner
         // autrement d'un test a l'autre dans le meme run PHPUnit.
         $prod = array_key_exists('prod', $options) ? (bool)$options['prod'] : (defined('__prod') && \__prod);
 
-        $result = ['ran' => [], 'dry_run' => [], 'refused_destructive' => []];
+        $result = ['ran' => [], 'dry_run' => [], 'refused_destructive' => [], 'failed' => []];
 
         $pending = self::pending($dir);
         if (!$pending)
@@ -216,7 +216,17 @@ class MigrationRunner
                 }
             }
 
-            self::executeFile($path, $sql);
+            try {
+                self::executeFile($path, $sql);
+            } catch (\Throwable $e) {
+                // une migration qui se juge elle-meme non sure a l'execution
+                // (ex. phase4_drop_old_images.php, ETAPE T : comptages de
+                // reprise incomplets) doit arreter le lot ici, sans etre
+                // enregistree jouee ni laisser une migration suivante
+                // s'executer sur un etat qu'elle ne prevoyait pas.
+                $result['failed'][] = ['migration' => $file, 'error' => $e->getMessage()];
+                break;
+            }
 
             $usedBatch = $step ? self::nextBatch() : $batch;
             self::recordPlayed($file, $usedBatch);
