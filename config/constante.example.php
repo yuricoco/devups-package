@@ -133,6 +133,16 @@ define('RATE_LIMIT_RESEND_MAX_ATTEMPTS', (int)dv_env('RATE_LIMIT_RESEND_MAX_ATTE
 define('RATE_LIMIT_RESEND_WINDOW_SECONDS', (int)dv_env('RATE_LIMIT_RESEND_WINDOW_SECONDS', 3600));
 
 /**
+ * ETAPE M.3 : Web Push (VAPID) - jamais versionnees, dans .env
+ * uniquement (dclass/devupscms/ModulePushNotification/Entity/Push_subscription.php).
+ * Independant du mecanisme existant (Configuration en base) utilise par
+ * l'ancien flux FCM/mobile, laisse inchange.
+ */
+define('VAPID_PUBLIC_KEY', dv_env('VAPID_PUBLIC_KEY', ''));
+define('VAPID_PRIVATE_KEY', dv_env('VAPID_PRIVATE_KEY', ''));
+define('VAPID_SUBJECT', dv_env('VAPID_SUBJECT', 'mailto:' . dv_env('MAIL_FROM', 'no-reply@example.com')));
+
+/**
  * Langues (lang.php) : LANG_DIR permet de pointer ailleurs que lang/ (la
  * suite de tests utilise un dossier temporaire recree par tests/bootstrap.php
  * pour ne jamais ecrire dans les fichiers versionnes). LANG_COLLECT coupe

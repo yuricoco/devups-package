@@ -198,7 +198,12 @@ class WorkersController extends Controller
 
                     $pusher = Push_subscription::find($worker->queue);
                     $payload = json_decode($worker->payload, true);
-                    $result = $pusher->fcmPushNotification($payload['message'], $payload['data']);
+                    // ETAPE M.3 : Web Push (VAPID) a cote du FCM/Expo existant,
+                    // selon le type d'abonnement - jamais les deux pour le meme.
+                    if ($pusher->subscription_type === 'webpush')
+                        $result = $pusher->sendWebPush($payload['message'], $payload['data'] ?? []);
+                    else
+                        $result = $pusher->fcmPushNotification($payload['message'], $payload['data']);
                     if ($result !== true) {
                         // fcmPushNotification()/expoPushNotification() ecrivent deja
                         // leur propre Emaillog en echec - mais $result n'etait jusque

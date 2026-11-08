@@ -24,7 +24,8 @@
         "firebase/php-jwt": "^6.9",
         "barcode-bakery/barcode-1d": "^7.0",
         "zircote/swagger-php": "^4.11",
-        "google/apiclient": "^2.18"
+        "google/apiclient": "^2.18",
+        "minishlink/web-push": "^10.0"
     },
     "autoload": {
         "classmap": [

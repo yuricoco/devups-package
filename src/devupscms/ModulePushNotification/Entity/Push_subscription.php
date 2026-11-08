@@ -1,16 +1,25 @@
 <?php
 // user \dclass\devups\model\Model;
-//use Minishlink\WebPush\SubscriptionInterface;
+use Minishlink\WebPush\SubscriptionInterface;
+use Minishlink\WebPush\WebPush;
 use Google\Auth\Credentials\ServiceAccountCredentials;
 
 /**
  * @Entity @Table(name="push_subscription")
  * */
-class Push_subscription extends Model implements JsonSerializable //, SubscriptionInterface
+class Push_subscription extends Model implements JsonSerializable, SubscriptionInterface
 
 {
 
     public static $access_token;
+
+    /**
+     * ETAPE M.3 : client Web Push injectable pour les tests (jamais de
+     * veritable appel reseau pendant la suite) - voir sendWebPush().
+     * @var WebPush|null
+     */
+    public static $webPushClient = null;
+
     /**
      * @Id @GeneratedValue @Column(type="integer")
      * @var int
@@ -31,6 +40,15 @@ class Push_subscription extends Model implements JsonSerializable //, Subscripti
      * @var string
      **/
     protected $status;
+    /**
+     * ETAPE M.3 : endpoint du service de push du navigateur
+     * (PushSubscription.endpoint cote client) - indispensable pour un
+     * VRAI envoi Web Push, manquait jusqu'ici (getEndpoint() existait
+     * deja mais lisait une propriete jamais declaree).
+     * @Column(name="endpoint", type="text", nullable=true)
+     * @var string
+     **/
+    protected $endpoint;
     /**
      * @Column(name="public_key",  type="text" , nullable=true )
      * @var string
@@ -85,7 +103,73 @@ class Push_subscription extends Model implements JsonSerializable //, Subscripti
 
     public function getContentEncoding(): ?string
     {
-        return 'aesgcm';
+        // aes128gcm (rfc8291) : encodage standard actuel, contrairement a
+        // aesgcm (obsolete, utilise par d'anciens navigateurs uniquement).
+        return 'aes128gcm';
+    }
+
+    public function setEndpoint($endpoint)
+    {
+        $this->endpoint = $endpoint;
+        return $this;
+    }
+
+    /**
+     * ETAPE M.3 : client Web Push (VAPID), cles dans .env uniquement
+     * (jamais versionnees, jamais en base - independant de
+     * Push_subscriptionFrontController::generateKey()/key(), qui les
+     * stocke dans Configuration pour l'ancien flux FCM/mobile, laisse
+     * tel quel). Retourne null si les cles ne sont pas configurees -
+     * l'appelant doit alors renoncer silencieusement a l'envoi.
+     */
+    public static function webPushClient(): ?WebPush
+    {
+        if (self::$webPushClient)
+            return self::$webPushClient;
+
+        if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY)
+            return null;
+
+        return new WebPush([
+            'VAPID' => [
+                'subject' => VAPID_SUBJECT,
+                'publicKey' => VAPID_PUBLIC_KEY,
+                'privateKey' => VAPID_PRIVATE_KEY,
+            ],
+        ]);
+    }
+
+    /**
+     * Envoie une notification Web Push a CET abonnement. Supprime
+     * automatiquement l'abonnement si le navigateur repond qu'il n'existe
+     * plus (410 Gone - MessageSentReport::isSubscriptionExpired()).
+     * Ne fait rien (retourne false) si subscription_type n'est pas
+     * 'webpush', ou si aucune cle VAPID n'est configuree.
+     */
+    public function sendWebPush(string $message, array $payload = []): bool
+    {
+        if ($this->subscription_type !== 'webpush')
+            return false;
+
+        $client = self::webPushClient();
+        if (!$client)
+            return false;
+
+        $report = $client->sendOneNotification($this, json_encode([
+            'message' => $message,
+            'data' => $payload,
+        ]));
+
+        if ($report->isSubscriptionExpired()) {
+            \Log::info('push_subscription #' . $this->id . ' expiree (410), suppression automatique');
+            $this->__delete();
+            return false;
+        }
+
+        if (!$report->isSuccess())
+            \Log::warning('push_subscription #' . $this->id . ' : envoi web push echoue - ' . $report->getReason());
+
+        return $report->isSuccess();
     }
 
     public function expoPushNotification($message, $payload = [], $icon = null)
