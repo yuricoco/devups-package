@@ -747,20 +747,29 @@ class DBAL extends Database
 
             $id = self::_createAction($table, $objarray, $objectinst);
             $objarray = $keyvalue;
-            $langs = Dvups_lang::all();
-            foreach ($langs as $lang) {
+            // ETAPE I.4 : cache des langues ACTIVES (Dvups_lang::cachedActiveDlangs(),
+            // meme cache que lang.php/dv_valid_lang() - cf. ETAPE H) plutot
+            // que Dvups_lang::all() (une requete SQL a chaque creation d'une
+            // entite traduite). Le cache est un tableau plat iso_code<->id
+            // (iso_code => id, iso_code.'/' => id, id => iso_code) : on ne
+            // retient que les entrees iso_code => id (cle string, qui ne finit
+            // pas par '/').
+            $activeLangs = Dvups_lang::cachedActiveDlangs();
+            foreach ($activeLangs as $iso => $langId) {
+                if (!is_string($iso) || substr($iso, -1) === '/')
+                    continue;
+
                 $keyvalue = [];
                 foreach ($objectinst->dvtranslated_columns as $key) {
                     if (!isset($objarray[$key]))
                         continue;
 
-                    if (isset($objarray[$key][$lang->getIso_code()]))
-                        $keyvalue[$key] = $objarray[$key][$lang->getIso_code()];
+                    if (isset($objarray[$key][$iso]))
+                        $keyvalue[$key] = $objarray[$key][$iso];
                     else
-                        $keyvalue[$key] = $id . "_" . $lang->getIso_code();
-                    // $this->object->{$key} = $objarray[$key][$lang->getIso_code()];
+                        $keyvalue[$key] = $id . "_" . $iso;
                 }
-                $keyvalue["lang_id"] = $lang->getId();
+                $keyvalue["lang_id"] = $langId;
                 $keyvalue[$table . "_id"] = $id;
                 self::_createAction($table . "_lang", $keyvalue, $objectinst);
             }
