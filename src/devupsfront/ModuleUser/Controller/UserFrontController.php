@@ -382,8 +382,12 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
      */
     public function authentification()
     {
-        $login = $_POST['login'];
-        $password = $_POST['password'];
+        // ETAPE V : un login sans "login" (ou "password") levait "Undefined
+        // array key" a chaque tentative malformee - trouve en testant
+        // l'endpoint reel - au lieu de tomber proprement dans le
+        // empty($login) juste en dessous.
+        $login = $_POST['login'] ?? null;
+        $password = $_POST['password'] ?? null;
 
         if (empty($login)) {
             return array(
