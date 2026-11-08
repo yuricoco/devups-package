@@ -85,7 +85,12 @@
                     define('sm_port', '{{sm_port}}');<br>
                     define('sm_smtp', '{{sm_smtp}}');<br>
                     define('sm_username', '{{sm_username}}');<br>
-                    define('sm_password', '{{sm_password}}');<br>
+                    {{-- ETAPE V : ce panneau affiche la configuration SMTP REELLE
+                         (constantes de config/constante.php) en clair a tout
+                         admin connecte - trouve en testant l'ecran reel. Le mot
+                         de passe est masque, le reste (host/port/from/...) n'est
+                         pas sensible et reste affiche pour l'aide integree. --}}
+                    define('sm_password', '********');<br>
                     define('sm_from', '{{sm_from}}');<br>
                     define('sm_name', '{{sm_name}}');<br>
                     define('sm_smtpsecurity', '{{sm_smtpsecurity}}');<br>
