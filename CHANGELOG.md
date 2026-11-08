@@ -1,11 +1,8 @@
 # Changelog
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
-Aucune version n'a encore été taguée sur ce dépôt : cette entrée résume
-l'ensemble du chantier de durcissement/mise à niveau mené en plusieurs
-sessions, avant la première publication.
 
-## [Non publié] - chantier de durcissement (ÉTAPES D à R)
+## [7.0.0] - 2026-11-08 - chantier de durcissement (ÉTAPES D à R)
 
 ### Ajouté
 
@@ -115,8 +112,9 @@ sessions, avant la première publication.
 
 ## Mise à jour depuis la version précédente
 
-Checklist pour un environnement existant (hors base de test, qui est
-toujours recréée automatiquement par `tests/bootstrap.php`) :
+Mise à jour depuis la v6.x. Checklist pour un environnement existant
+(hors base de test, qui est toujours recréée automatiquement par
+`tests/bootstrap.php`) :
 
 1. **Migrations** : exécuter `php devups migrate --dry-run` pour
    revoir le SQL, puis `php devups migrate` (confirmer les migrations

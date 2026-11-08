@@ -1346,20 +1346,20 @@ idempotent.
 
 ### Version proposee (semver) - tag NON cree, en attente de validation
 
-**v1.0.0** - premiere version jamais taguee de ce depot (aucun tag
-existant). Justification : le chantier ETAPES D-Q couvre un
-durcissement de securite complet (mots de passe, jetons, rate
-limiting, IP cliente), un systeme de migrations gere, une
-documentation (API + guide + Swagger) et une CI fonctionnelle - les
-criteres habituels d'une premiere version stable publiable, malgre des
-ruptures de compatibilite internes au depot (listees dans
-`CHANGELOG.md`) qui sont attendues pour un premier tag (rien ne pouvait
-casser une API publique qui n'a jamais ete versionnee). Alternative
-plus prudente si une verification manuelle supplementaire est
-souhaitee avant de s'engager sur un `1.0.0` definitif : **v1.0.0-rc1**,
-promu en `v1.0.0` sans changement de code dès que ce depot aura ete
-teste par **au moins une installation reelle** (hors le dossier vide de
-verification ci-dessus) - a la decision de qui validera le tag.
+**v7.0.0** - le paquet `spacekola/devups` est deja publie sur Packagist
+jusqu'a v6.1.0 (depot `github.com/yuricoco/devups-package`) : la
+version suivante est donc `v7.0.0`, pas un premier tag. Justification
+du bump MAJOR (6.x -> 7.0.0) : le chantier ETAPES D-Q introduit
+plusieurs ruptures de compatibilite reelles pour du code appelant hors
+de ce depot (listees dans `CHANGELOG.md` section "Mise a jour depuis
+la v6.x") - route de reinitialisation de mot de passe changee
+(`/resetpassword/:id` -> `/resetpassword`), classes supprimees
+(`ModuleGallery`/`Dv_image`, `Continent`/`Department`/`District`/
+`Region`/`Town`, `Local_content*`/`Page_mapped`,
+`Notificationbroadcasted`, `Request_history`), renommages CMS
+(`Cmstext`/`Imagecms` -> `Cmscontent`/`Cmsresource`), `langt()`
+supprimee - en plus d'un durcissement de securite complet, d'un
+systeme de migrations gere et d'une CI fonctionnelle.
 
 ## Resume final (ETAPES P a R) et ce qui reste avant publication
 
@@ -1391,13 +1391,10 @@ P, 288 a la fin des ETAPES Q et R) - **0 echec**, les 2 memes
 `tests/E2E/AdminScreensTest.php::KNOWN_BROKEN`).
 
 **Ce qui reste avant publication** :
-- **Le tag git lui-meme** - version proposee `v1.0.0` ci-dessus,
-  volontairement NON cree ("j'attends de valider").
-- Publier `spacekola/devups` sur Packagist (ou configurer un
-  repository prive) pour que `composer create-project spacekola/devups
-  mon-projet` fonctionne tel que documente dans le README sans l'option
-  `--repository` (contournement local documente dans le README en
-  attendant).
+- **Le tag/release git lui-meme** - version proposee `v7.0.0`
+  ci-dessus (le paquet est deja publie sur Packagist jusqu'a v6.1.0,
+  depot `github.com/yuricoco/devups-package`, qui se met a jour via
+  ses releases), volontairement NON cree ("j'attends de valider").
 - Decider du sort des DROP commentes en fin de
   `database/migration/2026_11_08_phase4_cms_rename.sql`
   (`imagecms`/`dv_image`) - suppression de donnees a valider
