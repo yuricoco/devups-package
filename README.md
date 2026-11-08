@@ -182,21 +182,24 @@ Le contenu CMS (anciennement `cmstext`) vit dans `Cmscontent`
 traduit comme avant (`dvtranslated_columns`). Les images d'un contenu
 sont des `Cmsresource` : contrairement à l'ancien `Imagecms` (simple
 table de jointure vers `Dv_image`/`ModuleGallery`), `Cmsresource`
-étend directement `ImageCore` (même modèle que `Dv_image`) et porte
-elle-même le fichier - plus de dépendance à `ModuleGallery` pour le
-contenu CMS. Les commentaires (`Cmscomment`, jamais générés avant
+étend directement `ImageCore` (même modèle que l'ancien `Dv_image`) et
+porte elle-même le fichier - plus de dépendance à `ModuleGallery` pour
+le contenu CMS. Les commentaires (`Cmscomment`, jamais générés avant
 cette session) sont liés à un `Cmscontent` et à un `User`.
 
 La page d'édition admin d'un contenu
 (`/admin/devupscms/ModuleCms/cmscontent/edit?id=`) fonctionne et liste
 ses ressources via `CmsresourceTable`.
 
-`ModuleGallery`/`Dv_image` reste en place : `ModuleTree`
-(`Tree_item`/`Tree_item_image`) en dépend encore directement pour les
-images d'arborescence, indépendamment du CMS - sa suppression est
-documentée comme chantier ouvert dans `TODO.md` (section "Phase 4
-(CMS) - ÉTAPE G", G.4), de même que la migration de données à exécuter
-manuellement (`database/migration/2026_11_08_phase4_cms_rename.sql`).
+`ModuleGallery`/`Dv_image` a été supprimé entièrement : `ModuleTree`
+(`Tree_item_image`, pour les images d'arborescence) étend lui aussi
+désormais `ImageCore` directement, sur le même modèle que
+`Cmsresource` - plus aucune dépendance à `ModuleGallery` dans tout le
+code. La migration de données (renommage CMS + nouvelles colonnes de
+`tree_item_image` + DROP de `imagecms`/`dv_image`, ces deux derniers
+commentés en attendant vérification manuelle) reste à exécuter sur les
+environnements réels (`database/migration/2026_11_08_phase4_cms_rename.sql`),
+voir `TODO.md` section "Phase 4 (CMS) - ÉTAPE G".
 
 ## Sécurité
 

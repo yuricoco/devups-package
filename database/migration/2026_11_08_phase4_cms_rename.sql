@@ -74,6 +74,36 @@ CREATE TABLE `cmscomment` (
 -- ne l'utilisait - voir TODO.md) n'existe sur aucun environnement
 -- connu ; aucun DROP necessaire.
 
--- ModuleGallery (dv_image/imagecms) reste en place pour l'instant :
--- Tree_item_image (ModuleTree) en depend encore directement, voir
--- TODO.md section "G.4 - suppression ModuleGallery (REPORTEE)".
+-- ETAPE G.4 : suppression de ModuleGallery (dv_image/imagecms).
+-- Tree_item_image (ModuleTree) n'a plus de relation `image` (FK vers
+-- dv_image) : il herite directement de ImageCore, comme cmsresource
+-- plus haut - memes colonnes a ajouter ici.
+
+ALTER TABLE tree_item_image
+  ADD COLUMN `reference` varchar(123) DEFAULT NULL AFTER `tree_item_id`,
+  ADD COLUMN `name` varchar(123) DEFAULT NULL AFTER `reference`,
+  ADD COLUMN `description` text AFTER `name`,
+  ADD COLUMN `image` varchar(255) DEFAULT NULL AFTER `description`,
+  ADD COLUMN `uploaddir` varchar(255) DEFAULT NULL AFTER `image`,
+  ADD COLUMN `size` float DEFAULT NULL AFTER `uploaddir`,
+  ADD COLUMN `width` float DEFAULT NULL AFTER `size`,
+  ADD COLUMN `height` float DEFAULT NULL AFTER `width`;
+
+-- A decommenter UNE FOIS la migration de donnees image_id->colonnes
+-- directes verifiee (meme precaution qu'imagecms->cmsresource plus
+-- haut : comparer le nombre de lignes tree_item_image.image_id NOT
+-- NULL avant/apres) :
+-- UPDATE tree_item_image ti
+--   JOIN dv_image di ON di.id = ti.image_id
+--   SET ti.reference = di.reference, ti.name = di.name, ti.image = di.image,
+--       ti.uploaddir = di.uploaddir, ti.size = di.size, ti.width = di.width,
+--       ti.height = di.height;
+-- ALTER TABLE tree_item_image DROP FOREIGN KEY <nom_contrainte_image_id>;
+-- ALTER TABLE tree_item_image DROP COLUMN image_id;
+
+-- A decommenter UNIQUEMENT une fois les deux migrations de donnees
+-- ci-dessus (imagecms->cmsresource ET tree_item_image.image_id ->
+-- colonnes directes) verifiees et executees - plus aucun code ne lit
+-- `dv_image` apres l'ETAPE G.4, mais la table peut encore contenir des
+-- fichiers references nulle part ailleurs :
+-- DROP TABLE dv_image;

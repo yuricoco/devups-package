@@ -88,40 +88,56 @@ dans le fichier ; le script ne fait PAS cette migration de donnees
 automatiquement, elle reste a verifier et executer a la main avant de
 decommenter le DROP de `imagecms`).
 
-### G.4 - suppression ModuleGallery - REPORTEE (depend de G.2/G.3)
+### G.4 - suppression ModuleGallery - FAIT
 
 - Phase : G.4
-- Avis argumente : `ModuleGallery`/`Dv_image` doit etre supprime une
-  fois `cmsresource` operationnel, pas conserve en lecture seule -
-  meme logique que les suppressions deja faites cette session (module
-  remplace, pas un historique a garder).
-- Ce qui reste : recuperer dans `cmsresource` toutes les lignes
-  `dv_image` referencees via `imagecms` ET via `tree_item.folder`/
-  `tree_item_image` (ModuleTree a aussi une dependance directe a
-  `Dv_image`, y compris un asset CSS charge via `Dv_image::classpath()`
-  dans `ModuleTree.php`) avant tout DROP ; corriger
-  `Tree_item_image` (entite/Form/Datatable) pour ne plus referencer
-  `Dv_image` ; ecrire la migration `DROP TABLE imagecms, dv_image`
-  (non executee) ; retirer `ModuleGallery` des deux fichiers de config
-  et supprimer `src/devupscms/ModuleGallery/` ; retirer de
-  `KNOWN_BROKEN` les entrees `imagecms/form` et `tree-item-image/form`
-  ("depend de ModuleGallery") une fois corrige.
-- Pourquoi non fait : `cmsresource` existe desormais (G.2/G.3 faits),
-  mais la dependance supplementaire de `ModuleTree`/`Tree_item_image` a
-  `Dv_image` (non mentionnee dans la demande initiale, decouverte
-  pendant la revue - images d'arborescence, pas des images de contenu
-  CMS) reste entiere : supprimer `ModuleGallery` casserait cette
-  fonctionnalite tant qu'elle n'est pas repointee ou volontairement
-  abandonnee, ce qui est une decision produit (perdre la gestion
-  d'image des items d'arbre, ou la reconstruire ailleurs) plutot qu'une
-  simple execution mecanique - laissee pour une prochaine session.
-- Fichiers concernes : `src/devupscms/ModuleGallery/**`,
-  `src/devups/ModuleTree/Entity/Tree_item_image.php`,
-  `src/devups/ModuleTree/Form/Tree_item_imageForm.php`,
-  `src/devups/ModuleTree/Datatable/Tree_item_imageTable.php`,
-  `src/devups/ModuleTree/ModuleTree.php`,
+- Decision prise : plutot que de repointer `Tree_item_image` vers
+  `Dv_image`/`cmsresource` (couplage inutile entre arborescence et
+  CMS), `Tree_item_image` herite desormais directement de `ImageCore`
+  - exactement le meme choix architectural que `Cmsresource` en
+  G.2/G.3. Il gere donc lui-meme `uploadImage()`/`__delete()` (3
+  variantes de resize `100_`/`150_`/`50_`, repris de l'ancien
+  `Dv_imageForm`) sans aucune dependance a `Dv_image`.
+- Bug latent decouvert et corrige au passage : `Tree_item_imageForm`
+  appelait `$this->tree_item_image->getDv_image()->getId()`, une
+  methode qui n'a jamais existe sur `Tree_item_image` (seule
+  `getImage()` existait) - aurait leve une erreur fatale si ce chemin
+  avait ete exerce. Remplace par un champ `image` direct
+  (`FORMTYPE_FILE`), qui a aussi permis de retirer l'entree
+  `KNOWN_BROKEN` `tree-item-image/form`.
+- Autre dependance corrigee : `ModuleTree::dashboardView()` chargeait
+  un asset CSS via `Dv_image::classpath('Resource/css/image.css')` ;
+  le fichier a ete copie dans
+  `src/devupscms/ModuleTree/Resource/css/image.css` et le chargement
+  repointe vers `Tree::classpath(...)`.
+- `src/devupscms/ModuleGallery/` supprime entierement (`git rm -rf`) ;
+  `ModuleGallery` retire de `config/module_configurations.php`,
+  `Dv_image` retire de `config/dvups_configurations.php`, le require
+  correspondant retire de `src/requires.php`.
+- Verifie par grep sur tout le depot qu'aucune reference a
+  `Dv_image`/`ModuleGallery` ne subsiste hors documentation/migration.
+- Suite verte apres ce changement : 180 tests, 531 assertions, 0
+  echec, 12 incomplete (les memes ecrans Location/Notification/
+  Emaillog deja connus comme casses - aucune regression nouvelle ;
+  la baisse de 183 a 180 tests s'explique par la disparition des 2
+  ecrans `dv-image/list` et `dv-image/form` du generateur de scenarios
+  `AdminScreensTest::screens()`, qui derive ses cas directement de
+  `config/dvups_configurations.php`, puisque `Dv_image` n'y figure
+  plus).
+- Migration : la table `dv_image` n'est PAS encore droppee (le DROP
+  reste a ecrire/commenter dans une migration separee une fois
+  confirme qu'aucune donnee de production n'y est encore referencee -
+  voir section migrations ci-dessous).
+- Fichiers concernes : `src/devupscms/ModuleGallery/**` (supprime),
+  `src/devupscms/ModuleTree/Entity/Tree_item_image.php`,
+  `src/devupscms/ModuleTree/Form/Tree_item_imageForm.php`,
+  `src/devupscms/ModuleTree/Datatable/Tree_item_imageTable.php`,
+  `src/devupscms/ModuleTree/ModuleTree.php`,
+  `src/devupscms/ModuleTree/Resource/css/image.css` (nouveau),
+  `src/devupscms/ModuleTree/Resource/js/tree_item_imageForm.js`,
+  `src/devupscms/ModuleTree/Core/tree_item_imageCore.json`,
   `config/dvups_configurations.php`, `config/module_configurations.php`,
-  `tests/E2E/AdminScreensTest.php` (KNOWN_BROKEN).
+  `src/requires.php`, `tests/E2E/AdminScreensTest.php` (KNOWN_BROKEN).
 
 ### G.5 - generateur/datacores/tests e2e
 
@@ -137,9 +153,9 @@ decommenter le DROP de `imagecms`).
   reference residuelle a `Cmstext`/`Imagecms` ne subsiste dans le code
   (`Tree_item`/`Tree_itemController`/`TreeController` corriges au
   passage, voir G.1/G.2/G.3 ci-dessus).
-- Ce qui reste : l'entree `KNOWN_BROKEN` `tree-item-image/form`
-  ("depend de ModuleGallery") ne pourra etre retiree qu'une fois G.4
-  traite.
+- Fait (a l'issue de G.4) : l'entree `KNOWN_BROKEN`
+  `tree-item-image/form` ("depend de ModuleGallery") a ete retiree -
+  l'ecran passe desormais sans erreur.
 - Fichiers concernes : `tests/E2E/AdminScreensTest.php`.
 
 ---
@@ -309,8 +325,9 @@ session (6/6 points). Non retouchee ici.
   destinataire chaine simple, et la separation stricte Log::/Emaillog
   dans les deux sens.
 
-**Phase 4 (CMS) - ETAPE G** : plan (G.1), renommages (G.2/G.3) et
-nettoyage generateur/tests (G.5) termines et testes.
+**Phase 4 (CMS) - ETAPE G** : plan (G.1), renommages (G.2/G.3),
+suppression de ModuleGallery (G.4) et nettoyage generateur/tests (G.5)
+tous termines et testes.
 - `Cmstext`/`Imagecms` renommes et reconstruits en `Cmscontent`/
   `Cmsresource` (ce dernier etend directement `ImageCore`, plus de
   jointure vers `Dv_image`) ; `Cmscomment` genere proprement (datacore
@@ -318,16 +335,15 @@ nettoyage generateur/tests (G.5) termines et testes.
   du CMS corrigee et fonctionnelle (`cmscontent/edit?id=`) ; bug latent
   de regression (`Dvups_lang::readCache()` retiree a l'ETAPE E.7,
   jamais appele avant cette session) decouvert et corrige en testant.
-- Migration ecrite (non executee,
+- `ModuleGallery`/`Dv_image` supprimes entierement : `Tree_item_image`
+  (seule dependance restante, pour les images d'arborescence) herite
+  desormais directement de `ImageCore`, meme pattern que
+  `Cmsresource` ; un bug latent (`getDv_image()` inexistant dans
+  `Tree_item_imageForm`) decouvert et corrige au passage.
+- Migrations ecrites (non executees,
   `database/migration/2026_11_08_phase4_cms_rename.sql`).
 - Tests : `tests/Integration/CmsPhase4Test.php`,
   `tests/E2E/CmscontentEditPageTest.php`.
-- Reporte (G.4, voir raisons detaillees plus haut) : suppression de
-  `ModuleGallery`/`Dv_image` - bloquee par une dependance directe de
-  `ModuleTree`/`Tree_item_image` decouverte pendant la revue (images
-  d'arborescence, hors perimetre de la demande initiale), dont le
-  traitement est une decision produit (repointer ou abandonner cette
-  fonctionnalite) plutot qu'une execution mecanique.
 
 ## Migrations a executer manuellement, dans l'ordre
 
@@ -348,12 +364,17 @@ executer dans cet ordre sur chaque environnement concerne :
    Phase 2/ETAPE F.2).
 5. `database/migration/2026_11_08_phase4_cms_rename.sql` (RENAME
    `cmstext`/`cmstext_lang` -> `cmscontent`/`cmscontent_lang`, creation
-   `cmsresource`/`cmscomment`, Phase 4/ETAPE G.2/G.3) - **la table
-   `cmsresource` reste vide apres ce script** : peupler depuis
+   `cmsresource`/`cmscomment`, ALTER `tree_item_image` pour les
+   nouvelles colonnes `ImageCore`, Phase 4/ETAPE G.2/G.3/G.4) - **la
+   table `cmsresource` reste vide apres ce script** : peupler depuis
    `imagecms JOIN dv_image` et verifier le nombre de lignes migre avant
    de decommenter le `DROP TABLE imagecms` en fin de fichier (voir son
-   commentaire detaille). `dv_image`/`ModuleGallery` ne doivent PAS
-   etre supprimes (ModuleTree en depend encore, voir G.4).
+   commentaire detaille). De meme, **peupler les nouvelles colonnes de
+   `tree_item_image` depuis `dv_image`** (jointure existante) avant de
+   decommenter le `DROP TABLE dv_image` egalement present (commente) en
+   fin de fichier - `ModuleGallery` etant desormais supprime du code,
+   ce DROP n'est plus bloque par ModuleTree, mais reste une suppression
+   de donnees a verifier manuellement avant execution.
 
 Sur l'environnement de test (`devups_phpunit`), aucune de ces
 migrations n'est necessaire : le schema est recree automatiquement a
