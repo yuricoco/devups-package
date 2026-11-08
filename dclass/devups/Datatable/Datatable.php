@@ -1179,8 +1179,17 @@ EOF;
                     $attrs = explode(".", $attrib);
                     if (count($attrs) > 1) {
                         $tr[] = "<td>" . $entity->{$attrs[0]}->{$attrs[1]} . "</td>"; // maybe we can activate debug mode so that when we are on this we show a notice!
-                    } else //if (($entity->{$attrib}))
-                        $tr[] = "<td>" . $entity->{$attrib} . "</td>";
+                    } else { //if (($entity->{$attrib}))
+                        $attribcontent = $entity->{$attrib};
+                        // ETAPE V : une colonne sans "value" explicite qui pointe vers une
+                        // colonne traduite (dvtranslated_columns) contient un tableau par
+                        // langue - meme resolution que pour le chemin get<Value>() plus bas
+                        // (sinon : "Array to string conversion" + cellule affichant "Array").
+                        if (is_array($attribcontent) && $this->entity->dvtranslate) {
+                            $attribcontent = $attribcontent[$iso_code] ?? '';
+                        }
+                        $tr[] = "<td>" . $attribcontent . "</td>";
+                    }
 
                     continue;
 
