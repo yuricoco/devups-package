@@ -73,6 +73,55 @@ abstract class HttpTestCase extends TestCase
         return $this->request('GET', $path, null, $headers);
     }
 
+    /**
+     * ETAPE L.2 : plusieurs requetes GET envoyees EN PARALLELE (curl_multi),
+     * avec le MEME cookie jar (lu seul - CURLOPT_COOKIEFILE sans
+     * CURLOPT_COOKIEJAR, pour ne pas faire courir N ecritures concurrentes
+     * sur le meme fichier). Sert a verifier qu'une rafale de requetes sur
+     * une session deja active ne provoque jamais de deconnexion.
+     *
+     * @return array<int, array{status:int, body:string}>
+     */
+    protected function parallelGet(array $paths): array
+    {
+        $mh = curl_multi_init();
+        $handles = [];
+        foreach ($paths as $i => $path) {
+            $ch = curl_init(HttpServer::baseUrl() . '/' . ltrim($path, '/'));
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HEADER => true,
+                CURLOPT_FOLLOWLOCATION => false,
+                CURLOPT_COOKIEFILE => self::$cookieJar,
+                CURLOPT_TIMEOUT => 30,
+            ]);
+            curl_multi_add_handle($mh, $ch);
+            $handles[$i] = $ch;
+        }
+
+        $running = null;
+        do {
+            curl_multi_exec($mh, $running);
+            if ($running > 0)
+                curl_multi_select($mh);
+        } while ($running > 0);
+
+        $results = [];
+        foreach ($handles as $i => $ch) {
+            $raw = curl_multi_getcontent($ch);
+            $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+            $results[$i] = [
+                'status' => curl_getinfo($ch, CURLINFO_RESPONSE_CODE),
+                'body' => substr((string)$raw, $headerSize),
+            ];
+            curl_multi_remove_handle($mh, $ch);
+            curl_close($ch);
+        }
+        curl_multi_close($mh);
+
+        return $results;
+    }
+
     protected function json(array $response): array
     {
         $data = json_decode($response['body'], true);
