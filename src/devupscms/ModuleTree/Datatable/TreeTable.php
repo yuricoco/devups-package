@@ -12,10 +12,14 @@ class TreeTable extends Datatable{
     }
 
     public static function init(\Tree $tree = null){
-    
-        $dt = new TreeTable();
+
+        // ETAPE V : meme bug que CountryTable avant son correctif - passer
+        // "new TreeTable()" SANS entite laisse Datatable::__construct()
+        // sans $this->class ($this->qbcustom non plus), donc le bouton
+        // "Creer" genere "onclick=...('')" -> GET /admin/api/null/form.
+        $dt = new TreeTable($tree ?: new Tree());
         $dt->entity = $tree;
-        
+
         return $dt;
     }
 
