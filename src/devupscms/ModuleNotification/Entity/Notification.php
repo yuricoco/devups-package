@@ -212,6 +212,99 @@ class Notification extends Model implements JsonSerializable
     }
 
     /**
+     * ETAPE M.2 : API simple, par-dessus on()/braodcast() (jamais en
+     * remplacement - SMS/push groupes restent sur l'API existante). Le
+     * gabarit du message vient de t($type) (lang/xx.php), pas du champ
+     * `content` par-langue de Notificationtype (specifique a
+     * on()/braodcast()) - Notificationtype est quand meme cree/retrouve
+     * par sa cle ($type), pour rester filtrable (cloche, liste admin).
+     */
+    private static function resolveType(string $type, string $session): \Notificationtype
+    {
+        $found = \Notificationtype::where(['_key' => $type, 'session' => $session])->firstOrNull();
+        if ($found && $found->getId())
+            return $found;
+
+        // meme gabarit de creation que on() plus haut : une entree par
+        // langue active (le contenu reel vient de t($type), pas de ce
+        // champ - voir render() - mais le laisser vide casserait le
+        // mecanisme de traduction dvtranslate de Notificationtype).
+        $content = [];
+        foreach (\Dvups_lang::allrows() as $lang)
+            $content[$lang->iso_code] = $type;
+
+        $id = \Notificationtype::create([
+            '_key' => $type,
+            'session' => $session,
+            'entity' => 'notification',
+            'content' => $content,
+        ]);
+        return \Notificationtype::find($id);
+    }
+
+    private static function render(string $type, array $params): string
+    {
+        // t() substitue deja les :placeholders de $params.
+        return t($type, $params);
+    }
+
+    /**
+     * Cree et enregistre une notification pour UN utilisateur. $type est
+     * la cle de traduction (lang/xx.php) ET la cle de Notificationtype
+     * (filtrage). $params remplace les :placeholders du gabarit traduit.
+     */
+    public static function toUser($user, string $type, array $params = []): self
+    {
+        if (!($user instanceof \User))
+            $user = \User::find($user);
+
+        $notification = new self();
+        $notification->notificationtype = self::resolveType($type, 'user');
+        $notification->setEntity('notification');
+        $notification->setEntityid($user->getId());
+        $notification->status = -1; // ping - voir le contrat documente sur $status plus haut
+        $notification->user_id = $user->getId();
+        $notification->setContent(self::render($type, $params));
+        $notification->__insert();
+
+        return $notification;
+    }
+
+    /**
+     * Meme chose, pour UN administrateur.
+     */
+    public static function toAdmin($admin, string $type, array $params = []): self
+    {
+        if (!($admin instanceof \Dvups_admin))
+            $admin = \Dvups_admin::find($admin);
+
+        $notification = new self();
+        $notification->notificationtype = self::resolveType($type, 'admin');
+        $notification->setEntity('notification');
+        $notification->setEntityid($admin->getId());
+        $notification->status = -1;
+        $notification->admin_id = $admin->getId();
+        $notification->setContent(self::render($type, $params));
+        $notification->__insert();
+
+        return $notification;
+    }
+
+    /**
+     * Meme chose, pour TOUS les administrateurs d'un role (dvups_role_id).
+     * @return self[]
+     */
+    public static function toRole($roleId, string $type, array $params = []): array
+    {
+        $admins = \Dvups_admin::where('dvups_role_id', $roleId instanceof \Dvups_role ? $roleId->getId() : $roleId)->get();
+
+        $sent = [];
+        foreach ($admins as $admin)
+            $sent[] = self::toAdmin($admin, $type, $params);
+        return $sent;
+    }
+
+    /**
      * @param $entity
      * @param $event
      * @param array $params
