@@ -3,10 +3,10 @@
 -- l'entite, comme Dv_image, au lieu d'une table de jointure vers
 -- dv_image) - voir TODO.md section "Phase 4 (CMS)".
 --
--- A executer MANUELLEMENT sur chaque environnement concerne, APRES
--- avoir verifie le mapping de donnees (aucune perte de contenu CMS
--- reel) :
---   mysql -u <user> -p <dbname> < database/migration/2026_11_08_phase4_cms_rename.sql
+-- A executer via la commande de migration, APRES avoir verifie le
+-- mapping de donnees (aucune perte de contenu CMS reel) :
+--   php devups migrate
+--   (ou, pour revue avant execution : php devups migrate --dry-run)
 --
 -- Sur l'environnement de test (devups_phpunit), aucune execution
 -- necessaire : le schema est recree automatiquement a partir des

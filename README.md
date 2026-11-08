@@ -260,8 +260,9 @@ code. La migration de données (renommage CMS, reprise des données
 - avec comptage avant/après en commentaire -, puis DROP de
 `imagecms`/`dv_image`, ces deux derniers commentés en attendant
 vérification manuelle) reste à exécuter sur les environnements réels
-(`database/migration/2026_11_08_phase4_cms_rename.sql`), voir `TODO.md`
-sections "Phase 4 (CMS) - ÉTAPE G" et "ÉTAPE I".
+(`database/migration/2026_11_08_phase4_cms_rename.sql`, via
+`php devups migrate` - voir section "Migrations" ci-dessous), voir
+`TODO.md` sections "Phase 4 (CMS) - ÉTAPE G" et "ÉTAPE I".
 
 ## Localisation (Phase 5)
 
@@ -280,8 +281,10 @@ php devups location:seed
 
 La migration qui `DROP` les tables retirées
 (`database/migration/2026_11_08_phase5_location_drop.sql`) reste à
-exécuter manuellement sur les environnements réels - voir `TODO.md`
-section "Phase 5 (Localisation) - ÉTAPE J".
+exécuter sur les environnements réels via `php devups migrate` (c'est
+une migration destructive : confirmation requise, voir section
+"Migrations" ci-dessous) - voir `TODO.md` section
+"Phase 5 (Localisation) - ÉTAPE J".
 
 ## Sécurité
 
@@ -304,6 +307,53 @@ section "Phase 5 (Localisation) - ÉTAPE J".
   seul le hash est stocké en base, avec expiration, rotation à chaque
   usage et invalidation à la déconnexion ou au changement de mot de
   passe. Voir `TODO.md` section "Phase 7 (Mots de passe) - ÉTAPE K".
+
+## Migrations (ÉTAPE Q)
+
+`database/migration/*.sql` (ou `.php`, voir plus bas) ne s'exécute plus
+à la main (`mysql -u ... -p ... < fichier`) : `php devups migrate` rejoue,
+dans l'ordre du nom de fichier, les migrations non encore jouées sur la
+base courante, et les enregistre (nom, lot, date) dans la table
+`dvups_migration`.
+
+```
+php devups migrate              # joue les migrations en attente
+php devups migrate --dry-run    # affiche le SQL sans l'executer
+php devups migrate --step       # un lot distinct par migration (au lieu d'un seul lot pour tout le batch)
+php devups migrate --force      # saute la confirmation d'une migration destructive
+php devups migrate:status       # liste les migrations jouees et en attente
+```
+
+Une migration contenant `DROP`, `TRUNCATE` ou `DELETE` est marquée
+**destructive** : elle demande une confirmation explicite (taper `oui`
+à l'invite, ou relancer avec `--force`) avant d'être jouée. En
+production (`APP_PROD=true`), seul `--force` passe - jamais la
+confirmation interactive.
+
+Format des fichiers : SQL brut (comme avant), ou PHP si plus pratique -
+le fichier doit `return` un objet avec une méthode `up(PDO $pdo)` :
+
+```php
+<?php
+return new class {
+    public function up(\PDO $pdo) {
+        $pdo->exec("ALTER TABLE ...");
+    }
+};
+```
+
+Une installation neuve (`php devups install`) construit déjà le schéma
+complet depuis les entités actuelles (Doctrine `orm:schema:create`) :
+les migrations existantes au moment de l'installation sont donc
+marquées jouées sans être ré-exécutées (elles seraient redondantes avec
+le schéma déjà créé). Seule une base **existante**, antérieure à cette
+fonctionnalité ou à une migration donnée, doit vraiment la jouer via
+`php devups migrate`.
+
+Logique dans `dclass/devups/Migration/MigrationRunner.php` (testée dans
+`tests/Integration/MigrationRunnerTest.php` : ordre, idempotence,
+dry-run, refus d'une migration destructive, `--force`, `--step`,
+migration PHP, `migrate:status`, marquage de base de départ).
 
 ## Documentation
 

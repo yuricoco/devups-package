@@ -3,9 +3,10 @@
 -- n'etait utilise par rien d'autre) est retire - les traductions vivent
 -- desormais dans des fichiers lang/<iso2>.php (voir lang.php, README.md).
 --
--- A executer MANUELLEMENT sur chaque environnement concerne (jamais par un
--- script automatise) :
---   mysql -u <user> -p <dbname> < database/migration/2026_11_08_drop_local_content.sql
+-- A executer via la commande de migration (jamais par un script mysql
+-- manuel) :
+--   php devups migrate
+--   (ou, pour revue avant execution : php devups migrate --dry-run)
 --
 -- Sur l'environnement de test (devups_phpunit), le schema est recree
 -- automatiquement a chaque run par Doctrine SchemaTool a partir des

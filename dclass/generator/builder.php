@@ -696,6 +696,18 @@ if (isset($argv[2])) {
 
             Dvups_lang::cacheData();
 
+            // ETAPE Q.4 : une installation neuve construit deja le schema
+            // COMPLET depuis les entites actuelles (orm:schema:create
+            // ci-dessus) - les fichiers de database/migration/ existants
+            // sont donc marques joues sans etre executes (les rejouer
+            // produirait des erreurs SQL, colonnes/tables deja presentes).
+            // Seule une base EXISTANTE (anterieure a cette installation)
+            // doit vraiment les executer, via `php devups migrate`.
+            if (!__prod) {
+                $baselined = \dclass\devups\Migration\MigrationRunner::markAllAsBaseline();
+                echo "\n > " . $baselined . " migration(s) existante(s) marquee(s) comme base de depart (deja incluses dans le schema cree ci-dessus).\n";
+            }
+
             echo "\n\n > Set the master admin.\n\nData master admin initialized with success.\ncredential\nlogin: dv_admin\npassword: admin
             \nYour project is ready to use. Do your best :)
             \n>php devups serve";
@@ -774,6 +786,71 @@ if (isset($argv[2])) {
                 echo basename($file) . " : " . count($missing) . " cle(s) non traduite(s)\n";
                 foreach ($missing as $cle)
                     echo "  - " . $cle . "\n";
+            }
+            break;
+
+        case 'migrate':
+            // ETAPE Q.1/Q.2 : rejoue dans l'ordre les fichiers de
+            // database/migration/ non encore enregistres dans
+            // dvups_migration (MigrationRunner). --dry-run affiche le SQL
+            // sans l'executer ; --step attribue un lot distinct a chaque
+            // migration (au lieu d'un seul lot pour tout le batch) ;
+            // --force saute la confirmation d'une migration destructive
+            // (DROP/TRUNCATE/DELETE) - en production (__prod), seul
+            // --force passe, jamais la confirmation interactive "oui".
+            $dryRun = in_array('--dry-run', $argv, true);
+            $force = in_array('--force', $argv, true);
+            $step = in_array('--step', $argv, true);
+
+            $confirm = function ($migration) {
+                echo "\n[ATTENTION] '" . $migration . "' contient une instruction destructive (DROP/TRUNCATE/DELETE).\n";
+                echo "Tapez « oui » pour confirmer son execution (ou relancez avec --force) : ";
+                $answer = trim((string)fgets(STDIN));
+                return strtolower($answer) === 'oui';
+            };
+
+            $result = \dclass\devups\Migration\MigrationRunner::run([
+                'dry_run' => $dryRun,
+                'force' => $force,
+                'step' => $step,
+                'confirm' => $confirm,
+            ]);
+
+            if ($dryRun) {
+                if (!$result['dry_run']) {
+                    echo "Aucune migration en attente.\n";
+                    break;
+                }
+                foreach ($result['dry_run'] as $entry) {
+                    echo "-- " . $entry['migration'] . ($entry['destructive'] ? " (DESTRUCTIVE)" : "") . " --\n";
+                    echo ($entry['sql'] ?? "(migration PHP - SQL non affichable en dry-run)") . "\n\n";
+                }
+                break;
+            }
+
+            foreach ($result['ran'] as $file)
+                echo "[OK] " . $file . "\n";
+
+            foreach ($result['refused_destructive'] as $file)
+                echo "[REFUSE] " . $file . " - migration destructive non confirmee (--force, ou repondez « oui » a l'invite, hors production).\n";
+
+            if (!$result['ran'] && !$result['refused_destructive'])
+                echo "Aucune migration en attente.\n";
+            else
+                echo count($result['ran']) . " migration(s) jouee(s).\n";
+            break;
+
+        case 'migrate:status':
+            $rows = \dclass\devups\Migration\MigrationRunner::status();
+            if (!$rows) {
+                echo "Aucun fichier de migration trouve dans database/migration/.\n";
+                break;
+            }
+            foreach ($rows as $row) {
+                $state = $row['played']
+                    ? ("jouee (lot " . $row['batch'] . ", " . $row['executed_at'] . ")")
+                    : "en attente";
+                echo $row['migration'] . " : " . $state . "\n";
             }
             break;
 

@@ -1069,11 +1069,18 @@ tous termines et testes.
   ambigu, liste exhaustive plus haut) ; aucune cle ajoutee/retiree,
   uniquement des valeurs corrigees.
 
-## Migrations a executer manuellement, dans l'ordre
+## Migrations - dans l'ordre
 
-Aucune de ces migrations n'a ete executee par cette session (regle :
-jamais de DROP ni de suppression de donnees hors base de test). A
-executer dans cet ordre sur chaque environnement concerne :
+Aucune de ces migrations n'a ete executee par cette session hors de la
+base de test (regle : jamais de DROP ni de suppression de donnees hors
+base de test). Depuis l'ETAPE Q, ne plus les executer a la main
+(`mysql -u ... < fichier`) : utiliser `php devups migrate` (rejoue
+dans l'ordre les migrations non encore enregistrees dans
+`dvups_migration`, voir README.md section "Migrations (ETAPE Q)") -
+`php devups migrate:status` liste ce qui est joue/en attente,
+`php devups migrate --dry-run` affiche le SQL sans l'executer. L'ordre
+ci-dessous est celui que `migrate` applique (tri alphabetique des noms
+de fichiers) :
 
 1. `database/migration/2026_11_07_dvups_log_schema.sql` (nouveau
    schema `dvups_log`, Phase 2/ETAPE D).
@@ -1125,16 +1132,26 @@ executer dans cet ordre sur chaque environnement concerne :
    (**ALTER** `push_subscription` - ajoute la colonne `endpoint`
    (URL du service de push), NULL pour les abonnements existants
    jusqu'a leur prochain renouvellement cote client. Phase 6/ETAPE M.3).
+10. `database/migration/2026_11_08_phase9_reset_password_token.sql`
+    (**ALTER** `user` - ajoute `reset_token_hash`/
+    `reset_token_expired_at`, additif, aucune donnee supprimee ni
+    modifiee. ETAPE P.1).
 
-**Destructrices de donnees (a valider avec precaution)** : #2, #3, #4
-(DROP+CREATE, exporter l'historique si besoin), #5 (DROP final commente,
-a decommenter apres verification manuelle), #6. Toutes les autres (#1,
-#7, #8, #9) sont des ALTER/CREATE additifs, sans perte de donnees.
+**Destructrices de donnees (a valider avec precaution, confirmation
+`php devups migrate` requise - `DROP`/`TRUNCATE`/`DELETE` detectes
+automatiquement)** : #2, #3, #4 (DROP+CREATE, exporter l'historique si
+besoin), #5 (DROP final commente, a decommenter apres verification
+manuelle), #6. Toutes les autres (#1, #7, #8, #9, #10) sont des
+ALTER/CREATE additifs, sans perte de donnees.
 
 Sur l'environnement de test (`devups_phpunit`), aucune de ces
 migrations n'est necessaire : le schema est recree automatiquement a
 chaque run par Doctrine SchemaTool a partir des entites
-(`tests/bootstrap.php`).
+(`tests/bootstrap.php`). Sur une **installation neuve**
+(`php devups install`), ces 10 fichiers sont marques joues (lot 0) sans
+etre executes - le schema qu'ils decrivent est deja construit en entier
+depuis les entites actuelles (voir README.md section
+"Migrations (ETAPE Q)").
 
 ## Etat des tests
 
@@ -1185,3 +1202,96 @@ est a jour. Items laisses ouverts, tous documentes a leur section :
 droit `Documentation` dedie pour `can()` (ETAPE N.3, actuellement
 reserve au role `admin`) ; items de traduction ambigus et bug de scan
 pre-existant sur une cle tronquee (ETAPE O, section ci-dessus).
+
+## ETAPE P (Corrections)
+
+Les 7 points demandes sont FAITS, chacun teste et committe
+individuellement :
+
+1. Reinitialisation de mot de passe : jeton dedie (`random_bytes(32)`
+   base64url, seul `hash('sha256', $token)` stocke,
+   `RESET_PASSWORD_TOKEN_TTL_MINUTES` - defaut 30 min -, usage unique,
+   invalide par une nouvelle demande ou au changement de mot de passe) ;
+   lien e-mail sans code court ni `u_id` ; reponse identique que le
+   compte existe ou non. Migration additive
+   (`database/migration/2026_11_08_phase9_reset_password_token.sql`).
+   Commit `9aa5bdd`.
+2. `Country::current()`/`ip_info()` : `Util::getIp()` (inexistante) ->
+   `Util::get_IP_address()`. Scanner reflection-based (scratchpad, non
+   committe) sur tout le depot : 4 autres appels casses trouves et
+   corriges (`StatusForm::render()` x2, `Dvups_adminController::renderForm()`,
+   `Dvups_roleController::renderDetail()`, `CmscontentForm::render()` x2) -
+   plus 2 bugs latents decouverts en ecrivant les tests de regression
+   (`TableTemplateRender::templateTableRowDetail()` double-indexait son
+   argument - cassait `_show` de TOUTE entite admin ; `Dvups_role` sans
+   `getAlias()`). phpstan niveau 0 ajoute (`composer phpstan`), beaucoup
+   de faux positifs documentes dans `phpstan.neon.dist`. Commit `e3cc0de`.
+3. IP client : `Util::get_IP_address()` durci en place (meme nom/signature,
+   8 appelants inchanges) - ne fait confiance a `X-Forwarded-For` que si
+   `REMOTE_ADDR` est dans `TRUSTED_PROXIES` (`.env`, vide par defaut).
+   Commit `6669e15`.
+4. Push : code mort retire (`pushNotificaiton()`, `cloudMessagingPush()`,
+   `fcmPushNotification()`, `testPushNotif()`, references a
+   `subscription_id`). Commit `7eb1167`.
+5. Notifications : `on()`/`braodcast()` deviennent des alias depreciees
+   (`@deprecated` + `Log::info()` au premier appel) de `toUser()`/
+   `toAdmin()`/`toRole()` et `broadcast()` (faute corrigee, alias garde) -
+   `on()` NON migre volontairement : couvre des cas (entite arbitraire,
+   SMS, session) que `toUser()`/`toAdmin()`/`toRole()` ne couvrent pas,
+   migrer aurait ete une regression silencieuse. Commit `0d5be44`.
+6. `Documentation/read` : action "virtuelle" (`Dvups_action::VIRTUAL_ACTIONS`,
+   synchronisee par `rights:sync` comme n'importe quelle action
+   d'entite) plutot qu'un entite/datacore fictif - l'acces a `/admin/apidocs`
+   est desormais attribuable a un role non maitre. Commit `eb1c605`.
+7. Langues : cle tronquee `Aucun élément pour l\'` retiree de
+   `lang/en.php`/`lang/fr.php` ; tokenizer de `lang:scan` verifie
+   correctement l'apostrophe echappee (test de regression). Commit
+   `ccc4236`.
+
+`composer test` reste vert a chaque commit (261 -> 276 tests au fil des
+7 sous-etapes, 0 echec, les 2 memes "incomplete" deja documentees).
+
+## ETAPE Q (Systeme de migrations)
+
+FAIT. `php devups migrate`/`migrate:status` (logique dans
+`dclass/devups/Migration/MigrationRunner.php`, cases CLI dans
+`dclass/generator/builder.php`) remplacent l'execution manuelle
+`mysql -u ... < fichier` - voir README.md section
+"Migrations (ETAPE Q)" pour l'usage complet (`--dry-run`, `--step`,
+`--force`, detection destructive DROP/TRUNCATE/DELETE avec confirmation
+ou refus en production, support `.sql` et `.php` (`up(PDO $pdo)`)).
+
+Suivi dans une nouvelle table `dvups_migration` (nom, lot, date) -
+nouvelle entite Doctrine `\Dvups_migration` (`dclass/extends/`, comme
+`Dvups_config_item.php`) : creee automatiquement sur une installation
+neuve (`orm:schema:create`, deja execute par `php devups install`) ;
+`MigrationRunner::ensureMigrationsTableExists()` la cree (SQL brut,
+`CREATE TABLE IF NOT EXISTS`) au premier usage sur une base existante,
+pour le cas poule-et-oeuf (la table de suivi ne peut pas etre sa propre
+premiere migration suivie).
+
+Les 10 migrations listees dans la section "Migrations" ci-dessus sont
+la base de depart : `php devups install` les marque jouees (lot 0) sans
+les executer juste apres avoir construit le schema complet depuis les
+entites actuelles ; une base EXISTANTE (anterieure a cette
+fonctionnalite) doit vraiment les jouer via `php devups migrate`.
+Interpretation deliberee : plutot qu'une liste figee de 9/10 noms de
+fichiers codee en dur (qui deviendrait fausse au prochain fichier
+ajoute), `install` marque TOUT ce qui est present dans
+`database/migration/` au moment de l'installation - toujours correct,
+puisqu'une installation neuve construit de toute facon le schema
+*actuel* complet, migrations ou non.
+
+Tests : `tests/Integration/MigrationRunnerTest.php` (12 tests, base de
+test dediee, repertoire de migrations temporaire - jamais les vrais
+fichiers de `database/migration/`) : ordre, idempotence, dry-run, refus
+d'une migration destructive sans confirmation, `--force`, callback de
+confirmation interactif, refus en production meme avec confirmation,
+execution en production avec `--force`, `--step` (lot distinct par
+migration), migration `.php`, `migrate:status`, `markAllAsBaseline()`
+idempotent.
+
+`composer test` reste vert (288 tests, 0 echec, les 2 memes
+"incomplete" documentees).
+
+## ETAPE R (Version publiable) - EN COURS
