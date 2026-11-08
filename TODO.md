@@ -500,6 +500,91 @@ decommenter le DROP de `imagecms`).
 
 ---
 
+## Durcissement - ETAPE L
+
+### L.1 - RateLimiter, expiration des codes, verrouillage login : FAIT
+
+- Phase : L.1
+- `dclass/devups/RateLimiter.php` (nouveau) : limiteur generique
+  (cle, fenetre, max), cache fichier `cache/ratelimit/<sha1(cle)>.json`
+  (meme pattern que `cache/rights/`/`cache/lang/active.php`).
+- Applique, par compte ET par IP : connexion admin (HTML et JSON),
+  connexion user, verification/renvoi des codes a 6 (ou 5, cf. L.4)
+  chiffres (activation, reinitialisation de mot de passe). 429 neutre
+  en cas de depassement.
+- `User::activationcode_expired_at` : etait mis a jour (+3h) mais
+  JAMAIS lu nulle part - desormais verifie par
+  `UserFrontController::checkActivationCode()`, TTL configurable
+  (`ACTIVATION_CODE_TTL_MINUTES`, defaut 15 min). Colonne retypee
+  `date` -> `datetime` (une date seule ne peut pas porter une
+  expiration a la minute) - migration ecrite, non executee (voir
+  "Migrations a executer manuellement").
+- Regression corrigee en cours de route : `\DClass\lib\Util::getIp()`
+  n'existe pas (seul `get_IP_address()` existe, sans parametre) -
+  provoquait un 500 sur CHAQUE connexion admin/user et faisait
+  echouer 63 tests e2e en cascade. `src/devupscms/ModuleLocation/Entity/Country.php`
+  appelle elle aussi `Util::getIp()` (avec des parametres qu'aucune
+  methode de `Util` n'accepte) - bug preexistant, hors perimetre de
+  cette etape, signale ici pour memoire.
+- Tests : `tests/Unit/RateLimiterTest.php` (6 tests). Suite complete
+  verte.
+
+### L.2 - rotation du "remember me" seulement a la restauration : FAIT (deja le cas)
+
+- Phase : L.2
+- `Dvups_adminController::restartsessionAction()` (ETAPE K.3) retourne
+  deja immediatement si `$_SESSION[ADMIN]` est deja presente, AVANT
+  toute verification/rotation du token - aucun code de production a
+  changer.
+- Test ajoute : `tests/E2E/RememberMeConcurrencyTest.php` - 3 requetes
+  paralleles (`HttpTestCase::parallelGet()`, curl_multi) sur une
+  session deja active ne provoquent jamais de deconnexion.
+
+### L.3 - dv_valid_lang() dans defaultLang()/Route() : FAIT
+
+- Phase : L.3
+- Point deja signale (section H.4) et deliberement laisse pour plus
+  tard : `Dvups_lang::defaultLang()` et
+  `Request::Route()` (`dclass/devups/Http/Request.php`) interrogeaient
+  `iso_code` avec la valeur brute de `?lang`. Desormais valides par
+  `dv_valid_lang()`, comme le reste de la Phase H.
+
+### L.4 - lien de reinitialisation de mot de passe : PAS DE JETON SEPARE, note ici
+
+- Phase : L.4
+- Il n'existe PAS de lien de reinitialisation base sur un jeton
+  aleatoire separe, hashe en base, a usage unique. Le seul "lien"
+  existant est `activation_link` dans
+  `UserFrontController::initialiseUserParam()` :
+  `route('login') . '?vld=' . $activationcode . '&u_id=' . $user->getId()`,
+  ou `$activationcode` est le MEME code court (5 chiffres en prod,
+  `'12345'` hors prod) envoye par email et verifie par
+  `checkActivationCode()` (ETAPE L.1) - deja a usage limite (compteur
+  d'echecs + IP, ETAPE L.1) et a expiration courte
+  (`ACTIVATION_CODE_TTL_MINUTES`), et jamais stocke en clair (seul son
+  `sha1()` est persiste).
+- Reste neanmoins deux ecarts par rapport a un jeton de
+  reinitialisation ideal :
+  1. le code (5-6 chiffres) a un espace de valeurs bien plus petit
+     qu'un jeton aleatoire (128+ bits) - le compteur d'echecs
+     (ETAPE L.1) attenue fortement un brute-force en ligne, mais
+     reste moins robuste par construction qu'un jeton long ;
+  2. le code apparait en clair dans l'URL `activation_link` - risque
+     de fuite par les journaux serveur, l'historique du navigateur,
+     ou un pre-chargement de lien par un client mail.
+- Recommandation pour une prochaine session (hors perimetre d'un
+  simple durcissement) : remplacer ce lien par un jeton aleatoire
+  dedie (type `random_bytes(32)` encode en base64url), stocke hache
+  (`hash('sha256', ...)`) dans une colonne/entite separee avec
+  expiration et usage unique, distinct du code a 6 chiffres envoye
+  par SMS/affiche a l'ecran - les deux canaux (lien email, code
+  SMS/app) n'ont pas besoin de partager le meme secret.
+- Fichier concerne :
+  `src/devupsfront/ModuleUser/Controller/UserFrontController.php`
+  (`initialiseUserParam()`).
+
+---
+
 ## Traductions non encore faites (lang:missing, en.php)
 
 `php devups lang:missing` (execute sur le vrai dossier `lang/`, pas sur

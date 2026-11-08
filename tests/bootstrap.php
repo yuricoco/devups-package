@@ -69,6 +69,14 @@ if (dv_test_needs_db()) {
     // des ids de langue qui ne correspondent plus a cette run.
     foreach (glob(__DIR__ . '/../cache/lang/*.php') as $staleCache)
         unlink($staleCache);
+    // ETAPE L.1 : cache/ratelimit/ (RateLimiter) est indexe par des cles
+    // qui incluent souvent un id d'utilisateur/compte - memes ids
+    // reutilises par la base qui repart de zero a chaque run, sans que les
+    // compteurs d'echecs d'une run precedente aient de sens pour la run en
+    // cours (et pourraient faire echouer a tort des tests sur la limite,
+    // comme `UserActivationTest::testResendRegeneratesTheStoredHash`).
+    foreach (glob(__DIR__ . '/../cache/ratelimit/*.json') as $staleCache)
+        unlink($staleCache);
 }
 
 // noyau + EntityManager + modules. Les deprecations emises a la compilation
