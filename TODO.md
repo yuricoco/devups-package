@@ -386,8 +386,16 @@ chaque run par Doctrine SchemaTool a partir des entites
 `composer test` verifie vert a chaque commit de cette session
 (ETAPE D : commit `d1f25e3` ; E.1-E.6 : `e5a9863` ; E.7-E.8 : `597cdd6` ;
 F.1 : `696cbc5` ; F.2 : `92af6d2` ; README : `e55cf7c` ; lang:scan +
-plan G : `5f04c6c` ; ETAPE G.1-G.3/G.5 : voir commit suivant) - a la
-fin de la session : **183 tests, 0 echec, 13 "incomplete"** documentes
-et assumes dans `tests/E2E/AdminScreensTest.php::KNOWN_BROKEN` (2 de
-moins qu'avant l'ETAPE G : `imagecms/form` et `comment/form` sont
-devenus `cmsresource/form`/`cmscomment/form`, desormais fonctionnels).
+plan G : `5f04c6c` ; ETAPE G.1-G.3/G.5 : `368172a` ; ETAPE G.4 :
+`d1a45b6` ; docs G.4 : `606c6d6`) - a la fin de la session :
+**180 tests, 0 echec, 12 "incomplete"** documentes et assumes dans
+`tests/E2E/AdminScreensTest.php::KNOWN_BROKEN` (tous concernent
+`ModuleLocation` (9, "seul Country est conserve"/"traduction a
+reactiver"), `Notificationbroadcasted` (1, entite absente),
+`Dvups_log`/`Emaillog` (2, ecrans lecture seule par design) - aucun ne
+concerne plus le CMS ni ModuleGallery, tous deux entierement traites a
+l'ETAPE G. La baisse de 183 a 180 tests entre G.1-G.3 et G.4 s'explique
+uniquement par la disparition des ecrans `dv-image/list` et
+`dv-image/form` du generateur `AdminScreensTest::screens()`, qui
+derive ses cas de `config/dvups_configurations.php` - `Dv_image` n'y
+figure plus apres la suppression de ModuleGallery.
