@@ -16,6 +16,7 @@
 /build/
 /database/*
 !/database/migration/
+!/database/seed/
 /*.log
 error_log
 

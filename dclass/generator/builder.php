@@ -756,6 +756,12 @@ if (isset($argv[2])) {
             }
             break;
 
+        case 'location:seed':
+            $result = Country::seed();
+            echo $result['total'] . " pays references (" . $result['created'] . " cree(s), "
+                . $result['updated'] . " mis a jour).\n";
+            break;
+
         case 'lang:missing':
             $keys = dv_lang_scan_keys();
             foreach (glob(LANG_DIR . '*.php') ?: [] as $file) {
