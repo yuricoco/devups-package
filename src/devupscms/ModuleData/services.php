@@ -19,15 +19,13 @@ $statusCtrl = new StatusController();
 switch (R::get('path')) {
 
     case 'status._new':
-        StatusForm::render(R::get("id"));
-        //g::json_encode($statusCtrl->formView());
+        g::json_encode($statusCtrl->formView());
         break;
     case 'status.create':
         g::json_encode($statusCtrl->createAction());
         break;
     case 'status.form':
-        StatusForm::render(R::get("id"));
-        //g::json_encode($statusCtrl->formView(R::get("id")));
+        g::json_encode($statusCtrl->formView(R::get("id")));
         break;
     case 'status._clonerow':
         g::json_encode($statusCtrl->cloneAction(R::get("id")));

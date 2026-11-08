@@ -23,13 +23,13 @@ $cmsresourceCtrl = new CmsresourceController();
 switch (R::get('path')) {
 
     case 'cmscontent._new':
-        CmscontentForm::render();
+        g::json_encode($cmscontentCtrl->formView());
         break;
     case 'cmscontent.create':
         g::json_encode($cmscontentCtrl->createAction());
         break;
     case 'cmscontent.form':
-        CmscontentForm::render(R::get("id"));
+        g::json_encode($cmscontentCtrl->formView(R::get("id")));
         break;
     case 'cmscontent/update':
         g::json_encode($cmscontentCtrl->updateAction(R::get("id")));

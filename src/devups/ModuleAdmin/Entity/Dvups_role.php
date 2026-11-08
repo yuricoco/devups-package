@@ -61,6 +61,17 @@ class Dvups_role extends Model implements JsonSerializable
         return $this->name;
     }
 
+    /**
+     * ETAPE P.2 : manquait - $alias est protected sans accesseur, alors
+     * que Dvups_roleTable::builddetailtable() en a besoin (appel
+     * 'get' . ucfirst('alias') construit dynamiquement par
+     * Datatable::getTableEntityBody()).
+     */
+    public function getAlias()
+    {
+        return $this->alias;
+    }
+
     public function setId($id)
     {
         $this->id = $id;

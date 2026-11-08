@@ -165,7 +165,7 @@ class Country extends \Model implements JsonSerializable
 
     public static function current()
     {
-        $ip = \DClass\lib\Util::getIp();
+        $ip = \DClass\lib\Util::get_IP_address();
         if (!isset($_SESSION["client_ip"])) {
             $_SESSION["client_ip"] = $ip;
         }
@@ -190,7 +190,7 @@ class Country extends \Model implements JsonSerializable
         $output = NULL;
 
         if (!$ip)
-            $ip = \DClass\lib\Util::getIp($ip, $deep_detect);
+            $ip = \DClass\lib\Util::get_IP_address();
 
         $purpose = str_replace(array("name", "\n", "\t", " ", "-", "_"), NULL, strtolower(trim($purpose)));
         $support = array("country", "countrycode", "state", "region", "city", "location", "address");

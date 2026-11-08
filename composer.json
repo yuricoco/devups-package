@@ -38,7 +38,8 @@
     },
     "require-dev": {
         "symfony/var-dumper": "^5.4",
-        "phpunit/phpunit": "^10.5"
+        "phpunit/phpunit": "^10.5",
+        "phpstan/phpstan": "^1.10"
     },
     "config": {
         "allow-plugins": {
@@ -60,6 +61,7 @@
         "test": "phpunit",
         "test:unit": "phpunit --testsuite unit",
         "test:integration": "phpunit --testsuite integration",
-        "test:e2e": "phpunit --testsuite e2e"
+        "test:e2e": "phpunit --testsuite e2e",
+        "phpstan": "phpstan analyse"
     }
 }

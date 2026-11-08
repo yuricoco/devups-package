@@ -150,8 +150,18 @@ EOF;
         return $html;
     }
 
-    public static function templateTableRowDetail($valuetd, $td){
-        return '<tr ><td> ' . $valuetd["label"] . ' </td><td>' . $td . '</td></tr>';
+    /**
+     * ETAPE P.2 : $label est deja la chaine extraite (voir l'unique appel,
+     * Datatable::getTableEntityBody() -> self::templateTableRowDetail(
+     * $valuetd["label"], $td)) - PHP 7 masquait silencieusement le bug
+     * ($valuetd["label"]["label"] degradait en "premier caractere d'une
+     * chaine"), PHP 8 le leve en TypeError ("Cannot access offset of type
+     * string on string"), ce qui cassait l'affichage detail (_show) de
+     * TOUTE entite passant par ce chemin (jamais exerce par un test avant
+     * LegacyServicesFormEndpointsTest::testDvupsRoleShowDoesNotFatal()).
+     */
+    public static function templateTableRowDetail($label, $td){
+        return '<tr ><td> ' . $label . ' </td><td>' . $td . '</td></tr>';
     }
 
 }
