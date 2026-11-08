@@ -28,6 +28,66 @@ Toute la configuration propre à une installation (base, URLs, SMTP, JWT, FCM,
 Google...) vit dans `.env`. `config/constante.example.php` lit ces valeurs avec
 `dv_env()` ; les variables d'environnement du serveur sont prioritaires sur le fichier.
 
+## Premier module
+
+Un module est décrit entièrement par des fichiers *datacore* (JSON) avant
+toute génération de code ; le CLI `devups` ne fait que lire ces fichiers
+et produire entités/contrôleurs/formulaires/tables à partir d'eux - il ne
+les crée pas. Exemple minimal, un module `ModuleExemple` avec une entité
+`Produit` dans le composant `devups` :
+
+```bash
+mkdir -p src/devups/ModuleExemple/Core
+```
+
+`src/devups/ModuleExemple/moduleexempleCore.json` (métadonnées du module) :
+
+```json
+{
+  "id": 90,
+  "name": "ModuleExemple",
+  "label": "Exemple",
+  "icon": "fas fa-box",
+  "project": "admin",
+  "nbent": 1,
+  "listentity": []
+}
+```
+
+`src/devups/ModuleExemple/Core/ProduitCore.json` (une entité, un champ
+`nom` obligatoire) - voir `src/devups/ModuleLog/Core/Dvups_logCore.json`
+pour un exemple avec plusieurs types de champs (`string`, `integer`,
+`datetime`, `text`) et `nullable` (`"not"` / `"default"`) :
+
+```json
+{
+  "id": 9090,
+  "name": "produit",
+  "module": { "id": 90 },
+  "ref": null,
+  "attribut": {
+    "1": { "name": "nom", "visibility": "", "datatype": "string", "size": "255", "nullable": "not", "formtype": "text" }
+  },
+  "relation": []
+}
+```
+
+Puis génération du code et branchement du module (CRUD, index, services,
+dépendances, ressources) :
+
+```bash
+php devups core:g:module devups\ModuleExemple
+php devups core:g:moduleendless devups\ModuleExemple
+php devups rights:sync          # ajoute les actions create/read/update/delete/export/import de Produit à dvups_action
+```
+
+Déclarer ensuite le module dans `config/module_configurations.php` et
+`config/dvups_configurations.php` (même structure que les entrées
+`ModuleLog`/`Dvups_log` déjà présentes) pour qu'il apparaisse dans le
+menu du back-office et dans les écrans générés (`admin/devups/ModuleExemple/produit/list`).
+`php devups dvups_:update` donne à l'admin maître les droits sur le
+nouveau module.
+
 ## Organisation
 
 | Dossier | Rôle |
@@ -247,6 +307,24 @@ section "Phase 5 (Localisation) - ÉTAPE J".
 
 ## Documentation
 
-- API (OpenAPI / Swagger) : `/documentation/`
-- Guide développeur généré depuis les datacores : `/documentation/guide.php`
+- API (OpenAPI / Swagger), routes front (JWT) uniquement, sans authentification : `/documentation/`
+- Guide développeur interactif généré depuis les datacores : `/documentation/guide.php`
+  (`?format=json` pour le JSON brut)
+- `php devups api:doc` écrit un instantané `openapi.json` à la racine du
+  projet (routes front uniquement, même contenu que `/documentation/`) -
+  utile pour un outillage externe (CI, client généré) ; non versionné
+  (`.gitignore`), à régénérer à la demande.
+- `php devups doc:guide` écrit une page HTML statique par module/entité
+  sous `documentation/guide/<composant>/<module>/<entité>.html` ; non
+  versionné, à régénérer à la demande.
+- Swagger UI back-office (`/admin/apidocs`), protégée par
+  `can('read', 'Documentation')` (role `admin` uniquement, tant qu'aucun
+  droit dédié n'est créé) : inclut EN PLUS les routes admin (session,
+  tag "Admin – session") à côté des routes front (JWT), générées depuis
+  `config/dvups_configurations.php` sur le même calcul de chemin que
+  `tests/E2E/AdminScreensTest.php::screens()`.
+- Logique de génération partagée (parsing statique des annotations
+  Devups et des datacores, aucune classe PHP chargée) :
+  `dclass/generator/OpenApiGenerator.php` et
+  `dclass/generator/DocGuideGenerator.php`.
 - Site : https://devups.spacekola.com
