@@ -156,6 +156,13 @@ define('VAPID_PRIVATE_KEY', dv_env('VAPID_PRIVATE_KEY', ''));
 define('VAPID_SUBJECT', dv_env('VAPID_SUBJECT', 'mailto:' . dv_env('MAIL_FROM', 'no-reply@example.com')));
 
 /**
+ * Geolocalisation (Util::getTimezone(), ipgeolocation.io - optionnel) :
+ * jamais codee en dur dans le code, vide par defaut (getTimezone()
+ * retombe alors sur 'UTC' sans appel HTTP).
+ */
+define('IPGEOLOCATION_API_KEY', dv_env('IPGEOLOCATION_API_KEY', ''));
+
+/**
  * Langues (lang.php) : LANG_DIR permet de pointer ailleurs que lang/ (la
  * suite de tests utilise un dossier temporaire recree par tests/bootstrap.php
  * pour ne jamais ecrire dans les fichiers versionnes). LANG_COLLECT coupe

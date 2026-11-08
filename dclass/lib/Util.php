@@ -538,12 +538,11 @@ class Util
     }
     public static function getTimezone()
     {
+        if (!IPGEOLOCATION_API_KEY)
+            return 'UTC';
 
-        $adresseIP = $_SERVER['REMOTE_ADDR']; // Remplacez par l'adresse IP de l'utilisateur '104.26.3.192'; //
-        $apiKey = "8f67b514f5b0437882f3dff272373e2d"; // Remplacez par votre clé d'API réelle
-        // 8f67b514f5b0437882f3dff272373e2d
-
-        $url = "https://api.ipgeolocation.io/timezone?apiKey=$apiKey&ip=$adresseIP";
+        $adresseIP = $_SERVER['REMOTE_ADDR'];
+        $url = "https://api.ipgeolocation.io/timezone?apiKey=" . IPGEOLOCATION_API_KEY . "&ip=$adresseIP";
 
         $response = file_get_contents($url);
         $data = json_decode($response, true);
