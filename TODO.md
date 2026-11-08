@@ -774,6 +774,122 @@ n'a ete reecrite dans le code (regle respectee).
 
 ---
 
+## Phase 8 (Documentation) - ETAPE N
+
+Constat de depart : `documentation/api.php` (OpenAPI 3) et
+`documentation/guide.php` (guide developpeur) existaient deja,
+FONCTIONNELS, generes par parsing statique des annotations Devups et
+des datacores (aucune classe PHP chargee) - confirmes servant du 200 en
+e2e avant toute modification. Decision (au lieu de reecrire) : extraire
+leur logique dans des fonctions partagees pour les reutiliser depuis de
+nouvelles commandes CLI, en verifiant l'absence de regression par
+diff byte-a-byte de la sortie live avant/apres (`/tmp/api-before.json`
+38239 octets, `/tmp/guide-before.json` 116725 octets - identiques apres
+refactor).
+
+- **N.1** : `dclass/generator/OpenApiGenerator.php`
+  (`dv_build_openapi_spec(string $root, bool $includeAdmin = false)`) -
+  extrait de `documentation/api.php`, qui se limite desormais a
+  `require` + `echo json_encode(...)`. `php devups api:doc` ecrit un
+  instantane `openapi.json` a la racine (non versionne, meme logique
+  que `/build/`).
+- **N.2** : `dclass/generator/DocGuideGenerator.php`
+  (`dv_build_doc_guide()` + `dv_render_doc_guide_entity_page()`) -
+  extrait de `documentation/guide.php` (JSON ET UI interactive
+  inchanges, verifies identiques). `php devups doc:guide` ecrit une
+  page HTML statique par module/entite sous
+  `documentation/guide/<composant>/<module>/<entite>.html` (non
+  versionne).
+- **N.3** : Swagger UI back-office (`route\Admin::apidocsView()`,
+  `admin/apidocs`), protegee par `can('read', 'Documentation')` - meme
+  garde que l'ecran `Dvups_log` (lecture seule). Comme AUCUNE action
+  `Documentation` n'existe dans `dvups_action`, seul le role `admin`
+  (bypass maitre de `can()`) y a acces pour l'instant ; un droit dedie
+  pourrait etre ajoute via le datacore + `rights:sync` si une
+  granularite plus fine est souhaitee (**item ouvert**, note ici plutot
+  que devine). Cette page ajoute `$includeAdmin = true` : les routes
+  admin standard (liste + formulaire, memes chemins que
+  `tests/E2E/AdminScreensTest.php::screens()`) apparaissent sous le tag
+  "Admin – session" avec un schema `SessionAuth` (cookie), a cote des
+  routes front (JWT, `BearerAuth`) deja documentees - "distingue les
+  routes front (JWT) et admin (session)" demande par l'instruction.
+- README : section "Premier module" ajoutee (datacore JSON a la main +
+  `core:g:module`/`core:g:moduleendless`/`rights:sync` - aucune de ces
+  commandes ne modifie `config/dvups_configurations.php`ni
+  `module_configurations.php`, a declarer a la main, verifie en lisant
+  `dclass/generator/__Generator.php`) ; section "Documentation" mise a
+  jour avec les 3 points ci-dessus.
+- Tests : `tests/Unit/DocGenerationTest.php` (spec/guide bien formes,
+  deterministes, `$includeAdmin` ajoute bien les routes et le schema
+  `SessionAuth` sans jamais y toucher par defaut) et
+  `tests/E2E/AdminApiDocsTest.php` (403 anonyme, 200 + tag admin pour
+  une session admin).
+
+Commits : `0d8aa5a` (N.1/N.2), `bf36a1a` (N.3), `68020e3` (README).
+
+---
+
+## Traductions - ETAPE O
+
+`php devups lang:missing` (cles effectivement appelees par `t()` dans
+le code, comparees a `lang/en.php`/`lang/fr.php`) signalait 254 cles
+"manquantes" en anglais et 288 en francais - en realite une partie de
+ces cles est DEJA correcte dans la langue cible (meme mot des deux
+cotes - "Email", "Status"... - ou phrase deja ecrite directement dans
+la bonne langue par le code appelant `t()`), ce que `lang:missing` ne
+peut pas distinguer d'une vraie fuite (il se contente de `valeur ===
+cle`). Un tri manuel, cle par cle, a donc precede toute ecriture :
+
+- **Vraies fuites de francais dans `lang/en.php`** (13 phrases, ex:
+  "Apercu impossible : gabarit introuvable" -> "Preview unavailable:
+  template not found") : traduites.
+- **Vraies fuites d'anglais dans `lang/fr.php`** (~35 phrases, ex:
+  "Username" -> "Nom d'utilisateur", "Country has not been specified..."
+  -> "Le pays n'a pas été précisé...") : traduites.
+- **Vocabulaire technique partage** (~160 cles `entite.champ` ou
+  `nom_champ`, label generique de formulaire/tableau pour un champ sans
+  libelle explicite dans son datacore - ex: `dvups_log.level` -> "Level"
+  / "Niveau", `user_id` -> "User ID" / "ID utilisateur") : traduit via
+  une table de correspondance couvrant le nom de champ (apres le
+  dernier point) commune aux deux langues.
+- **Laisse intentionnellement inchange** (valeur = cle, DEJA correcte) :
+  tous les mots identiques dans les deux langues non ambigus (`Email`,
+  `Status`→`Statut` deja present, `Position`, `Description`...) plus
+  les cles deja ecrites par le code dans la langue cible (ex: pour
+  `fr.php`, `"Bienvenue sur"`, `"Erreur"`, `"Code d'activation
+  incorrect!"` - le code appelle directement `t()` avec du francais).
+- **Items ambigus, non devines, a trancher a la main** (meme liste pour
+  les deux langues) : `Action`, `Active`, `Alias`, `Callback`, `Client`,
+  `Contenu text` (francais avec faute de frappe "texte", ou anglais
+  "content text" ? contexte non retrouve), `Dvups_action`/`Dvups_role`
+  (et leurs variantes en minuscule - nom de classe, a garder tel quel ou
+  traduire en "Role"/"Action" ?), `Interval`, `Log`, `Ref`, `Session`,
+  `cmscontent.reference`, `entity.cmscontent`, `entity.tree_item` (ces
+  deux dernieres ressemblent a des *valeurs* d'un champ "entity", pas a
+  des libelles de champ - contexte d'appel non retrouve dans le temps
+  disponible).
+- **Bug pre-existant repere, non corrige** (hors scope ÉTAPE O, scanner
+  `lang:scan`, pas le code applicatif) : la cle `'Aucun élément pour
+  l\\'` dans `lang/en.php`/`lang/fr.php` est tronquée - une apostrophe
+  dans la chaine source a confondu la regex de `dv_lang_scan_keys()`
+  (`builder.php`). La vraie cle complete (`"Aucun élément pour
+  l'instant."`) existe par ailleurs et est déjà bien traduite ; cette
+  entrée tronquée est un résidu inoffensif (plus jamais recherchée par
+  `t()`), laissée telle quelle plutôt que corrigée au hasard.
+
+Resultat : `lang:missing` est passe de 254/288 a **77/81** cles
+"manquantes" (le reste correspond aux categories "deja correct" et
+"ambigu" ci-dessus, pas a une fuite reelle). Script de traduction
+ecrit dans le scratchpad de session (non versionne - une substitution
+cle-par-cle a partir des deux tableaux `missing_en`/`missing_fr`
+exacts), fichiers `lang/*.php` reecrits avec le meme format (`'cle' =>
+'valeur',`, triees) ; aucune cle n'a ete ajoutee ni retiree, seules des
+valeurs ont change.
+
+Commit : (a suivre).
+
+---
+
 ## Resume phase par phase
 
 **Phase 1 (Droits)** : entierement terminee et committee AVANT cette
