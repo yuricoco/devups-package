@@ -1360,3 +1360,52 @@ souhaitee avant de s'engager sur un `1.0.0` definitif : **v1.0.0-rc1**,
 promu en `v1.0.0` sans changement de code dès que ce depot aura ete
 teste par **au moins une installation reelle** (hors le dossier vide de
 verification ci-dessus) - a la decision de qui validera le tag.
+
+## Resume final (ETAPES P a R) et ce qui reste avant publication
+
+**ETAPE P (Corrections)** : les 7 points demandes sont FAITS (detail et
+commits individuels dans la section "ETAPE P" ci-dessus) - jeton de
+reinitialisation de mot de passe dedie et sans enumeration de comptes,
+appels statiques casses corriges (4 trouves au-dela du point 2 de la
+consigne, 2 bugs latents decouverts en testant), IP cliente fiable
+(`TRUSTED_PROXIES`), code mort de push retire, API de notification
+unifiee (`on()`/`braodcast()` depreciees), droit `Documentation`
+attribuable a un role, cle de traduction tronquee retiree.
+
+**ETAPE Q (Migrations)** : FAITE - `php devups migrate`/`migrate:status`
+remplacent l'execution manuelle, avec detection et confirmation des
+migrations destructives, `--dry-run`/`--step`/`--force`, support
+`.sql`/`.php`, 12 tests dedies.
+
+**ETAPE R (Version publiable)** : FAITE sauf la creation du tag
+(volontairement laissee de cote, voir ci-dessous) - `CHANGELOG.md`,
+`.env.example` complet, CI (`.github/workflows/tests.yml`),
+installation neuve verifiee de bout en bout (dossier vide separe, base
+jetable supprimee apres coup) jusqu'a la connexion admin reussie.
+
+**Etat des tests a la fin de ce chantier** : `composer test` vert a
+chaque commit de l'ensemble des ETAPES P/Q/R (276 a la fin de l'ETAPE
+P, 288 a la fin des ETAPES Q et R) - **0 echec**, les 2 memes
+"incomplete" documentees et assumees depuis l'ETAPE N
+(`Dvups_log`/`Emaillog`, ecrans lecture seule par design, voir
+`tests/E2E/AdminScreensTest.php::KNOWN_BROKEN`).
+
+**Ce qui reste avant publication** :
+- **Le tag git lui-meme** - version proposee `v1.0.0` ci-dessus,
+  volontairement NON cree ("j'attends de valider").
+- Publier `spacekola/devups` sur Packagist (ou configurer un
+  repository prive) pour que `composer create-project spacekola/devups
+  mon-projet` fonctionne tel que documente dans le README sans l'option
+  `--repository` (contournement local documente dans le README en
+  attendant).
+- Decider du sort des DROP commentes en fin de
+  `database/migration/2026_11_08_phase4_cms_rename.sql`
+  (`imagecms`/`dv_image`) - suppression de donnees a valider
+  manuellement par environnement avant de les decommenter (voir ETAPE
+  I, inchange depuis).
+- Les ruptures de compatibilite listees dans `CHANGELOG.md` sont a
+  diffuser a toute equipe maintenant du code appelant hors de ce depot
+  (aucune trouvee a l'interieur du depot lui-meme, verifie par grep a
+  chaque etape concernee).
+- Aucun blocage technique connu, aucune tache de ce chantier laissee
+  inachevee.
