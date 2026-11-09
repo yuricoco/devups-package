@@ -38,6 +38,124 @@ Decisions actees pour tout le chantier :
   choix le plus prudent, on continue.
 - Aucun tag ni release cree pendant ce chantier.
 
+### LOT 1.0 - Plan (inventaire, sans code)
+
+**Risque bloquant a noter avant tout** : cette machine de dev n'a que
+PHP 8.1.34 / 8.2.12 / 7.4.33 installes (`xampp`), aucun 8.3+. Options :
+(a) ecrire `composer.json` avec `"php": ">=8.3"` quand meme (c'est la
+cible demandee) et verifier localement avec l'interpreteur 8.2 reel via
+`composer config platform.php 8.2.99` (ou `--ignore-platform-reqs`
+ponctuel) - les tests tournent alors sous un moteur 8.2, donc ne
+couvrent pas une syntaxe strictement 8.3+, mais la CI GitHub (matrice
+8.3/8.4/8.5, ETAPE 1.1) reste la verification reelle de la cible ; (b)
+ne pas changer la contrainte php tout de suite. Choix retenu (le plus
+prudent qui respecte la demande explicite) : (a) - `composer.json`
+passe a `>=8.3`, platform override local pour pouvoir executer
+`composer test`/`phpstan` ici, CI GitHub = seul juge final du
+"compose test vert sur 8.3/8.4/8.5". A noter dans chaque commit de ce
+chantier ou cette limite s'applique.
+
+**Inventaire dependances directes** (`composer outdated --direct`,
+versions installees 7.1.0 -> dernieres connues) :
+
+| Paquet | Installee | Derniere | PHP 8.3+ | Action lot 1 |
+|---|---|---|---|---|
+| doctrine/orm | 2.9.3 | 3.7.6 | OK (ORM3 exige php >=8.1) | **MAJ vers ^3.7** - rupture mapping, voir plus bas |
+| doctrine/cache | 1.11.3 | 2.2.0 | abandonne (`composer outdated` le signale) | A retirer si possible (ORM3 n'en a plus besoin pour le cache de metadonnees ; verifier usages directs hors ORM avant suppression) |
+| philo/laravel-blade | 3.1 | - (abandonne) | epingle illuminate/view a ~5 | **lot 2**, pas lot 1 |
+| phpunit/phpunit | 10.5.66 | 11.5.57 | OK | MAJ vers ^11 si aucune API retiree utilisee par la suite existante (a verifier en 1.1) |
+| phpstan/phpstan | 1.12.34 | 2.3.5 | OK | MAJ vers ^2 - **lot 7** prevoit la bascule complete (regles changees) ; en lot 1 on reste sur ^1 tant que le reste du socle n'est pas stabilise, sauf si ^2 passe sans friction |
+| firebase/php-jwt | 6.11.1 | 7.2.1 | OK les deux | reste sur ^6 - deja documente dans `composer.json` (audit ignore PKSA-y2cr-5h3j-g3ys) : google/apiclient->google/auth exige encore ^6, inchange en v8.0 |
+| google/apiclient | 2.19.4 | 2.20.1 | OK | MAJ mineure sans risque |
+| guzzlehttp/guzzle | 7.16.1 | 8.3.1 | OK les deux | reste sur ^7 en lot 1 (MAJ majeure non demandee, pas de rupture connue a corriger) ; a revisiter si une dependance du lot 6 (HTTP) l'exige |
+| minishlink/web-push | 10.0.3 | 11.0.0 | OK les deux | reste sur ^10, pas de rupture a traiter dans ce chantier |
+| phpmailer/phpmailer | 6.12.0 | 7.2.0 | OK les deux | reste sur ^6, pas touche par ce chantier |
+| symfony/var-dumper | 5.4.54 | 7.4.22 | OK les deux (dev uniquement) | reste sur ^5.4 (dev-only, sans impact) |
+| zircote/swagger-php | 4.11.1 | 7.5.0 | OK les deux | reste sur ^4, utilise par `documentation/api.php`/`guide.php` hors perimetre Doctrine |
+| maslosoft/addendum | 7.0.6 (deja derniere) | - | a verifier en lot 3 | utilise pour le routing par annotations - **lot 3** ("fin d'addendum"), pas touche en lot 1 |
+| mpdf/mpdf, ifsnop/mysqldump-php, barcode-bakery/barcode-1d, google/apiclient, minishlink/web-push | a jour ou proches | - | OK PHP 8.3+ | pas d'action lot 1 |
+
+**Ce que casse Doctrine ORM 3 dans Devups** (`doctrine/orm` 2.9 -> 3.7,
+`doctrine/dbal` suit en 4.x) :
+
+- `Setup::createAnnotationMetadataConfiguration()` et la classe
+  `Setup` : supprimes. Remplacement : `ORMSetup::
+  createAttributeMetadataConfiguration($paths, $isDevMode)`.
+- `EntityManager::create($conn, $config)` (methode statique) :
+  supprimee. Remplacement : `new EntityManager(DriverManager::
+  getConnection($conn, $config), $config)` (ou `EntityManager::
+  create()` d'une factory differente selon la version finale - a
+  confirmer a l'implementation, l'API exacte a bouge entre 3.x RC et
+  stable).
+- Driver d'annotations (`AnnotationDriver`, `AnnotationReader` de
+  `doctrine/annotations`) : le paquet `doctrine/annotations` n'est plus
+  une dependance de `doctrine/orm` 3 ; le mapping par docblocks
+  n'est plus supporte nativement -> remplace par `AttributeDriver` +
+  attributs PHP 8 (`#[ORM\Entity]`, etc.) sur toutes les entites.
+- `doctrine/cache` (1.x, abandonne) : plus utilise par l'ORM 3
+  (cache PSR-6/PSR-16 natif) - a retirer de `composer.json` si aucun
+  usage direct hors ORM n'est trouve en 1.1.
+- `cli-config.php` : l'API de retour (`ConsoleRunner::createHelperSet`
+  avec un `EntityManagerHelper` construit a la main) change de forme
+  avec `ORM\Tools\Console\ConsoleRunner` en 3.x (signature des helpers
+  mise a jour) - a adapter en 1.2/1.4.
+- `SchemaTool` : namespace et constructeur inchanges en substance,
+  mais depend de la Configuration/EntityManager reconstruits ci-dessus
+  - a revalider par le test d'integration `schema:update --dump-sql`
+  (1.2).
+- Types de colonnes (`Types::STRING` etc.) : l'API `Doctrine\DBAL\
+  Types\Type` est globalement stable entre DBAL 2->4 pour les types
+  utilises ici (`string`, `integer`, `boolean`, `datetime`, `text`) -
+  risque faible, a confirmer par les tests existants (1.4).
+- Lecture des metadonnees dans le reste du framework : 8 fichiers
+  appellent directement l'API Doctrine (`getClassMetadata()`,
+  `getMetadataFactory()`, `EntityManager::create`, `Setup::`) et
+  doivent etre revus avec le nouveau driver/API (1.4) :
+  `dclass/devups/Tchutte/DBAL.php` (le point d'entree principal,
+  `getEntityManager()`), `dclass/devups/model/Model.php`,
+  `dclass/devups/model/ModelTrait.php`,
+  `dclass/devups/Controller/Controller.php`,
+  `dclass/generator/BackendGenerator.php`, `dclass/generator/
+  builder.php`, `tests/bootstrap.php`,
+  `tests/Integration/TreeStatusUniqueConstraintAnnotationsTest.php`
+  (renommage probable -> `...AttributesTest.php`, le nom actuel
+  reference les annotations). `documentation/api.php` et
+  `documentation/guide.php` (zircote/swagger-php) ne touchent pas
+  l'API Doctrine - hors perimetre lot 1.
+
+**Entites a convertir (annotations -> attributs), 41 fichiers** :
+`dclass/devups/model/DateTimeTrait.php` (trait partage, `@Column` sur
+proprietes reutilisees - a traiter en premier car tout le reste en
+depend), `dclass/extends/{Dv_langCore,Dvups_config_item,
+Dvups_migration,ImageCore,UserCore}.php` (MappedSuperclass/traits de
+base), puis les 36 entites sous `src/**/Entity/*.php` (modules Admin,
+Config, Lang, Log, Cms, Data, Location, Notification,
+PushNotification, Reporting, Tree, User/Oauth). `dclass/generator/
+BackendGenerator.php` genere lui-meme des docblocks Doctrine pour les
+nouvelles entites -> doit emettre des attributs apres 1.2 (sinon le
+generateur regenere du code incompatible) - couple a 1.3/1.4, pas
+seulement a l'audit.
+
+**Ordre d'execution retenu (lot 1)** :
+
+1. 1.1 `composer.json` (php>=8.3, deps) + `composer audit` propre.
+2. 1.2a `DateTimeTrait` + les 5 classes `dclass/extends/*Core*` /
+   `*_migration` (base commune) -> attributs, car toutes les entites
+   en heritent ou les utilisent en trait.
+3. 1.2b Les 36 entites `src/**/Entity/*.php` -> attributs.
+4. 1.2c `DBAL::getEntityManager()` -> `ORMSetup::
+   createAttributeMetadataConfiguration` + nouvelle construction de
+   l'EntityManager ; `cli-config.php` adapte.
+5. 1.2d Test d'integration "`schema:update --dump-sql` vide sur un
+   schema 7.1 installe" (garde-fou noyau du lot).
+6. 1.3 Commande `upgrade:entities` (reutilise le meme mapping de
+   conversion que 1.2, applique a un projet utilisateur) + fixtures.
+7. 1.4 Les 8 autres consommateurs de metadonnees (Model, ModelTrait,
+   Controller, generator, tests/bootstrap) + `BackendGenerator` emet
+   des attributs pour les nouvelles entites generees.
+8. 1.5 `UPGRADE-8.0.md`.
+9. 1.6 Push + CI.
+
 Ce fichier remplace entierement la version precedente : les points
 Phase 2 (B.2/B.5/B.6/B.7/B.8) et Phase 3 (C.1/C.4/C.5/C.6/C.7) qu'elle
 documentait comme ouverts ont ete traites dans cette session (voir
