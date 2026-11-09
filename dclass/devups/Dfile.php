@@ -494,12 +494,29 @@ class Dfile
          * follow the link below
          * https://www.php.net/manual/en/image.installation.php
          */
-        $newimage = imagecreatetruecolor($largeur, $hauteur) or die("Erreur");
+        $largeur = max(1, (int)round($largeur));
+        $hauteur = max(1, (int)round($hauteur));
+        $newimage = imagecreatetruecolor($largeur, $hauteur);
+        if (!$newimage) {
+            // ETAPE A.3 (v7.1) : imagecreatetruecolor() peut echouer (image
+            // source degeneree, ex. 1x1 pixel, ou memoire GD insuffisante) -
+            // "or die()" arretait toute la requete (500) au lieu de garder
+            // l'original deja enregistre par moveto() et de simplement
+            // renoncer a cette variante redimensionnee.
+            Log::warning('resizeimage(): imagecreatetruecolor() a echoue, variante ignoree', [
+                'file' => $this->file_name, 'largeur' => $largeur, 'hauteur' => $hauteur,
+            ]);
+            return;
+        }
 
         //dv_dump($this->file_name, $this->extension);
         if (in_array($this->extension, array('jpg', 'jpeg', 'png'))) {
             if (in_array($this->extension, array('jpg', 'jpeg'))) {
-                $image = imagecreatefromjpeg($source_url);
+                $image = @imagecreatefromjpeg($source_url);
+                if (!$image) {
+                    Log::warning('resizeimage(): imagecreatefromjpeg() a echoue, variante ignoree', ['file' => $this->file_name]);
+                    return;
+                }
 
                 if (imagecopyresampled($newimage, $image, 0, 0, 0, 0, $largeur, $hauteur, $imagesize[0], $imagesize[1])) {
 
@@ -519,6 +536,10 @@ class Dfile
                 imagesavealpha($newimage, true);
 
                 $source = @imagecreatefrompng($source_url);
+                if (!$source) {
+                    Log::warning('resizeimage(): imagecreatefrompng() a echoue, variante ignoree', ['file' => $this->file_name]);
+                    return;
+                }
                 imagealphablending($source, true);
 
                 imagecopyresampled($newimage, $source, 0, 0, 0, 0, $largeur, $hauteur, $imagesize[0], $imagesize[1]);
@@ -534,7 +555,11 @@ class Dfile
             }
         } elseif ($this->extension == 'gif') {
 
-            $image = imagecreatefromgif($source_url);
+            $image = @imagecreatefromgif($source_url);
+            if (!$image) {
+                Log::warning('resizeimage(): imagecreatefromgif() a echoue, variante ignoree', ['file' => $this->file_name]);
+                return;
+            }
             if (!imagegif($image, $filename, $quality))
                 $this->message[] = 'Le png n\'a pas pu etre converti correctement';
 //            else

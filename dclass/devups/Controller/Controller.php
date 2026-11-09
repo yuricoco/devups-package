@@ -7,7 +7,6 @@ use dclass\devups\Datatable\Lazyloading;
 use Dvups_lang;
 use Exception;
 use Genesis as g;
-use Philo\Blade\Blade;
 use phpDocumentor\Reflection\Types\Self_;
 use QueryBuilder;
 use ReflectionAnnotatedClass;
@@ -296,10 +295,22 @@ class Controller
                 return $object;
             }
         } elseif ($object->getId()) {
-            //            if($object->dvtranslate)
-            //                $object = $object->__show($deeper, \Dvups_lang::defaultLang()->getId());
-            //            else
-            //$object = $object->hydrate();
+            // ETAPE F.2 (v7.1) : reactive - sans hydratation, $object (new
+            // Entite($id), le chemin utilise par CrudTrait::updateAction(),
+            // Dvups_adminController::updateAction()...) ne porte que l'id et
+            // les proprietes que le formulaire soumis renseignera ;
+            // entityKeyUpdate() (ModelTrait) traitait alors CHAQUE propriete
+            // actuellement non null comme "modifiee" - ecrasant en base
+            // toute colonne NOT NULL absente du formulaire (ex. `login` sur
+            // une mise a jour partielle de Dvups_admin ne touchant que
+            // `name`) : invisible sous sql_mode tolerant (UPDATE NULL ->
+            // defaut implicite + warning), erreur 1048 sous sql_mode strict
+            // (MySQL 8, celui de la CI). hydrate() charge l'etat reellement
+            // persiste AVANT que formWithPost() applique le formulaire
+            // par-dessus (set*() cible par cle, jamais une remise a zero de
+            // $object) : entityKeyUpdate() ne voit plus alors comme
+            // "modifies" que les champs reellement soumis par le formulaire.
+            $object = $object->hydrate();
         }
         if (!$data) {
             return $object; //->hydrate();
@@ -707,7 +718,9 @@ class Controller
             }
         }
 
-        $blade = new Blade([web_dir . "views", admin_dir . 'views'], ROOT . "cache/views");
+        // ETAPE F.3 (v7.1) : BladeD (pas Blade directement) - seul son
+        // constructeur cree cache/views s'il manque (voir Genesis.php).
+        $blade = new \BladeD([web_dir . "views", admin_dir . 'views'], ROOT . "cache/views");
         echo $blade->view()->make($view, $compilate)->render();
         //die;
     }
@@ -723,7 +736,7 @@ class Controller
 
         $data["moduledata"] = $moduledata; //Genesis::top_action($action, $classroot);
 
-        $blade = new Blade($viewdir, ROOT . "cache/views");
+        $blade = new \BladeD($viewdir, ROOT . "cache/views");
         echo $blade->view()->make($view, $data)->render();
     }
 

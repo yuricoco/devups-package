@@ -794,12 +794,27 @@ die;
             }
         }
 
+        $entityRequireLine = "require 'Entity/" . $name . ".php';";
+
         $package .= "
-    require 'Entity/" . $name . ".php';$requiremanytomany
+    $entityRequireLine$requiremanytomany
     require 'Form/" . $name . "Form.php';
     require 'Datatable/" . $name . "Table.php';
     require 'Controller/" . $name . "Controller.php';\n";
         //}
+
+        // ETAPE D.7 (v7.1) - D7 : en mode "a+" (fichier deja present, pas de
+        // --rewrite), ce bloc etait ajoute SANS jamais verifier s'il y etait
+        // deja - regenerer la meme entite deux fois (ex. deux `core:g:crud`
+        // successifs) dupliquait son require (Entity/Form/Datatable/
+        // Controller), chaque classe redeclaree a l'inclusion. Si le
+        // require de cette entite est deja present, le fichier reste
+        // inchange (regeneration idempotente) plutot que d'accumuler un
+        // doublon.
+        if ($mode === "a+" && str_contains(file_get_contents($filename), $entityRequireLine)) {
+            chdir("../");
+            return;
+        }
 
         // mode "a+" (fichier present, pas de
         // --rewrite) ne perd rien par construction - seul le mode "w" (fichier

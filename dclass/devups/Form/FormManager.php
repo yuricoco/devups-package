@@ -30,8 +30,12 @@ define('FORMTYPE_EMAIL', 'email');
 define('FORMTYPE_NUMBER', 'number');
 define('FORMTYPE_PASSWORD', 'password');
 define('FORMTYPE_INJECTION', 'injection');
-// Non gere par FormFactory::__renderForm() (rendu vide en prod, commentaire
-// HTML en dev). Conserve car public ; a implementer ou retirer.
+// @deprecated ETAPE E.4 (v7.1) - audit mort/vivant : jamais reference par
+// sa valeur ('injectioncollection') ailleurs dans le depot (aucun datacore,
+// aucun Form). Non gere par FormFactory::__renderForm(), qui rend deja un
+// commentaire HTML explicite en dev pour tout type non gere (voir son
+// fallback generique, ligne ~475) - rendu vide en prod. Conserve car public
+// (constante exportee) ; a implementer ou retirer dans une version future.
 define('FORMTYPE_INJECT_COLLECTIONFORM', 'injectioncollection');
 
 define('FH_TYPE', 'type');

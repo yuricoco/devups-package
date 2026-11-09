@@ -214,6 +214,19 @@ class Router // extends Request
         }
     }
 
+    /**
+     * ETAPE E.4 (v7.1) - audit mort/vivant (grep de __route_cache et de
+     * cacheRoute() dans tout le depot) : le reste de cette methode est du
+     * code mort EN PRATIQUE, pas supprime - __route_cache vaut
+     * TOUJOURS false dans config/constante.php (et dv_env('ROUTE_CACHE',
+     * false) dans l'exemple : jamais active par defaut), donc ce `return
+     * null` precoce est pris a chaque appel. cacheRoute() (plus bas) ne
+     * remplit d'ailleurs jamais self::$routes non plus - voir son propre
+     * commentaire. Risque de regression trop incertain pour retirer
+     * entierement le mecanisme (plusieurs sites d'appel dans Request.php,
+     * jamais exerces par aucun test existant) : documente ici plutot que
+     * supprime.
+     */
     public function runCache($url)
     {
         if (!__route_cache)
@@ -543,17 +556,32 @@ class Router // extends Request
 
         self::$admin_route = true;
         self::$api_route = true;
-        if (!isset($_SESSION[ADMIN])) {
-
-            // Genesis::json_encode(["success" => false, "message" => "admin session expired!!"]);
-
-        }
 
         $this->runCache(self::$path_info ?? $this->default_url);
 
         $this->url = self::$path_info;
         self::$path = str_replace('/api/', '', self::$path_info);
         $path = explode("/", self::$path);
+
+        // ETAPE E.3 (v7.1) : ce garde n'etait qu'un commentaire mort
+        // (if (!isset($_SESSION[ADMIN])) { // Genesis::json_encode(...) }) -
+        // manageServe() ne refusait donc RIEN par lui-meme. Seules certaines
+        // des classes qui en heritent (via ModuleController) avaient recu un
+        // garde equivalent dans leur PROPRE constructeur (AdminService) ou en
+        // dependaient du script bootstrap qui les inclut (admin/header.php,
+        // par nom de fichier/chemin - voir AdminSecurityTest) : Admin,
+        // ModuleConfig, ModuleLog, ModuleUser (et tout futur module genere
+        // sur le meme patron, cf. BackendGenerator/__Generator::module())
+        // n'etaient proteges par AUCUN garde propre a ce point d'entree
+        // partage. Meme exceptions que Router::manage() (ligne ~463) :
+        // "connexion-action" et toute entite listee dans $this->public_access.
+        if (!isset($_SESSION[ADMIN]) && self::$path !== 'connexion-action' && !in_array(strtolower($path[0]), array_keys($this->public_access), true) && (!isset($path[1]) || !in_array(strtolower($path[1]), array_keys($this->public_access), true))) {
+            http_response_code(401);
+            Genesis::json_encode([
+                'success' => false,
+                'detail' => 'admin session required',
+            ]);
+        }
 
         /*if (self::$path_info) {
             $routemap = explode("/", self::$path_info);
@@ -694,6 +722,15 @@ class Router // extends Request
         call_user_func_array(array($this, $function), $methoparams);
     }
 
+    /**
+     * ETAPE E.4 (v7.1) - audit mort/vivant : ce `return null;` precoce
+     * (deja present, pas ajoute ici) rend TOUT le reste du corps
+     * INATTEIGNABLE, quel que soit __route_cache - cacheRoute() ne
+     * remplit donc jamais self::$routes. Appele neanmoins depuis plusieurs
+     * sites de Request.php (jamais exerces par aucun test existant) :
+     * documente plutot que supprime, meme raison que runCache()
+     * ci-dessus.
+     */
     public static function cacheRoute($path, $methodview, $params = [], $auth = false, $request_method = "GET")
     {
 

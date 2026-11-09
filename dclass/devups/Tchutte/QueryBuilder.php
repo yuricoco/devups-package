@@ -35,6 +35,13 @@ class QueryBuilder extends \DBAL
     private $parameters = [];
     /** Compteur de placeholders whereLike()/like()/_like()/like_() - evite les collisions de nom lie au sein d'une meme requete. */
     private $likeParamSeq = 0;
+    /**
+     * ETAPE B.1/B.2 (v7.1) : meme role que $likeParamSeq, pour les
+     * placeholders de whereIn()/in()/notIn()/whereInReverse()/
+     * whereBetween()/between() - evite toute collision entre plusieurs
+     * appels sur la meme requete (ex. whereGroup()).
+     */
+    private $inParamSeq = 0;
     private $columns = "*";
     //private $defaultjoin = "";
     private $columnscount = "COUNT(*)";
@@ -797,6 +804,31 @@ class QueryBuilder extends \DBAL
      * @param mixed $value
      * @return $this
      */
+    /**
+     * ETAPE C.4 (v7.1) - D2 : une colonne NON qualifiee (sans "table."/"this.")
+     * qui appartient a l'entite de base devient ambigue dans un WHERE/IN/
+     * BETWEEN des qu'une jointure de traduction est presente - initSelect()
+     * joint toujours "<table>_lang" (colonne "id", entre autres), et en mode
+     * bilingue (sans id_lang) joint aussi "dvups_lang" aliase "l" (colonnes
+     * "id"/"name", entre autres) : MySQL/MariaDB refuse alors toute
+     * reference non qualifiee a une colonne presente des deux cotes
+     * ("Column 'x' in where clause is ambiguous", 1052).
+     *
+     * Prefixe la colonne avec le pseudo-alias "this." (deja utilise
+     * ailleurs dans ce fichier - resolu en fin de requete par
+     * querysanitize() vers le vrai nom de table) quand l'entite est
+     * traduite et que la colonne n'est pas deja qualifiee - inoffensif
+     * pour une entite non traduite (retournee inchangee).
+     */
+    private function qualifyIfAmbiguous(string $column): string
+    {
+        if ($this->object && $this->object->dvtranslate && strpos($column, '.') === false && strpos($column, ' ') === false) {
+            return 'this.' . $column;
+        }
+
+        return $column;
+    }
+
     public function where($column, $operator = self::NO_ARG, $value = self::NO_ARG, $link = "AND")
     {
         $this->endquery = "";
@@ -854,6 +886,7 @@ class QueryBuilder extends \DBAL
                 }
             }
         } else {
+            $column = $this->qualifyIfAmbiguous($column);
             $keymap = explode(".", $column);
             $attrib = str_replace(".", "_", $column);
             if (count($keymap) == 2) {
@@ -1020,21 +1053,81 @@ class QueryBuilder extends \DBAL
     }
 
     /**
+     * Prochain nom de placeholder whereIn()/in()/notIn()/whereInReverse()/
+     * whereBetween()/between() - jamais de collision au sein d'une meme
+     * requete (meme principe que nextLikeParam()).
+     */
+    private function nextInParam(string $hint): string
+    {
+        $this->inParamSeq++;
+        return 'in_' . preg_replace('/[^a-zA-Z0-9_]/', '_', $hint) . '_' . $this->inParamSeq;
+    }
+
+    /**
+     * ETAPE B.1 (v7.1) : la forme chaine brute de whereIn()/in()/notIn()
+     * ("1,2,3") est DEPRECIEE - elle interpolait $values directement dans
+     * le SQL (`IN ( $values )`), une injection SQL immediate pour tout
+     * appelant qui y passerait une entree utilisateur non filtree. Aucun
+     * appelant du depot n'utilise plus cette forme (verifie par recherche
+     * exhaustive - tous passent desormais un tableau), mais elle reste
+     * supportee pour la compatibilite : elle n'accepte plus qu'une liste
+     * d'entiers separes par des virgules (le seul usage qu'elle ait jamais
+     * eu de maniere sure), journalise un avertissement au premier appel,
+     * et refuse (exception) tout ce qui ne ressemble pas a ça - jamais
+     * d'interpolation, meme validee.
+     *
+     * @throws \InvalidArgumentException si $values n'est pas une liste
+     *         d'entiers separes par des virgules.
+     */
+    private function parseDeprecatedRawIntegerList(string $values, string $method): array
+    {
+        \Log::warning("QueryBuilder::$method() : la forme chaine brute (\"\$values\" string) est depreciee, utilisez un tableau.");
+
+        if (!preg_match('/^\s*\d+(\s*,\s*\d+)*\s*$/', $values)) {
+            throw new \InvalidArgumentException(
+                "QueryBuilder::$method() : la forme chaine brute n'accepte plus qu'une liste d'entiers separes par des virgules (recu : \"$values\")."
+            );
+        }
+
+        return array_map('intval', array_map('trim', explode(',', $values)));
+    }
+
+    /**
      * find a value of a database column from a list of potential values
      * @param $column
      * @param $values
      * @param $negate
      * @return $this
+     *
+     * Parametree (:param lie par valeur) - qb_sanitize() entourait la
+     * valeur de guillemets SANS echapper les guillemets qu'elle
+     * contiendrait deja (injection SQL pour toute valeur utilisateur
+     * contenant une apostrophe, meme passee en tableau). La forme chaine
+     * brute est depreciee (voir parseDeprecatedRawIntegerList()).
      */
     public function whereIn($column, $values, $negate = "")
     {
+        $column = $this->qualifyIfAmbiguous($column);
 
         if (is_array($values)) {
-            $this->_where .= " AND $column $negate IN (" . implode(",", array_map("qb_sanitize", $values)) . ")";
-        } else if (is_object($values))
+            $placeholders = [];
+            foreach ($values as $value) {
+                $attrib = $this->nextInParam($column);
+                $placeholders[] = ":$attrib";
+                $this->parameters[$attrib] = $value;
+            }
+            $this->_where .= " AND $column $negate IN (" . implode(",", $placeholders) . ")";
+        } else if (is_object($values)) {
             $this->_where .= " AND $column $negate IN ( " . $values->getSqlQuery()['query'] . " ) ";
-        else
-            $this->_where .= " AND $column $negate IN ( $values )";
+        } else {
+            $placeholders = [];
+            foreach ($this->parseDeprecatedRawIntegerList((string)$values, 'whereIn') as $id) {
+                $attrib = $this->nextInParam($column);
+                $placeholders[] = ":$attrib";
+                $this->parameters[$attrib] = $id;
+            }
+            $this->_where .= " AND $column $negate IN (" . implode(",", $placeholders) . ")";
+        }
 
         return $this;
         // return $this->where($column)->in($collection);
@@ -1047,14 +1140,24 @@ class QueryBuilder extends \DBAL
      * @param $columns
      * @param $negate
      * @return $this
+     *
+     * $value (la donnee utilisateur) est desormais liee en parametre ;
+     * $columns reste interpole - ce ne sont jamais des valeurs mais des
+     * NOMS DE COLONNE (identifiants SQL, pas de placeholder possible),
+     * fournis par l'appelant (code), jamais directement par une requete.
      */
     public function whereInReverse($value, $columns, $negate = "")
     {
+        $attrib = $this->nextInParam('reverse');
+        $this->parameters[$attrib] = $value;
 
         if (is_array($columns)) {
-            $this->_where .= " AND $value $negate IN (" . implode(",", $columns) . ")";
-        } else
-            $this->_where .= " AND $value $negate IN ( $columns )";
+            $columns = array_map(fn($col) => $this->qualifyIfAmbiguous($col), $columns);
+            $this->_where .= " AND :$attrib $negate IN (" . implode(",", $columns) . ")";
+        } else {
+            $columns = $this->qualifyIfAmbiguous($columns);
+            $this->_where .= " AND :$attrib $negate IN ( $columns )";
+        }
 
         return $this;
         // return $this->where($column)->in($collection);
@@ -1064,13 +1167,29 @@ class QueryBuilder extends \DBAL
      *
      * @param String|Array $values
      * @return $this
+     *
+     * Parametree - voir whereIn(). La forme chaine brute est depreciee
+     * (voir parseDeprecatedRawIntegerList()).
      */
     public function in($values)
     {
         if (is_array($values)) {
-            $this->_where .= " in (" . implode(",", array_map("qb_sanitize", $values)) . ")";
-        } else
-            $this->_where .= " in ( $values )";
+            $placeholders = [];
+            foreach ($values as $value) {
+                $attrib = $this->nextInParam('in');
+                $placeholders[] = ":$attrib";
+                $this->parameters[$attrib] = $value;
+            }
+            $this->_where .= " in (" . implode(",", $placeholders) . ")";
+        } else {
+            $placeholders = [];
+            foreach ($this->parseDeprecatedRawIntegerList((string)$values, 'in') as $id) {
+                $attrib = $this->nextInParam('in');
+                $placeholders[] = ":$attrib";
+                $this->parameters[$attrib] = $id;
+            }
+            $this->_where .= " in (" . implode(",", $placeholders) . ")";
+        }
 
         return $this;
     }
@@ -1078,13 +1197,29 @@ class QueryBuilder extends \DBAL
     /**
      * @param $values
      * @return $this
+     *
+     * Parametree - voir whereIn(). La forme chaine brute est depreciee
+     * (voir parseDeprecatedRawIntegerList()).
      */
     public function notIn($values)
     {
         if (is_array($values)) {
-            $this->_where .= " NOT IN (" . implode(",", array_map("qb_sanitize", $values)) . ")";
-        } else
-            $this->_where .= " NOT IN ( $values )";
+            $placeholders = [];
+            foreach ($values as $value) {
+                $attrib = $this->nextInParam('notin');
+                $placeholders[] = ":$attrib";
+                $this->parameters[$attrib] = $value;
+            }
+            $this->_where .= " NOT IN (" . implode(",", $placeholders) . ")";
+        } else {
+            $placeholders = [];
+            foreach ($this->parseDeprecatedRawIntegerList((string)$values, 'notIn') as $id) {
+                $attrib = $this->nextInParam('notin');
+                $placeholders[] = ":$attrib";
+                $this->parameters[$attrib] = $id;
+            }
+            $this->_where .= " NOT IN (" . implode(",", $placeholders) . ")";
+        }
 
         return $this;
     }
@@ -1180,15 +1315,32 @@ class QueryBuilder extends \DBAL
         return $this;
     }
 
+    /**
+     * ETAPE B.2 (v7.1) : parametree - les bornes etaient interpolees
+     * entre guillemets simples SANS echappement (injection SQL pour toute
+     * valeur contenant une apostrophe, ex. l'operateur Lazyloading "btw").
+     */
     public function between($value1, $value2)
     {
-        $this->_where .= " BETWEEN '" . $value1 . "' AND '" . $value2 . "'";
+        $attrib1 = $this->nextInParam('between_from');
+        $attrib2 = $this->nextInParam('between_to');
+        $this->_where .= " BETWEEN :$attrib1 AND :$attrib2";
+        $this->parameters[$attrib1] = $value1;
+        $this->parameters[$attrib2] = $value2;
         return $this;
     }
 
+    /**
+     * ETAPE B.2 (v7.1) : meme correctif que between().
+     */
     public function whereBetween($column, $values)
     {
-        $this->_where .= " AND $column BETWEEN '" . $values[0] . "' AND '" . $values[1] . "'";
+        $attrib1 = $this->nextInParam($column . '_from');
+        $attrib2 = $this->nextInParam($column . '_to');
+        $column = $this->qualifyIfAmbiguous($column);
+        $this->_where .= " AND $column BETWEEN :$attrib1 AND :$attrib2";
+        $this->parameters[$attrib1] = $values[0];
+        $this->parameters[$attrib2] = $values[1];
         return $this;
     }
 
@@ -1592,7 +1744,16 @@ class QueryBuilder extends \DBAL
                     $groupment[] = "  GROUP_CONCAT( CONCAT('[', l.iso_code, ']', $thislang.$col) SEPARATOR '' ) AS $col ";
                 $this->query .= ", " . implode(", ", $groupment) . " ";
                 $this->_join .= " left join $thislang on ($thislang.{$this->table}_id = `{$this->table}`.id ) ";
-                $this->_join .= " join dvups_lang l on ($thislang.lang_id = l.id ) ";
+                // ETAPE C.2 (v7.1) - D15 : cette jointure etait un INNER
+                // JOIN ("join" simple) - une ligne SANS aucune ligne
+                // "{$this->table}_lang" produit lang_id = NULL (jointure
+                // precedente), et "NULL = l.id" n'est VRAI pour aucune
+                // ligne de dvups_lang : l'INNER JOIN eliminait alors la
+                // ligne de base ENTIERE (pas seulement ses colonnes
+                // traduites). LEFT JOIN : la ligne de base reste, le
+                // GROUP_CONCAT devient simplement NULL/vide (jamais une
+                // ligne perdue ni une erreur).
+                $this->_join .= " left join dvups_lang l on ($thislang.lang_id = l.id ) ";
                 $this->_group_by .= ("{$this->table}.id");
             }
         }
@@ -1881,14 +2042,26 @@ class QueryBuilder extends \DBAL
         return $this->__findOneRow($this->query, $this->parameters) ?? new $this->objectName;
     }
 
+    /**
+     * ETAPE C.3 (v7.1) - D3 : setLang() devait etre appele AVANT
+     * initSelect() (mesure le 2026-11-04 : initSelect() lit
+     * $this->id_lang pour choisir entre la jointure mono-langue et le
+     * GROUP_CONCAT bilingue - appele apres, $id_lang ne servait jamais a
+     * RIEN ici, la requete etait TOUJOURS construite en mode bilingue,
+     * meme avec une langue explicitement demandee). Contourne jusqu'ici
+     * par plusieurs appelants (Status::buildCacheDataFor(),
+     * Tree_item::getmainmenu()) via ->setLang($id_lang)->get() explicite
+     * avant cet appel - toujours valide, setLang() est idempotente.
+     */
     public function get($column = "*", $id_lang = null)
     {
         $this->select($column);
-        $this->initSelect();
-        $this->sequensization();
 
         if (!$this->id_lang)
             $this->setLang($id_lang);
+
+        $this->initSelect();
+        $this->sequensization();
 
         if (self::$debug)
             return $this->getSqlQuery();

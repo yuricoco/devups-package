@@ -36,7 +36,14 @@ final class LangCacheTest extends DatabaseTestCase
         $lang->setActive('1');
         $lang->setIso_code($iso);
         $lang->setLanguage_code($iso);
-        $lang->setLocale($iso);
+        // ETAPE F.2 (v7.1) : `locale` fait 2 caracteres en base
+        // (@Column(length=2)) - lui donner le $iso complet (5 caracteres,
+        // "z" + 4 du uniqid()) tronquait silencieusement sous sql_mode
+        // tolerant (MariaDB), erreur 1406 "String data, right truncated"
+        // sous sql_mode strict (MySQL 8, celui de la CI). Aucune assertion
+        // de ce test ne porte sur la valeur de `locale` : une valeur fixe,
+        // valide, suffit.
+        $lang->setLocale('en');
         $lang->setDate_format_lite('d/m/Y');
         $lang->setDate_format_full('d/m/Y H:i:s');
         return $lang;

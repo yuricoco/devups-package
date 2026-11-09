@@ -110,8 +110,10 @@ class Push_subscription extends Model implements JsonSerializable, SubscriptionI
 
     public function setEndpoint($endpoint)
     {
+        // ETAPE A.4 (v7.1) : meme correctif que Reportingmodel::setObject()
+        // - "return $this;" casserait la creation/mise a jour via un
+        // formulaire admin qui exposerait ce champ.
         $this->endpoint = $endpoint;
-        return $this;
     }
 
     /**

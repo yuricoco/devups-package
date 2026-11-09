@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php-version: ['8.1', '8.2', '8.3']
+        php-version: ['8.2', '8.3', '8.4']
 
     services:
       mysql:
@@ -53,3 +53,10 @@ jobs:
           DB_USER: root
           DB_PASSWORD: ""
         run: composer test
+
+      # ETAPE E.5 (v7.1) : erreurs pre-existantes gelees dans
+      # phpstan-baseline.neon (voir phpstan.neon.dist) - ce job echoue
+      # seulement sur une NOUVELLE erreur.
+      - name: Run phpstan
+        if: matrix.php-version == '8.2'
+        run: composer phpstan

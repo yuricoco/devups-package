@@ -669,18 +669,30 @@ class DBAL extends Database
             $objarray = (array)$this->object;
 
             $langs = Dvups_lang::allrows();
+            // ETAPE F.2 (v7.1) : la langue par defaut (Dvups_lang::defaultLang(),
+            // colonne `main`), utilisee comme repli avant la chaine vide
+            // ci-dessous - voir la boucle qui suit.
+            $defaultLang = Dvups_lang::defaultLang();
+            $defaultIso = $defaultLang ? $defaultLang->getIso_code() : null;
 
             foreach ($langs as $lang) {
 
                 $keyvalue = [];
                 foreach ($this->object->dvtranslated_columns as $key) {
-                    if (!isset($objarray[$key]))
-                        continue;
-                    if (isset($objarray[$key][$lang->getIso_code()]))
-                        $keyvalue[$key] = $objarray[$key][$lang->getIso_code()];
-                    else
-                        $keyvalue[$key] = $id . "_" . $lang->getIso_code();
-                    // $this->object->{$key} = $objarray[$key][$lang->getIso_code()];
+                    // ETAPE F.2 (v7.1) : avant ce correctif, une colonne
+                    // traduite jamais fournie par l'appelant (`$objarray[$key]`
+                    // absent) etait entierement omise du tableau - omise de
+                    // l'INSERT qui en decoule, donc "doesn't have a default
+                    // value" sous MySQL 8/sql_mode strict (jamais vu en local,
+                    // MariaDB n'etant pas strict par defaut). Chaque colonne
+                    // traduite recoit desormais systematiquement une valeur :
+                    // celle fournie pour cette langue, sinon celle fournie
+                    // pour la langue par defaut, sinon une chaine vide -
+                    // jamais plus une colonne manquante de l'INSERT.
+                    $perLang = is_array($objarray[$key] ?? null) ? $objarray[$key] : [];
+                    $keyvalue[$key] = $perLang[$lang->getIso_code()]
+                        ?? ($defaultIso !== null ? ($perLang[$defaultIso] ?? null) : null)
+                        ?? '';
                 }
                 $keyvalue["lang_id"] = $lang->getId();
                 $keyvalue[$this->table . "_id"] = $id;
@@ -746,6 +758,45 @@ class DBAL extends Database
         $table = $metadata->table["name"];
         $objectinst = new $object;
 
+        // ETAPE F.2 (v7.1) : Model::create() (seul appelant de cette
+        // methode statique) ne transmet dans $keyvalue que les colonnes
+        // explicitement fournies par l'appelant - toute colonne NOT NULL
+        // sans defaut SQL mais avec un defaut PHP non nul sur l'entite
+        // (ex. Country::$iso3 = '') et non fournie par l'appelant etait
+        // donc absente de l'INSERT lui-meme (jamais un NULL explicite) :
+        // invisible sous sql_mode tolerant (MariaDB, utilise en local),
+        // erreur 1364 sous sql_mode strict (MySQL 8, celui de la CI).
+        // Complete $keyvalue avec les valeurs par defaut non nulles
+        // declarees sur l'entite, mais UNIQUEMENT pour les colonnes NOT
+        // NULL (`nullable === false` dans le mapping Doctrine) absentes de
+        // $keyvalue - $keyvalue (fourni par l'appelant) reste toujours
+        // prioritaire. Se limiter aux colonnes NOT NULL est deliberement
+        // conservateur : une colonne nullable omise par l'appelant doit
+        // continuer a recevoir NULL en base (comportement existant,
+        // observe sur User::$lang = "en" - nullable=true - dont de
+        // nombreux appelants attendent explicitement NULL quand `lang`
+        // n'est pas fourni, jamais le defaut PHP "en").
+        // Passe par entityKey() (deja utilisee par le chemin d'instance
+        // createDbal()) plutot que par un cast (array) direct : $objectinst
+        // est protected/private sur ses colonnes, un cast depuis cette
+        // classe (hors de la hierarchie de l'entite) ne verrait que des
+        // cles prefixees (\0*\0iso3), jamais le nom de colonne reel.
+        $defaults = array_filter(
+            $objectinst->entityKey($metadata->fieldNames),
+            function ($val, $key) use ($metadata) {
+                return $val !== null
+                    && isset($metadata->fieldMappings[$key]['nullable'])
+                    && $metadata->fieldMappings[$key]['nullable'] === false;
+            },
+            ARRAY_FILTER_USE_BOTH
+        );
+        $keyvalue = array_merge($defaults, $keyvalue);
+        // ETAPE F.2 (v7.1) : voir castEmptyFormStrings() - un appelant de
+        // Model::create() peut transmettre '' pour une colonne numerique/
+        // booleenne/temporelle (ex. un formulaire rejoue tel quel), meme
+        // chemin que createDbal()/mappingProd() ci-dessus.
+        $keyvalue = self::castEmptyFormStrings($keyvalue, $metadata, $object);
+
         if (isset($objectinst->dvtranslate) && $objectinst->dvtranslate) {
             $objarray = $keyvalue;
             $values = [];
@@ -763,6 +814,13 @@ class DBAL extends Database
             // (iso_code => id, iso_code.'/' => id, id => iso_code) : on ne
             // retient que les entrees iso_code => id (cle string, qui ne finit
             // pas par '/').
+            // ETAPE F.2 (v7.1) : meme repli qu'au-dessus (createDbal()) -
+            // valeur fournie pour cette langue, sinon celle de la langue par
+            // defaut, sinon une chaine vide ; jamais une colonne omise de
+            // l'INSERT (voir le commentaire detaille plus haut).
+            $defaultLang = Dvups_lang::defaultLang();
+            $defaultIso = $defaultLang ? $defaultLang->getIso_code() : null;
+
             $activeLangs = Dvups_lang::cachedActiveDlangs();
             foreach ($activeLangs as $iso => $langId) {
                 if (!is_string($iso) || substr($iso, -1) === '/')
@@ -770,13 +828,10 @@ class DBAL extends Database
 
                 $keyvalue = [];
                 foreach ($objectinst->dvtranslated_columns as $key) {
-                    if (!isset($objarray[$key]))
-                        continue;
-
-                    if (isset($objarray[$key][$iso]))
-                        $keyvalue[$key] = $objarray[$key][$iso];
-                    else
-                        $keyvalue[$key] = $id . "_" . $iso;
+                    $perLang = is_array($objarray[$key] ?? null) ? $objarray[$key] : [];
+                    $keyvalue[$key] = $perLang[$iso]
+                        ?? ($defaultIso !== null ? ($perLang[$defaultIso] ?? null) : null)
+                        ?? '';
                 }
                 $keyvalue["lang_id"] = $langId;
                 $keyvalue[$table . "_id"] = $id;
@@ -792,6 +847,65 @@ class DBAL extends Database
             $id = self::_createAction($table, $keyvalue, $objectinst);
         }
         return $id;
+    }
+
+    /**
+     * ETAPE F.2 (v7.1) : un formulaire HTML (ou du JSON permissif) soumet
+     * toujours des chaines - un champ numerique/booleen/temporel (type
+     * Doctrine "integer"/"smallint"/"bigint"/"float"/"decimal"/"boolean"/
+     * "date"/"datetime"/"time") laisse vide arrive donc ici comme '' (ex.
+     * CountryForm, `phonecode`). MySQL non strict (MariaDB en local)
+     * convertissait silencieusement '' en 0/false/une date "zero" pour une
+     * telle colonne ; sql_mode strict (MySQL 8, celui de la CI) le refuse
+     * (erreur 1366 "Incorrect integer value", ou 1292 sous NO_ZERO_DATE).
+     * Plutot que de laisser une erreur SQL illisible remonter, resout '' en
+     * amont, dans l'ordre : NULL si la colonne est nullable ; sinon le
+     * defaut PHP declare sur l'entite (ex. Country::$iso3 = '') s'il en
+     * existe un ; sinon, pour un type numerique/booleen, un zero-equivalent
+     * (0 / false - replique le comportement implicite dont le framework
+     * dependait jusque-la) ; pour un type temporel (date/datetime/time)
+     * SANS defaut PHP ni nullable, il n'existe aucune valeur "vide" sure
+     * (inventer une date serait trompeur, et NO_ZERO_DATE interdit
+     * precisement la date "zero") : leve une erreur de validation lisible
+     * plutot que de laisser filer un INSERT/UPDATE voue a l'echec SQL.
+     * Chemin partage par createDbal()/mappingProd() et _createDbal().
+     */
+    private static function castEmptyFormStrings(array $keys, $metadata, string $class): array
+    {
+        $numeric = ['integer', 'smallint', 'bigint', 'float', 'decimal'];
+        $temporal = ['date', 'datetime', 'time'];
+        $relevant = array_merge($numeric, $temporal, ['boolean']);
+
+        $defaults = null;
+        foreach ($keys as $key => $val) {
+            if ($val !== '')
+                continue;
+            $type = $metadata->fieldMappings[$key]['type'] ?? null;
+            if (!in_array($type, $relevant, true))
+                continue;
+
+            if (!empty($metadata->fieldMappings[$key]['nullable'])) {
+                $keys[$key] = null;
+                continue;
+            }
+
+            if ($defaults === null)
+                $defaults = (new $class)->entityKey($metadata->fieldNames);
+            $default = $defaults[$key] ?? null;
+            if ($default !== null && $default !== '') {
+                $keys[$key] = $default;
+                continue;
+            }
+
+            if (in_array($type, $temporal, true)) {
+                throw new \InvalidArgumentException(
+                    "Le champ '" . $key . "' est obligatoire : valeur vide non autorisee pour une colonne de type '" . $type . "'."
+                );
+            }
+
+            $keys[$key] = $type === 'boolean' ? false : 0;
+        }
+        return $keys;
     }
 
     private static function _createAction($table, $keyvalue, $objectinst = null)
@@ -1616,6 +1730,12 @@ class DBAL extends Database
             if (is_array($val))
                 $this->objectCollection[] = $val;
         }
+
+        // ETAPE F.2 (v7.1) : voir castEmptyFormStrings() - un formulaire
+        // HTML soumet toujours des chaines, un champ numerique/booleen/
+        // temporel laisse vide (ex. CountryForm, `phonecode`) arrive donc
+        // ici comme ''.
+        $keys = self::castEmptyFormStrings($keys, $metadata, $this->objectName);
 
         $this->objectVar = array_keys($keys);
         $this->objectValue = array_values($keys);

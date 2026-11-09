@@ -110,10 +110,21 @@ class Lazyloading implements \JsonSerializable
                 $this->currentqb->andwhere($attr)->in(explode(',', $value));
                 break;
             case "rein":
-                $this->currentqb->where_str(" $value IN ( $attr )");
+                // ETAPE B.3 (v7.1) : where_str(" $value IN ( $attr )")
+                // interpolait $value (donnee utilisateur) directement dans
+                // le SQL - injection SQL immediate (ex. valeur contenant
+                // une apostrophe ou une tentative d'injection). whereInReverse()
+                // lie desormais $value en parametre ; $attr reste un nom de
+                // colonne (identifiant, pas une valeur).
+                $this->currentqb->whereInReverse($value, $attr);
                 break;
             case "notin":
-                $this->currentqb->andwhere($attr)->notIn($value);
+                // ETAPE B.3 (v7.1) : $value n'etait jamais eclate par
+                // virgule ici (contrairement a "in" juste au-dessus) - la
+                // liste entiere passait donc comme une seule chaine brute
+                // a notIn(), interpolee sans echappement. Desormais
+                // eclatee et liee en parametres (voir notIn()).
+                $this->currentqb->andwhere($attr)->notIn(explode(',', $value));
                 break;
             case "empty":
                 if ($value == 1)

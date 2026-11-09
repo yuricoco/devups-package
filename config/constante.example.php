@@ -40,6 +40,10 @@ const __vendor_folder = __DIR__ . '/../vendor';
 define("__front", __env . 'web/assets/');
 const __admin = __env . 'admin/assets/';
 define('__prod', dv_env('APP_PROD', false));
+// ETAPE E.4 (v7.1) : Router::runCache()/cacheRoute() sont du code mort
+// quelle que soit cette valeur - voir le commentaire equivalent dans
+// config/constante.php. Ne jamais mettre ROUTE_CACHE=1 en attendant un
+// effet : aucun n'existe actuellement.
 define('__route_cache', dv_env('ROUTE_CACHE', false));
 define('__cache_version', dv_env('CACHE_VERSION', '1.0.0'));
 define('__default_lang', dv_env('DEFAULT_LANG', 'fr'));

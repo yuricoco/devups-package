@@ -19,6 +19,7 @@
 /database/*
 !/database/migration/
 !/database/seed/
+/tuto_doc/*.html
 /*.log
 error_log
 

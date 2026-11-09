@@ -1,7 +1,7 @@
-# ETAPE P.2 : analyse statique de surface (niveau 0) - trouve les classes
-# et methodes qui n'existent plus apres un renommage (meme famille de bug
-# que \DClass\lib\Util::getIp() -> Util::get_IP_address(), corrige dans ce
-# meme commit). `composer phpstan` pour la lancer.
+# ETAPE P.2 : analyse statique de surface - trouve les classes et methodes
+# qui n'existent plus apres un renommage (meme famille de bug que
+# \DClass\lib\Util::getIp() -> Util::get_IP_address(), corrige dans ce meme
+# commit). `composer phpstan` pour la lancer.
 #
 # Beaucoup de "Call to an undefined method" releves par ce niveau sont de
 # FAUX positifs : ce framework resout largement ses methodes par
@@ -9,14 +9,45 @@
 # traits non vus par phpstan dans certains contextes generiques, etc.) -
 # chaque signalement doit etre verifie a la main avant correction (voir
 # TODO.md, section ETAPE P.2, pour le detail de ce qui a ete corrige ici).
+#
+# ETAPE E.5 (v7.1) : passe de 0 a 1 - les 867 erreurs existantes (niveau 0
+# + les nouvelles de niveau 1, aucune n'est dans une ligne touchee par le
+# chantier v7.1 - verifie a la main, voir TODO.md) sont gelees dans
+# phpstan-baseline.neon plutot que corrigees une a une (hors perimetre
+# d'un chantier de dettes cible) : seule une NOUVELLE erreur (pas deja
+# dans ce fichier) fait desormais echouer `composer phpstan`. Niveau 2
+# tente, genere ~200 erreurs supplementaires de nature similaire
+# (proprietes dynamiques, methodes magiques) - reporte, pas dans ce
+# baseline, documente dans TODO.md plutot que fige silencieusement.
+includes:
+    - phpstan-baseline.neon
 parameters:
-    level: 0
+    level: 1
+    # ETAPE F.2 (v7.1) : sans ce bootstrap, phpstan ne voit aucune des
+    # constantes definies via define('x', dv_env(...)) dans
+    # config/constante.example.php (dbname, dbuser, __prod,
+    # GOOGLE_CLIENT_ID...) - leur valeur vient d'un appel de fonction, pas
+    # d'un litteral, et phpstan ne les decouvre pas par simple lecture
+    # statique du fichier comme il le fait pour un `const X = Y;` (c'est
+    # ainsi que config/constante.php, le fichier LOCAL ignore par git, les
+    # declare - jamais commis, donc jamais vu par la CI ni par un clone
+    # neuf). bootstrapFiles execute reellement ce fichier (dv_env() compris)
+    # avant l'analyse : les constantes existent alors pour de vrai, sans
+    # dependre d'un config/constante.php present par ailleurs - ni en CI, ni
+    # pour un contributeur qui vient de cloner le depot.
+    bootstrapFiles:
+        - config/constante.example.php
     paths:
         - src
         - dclass
         - route
         - config
         - documentation
+        # ETAPE E.5 (v7.1) : ajoute - sans lui, phpstan ne voit jamais
+        # admin\generator\TableTemplateRender (trait reellement utilise
+        # avec succes a l'execution par Datatable), erreur de symbole non
+        # baselinable ("use excludePaths instead").
+        - admin/generator
     excludePaths:
         - vendor/*
         - cache/*

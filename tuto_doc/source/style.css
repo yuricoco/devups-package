@@ -1,0 +1,73 @@
+@page {
+  size: A4;
+  margin: 22mm 20mm 22mm 20mm;
+  @top-right { content: string(chapter); font: 8pt "Inter"; color: #8a8f99; }
+  @bottom-center { content: counter(page); font: 8pt "Inter"; color: #8a8f99; }
+}
+@page cover { margin: 0; @top-right { content: none; } @bottom-center { content: none; } }
+@page toc { @top-right { content: none; } }
+
+html { font-family: "Bitstream Charter", "Lora", "DejaVu Serif", serif;
+       font-size: 10.2pt; line-height: 1.5; color: #1f2430; }
+body { margin: 0; }
+
+/* Couverture */
+.cover { page: cover; height: 297mm; position: relative; }
+.cover .band { background: #2f4c7a; color: #fff; height: 120mm; padding: 52mm 25mm 0 25mm; box-sizing: border-box; }
+.cover .brand { font-family: "Inter"; font-weight: 300; font-size: 54pt; line-height: 1; }
+.cover .rule { width: 26mm; border-top: 1.2pt solid #9db6dd; margin: 12mm 0 8mm 0; }
+.cover .subtitle { font-family: "Inter"; font-size: 17pt; color: #dbe5f5; }
+.cover .meta { font-family: "Inter"; font-size: 9.5pt; color: #3d4350; padding: 34mm 25mm 0 25mm; }
+.cover .meta p { margin: 0 0 3mm 0; }
+.cover .foot { position: absolute; bottom: 18mm; left: 25mm; right: 25mm; border-top: 0.5pt solid #e1e4ea;
+               padding-top: 3mm; font-family: "Inter"; font-size: 7.5pt; color: #8a8f99; }
+
+/* Sommaire */
+.toc { page: toc; break-after: page; font-family: "Inter"; }
+.toc-title { font-size: 20pt; font-weight: 600; margin: 0 0 8mm 0; border: none; }
+.toc ul { list-style: none; padding: 0; margin: 0; }
+.toc li a { color: inherit; text-decoration: none; }
+.toc li a::after { content: leader('.') target-counter(attr(href), page); color: #8a8f99; }
+.toc li.l1 { font-weight: 600; font-size: 10pt; margin-top: 4.5mm; }
+.toc li.l2 { font-size: 8.6pt; color: #4b5260; margin: 1mm 0 0 6mm; }
+
+/* Titres */
+h1, h2, h3, h4 { font-family: "Inter"; color: #1f2430; }
+h1.chapter { string-set: chapter content(); break-before: page; font-size: 21pt; font-weight: 700;
+             border-bottom: 1.6pt solid #2f4c7a; padding-bottom: 3mm; margin: 0 0 7mm 0; }
+h2 { font-size: 13pt; color: #2f4c7a; font-weight: 600; margin: 8mm 0 2.5mm 0; break-after: avoid; }
+h3 { font-size: 10.5pt; font-weight: 600; margin: 5mm 0 1.5mm 0; break-after: avoid; }
+p { margin: 0 0 2.6mm 0; text-align: justify; hyphens: auto; }
+ul, ol { margin: 0 0 3mm 0; padding-left: 6mm; }
+li { margin-bottom: 1mm; }
+strong { font-weight: 700; }
+
+/* Code */
+code { font-family: "DejaVu Sans Mono", monospace; font-size: 8.2pt; background: #eef1f6;
+       padding: 0.2mm 1mm; border-radius: 1mm; color: #24324d; }
+pre { background: #f5f7fa; border: 0.5pt solid #e1e4ea; border-left: 2pt solid #9db6dd;
+      padding: 2.5mm 3.5mm; margin: 0 0 3.5mm 0; font-size: 7.9pt; line-height: 1.4;
+      white-space: pre-wrap; break-inside: avoid; }
+pre code { background: none; padding: 0; font-size: inherit; color: #1f2430; }
+
+/* Tableaux */
+table { width: 100%; border-collapse: collapse; margin: 1mm 0 4mm 0; font-family: "Inter";
+        font-size: 8.1pt; line-height: 1.35; }
+thead { display: table-header-group; }
+th { background: #2f4c7a; color: #fff; text-align: left; font-weight: 600; padding: 1.8mm 2mm; }
+td { padding: 1.6mm 2mm; border-bottom: 0.5pt solid #e1e4ea; vertical-align: top; }
+tr { break-inside: avoid; }
+tbody tr:nth-child(even) td { background: #f7f9fc; }
+td code, th code { font-size: 7.4pt; }
+
+/* Encadrés */
+.note, .warn, .new { border-radius: 1.2mm; padding: 2.5mm 4mm; margin: 1mm 0 4mm 0; break-inside: avoid;
+                     font-size: 9.4pt; }
+.note { background: #f1f5fb; border-left: 2.2pt solid #2f4c7a; }
+.warn { background: #fdf5ec; border-left: 2.2pt solid #c7792b; }
+.new  { background: #eef8f1; border-left: 2.2pt solid #2f8a57; }
+.note p:last-child, .warn p:last-child, .new p:last-child { margin-bottom: 0; }
+.note > p:first-child strong:first-child, .warn > p:first-child strong:first-child,
+.new > p:first-child strong:first-child { font-family: "Inter"; }
+
+.end { margin-top: 8mm; font-style: italic; color: #4b5260; }

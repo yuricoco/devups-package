@@ -13,6 +13,19 @@ class BladeD extends Blade
 {
     public function __construct($viewPaths, $cachePath, \Illuminate\Events\Dispatcher $events = null)
     {
+        // ETAPE F.3 (v7.1) : cache/ est entierement ignore par git (.gitignore)
+        // - un clone neuf n'a donc AUCUN de ses sous-dossiers, y compris
+        // cache/views. Le compilateur Blade (vendor, jamais modifie ici)
+        // n'essaie lui-meme jamais de creer $cachePath : il echoue avec
+        // file_put_contents(.../cache/views/xxx.php): Failed to open stream
+        // au premier rendu de vue, sans rapport avec php devups install (qui
+        // le cree, mais seulement si on l'a lance). Cree systematiquement
+        // ici, au point d'entree UNIQUE de toute instanciation de Blade dans
+        // ce framework (Genesis, Controller, Request) - jamais besoin d'une
+        // etape d'installation prealable.
+        if (!is_dir($cachePath))
+            mkdir($cachePath, 0777, true);
+
         parent::__construct($viewPaths, $cachePath, $events);
     }
 
