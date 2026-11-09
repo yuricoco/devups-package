@@ -2,7 +2,9 @@
 // user \dclass\devups\model\Model;
 
 /**
- * @Entity @Table(name="tree_item")
+ * @Entity @Table(name="tree_item", uniqueConstraints={
+ *     @UniqueConstraint(name="uq_tree_item_tree_id_slug", columns={"tree_id", "slug"})
+ * })
  * */
 class Tree_item extends Model implements JsonSerializable
 {

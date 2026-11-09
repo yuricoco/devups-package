@@ -30,6 +30,13 @@ final class ReportingmodelCreateViaFormTest extends HttpTestCase
             $pdo->exec("DELETE FROM reportingmodel_lang WHERE reportingmodel_id = " . $this->reportingmodelId);
             $pdo->exec("DELETE FROM reportingmodel WHERE id = " . $this->reportingmodelId);
         }
+        // ReportingmodelController::ensureTemplateFile() (ETAPE M.4) genere
+        // automatiquement web/views/mails/<name>.blade.php a la creation -
+        // jamais nettoye autrement, resterait sur disque a chaque run.
+        $generated = ROOT . 'web/views/mails/etapea4_regression_reportingmodel.blade.php';
+        if (file_exists($generated)) {
+            unlink($generated);
+        }
         parent::tearDown();
     }
 

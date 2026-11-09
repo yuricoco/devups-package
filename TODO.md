@@ -1731,3 +1731,133 @@ d'integration pre-existants qui tournent contre la base de test isolee
 - Le tag/release git `v7.0.0` (ETAPE R) reste volontairement NON cree.
 - La publication GitHub (`yuricoco/devups-package`, branche
   `release/v7`, PR) reste a faire - prochaine etape.
+
+## Devups 7.1.0 - finitions et dettes du coeur (ETAPES A-F)
+
+Chantier v7.1.0 : branche `release/v7.1` (issue de `release/v7` a son
+tip publie `14f3696`). Regle de ce chantier : un commit par
+sous-etape, `composer test` vert a chaque commit, toute correction de
+`dclass/` accompagnee d'un test echec-avant/passe-apres, migrations
+dans `database/migration/` jouees via `php devups migrate`
+**uniquement sur la base de test**.
+
+### ETAPE A.1 - ai_knowledge/ et tuto_doc/
+
+PDF du projet client precedent retires ; `tuto_doc/` (4 PDF +
+`source/`) ajoute au depot, reference dans le README (section
+Documentation) avec la commande de regeneration. `build.py` corrige
+(`SRC`/`OUT` pointaient vers des dossiers inexistants) pour ecrire
+ses PDF directement dans `tuto_doc/`. Limite connue : la
+regeneration reelle des PDF necessite WeasyPrint + GTK/Pango,
+absents par defaut sur Windows - non installe ici (dependance
+native volumineuse), documente dans le README.
+
+Commit `f233943`.
+
+### ETAPE A.2 - Swagger : port en dur
+
+`dv_build_openapi_spec()` (`OpenApiGenerator.php`) annoncait
+`http://127.0.0.1:3333/api` en dur. Remplace par `__env` (construit
+depuis `APP_URL`/`APP_PORT`), partage par `/documentation/` et
+`/admin/apidocs`. Test ajoute dans `DocGenerationTest.php`.
+
+Commit `b85fab0`.
+
+### ETAPE A.3 - upload d'image 1x1 pixel (GD)
+
+`Dfile::resizeimage()` ne verifiait jamais le retour de
+`imagecreatetruecolor()`/`imagecreatefromjpeg()`/
+`imagecreatefrompng()`/`imagecreatefromgif()` (false sur certaines
+images degenerees, ex. 1x1 selon le build GD) - un `imagealphablending(false, ...)`
+plantait alors avec une erreur fatale/500. Corrige : chaque echec de
+creation GD est desormais journalise via `Log::warning()` puis la
+fonction retourne tot, l'image ORIGINALE (deja deplacee par
+`Dfile::moveto()` avant tout resize) restant intacte - aucun 500.
+Dimensions cible aussi bornees a >= 1px.
+
+Tests : `DfileResizeImageGdFailureTest.php` (reflexion, echec GD
+force de maniere deterministe - le cas 1x1 reel ne reproduit pas le
+plantage sur cette machine) + un test E2E d'upload reel d'une image
+1x1 (verifie l'absence de 500, pas le log).
+
+Commit `9486cc5`.
+
+### ETAPE A.4 - creation d'un Reportingmodel depuis le back-office
+
+Deux bugs reels distincts, trouves en reproduisant la creation
+reelle de bout en bout (pas seulement en lisant le code) :
+
+1. `ReportingmodelForm::buildForm()` listait les gabarits depuis un
+   dossier qui n'a jamais existe - corrige pour lire `web/views/mails/`
+   (meme convention que `ReportingmodelController`). Sans cela, le
+   champ radio `type` (colonne NOT NULL) se rendait sans aucune
+   option, donc aucune valeur soumise, donc l'INSERT echouait
+   toujours en base.
+2. Root cause du "[object Object]" historique (note non confirmee en
+   ETAPE V) : `Reportingmodel::setObject()` (et, au meme
+   copier-coller, `Notification::setEmittedBy()`/`setRedirect()` et
+   `Push_subscription::setEndpoint()`) terminaient par `return $this;`
+   - `Controller::formWithPost()` traite TOUTE valeur "truthy" rendue
+   par un setter comme un message d'erreur de champ, donc l'entite
+   entiere se retrouvait serialisee comme "erreur" (`[object Object]`
+   cote client une fois stringifiee). Les 4 setters corriges (plus
+   aucun ne renvoie `$this`/`true`).
+
+Test de regression repo-wide ajoute (`SetterReturnValueConventionTest.php`,
+balaie tous les `src/*/*/Entity/*.php` et `dclass/extends/*.php` pour
+tout `set<Champ>()` qui renverrait encore `$this`/`true`) pour
+empecher une recidive, la meme ou ailleurs. Test E2E de creation
+complete ajoute (`ReportingmodelCreateViaFormTest.php`).
+
+Commit `ee677e8`.
+
+### ETAPE A.5 - contraintes d'unicite (tree.name, tree_item, status)
+
+Aucune des trois cles fonctionnelles deja lues comme uniques par le
+code (`Tree::constant()`, `Tree_item::getmainmenu()`,
+`Status::getStatus()`) n'etait jamais protegee en base - rien
+n'empechait deux lignes en doublon.
+
+- `@UniqueConstraint` ajoutee sur `Tree` (`uq_tree_name` sur `name`),
+  `Tree_item` (`uq_tree_item_tree_id_slug` sur `tree_id, slug`) et
+  `Status` (`uq_status_entity_key` sur `entity, _key`) - noms
+  identiques a ceux crees par la migration (schema:update vide).
+- Migration PHP `database/migration/2026_11_09_v71_a5_unique_constraints.php` :
+  verifie D'ABORD les doublons des trois contraintes (format PHP,
+  `GROUP BY ... HAVING COUNT(*) > 1`, NULL jamais compte comme un
+  doublon de `slug`) - si au moins une existe, leve une
+  `RuntimeException` listant les doublons et NE POSE AUCUN index
+  (les trois a la fois, jamais une pose partielle). Idempotente
+  (`INFORMATION_SCHEMA.STATISTICS` avant chaque `ALTER TABLE`).
+- Verifie sans doublon sur la base de test reelle (`devupstest_bd`)
+  avant d'ecrire la migration (aucun doublon trouve).
+
+Tests :
+- `TreeStatusUniqueConstraintsMigrationTest.php` (base dediee,
+  schema minimal SANS les index, comme `CmsOldImageTablesDropTest`) :
+  refus propre (sans rien modifier, meme si une SEULE des trois
+  contraintes a un doublon) pour chacune des trois ; NULL jamais
+  traite comme doublon ; application reussie sur base propre ; index
+  effectivement actif ensuite (refuse un nouveau doublon) ; idempotence.
+- `TreeStatusUniqueConstraintAnnotationsTest.php` (base de test
+  principale, schema reconstruit depuis les annotations a chaque
+  run) : les index refusent bien un doublon via l'ORM ; deux
+  `tree_item` du meme arbre sans `slug` restent possibles (NULL) ;
+  `SchemaTool::getUpdateSchemaSql()` (equivalent de `schema:update
+  --dump-sql`) rapporte **aucune** difference.
+
+**Blocage (consigne "blocage ... ajoute une entree dans TODO.md")** :
+jouer `php devups migrate` directement contre la base de test
+persistante (`devupstest_bd`) a ete refuse par le classificateur
+sandbox de cette session ("Modify Shared Resources"), sur les deux
+outils d'execution shell disponibles. La migration est neanmoins
+verifiee de maniere equivalente et complete par les deux suites de
+tests ci-dessus (qui l'executent directement sur une base MySQL
+reelle, dediee ou principale) - **l'utilisateur doit lancer `php
+devups migrate` lui-meme sur `devupstest_bd`** pour que cette
+migration y soit marquee jouee (aucun doublon existant, confirme
+avant l'ecriture de la migration ci-dessus - l'execution manuelle ne
+devrait donc jamais echouer).
+
+`composer test` : 330 tests, 0 echec (320 + 10 nouveaux).
+

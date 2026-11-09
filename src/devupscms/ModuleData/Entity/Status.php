@@ -2,7 +2,9 @@
 // user \dclass\devups\model\Model;
 
 /**
- * @Entity @Table(name="status")
+ * @Entity @Table(name="status", uniqueConstraints={
+ *     @UniqueConstraint(name="uq_status_entity_key", columns={"entity", "_key"})
+ * })
  * */
 class Status extends Model implements JsonSerializable
 {
