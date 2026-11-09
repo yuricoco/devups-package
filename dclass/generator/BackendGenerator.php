@@ -190,11 +190,20 @@ class BackendGenerator
 
                     $construteur .= "\n\t$" . "this->" . $relation->entity . " = new $entitytype();";
 
+                    // ETAPE D.6 (v7.1) - D6 : une relation declaree "not"
+                    // nullable dans le datacore ne se repercutait jamais
+                    // dans l'annotation Doctrine generee - @JoinColumn ne
+                    // portait que onDelete, jamais nullable=false, et le
+                    // schema genere (Setup::createAnnotationMetadataConfiguration)
+                    // acceptait donc NULL sur une relation censee etre
+                    // obligatoire.
+                    $relationNullable = (($relation->nullable ?? 'default') === 'not') ? ", nullable=false" : "";
+
                     $attrib .= "
         /**
          * " . ucfirst($relation->cardinality) . "
          * @ManyToOne(targetEntity=\"" . $antislash . $entitytype . "\")
-         * @JoinColumn(onDelete=\"" . ($relation->ondelete ) . "\")
+         * @JoinColumn(onDelete=\"" . ($relation->ondelete ) . "\"" . $relationNullable . ")
          * @var " . $antislash . $entitytype . "
          */
         public $" . $relation->entity . ";\n";
@@ -216,10 +225,14 @@ class BackendGenerator
 
                     $construteur .= "\n\t$" . "this->" . $relation->entity . " = new " . $entitytype . "();";
 
+                    // ETAPE D.6 (v7.1) - D6 : voir le commentaire equivalent
+                    // dans la branche oneToOne ci-dessus.
+                    $relationNullable = (($relation->nullable ?? 'default') === 'not') ? ", nullable=false" : "";
+
                     $attrib .= "
         /**
          * @" . ucfirst($relation->cardinality) . "(targetEntity=\"" . $antislash . $entitytype . "\")
-         * @JoinColumn(onDelete=\"" . $relation->ondelete . "\")
+         * @JoinColumn(onDelete=\"" . $relation->ondelete . "\"" . $relationNullable . ")
          * @var " . $antislash . $entitytype . "
          */
         public $" . $relation->entity . ";\n";
