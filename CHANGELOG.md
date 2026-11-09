@@ -4,6 +4,11 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 
 ## [7.1.0] - 2026-11-09 - finitions et dettes du cœur (ÉTAPES A à F)
 
+**PHP 8.2 minimum (8.1 en fin de vie).** La 7.0.0 annonçait 8.1 mais ne
+s'installait pas réellement à cause de `minishlink/web-push` v10 (qui exige
+déjà PHP ≥ 8.2) - `composer.json` l'affiche maintenant correctement.
+Intégration continue sur PHP 8.2, 8.3 et 8.4.
+
 ### Sécurité
 
 - `QueryBuilder::whereIn()`/`in()`/`notIn()`/`whereInReverse()`/
@@ -101,6 +106,46 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
   au premier rendu de vue) - `BladeD` (point d'entrée unique de toute
   instanciation de Blade dans ce framework) le crée désormais elle-même
   si besoin, sans dépendre de `php devups install`.
+- **Valeur vide sur une colonne numérique/booléenne/temporelle** : un
+  formulaire HTML soumet toujours des chaînes - un champ laissé vide
+  (ex. `phonecode` sur `CountryForm`) arrivait tel quel (`''`) jusqu'à
+  l'INSERT/UPDATE SQL. MySQL non strict (MariaDB en local) convertissait
+  silencieusement en `0`/`false` ; `sql_mode` strict (MySQL 8, celui de
+  la CI) le refusait avec une erreur SQL illisible (1366 "Incorrect
+  integer value"). `DBAL` résout désormais `''` en amont, pour les
+  colonnes Doctrine `integer`/`smallint`/`bigint`/`float`/`decimal`/
+  `boolean`/`date`/`datetime`/`time` : `NULL` si la colonne est
+  nullable, sinon le défaut PHP déclaré sur l'entité, sinon (numérique/
+  booléen) `0`/`false`, sinon (date/datetime/time, sans défaut sûr) une
+  erreur de validation lisible plutôt qu'un plantage SQL.
+- **Perte silencieuse de données sur une mise à jour partielle (risque
+  réel en 7.0.0 sur MySQL non strict)** : toute mise à jour passant par
+  `CrudTrait::updateAction()`/`Dvups_adminController::updateAction()`
+  (le chemin utilisé par tous les écrans d'administration) construit
+  l'entité par id seul (`new Entite($id)`), jamais hydratée avant
+  application du formulaire. `ModelTrait::entityKeyUpdate()` traitait
+  alors CHAQUE colonne actuellement non modifiée par le formulaire comme
+  "modifiée à sa valeur PHP par défaut (souvent `NULL`)" et l'écrivait
+  en base - par exemple, changer uniquement le rôle d'un administrateur
+  effaçait silencieusement son `login`, son mot de passe et son email.
+  Sous MySQL non strict (7.0.0, MariaDB en local), ceci passait
+  inaperçu (colonne `NOT NULL` réécrite avec une valeur par défaut
+  implicite, avec un simple warning) ; sous `sql_mode` strict (MySQL 8,
+  la CI) l'erreur 1048 ("Column 'login' cannot be null") le révélait.
+  `Controller::form_fillingentity()` hydrate désormais l'entité depuis
+  la base avant d'y appliquer le formulaire (`formWithPost()` ne cible
+  que les clés soumises, jamais une remise à zéro) : une mise à jour
+  n'écrit plus que les colonnes réellement soumises par le formulaire.
+  `entityKeyUpdate()` ignore en complément, par sécurité, toute colonne
+  encore à `NULL` quand aucun état hydraté n'est disponible.
+- `composer phpstan` ne trouvait aucune des constantes définies via
+  `define('x', dv_env(...))` dans `config/constante.example.php`
+  (`dbname`, `__prod`, `GOOGLE_CLIENT_ID`...) dans un clone neuf (`config/
+  constante.php`, qui les déclare en local via `const`, est ignoré par
+  git) - la CI n'avait donc jamais pu exécuter cette étape avec succès.
+  `phpstan.neon.dist` charge désormais `config/constante.example.php` en
+  `bootstrapFiles` ; un `composer install`/`update` crée en complément
+  `config/constante.php` depuis l'exemple s'il est absent.
 
 ### Migrations v7.1
 

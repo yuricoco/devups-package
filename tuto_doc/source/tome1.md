@@ -83,7 +83,7 @@ Un projet ajoute ses propres composants à côté des trois du socle — par exe
 
 | Élément | Valeur |
 |---|---|
-| PHP | **8.1 ou plus** (`composer.json` : `"php": ">=8.1"`), testé en intégration continue sur 8.1, 8.2 et 8.3 |
+| PHP | **8.2 ou plus** (`composer.json` : `"php": ">=8.2"`), testé en intégration continue sur 8.2, 8.3 et 8.4 |
 | Extensions | `pdo_mysql`, `mbstring`, `xml`, `gd`, `zip`, `curl`, `intl` |
 | Base de données | MySQL ou MariaDB |
 | Composer | requis |
@@ -921,7 +921,7 @@ Le framework est livré avec une suite PHPUnit 10, configurée par `phpunit.xml.
 | bout en bout | `composer test:e2e` | un serveur `php -S` démarré automatiquement : API, connexion, sécurité, chaque écran liste et formulaire du back-office |
 | toutes | `composer test` | les trois |
 
-L'intégration continue (`.github/workflows/tests.yml`) exécute `composer test` sur PHP 8.1, 8.2 et 8.3 avec un service MySQL, à chaque push et chaque pull request.
+L'intégration continue (`.github/workflows/tests.yml`) exécute `composer test` sur PHP 8.2, 8.3 et 8.4 avec un service MySQL, à chaque push et chaque pull request.
 
 ## 9.2 La base de test
 

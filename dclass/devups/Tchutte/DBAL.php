@@ -791,6 +791,11 @@ class DBAL extends Database
             ARRAY_FILTER_USE_BOTH
         );
         $keyvalue = array_merge($defaults, $keyvalue);
+        // ETAPE F.2 (v7.1) : voir castEmptyFormStrings() - un appelant de
+        // Model::create() peut transmettre '' pour une colonne numerique/
+        // booleenne/temporelle (ex. un formulaire rejoue tel quel), meme
+        // chemin que createDbal()/mappingProd() ci-dessus.
+        $keyvalue = self::castEmptyFormStrings($keyvalue, $metadata, $object);
 
         if (isset($objectinst->dvtranslate) && $objectinst->dvtranslate) {
             $objarray = $keyvalue;
@@ -842,6 +847,65 @@ class DBAL extends Database
             $id = self::_createAction($table, $keyvalue, $objectinst);
         }
         return $id;
+    }
+
+    /**
+     * ETAPE F.2 (v7.1) : un formulaire HTML (ou du JSON permissif) soumet
+     * toujours des chaines - un champ numerique/booleen/temporel (type
+     * Doctrine "integer"/"smallint"/"bigint"/"float"/"decimal"/"boolean"/
+     * "date"/"datetime"/"time") laisse vide arrive donc ici comme '' (ex.
+     * CountryForm, `phonecode`). MySQL non strict (MariaDB en local)
+     * convertissait silencieusement '' en 0/false/une date "zero" pour une
+     * telle colonne ; sql_mode strict (MySQL 8, celui de la CI) le refuse
+     * (erreur 1366 "Incorrect integer value", ou 1292 sous NO_ZERO_DATE).
+     * Plutot que de laisser une erreur SQL illisible remonter, resout '' en
+     * amont, dans l'ordre : NULL si la colonne est nullable ; sinon le
+     * defaut PHP declare sur l'entite (ex. Country::$iso3 = '') s'il en
+     * existe un ; sinon, pour un type numerique/booleen, un zero-equivalent
+     * (0 / false - replique le comportement implicite dont le framework
+     * dependait jusque-la) ; pour un type temporel (date/datetime/time)
+     * SANS defaut PHP ni nullable, il n'existe aucune valeur "vide" sure
+     * (inventer une date serait trompeur, et NO_ZERO_DATE interdit
+     * precisement la date "zero") : leve une erreur de validation lisible
+     * plutot que de laisser filer un INSERT/UPDATE voue a l'echec SQL.
+     * Chemin partage par createDbal()/mappingProd() et _createDbal().
+     */
+    private static function castEmptyFormStrings(array $keys, $metadata, string $class): array
+    {
+        $numeric = ['integer', 'smallint', 'bigint', 'float', 'decimal'];
+        $temporal = ['date', 'datetime', 'time'];
+        $relevant = array_merge($numeric, $temporal, ['boolean']);
+
+        $defaults = null;
+        foreach ($keys as $key => $val) {
+            if ($val !== '')
+                continue;
+            $type = $metadata->fieldMappings[$key]['type'] ?? null;
+            if (!in_array($type, $relevant, true))
+                continue;
+
+            if (!empty($metadata->fieldMappings[$key]['nullable'])) {
+                $keys[$key] = null;
+                continue;
+            }
+
+            if ($defaults === null)
+                $defaults = (new $class)->entityKey($metadata->fieldNames);
+            $default = $defaults[$key] ?? null;
+            if ($default !== null && $default !== '') {
+                $keys[$key] = $default;
+                continue;
+            }
+
+            if (in_array($type, $temporal, true)) {
+                throw new \InvalidArgumentException(
+                    "Le champ '" . $key . "' est obligatoire : valeur vide non autorisee pour une colonne de type '" . $type . "'."
+                );
+            }
+
+            $keys[$key] = $type === 'boolean' ? false : 0;
+        }
+        return $keys;
     }
 
     private static function _createAction($table, $keyvalue, $objectinst = null)
@@ -1666,6 +1730,12 @@ class DBAL extends Database
             if (is_array($val))
                 $this->objectCollection[] = $val;
         }
+
+        // ETAPE F.2 (v7.1) : voir castEmptyFormStrings() - un formulaire
+        // HTML soumet toujours des chaines, un champ numerique/booleen/
+        // temporel laisse vide (ex. CountryForm, `phonecode`) arrive donc
+        // ici comme ''.
+        $keys = self::castEmptyFormStrings($keys, $metadata, $this->objectName);
 
         $this->objectVar = array_keys($keys);
         $this->objectValue = array_values($keys);

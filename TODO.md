@@ -2384,18 +2384,119 @@ neuf.
 `composer test` : 401 tests, 0 echec, sous sql_mode strict, depuis un
 clone neuf. `composer phpstan` : aucune erreur.
 
+## ETAPE F.4 - CI GitHub encore rouge apres F.2/F.3
+
+Le run CI declenche par le commit F.2/F.3 restait en echec (8.1 : etape
+"Install dependencies" ; 8.2/8.3 : "Run test suite") - trois causes
+distinctes, trouvees en lisant le journal reel de la CI (necessite une
+connexion GitHub, l'API publique refusant les logs sans droits admin).
+
+### PHP 8.1 en fin de vie, jamais reellement installable depuis la 7.0.0
+
+`composer.json` annoncait `"php": ">=8.1"` mais `minishlink/web-push`
+v10 (deja present en 7.0.0) exige `php ">=8.2"` - un `composer install`
+sous PHP 8.1 echouait donc systematiquement a l'etape "Install
+dependencies", jamais remarque car cette etape n'avait jamais ete
+atteinte avant F.2/F.3 (toute la CI echouait plus tot). PHP 8.1 n'a de
+toute facon plus de correctifs de securite depuis le 31/12/2025.
+Corrige : `"php": ">=8.2"`, matrice CI `8.2`/`8.3`/`8.4`, README/
+tuto_doc (Tome I SS1.4) et CHANGELOG mis a jour.
+
+### '' sur une colonne numerique/booleenne/temporelle
+
+`CountryCreateViaFormTest` (deja existant) : `phonecode` (colonne
+`integer`) soumis vide par `CountryForm` arrivait tel quel ('') jusqu'a
+l'INSERT - erreur 1366 sous sql_mode strict. `DBAL::castEmptyFormStrings()`
+(nouvelle methode partagee par `mappingProd()` et `_createDbal()`)
+resout desormais '' en amont, pour les colonnes Doctrine
+`integer`/`smallint`/`bigint`/`float`/`decimal`/`boolean`/`date`/
+`datetime`/`time` : NULL si nullable, sinon le defaut PHP de l'entite,
+sinon (numerique/booleen) 0/false, sinon (temporel, sans valeur sure)
+une `\InvalidArgumentException` lisible plutot qu'une erreur SQL. Test ajoute :
+`StrictModeFrameworkInsertUpdateTest::testCreateCoercesAnEmptyStringToZeroForANumericColumn`
+(chemin statique `Model::create()`/`_createDbal()` - le chemin instance
+est deja couvert par `CountryCreateViaFormTest`).
+
+### Perte silencieuse de donnees sur une mise a jour partielle
+
+`RoleAdminGuardTest::testNonMasterRoleWithUpdateCannotChangeAnAdminsRole` :
+erreur 1048 "Column 'login' cannot be null" sur un UPDATE qui ne
+touchait que le role d'un admin. Racine : `CrudTrait::updateAction()` et
+`Dvups_adminController::updateAction()` construisent l'entite a mettre
+a jour par id seul (`new Entite($id)`), jamais hydratee avant
+d'appliquer le formulaire soumis (`Controller::form_fillingentity()`,
+appel a `hydrate()` commente de longue date). `ModelTrait::
+entityKeyUpdate()` traitait alors CHAQUE colonne mappee - y compris
+celles jamais touchees par le formulaire, a leur valeur PHP par defaut
+(souvent NULL) - comme "modifiee", et l'ecrivait en base : changer
+uniquement le role d'un admin effacait silencieusement son login, son
+mot de passe et son email. Invisible sous sql_mode tolerant (MariaDB
+non strict n'a jamais ete utilise par la suite e2e en local, qui passe
+par un vrai sous-processus `php -S` non concerne par le `SET SESSION`
+de `tests/bootstrap.php` - seule la vraie CI, MySQL 8, l'a revele) ;
+erreur 1048 sous sql_mode strict.
+
+Corrige a la racine : `Controller::form_fillingentity()` reactive
+`hydrate()` avant application du formulaire (`formWithPost()` ne cible
+que les cles soumises - jamais une remise a zero de l'entite) :
+`entityKeyUpdate()` ne voit alors plus comme "modifiees" que les
+colonnes reellement soumises. `entityKeyUpdate()` ignore en complement,
+par securite, toute colonne encore a NULL quand aucun etat hydrate
+n'est disponible (defense en profondeur pour un chemin d'update qui ne
+passerait pas par `form_fillingentity()`).
+
+Meme schema cherche ailleurs dans le framework (`CrudTrait::
+updateAction()`, `Dvups_roleController::updateAction()`,
+`UserFrontController`) : tous passent par `form_generat()`/
+`form_fillingentity()`, donc par le meme correctif - aucun autre
+chemin d'update trouve.
+
+Tests ajoutes : `StrictModeFrameworkInsertUpdateTest::
+testUpdateOfUnhydratedEntityDoesNotNullOtherNotNullColumns` (unitaire,
+`Dvups_admin`) et `RoleAdminGuardTest::
+testUpdatingOnlyTheRoleLeavesOtherFieldsIntact` (e2e, demande
+explicitement : changer uniquement le role laisse login/password/email/
+name intacts).
+
+### phpstan: constantes dynamiques introuvables dans un clone neuf
+
+`composer phpstan`, jamais execute jusqu'au bout en CI avant ce
+correctif (la suite de tests echouait plus tot), echouait des le
+premier run reellement atteint : 118 erreurs "Constant dbname/dbuser/
+__prod/... not found". Cause : `config/constante.php` (ignore par git)
+declare ces constantes avec `const X = Y;` (litteral, vu par phpstan
+par simple lecture statique) alors que `config/constante.example.php`
+(le modele verse, absent de `config/constante.php` en CI/clone neuf)
+les declare via `define('X', dv_env(...))` - valeur dynamique, non
+decouverte par phpstan sans execution reelle du fichier. Corrige :
+`phpstan.neon.dist` charge `config/constante.example.php` en
+`bootstrapFiles` (l'execute reellement avant l'analyse, independamment
+de la presence d'un `config/constante.php` local). `composer install`/
+`update` cree en complement `config/constante.php` depuis l'exemple
+s'il est absent (confort pour un nouveau contributeur, non requis pour
+la CI).
+
+### Verification base de dev locale (lecture seule, demandee)
+
+`SELECT id, login FROM dvups_admin WHERE login = '' OR login IS NULL`
+sur la base configuree localement (`devupstest_bd`, base de test - voir
+`config/constante.php`) : 0 ligne. Aucune donnee corrompue trouvee par
+le bug ci-dessus sur cette base.
+
 ## Fin du chantier v7.1.0 - resume
 
-**Etat final** : `composer test` vert (401 tests, 0 echec, 2
+**Etat final** : `composer test` vert (405 tests, 0 echec, 2
 incomplets preexistants et hors perimetre - ecrans en lecture reel par
 design), verifie depuis un clone neuf ET sous sql_mode strict
 (MySQL 8, le defaut reel de la CI) - plus seulement en local sous
 MariaDB ; `composer phpstan` vert (niveau 1, 0 erreur hors
-`phpstan-baseline.neon`, 836 erreurs gelees aucune dans ce chantier).
-Une seule migration v7.1 a jouer sur une base existante
+`phpstan-baseline.neon`, bootstrap des constantes dynamiques inclus,
+verifie lui aussi depuis un clone neuf). Une seule migration v7.1 a
+jouer sur une base existante
 (`2026_11_09_v71_a5_unique_constraints.php`, non destructive) via
-`php devups migrate`. CI GitHub (workflow `tests`) verte - voir le
-numero de run dans le dernier commit de ce chantier.
+`php devups migrate`. CI GitHub (workflow `tests`, matrice PHP 8.2/
+8.3/8.4) verte - voir le numero de run dans le dernier commit de ce
+chantier.
 
 **Recapitulatif par etape** :
 - A : contraintes d'unicite manquantes + divers correctifs mineurs
@@ -2409,7 +2510,9 @@ numero de run dans le dernier commit de ce chantier.
   `manageServe()`, audit mort/vivant, PHPStan niveau 1 + CI).
 - F : documentation (CHANGELOG, 4 tomes, PDF, README) et sortie ; puis
   CI GitHub reparee (F.2 sql_mode strict, F.3 cache/views absent d'un
-  clone neuf) - rouge depuis la 7.0.0, jamais verte avant ce chantier.
+  clone neuf, F.4 PHP 8.1 EOL + coercion '' + perte de donnees UPDATE +
+  phpstan/constantes dynamiques) - rouge depuis la 7.0.0, jamais verte
+  avant ce chantier.
 
 **Reporte a la v8.0** (dettes ouvertes restantes, tableau 10.2 du Tome
 IV) :

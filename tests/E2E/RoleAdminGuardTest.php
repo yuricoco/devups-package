@@ -153,4 +153,45 @@ final class RoleAdminGuardTest extends HttpTestCase
             (int)\Dvups_privilege::where('dvups_role_id', $targetRoleId)->andwhere('dvups_action_id', $actionId)->count()
         );
     }
+
+    /**
+     * ETAPE F.2 (v7.1) : regression - Dvups_adminController::updateAction()
+     * construit l'entite a mettre a jour par id seul (new Dvups_admin($id)),
+     * jamais hydratee avant application du formulaire. entityKeyUpdate()
+     * (ModelTrait) traitait alors CHAQUE propriete actuellement non null
+     * comme "modifiee", donc toute colonne NOT NULL absente du formulaire
+     * (login, password...) etait reecrite a NULL en base - invisible sous
+     * sql_mode tolerant (MariaDB, UPDATE NULL -> defaut implicite + warning),
+     * erreur 1048 "Column 'login' cannot be null" sous sql_mode strict
+     * (MySQL 8, celui de la CI). Changer UNIQUEMENT le role d'un admin ne
+     * doit toucher aucune autre colonne.
+     */
+    public function testUpdatingOnlyTheRoleLeavesOtherFieldsIntact(): void
+    {
+        $this->loginAdmin(); // dv_admin, role maitre "admin"
+
+        $originalRoleId = \Dvups_role::create(['name' => 'e2e-onlyrole-orig' . uniqid(), 'alias' => 'x']);
+        $newRoleId = \Dvups_role::create(['name' => 'e2e-onlyrole-new' . uniqid(), 'alias' => 'x']);
+        $login = 'e2e-onlyrole' . uniqid();
+        $password = sha1('secret');
+        $email = 'e2e-onlyrole' . uniqid() . '@example.test';
+        $targetAdminId = \Dvups_admin::create([
+            'name' => 'cible-intacte', 'login' => $login, 'password' => $password, 'email' => $email,
+            'firstconnexion' => 0, 'dvups_role_id' => $originalRoleId,
+        ]);
+
+        $res = $this->request(
+            'POST',
+            'src/devups/ModuleAdmin/services.php?path=dvups_admin.update&id=' . $targetAdminId,
+            ['dvups_admin_form' => ['dvups_role.id' => $newRoleId]]
+        );
+
+        $this->assertTrue($this->json($res)['success'] ?? false, $res['body']);
+        $reloaded = \Dvups_admin::find($targetAdminId);
+        $this->assertSame($newRoleId, $reloaded->dvups_role->getId());
+        $this->assertSame('cible-intacte', $reloaded->getName());
+        $this->assertSame($login, $reloaded->getLogin());
+        $this->assertSame($password, $reloaded->getPassword());
+        $this->assertSame($email, $reloaded->getEmail());
+    }
 }

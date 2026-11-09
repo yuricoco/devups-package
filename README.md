@@ -10,7 +10,7 @@ de chaque version (une seule migration à jouer depuis la 7.0, `php devups migra
 
 ## Prérequis
 
-- PHP 8.1 ou plus (extensions `pdo_mysql`, `mbstring`, `xml`, `gd`, `zip`, `curl`, `intl`)
+- PHP 8.2 ou plus (extensions `pdo_mysql`, `mbstring`, `xml`, `gd`, `zip`, `curl`, `intl`)
 - MySQL / MariaDB
 - Composer
 
@@ -126,8 +126,8 @@ une base dont le nom ne contient pas `test` ou `phpunit`. Pour surcharger les ac
 (utilisateur, mot de passe), définir les variables d'environnement `DB_USER`,
 `DB_PASSWORD`... ou copier `phpunit.xml.dist` en `phpunit.xml` (non versionné).
 
-CI : `.github/workflows/tests.yml` exécute `composer test` sur PHP 8.1,
-8.2 et 8.3 avec un service MySQL, à chaque push/pull request.
+CI : `.github/workflows/tests.yml` exécute `composer test` sur PHP 8.2,
+8.3 et 8.4 avec un service MySQL, à chaque push/pull request.
 
 La suite e2e ouvre chaque écran liste et chaque formulaire du back-office pour
 toutes les entités déclarées : les écrans connus comme cassés sont listés dans

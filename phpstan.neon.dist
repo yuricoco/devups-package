@@ -23,6 +23,20 @@ includes:
     - phpstan-baseline.neon
 parameters:
     level: 1
+    # ETAPE F.2 (v7.1) : sans ce bootstrap, phpstan ne voit aucune des
+    # constantes definies via define('x', dv_env(...)) dans
+    # config/constante.example.php (dbname, dbuser, __prod,
+    # GOOGLE_CLIENT_ID...) - leur valeur vient d'un appel de fonction, pas
+    # d'un litteral, et phpstan ne les decouvre pas par simple lecture
+    # statique du fichier comme il le fait pour un `const X = Y;` (c'est
+    # ainsi que config/constante.php, le fichier LOCAL ignore par git, les
+    # declare - jamais commis, donc jamais vu par la CI ni par un clone
+    # neuf). bootstrapFiles execute reellement ce fichier (dv_env() compris)
+    # avant l'analyse : les constantes existent alors pour de vrai, sans
+    # dependre d'un config/constante.php present par ailleurs - ni en CI, ni
+    # pour un contributeur qui vient de cloner le depot.
+    bootstrapFiles:
+        - config/constante.example.php
     paths:
         - src
         - dclass

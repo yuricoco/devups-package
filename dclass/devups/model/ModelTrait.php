@@ -1086,7 +1086,25 @@ trait ModelTrait
             $keys[$key . '_id'] = $this->{$key}?->id;
         }
         foreach ($this as $key => $val) {
-            if (array_key_exists($key, $fieldNames) && (!$old || $val != $old->{$key}))
+            if (!array_key_exists($key, $fieldNames))
+                continue;
+            if ($old) {
+                if ($val != $old->{$key})
+                    $keys[$key] = $val;
+                continue;
+            }
+            // ETAPE F.2 (v7.1) : sans etat lu, un champ jamais renseigne par
+            // l'appelant (new Entite($id) + quelques proprietes du formulaire,
+            // le chemin de mise a jour utilise partout dans le framework -
+            // CrudTrait::updateAction(), Dvups_adminController::updateAction())
+            // garde sa valeur PHP par defaut null - l'inclure dans l'UPDATE
+            // ecrasait silencieusement en base toute colonne NOT NULL absente
+            // du formulaire (ex. `login` sur une mise a jour partielle de
+            // Dvups_admin ne touchant que `name`) : invisible sous sql_mode
+            // tolerant (UPDATE NULL -> defaut implicite + warning), erreur
+            // 1048 sous sql_mode strict (MySQL 8, celui de la CI). Une valeur
+            // jamais fournie n'est plus consideree comme "modifiee a null".
+            if ($val !== null)
                 $keys[$key] = $val;
         }
         /*dv_dump($this->dvtranslate, $keys);
