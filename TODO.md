@@ -4,6 +4,40 @@ Suivi des points ouverts, decisions prises, et blocages rencontres
 pendant le chantier (droits / logs / langues / cms). Chaque entree :
 phase, ce qui reste, pourquoi, fichiers concernes.
 
+## Chantier v8.0 (rupture, modernisation)
+
+Branche `release/v8.0`, creee depuis `origin/master` (v7.1.0 fusionnee).
+Plan d'ensemble en 8 lots :
+
+1. Socle (PHP 8.3, dependances, Doctrine ORM 3 + attributs)
+2. Vues (illuminate/view)
+3. Routes (attributs PHP 8, fin d'addendum)
+4. Generateur
+5. PSR-4 + conteneur PSR-11 + Log PSR-3
+6. HTTP (Request/Response, middlewares)
+7. Qualite (PHPStan 5)
+8. Livraison (UPGRADE-8.0.md, doc, demo)
+
+Decisions actees pour tout le chantier :
+
+- PHP >= 8.3 (CI sur 8.3/8.4/8.5).
+- L'ORM maison Tchutte est conserve : Doctrine reste limite aux
+  metadonnees et au schema (DBAL/SchemaTool/mapping), jamais au query
+  runtime applicatif qui reste 100% Tchutte.
+- Namespace racine `Devups\`.
+- Framework neutre, aucun secret versionne, base de test dediee,
+  sql_mode strict dans les tests.
+- Un commit par sous-etape, `composer test` et `composer phpstan`
+  verts a chaque commit.
+- Toute rupture : un test + une entree dans `UPGRADE-8.0.md`
+  (avant / apres / comment migrer) + si possible une commande de
+  migration automatique.
+- A la fin de chaque lot : push sur `release/v8.0`, puis CI GitHub
+  verte avant le lot suivant.
+- Blocage ou choix d'architecture incertain : options ecrites ici,
+  choix le plus prudent, on continue.
+- Aucun tag ni release cree pendant ce chantier.
+
 Ce fichier remplace entierement la version precedente : les points
 Phase 2 (B.2/B.5/B.6/B.7/B.8) et Phase 3 (C.1/C.4/C.5/C.6/C.7) qu'elle
 documentait comme ouverts ont ete traites dans cette session (voir
