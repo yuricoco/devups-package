@@ -1,0 +1,1516 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Access to an undefined property Database\\:\\:\\$exist\\.$#"
+			count: 1
+			path: config/Database.php
+
+		-
+			message: "#^Method dclass\\\\devups\\\\Controller\\\\Controller\\:\\:form_fillingentity\\(\\) invoked with 3 parameters, 1\\-2 required\\.$#"
+			count: 1
+			path: dclass/devups/Controller/Controller.php
+
+		-
+			message: "#^Access to an undefined property dclass\\\\devups\\\\Controller\\\\ControllerCore\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: dclass/devups/Controller/ControllerCore.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 8
+			path: dclass/devups/Controller/ControllerCore.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 2
+			path: dclass/devups/Controller/FrontController.php
+
+		-
+			message: "#^Variable \\$module_configurations might not be defined\\.$#"
+			count: 2
+			path: dclass/devups/Core.php
+
+		-
+			message: "#^Access to an undefined property dclass\\\\devups\\\\Datatable\\\\Datatable\\:\\:\\$columnaction\\.$#"
+			count: 1
+			path: dclass/devups/Datatable/Datatable.php
+
+		-
+			message: "#^Access to an undefined property dclass\\\\devups\\\\Datatable\\\\Datatable\\:\\:\\$paginationenabled\\.$#"
+			count: 1
+			path: dclass/devups/Datatable/Datatable.php
+
+		-
+			message: "#^Access to an undefined property dclass\\\\devups\\\\Datatable\\\\Datatable\\:\\:\\$url_delete\\.$#"
+			count: 1
+			path: dclass/devups/Datatable/Datatable.php
+
+		-
+			message: "#^Access to an undefined property dclass\\\\devups\\\\Datatable\\\\Datatable\\:\\:\\$url_read\\.$#"
+			count: 1
+			path: dclass/devups/Datatable/Datatable.php
+
+		-
+			message: "#^Access to an undefined property dclass\\\\devups\\\\Datatable\\\\Datatable\\:\\:\\$url_update\\.$#"
+			count: 1
+			path: dclass/devups/Datatable/Datatable.php
+
+		-
+			message: "#^Access to an undefined static property Response\\:\\:\\$header\\.$#"
+			count: 1
+			path: dclass/devups/Datatable/Datatable.php
+
+		-
+			message: "#^Call to an undefined method dclass\\\\devups\\\\Datatable\\\\Datatable\\:\\:buildindextable\\(\\)\\.$#"
+			count: 1
+			path: dclass/devups/Datatable/Datatable.php
+
+		-
+			message: "#^Constructor of class dclass\\\\devups\\\\Datatable\\\\Datatable has an unused parameter \\$datatablemodel\\.$#"
+			count: 1
+			path: dclass/devups/Datatable/Datatable.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 10
+			path: dclass/devups/Datatable/Datatable.php
+
+		-
+			message: "#^Inner named functions are not supported by PHPStan\\. Consider refactoring to an anonymous function, class method, or a top\\-level\\-defined function\\. See issue \\#165 \\(https\\://github\\.com/phpstan/phpstan/issues/165\\) for more details\\.$#"
+			count: 1
+			path: dclass/devups/Datatable/Datatable.php
+
+		-
+			message: "#^Variable \\$customrowaction might not be defined\\.$#"
+			count: 1
+			path: dclass/devups/Datatable/Datatable.php
+
+		-
+			message: "#^Variable \\$entityjoin might not be defined\\.$#"
+			count: 2
+			path: dclass/devups/Datatable/Datatable.php
+
+		-
+			message: "#^Variable \\$tb might not be defined\\.$#"
+			count: 1
+			path: dclass/devups/Datatable/Datatable.php
+
+		-
+			message: "#^Variable \\$tr might not be defined\\.$#"
+			count: 1
+			path: dclass/devups/Datatable/Datatable.php
+
+		-
+			message: "#^Constructor of class dclass\\\\devups\\\\Datatable\\\\Lazyloading has an unused parameter \\$qbcustom\\.$#"
+			count: 1
+			path: dclass/devups/Datatable/Lazyloading.php
+
+		-
+			message: "#^Variable \\$next might not be defined\\.$#"
+			count: 1
+			path: dclass/devups/Datatable/Lazyloading.php
+
+		-
+			message: "#^Variable \\$per_page might not be defined\\.$#"
+			count: 1
+			path: dclass/devups/Datatable/Lazyloading.php
+
+		-
+			message: "#^Variable \\$qb might not be defined\\.$#"
+			count: 1
+			path: dclass/devups/Datatable/Lazyloading.php
+
+		-
+			message: "#^Access to an undefined property \\$this\\(Dfile\\)\\:\\:\\$error\\.$#"
+			count: 1
+			path: dclass/devups/Dfile.php
+
+		-
+			message: "#^Access to an undefined property Dfile\\:\\:\\$error\\.$#"
+			count: 10
+			path: dclass/devups/Dfile.php
+
+		-
+			message: "#^Access to an undefined property Dfile\\:\\:\\$imagetoresize\\.$#"
+			count: 1
+			path: dclass/devups/Dfile.php
+
+		-
+			message: "#^Access to an undefined property Dfile\\:\\:\\$message\\.$#"
+			count: 7
+			path: dclass/devups/Dfile.php
+
+		-
+			message: "#^Access to an undefined property Dfile\\:\\:\\$name\\.$#"
+			count: 9
+			path: dclass/devups/Dfile.php
+
+		-
+			message: "#^Access to an undefined property Dfile\\:\\:\\$size\\.$#"
+			count: 5
+			path: dclass/devups/Dfile.php
+
+		-
+			message: "#^Access to an undefined property Dfile\\:\\:\\$tmp_name\\.$#"
+			count: 6
+			path: dclass/devups/Dfile.php
+
+		-
+			message: "#^Access to an undefined property Dfile\\:\\:\\$variante\\.$#"
+			count: 1
+			path: dclass/devups/Dfile.php
+
+		-
+			message: "#^Function imagegif invoked with 3 parameters, 1\\-2 required\\.$#"
+			count: 1
+			path: dclass/devups/Dfile.php
+
+		-
+			message: "#^Variable \\$collection might not be defined\\.$#"
+			count: 5
+			path: dclass/devups/Dfile.php
+
+		-
+			message: "#^Variable \\$crop might not be defined\\.$#"
+			count: 1
+			path: dclass/devups/Dfile.php
+
+		-
+			message: "#^Variable \\$extension might not be defined\\.$#"
+			count: 1
+			path: dclass/devups/Dfile.php
+
+		-
+			message: "#^Variable \\$quality might not be defined\\.$#"
+			count: 2
+			path: dclass/devups/Dfile.php
+
+		-
+			message: "#^Variable \\$resize might not be defined\\.$#"
+			count: 2
+			path: dclass/devups/Dfile.php
+
+		-
+			message: "#^Variable \\$result might not be defined\\.$#"
+			count: 1
+			path: dclass/devups/Dfile.php
+
+		-
+			message: "#^Variable \\$size might not be defined\\.$#"
+			count: 1
+			path: dclass/devups/Dfile.php
+
+		-
+			message: "#^Variable \\$sufix might not be defined\\.$#"
+			count: 1
+			path: dclass/devups/Dfile.php
+
+		-
+			message: "#^Variable \\$sz might not be defined\\.$#"
+			count: 1
+			path: dclass/devups/Dfile.php
+
+		-
+			message: "#^Variable \\$uploaddir might not be defined\\.$#"
+			count: 1
+			path: dclass/devups/Dfile.php
+
+		-
+			message: "#^Constant __cssversion not found\\.$#"
+			count: 1
+			path: dclass/devups/Form/Form.php
+
+		-
+			message: "#^Constant __jsversion not found\\.$#"
+			count: 1
+			path: dclass/devups/Form/Form.php
+
+		-
+			message: "#^Static method FormFactory\\:\\:__filepreview\\(\\) invoked with 2 parameters, 1 required\\.$#"
+			count: 1
+			path: dclass/devups/Form/Form.php
+
+		-
+			message: "#^Call to static method __renderForm\\(\\) on an unknown class BlockcontentmodelForm\\.$#"
+			count: 2
+			path: dclass/devups/Form/FormFactory.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 1
+			path: dclass/devups/Form/FormFactory.php
+
+		-
+			message: "#^Instantiated class Blockcontentmodel not found\\.$#"
+			count: 1
+			path: dclass/devups/Form/FormFactory.php
+
+		-
+			message: "#^Variable \\$ids might not be defined\\.$#"
+			count: 2
+			path: dclass/devups/Form/FormManager.php
+
+		-
+			message: "#^Variable \\$_GET in isset\\(\\) always exists and is not nullable\\.$#"
+			count: 1
+			path: dclass/devups/Http/Request.php
+
+		-
+			message: "#^Variable \\$_POST in isset\\(\\) always exists and is not nullable\\.$#"
+			count: 1
+			path: dclass/devups/Http/Request.php
+
+		-
+			message: "#^Access to an undefined property Response\\:\\:\\$message\\.$#"
+			count: 1
+			path: dclass/devups/Http/Response.php
+
+		-
+			message: "#^Variable \\$function might not be defined\\.$#"
+			count: 8
+			path: dclass/devups/Http/Router.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 1
+			path: dclass/devups/Log.php
+
+		-
+			message: "#^Result of function var_dump \\(void\\) is used\\.$#"
+			count: 1
+			path: dclass/devups/ScanDir.php
+
+		-
+			message: "#^Instantiated class string not found\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Variable \\$classentity might not be defined\\.$#"
+			count: 3
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Variable \\$entityTable might not be defined\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Variable \\$id might not be defined\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Variable \\$relations might not be defined\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Access to an undefined property QueryBuilder\\:\\:\\$join\\.$#"
+			count: 3
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^Method DBAL\\:\\:__count\\(\\) invoked with 4 parameters, 1\\-2 required\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^Variable \\$listentity in empty\\(\\) always exists and is not falsy\\.$#"
+			count: 2
+			path: dclass/devups/model/EntityCollection.php
+
+		-
+			message: "#^Variable \\$listentity2 in empty\\(\\) always exists and is not falsy\\.$#"
+			count: 2
+			path: dclass/devups/model/EntityCollection.php
+
+		-
+			message: "#^Call to static method where\\(\\) on an unknown class Dvups_role_dvups_entity\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^Method Model\\:\\:uploadfile\\(\\) should return bool but return statement is missing\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^Variable \\$getcurrentfile might not be defined\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^Call to an undefined method Dv_langCore\\:\\:getId\\(\\)\\.$#"
+			count: 2
+			path: dclass/extends/Dv_langCore.php
+
+		-
+			message: "#^Constant USER not found\\.$#"
+			count: 1
+			path: dclass/extends/UserCore.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 4
+			path: dclass/extends/UserCore.php
+
+		-
+			message: "#^Undefined variable\\: \\$projet$#"
+			count: 5
+			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^Variable \\$moduleentities might not be defined\\.$#"
+			count: 1
+			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^Variable \\$modules might not be defined\\.$#"
+			count: 1
+			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^Variable \\$projects might not be defined\\.$#"
+			count: 1
+			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^Instantiated class FrontendGenerator not found\\.$#"
+			count: 2
+			path: dclass/generator/android/__Generatorjava.php
+
+		-
+			message: "#^Instantiated class RootGenerator not found\\.$#"
+			count: 1
+			path: dclass/generator/android/__Generatorjava.php
+
+		-
+			message: "#^Static method __Generatorjava\\:\\:__entity\\(\\) invoked with 2 parameters, 3\\-5 required\\.$#"
+			count: 1
+			path: dclass/generator/android/__Generatorjava.php
+
+		-
+			message: "#^Undefined variable\\: \\$projet$#"
+			count: 5
+			path: dclass/generator/android/__Generatorjava.php
+
+		-
+			message: "#^Variable \\$moduleentities might not be defined\\.$#"
+			count: 1
+			path: dclass/generator/android/__Generatorjava.php
+
+		-
+			message: "#^Variable \\$modules might not be defined\\.$#"
+			count: 1
+			path: dclass/generator/android/__Generatorjava.php
+
+		-
+			message: "#^Variable \\$projects might not be defined\\.$#"
+			count: 1
+			path: dclass/generator/android/__Generatorjava.php
+
+		-
+			message: "#^Function dv_lang_write_missing_key not found\\.$#"
+			count: 1
+			path: dclass/generator/builder.php
+
+		-
+			message: "#^Static method Core\\:\\:getComponentCore\\(\\) invoked with 0 parameters, 1 required\\.$#"
+			count: 1
+			path: dclass/generator/builder.php
+
+		-
+			message: "#^Access to an undefined property DPdf\\:\\:\\$mpdf\\.$#"
+			count: 1
+			path: dclass/lib/DPdf.php
+
+		-
+			message: "#^Instantiated class Shuchkin\\\\SimpleXLSXEx not found\\.$#"
+			count: 1
+			path: dclass/lib/SimpleXLSX.php
+
+		-
+			message: "#^Variable \\$_old might not be defined\\.$#"
+			count: 1
+			path: dclass/lib/SimpleXLSX.php
+
+		-
+			message: "#^Constant USERLOCATION not found\\.$#"
+			count: 3
+			path: dclass/lib/Util.php
+
+		-
+			message: "#^Function ip_info not found\\.$#"
+			count: 1
+			path: dclass/lib/Util.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 2
+			path: dclass/lib/Util.php
+
+		-
+			message: "#^Variable \\$matches might not be defined\\.$#"
+			count: 1
+			path: dclass/lib/annotation/Auth.php
+
+		-
+			message: "#^Access to an undefined property DDoc\\:\\:\\$GET\\.$#"
+			count: 1
+			path: dclass/lib/annotation/DDoc.php
+
+		-
+			message: "#^Access to an undefined property DDoc\\:\\:\\$name\\.$#"
+			count: 1
+			path: dclass/lib/annotation/DDoc.php
+
+		-
+			message: "#^Access to an undefined property DDoc\\:\\:\\$path\\.$#"
+			count: 2
+			path: dclass/lib/annotation/DDoc.php
+
+		-
+			message: "#^Variable \\$routeParams on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 2
+			path: dclass/lib/annotation/GET.php
+
+		-
+			message: "#^Call to static method renderView\\(\\) on an unknown class devups\\\\ModuleAdmin\\\\ModuleAdmin\\.$#"
+			count: 2
+			path: route/Admin.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 1
+			path: route/Admin.php
+
+		-
+			message: "#^Instantiated class Dvups_entityController not found\\.$#"
+			count: 1
+			path: route/Admin.php
+
+		-
+			message: "#^Anonymous function has an unused use \\$treename\\.$#"
+			count: 1
+			path: route/AdminService.php
+
+		-
+			message: "#^Call to static method renderView\\(\\) on an unknown class devups\\\\ModuleAdmin\\\\ModuleAdmin\\.$#"
+			count: 2
+			path: route/AdminService.php
+
+		-
+			message: "#^Instantiated class Dvups_entityController not found\\.$#"
+			count: 1
+			path: route/AdminService.php
+
+		-
+			message: "#^Constant assets not found\\.$#"
+			count: 2
+			path: route/App.php
+
+		-
+			message: "#^Access to an undefined static property route\\\\WebService\\:\\:\\$genericPathWriteActions\\.$#"
+			count: 1
+			path: route/WebService.php
+
+		-
+			message: "#^Access to an undefined property Dvups_actionController\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Controller/Dvups_actionController.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Controller/Dvups_actionController.php
+
+		-
+			message: "#^Access to an undefined property Dvups_adminController\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Controller/Dvups_adminController.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 6
+			path: src/devups/ModuleAdmin/Controller/Dvups_adminController.php
+
+		-
+			message: "#^Variable \\$confimnewpwd might not be defined\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Controller/Dvups_adminController.php
+
+		-
+			message: "#^Variable \\$currentpwd might not be defined\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Controller/Dvups_adminController.php
+
+		-
+			message: "#^Variable \\$dvups_admin_form might not be defined\\.$#"
+			count: 2
+			path: src/devups/ModuleAdmin/Controller/Dvups_adminController.php
+
+		-
+			message: "#^Variable \\$login might not be defined\\.$#"
+			count: 2
+			path: src/devups/ModuleAdmin/Controller/Dvups_adminController.php
+
+		-
+			message: "#^Variable \\$newpwd might not be defined\\.$#"
+			count: 2
+			path: src/devups/ModuleAdmin/Controller/Dvups_adminController.php
+
+		-
+			message: "#^Variable \\$oldpwd might not be defined\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Controller/Dvups_adminController.php
+
+		-
+			message: "#^Variable \\$password might not be defined\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Controller/Dvups_adminController.php
+
+		-
+			message: "#^Call to an undefined method devups\\\\ModuleAdmin\\\\Controller\\\\Dvups_adminFrontController\\:\\:sendmail\\(\\)\\.$#"
+			count: 2
+			path: src/devups/ModuleAdmin/Controller/Dvups_adminFrontController.php
+
+		-
+			message: "#^Instantiated class devups\\\\ModuleAdmin\\\\Controller\\\\RateLimiter not found\\.$#"
+			count: 2
+			path: src/devups/ModuleAdmin/Controller/Dvups_adminFrontController.php
+
+		-
+			message: "#^Method dclass\\\\devups\\\\Controller\\\\Controller\\:\\:lazyloading\\(\\) invoked with 4 parameters, 1\\-3 required\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Controller/Dvups_adminFrontController.php
+
+		-
+			message: "#^Access to an undefined property Dvups_privilegeController\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Controller/Dvups_privilegeController.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Controller/Dvups_privilegeController.php
+
+		-
+			message: "#^Access to an undefined property Dvups_roleController\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Controller/Dvups_roleController.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 10
+			path: src/devups/ModuleAdmin/Controller/Dvups_roleController.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 7
+			path: src/devups/ModuleAdmin/Datatable/Dvups_actionTable.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 5
+			path: src/devups/ModuleAdmin/Datatable/Dvups_privilegeTable.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 5
+			path: src/devups/ModuleAdmin/Datatable/Dvups_roleTable.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Entity/Dvups_admin.php
+
+		-
+			message: "#^Method Dvups_admin\\:\\:generateLogin\\(\\) invoked with 1 parameter, 0 required\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Entity/Dvups_admin.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Entity/Dvups_role.php
+
+		-
+			message: "#^Call to an undefined static method Dvups_actionForm\\:\\:getFormData\\(\\)\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Form/Dvups_actionForm.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 3
+			path: src/devups/ModuleAdmin/Form/Dvups_actionForm.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 2
+			path: src/devups/ModuleAdmin/Form/Dvups_adminForm.php
+
+		-
+			message: "#^Call to an undefined static method Dvups_privilegeForm\\:\\:getFormData\\(\\)\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Form/Dvups_privilegeForm.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 2
+			path: src/devups/ModuleAdmin/Form/Dvups_privilegeForm.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 2
+			path: src/devups/ModuleAdmin/Form/Dvups_roleForm.php
+
+		-
+			message: "#^Variable \\$detail might not be defined\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Resource/views/admin/dvups_admin/changepwd.blade.php
+
+		-
+			message: "#^Constant assets not found\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Resource/views/admin/dvups_admin/complete_registration.blade.php
+
+		-
+			message: "#^Variable \\$admin might not be defined\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Resource/views/admin/dvups_admin/complete_registration.blade.php
+
+		-
+			message: "#^Constant CHEMINMODULE not found\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Resource/views/admin/dvups_admin/form.blade.php
+
+		-
+			message: "#^Variable \\$__navigation might not be defined\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Resource/views/admin/dvups_admin/form.blade.php
+
+		-
+			message: "#^Variable \\$action_form might not be defined\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Resource/views/admin/dvups_admin/form.blade.php
+
+		-
+			message: "#^Variable \\$dvups_admin might not be defined\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Resource/views/admin/dvups_admin/form.blade.php
+
+		-
+			message: "#^Constant CHEMINMODULE not found\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Resource/views/admin/dvups_admin/show.blade.php
+
+		-
+			message: "#^Variable \\$__navigation might not be defined\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Resource/views/admin/dvups_admin/show.blade.php
+
+		-
+			message: "#^Variable \\$dvups_admin might not be defined\\.$#"
+			count: 5
+			path: src/devups/ModuleAdmin/Resource/views/admin/dvups_admin/show.blade.php
+
+		-
+			message: "#^File ends with a trailing whitespace\\. This may cause problems when running the code in the web browser\\. Remove the closing \\?\\> mark or remove the whitespace\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Resource/views/admin/dvups_role/formWidgetGroup.blade.php
+
+		-
+			message: "#^Variable \\$action might not be defined\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Resource/views/admin/dvups_role/formWidgetGroup.blade.php
+
+		-
+			message: "#^Variable \\$component might not be defined\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Resource/views/admin/dvups_role/formWidgetGroup.blade.php
+
+		-
+			message: "#^Variable \\$components might not be defined\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Resource/views/admin/dvups_role/formWidgetGroup.blade.php
+
+		-
+			message: "#^Variable \\$dvups_role might not be defined\\.$#"
+			count: 3
+			path: src/devups/ModuleAdmin/Resource/views/admin/dvups_role/formWidgetGroup.blade.php
+
+		-
+			message: "#^Variable \\$entities might not be defined\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Resource/views/admin/dvups_role/formWidgetGroup.blade.php
+
+		-
+			message: "#^Variable \\$entity might not be defined\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Resource/views/admin/dvups_role/formWidgetGroup.blade.php
+
+		-
+			message: "#^Variable \\$module might not be defined\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Resource/views/admin/dvups_role/formWidgetGroup.blade.php
+
+		-
+			message: "#^Variable \\$modules might not be defined\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Resource/views/admin/dvups_role/formWidgetGroup.blade.php
+
+		-
+			message: "#^File ends with a trailing whitespace\\. This may cause problems when running the code in the web browser\\. Remove the closing \\?\\> mark or remove the whitespace\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Resource/views/admin/layout.blade.php
+
+		-
+			message: "#^Call to static method updatelabel\\(\\) on an unknown class Dvups_entityController\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/services.php
+
+		-
+			message: "#^Call to static method updatelabel\\(\\) on an unknown class Dvups_moduleController\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/services.php
+
+		-
+			message: "#^Static method Dvups_roleForm\\:\\:renderWidget\\(\\) invoked with 0 parameters, 1\\-2 required\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/services.php
+
+		-
+			message: "#^Access to an undefined property ConfigurationController\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: src/devups/ModuleConfig/Controller/ConfigurationController.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 1
+			path: src/devups/ModuleConfig/Controller/ConfigurationController.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 12
+			path: src/devups/ModuleConfig/Datatable/ConfigurationTable.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 1
+			path: src/devups/ModuleConfig/Entity/Configuration.php
+
+		-
+			message: "#^Call to an undefined static method ConfigurationForm\\:\\:getFormData\\(\\)\\.$#"
+			count: 1
+			path: src/devups/ModuleConfig/Form/ConfigurationForm.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 4
+			path: src/devups/ModuleConfig/Form/ConfigurationForm.php
+
+		-
+			message: "#^File ends with a trailing whitespace\\. This may cause problems when running the code in the web browser\\. Remove the closing \\?\\> mark or remove the whitespace\\.$#"
+			count: 1
+			path: src/devups/ModuleConfig/Resource/views/admin/layout.blade.php
+
+		-
+			message: "#^Access to an undefined property Dvups_langController\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: src/devups/ModuleLang/Controller/Dvups_langController.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 2
+			path: src/devups/ModuleLang/Controller/Dvups_langController.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 15
+			path: src/devups/ModuleLang/Datatable/Dvups_langTable.php
+
+		-
+			message: "#^Method Dvups_lang\\:\\:cacheData\\(\\) should return Dvups_lang but return statement is missing\\.$#"
+			count: 1
+			path: src/devups/ModuleLang/Entity/Dvups_lang.php
+
+		-
+			message: "#^Call to an undefined static method Dvups_langForm\\:\\:getFormData\\(\\)\\.$#"
+			count: 1
+			path: src/devups/ModuleLang/Form/Dvups_langForm.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 8
+			path: src/devups/ModuleLang/Form/Dvups_langForm.php
+
+		-
+			message: "#^Call to static method init\\(\\) on an unknown class Dvups_module\\.$#"
+			count: 1
+			path: src/devups/ModuleLang/ModuleLang.php
+
+		-
+			message: "#^File ends with a trailing whitespace\\. This may cause problems when running the code in the web browser\\. Remove the closing \\?\\> mark or remove the whitespace\\.$#"
+			count: 1
+			path: src/devups/ModuleLang/Resource/views/admin/layout.blade.php
+
+		-
+			message: "#^Access to an undefined property Dvups_logController\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: src/devups/ModuleLog/Controller/Dvups_logController.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 4
+			path: src/devups/ModuleLog/Controller/Dvups_logController.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 20
+			path: src/devups/ModuleLog/Datatable/Dvups_logTable.php
+
+		-
+			message: "#^Call to an undefined static method Dvups_logForm\\:\\:getFormData\\(\\)\\.$#"
+			count: 1
+			path: src/devups/ModuleLog/Form/Dvups_logForm.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 11
+			path: src/devups/ModuleLog/Form/Dvups_logForm.php
+
+		-
+			message: "#^File ends with a trailing whitespace\\. This may cause problems when running the code in the web browser\\. Remove the closing \\?\\> mark or remove the whitespace\\.$#"
+			count: 1
+			path: src/devups/ModuleLog/Resource/views/admin/layout.blade.php
+
+		-
+			message: "#^Access to an undefined property CmscommentController\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Controller/CmscommentController.php
+
+		-
+			message: "#^Access to an undefined property CmscontentController\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Controller/CmscontentController.php
+
+		-
+			message: "#^Access to an undefined property CmsresourceController\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Controller/CmsresourceController.php
+
+		-
+			message: "#^Instantiated class Lazyloading not found\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Controller/CmsresourceFrontController.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 8
+			path: src/devupscms/ModuleCms/Datatable/CmscommentTable.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 9
+			path: src/devupscms/ModuleCms/Datatable/CmscontentTable.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 3
+			path: src/devupscms/ModuleCms/Datatable/CmsresourceTable.php
+
+		-
+			message: "#^Call to an undefined method Cmscontent\\:\\:__inittranslate\\(\\)\\.$#"
+			count: 2
+			path: src/devupscms/ModuleCms/Entity/Cmscontent.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 6
+			path: src/devupscms/ModuleCms/Form/CmscommentForm.php
+
+		-
+			message: "#^Call to an undefined static method CmscontentForm\\:\\:getFormData\\(\\)\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Form/CmscontentForm.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 3
+			path: src/devupscms/ModuleCms/Form/CmscontentForm.php
+
+		-
+			message: "#^Call to an undefined static method CmsresourceForm\\:\\:getFormData\\(\\)\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Form/CmsresourceForm.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 2
+			path: src/devupscms/ModuleCms/Form/CmsresourceForm.php
+
+		-
+			message: "#^File ends with a trailing whitespace\\. This may cause problems when running the code in the web browser\\. Remove the closing \\?\\> mark or remove the whitespace\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Resource/views/admin/cmscontent/formWidget.blade.php
+
+		-
+			message: "#^Variable \\$action might not be defined\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Resource/views/admin/cmscontent/formWidget.blade.php
+
+		-
+			message: "#^Variable \\$cmscontent might not be defined\\.$#"
+			count: 8
+			path: src/devupscms/ModuleCms/Resource/views/admin/cmscontent/formWidget.blade.php
+
+		-
+			message: "#^Variable \\$lang might not be defined\\.$#"
+			count: 2
+			path: src/devupscms/ModuleCms/Resource/views/admin/cmscontent/formWidget.blade.php
+
+		-
+			message: "#^Variable \\$tree_item might not be defined\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Resource/views/admin/cmscontent/formWidget.blade.php
+
+		-
+			message: "#^Variable \\$tree_item_id might not be defined\\.$#"
+			count: 2
+			path: src/devupscms/ModuleCms/Resource/views/admin/cmscontent/formWidget.blade.php
+
+		-
+			message: "#^Call to static method buildtable\\(\\) on an unknown class DClass\\\\devups\\\\Datatable\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Resource/views/admin/cmscontent/index.blade.php
+
+		-
+			message: "#^Constant CHEMINMODULE not found\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Resource/views/admin/cmscontent/index.blade.php
+
+		-
+			message: "#^Variable \\$lazyloading might not be defined\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Resource/views/admin/cmscontent/index.blade.php
+
+		-
+			message: "#^File ends with a trailing whitespace\\. This may cause problems when running the code in the web browser\\. Remove the closing \\?\\> mark or remove the whitespace\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Resource/views/admin/layout.blade.php
+
+		-
+			message: "#^File ends with a trailing whitespace\\. This may cause problems when running the code in the web browser\\. Remove the closing \\?\\> mark or remove the whitespace\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Resource/views/cmscontent/formWidget.blade.php
+
+		-
+			message: "#^Variable \\$action might not be defined\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Resource/views/cmscontent/formWidget.blade.php
+
+		-
+			message: "#^Variable \\$api might not be defined\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Resource/views/cmscontent/formWidget.blade.php
+
+		-
+			message: "#^Variable \\$cmscontent might not be defined\\.$#"
+			count: 9
+			path: src/devupscms/ModuleCms/Resource/views/cmscontent/formWidget.blade.php
+
+		-
+			message: "#^Variable \\$lang might not be defined\\.$#"
+			count: 2
+			path: src/devupscms/ModuleCms/Resource/views/cmscontent/formWidget.blade.php
+
+		-
+			message: "#^Variable \\$tree_item might not be defined\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Resource/views/cmscontent/formWidget.blade.php
+
+		-
+			message: "#^Variable \\$tree_item_id might not be defined\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Resource/views/cmscontent/formWidget.blade.php
+
+		-
+			message: "#^Call to static method buildtable\\(\\) on an unknown class DClass\\\\devups\\\\Datatable\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Resource/views/cmscontent/index.blade.php
+
+		-
+			message: "#^Constant CHEMINMODULE not found\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Resource/views/cmscontent/index.blade.php
+
+		-
+			message: "#^Variable \\$lazyloading might not be defined\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Resource/views/cmscontent/index.blade.php
+
+		-
+			message: "#^Access to an undefined property IntervalController\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Controller/IntervalController.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Controller/IntervalController.php
+
+		-
+			message: "#^Access to an undefined property StatusController\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Controller/StatusController.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 14
+			path: src/devupscms/ModuleData/Datatable/IntervalTable.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 9
+			path: src/devupscms/ModuleData/Datatable/StatusTable.php
+
+		-
+			message: "#^Call to an undefined method devupscms\\\\ModuleData\\\\Entity\\\\Interval_group\\:\\:getId\\(\\)\\.$#"
+			count: 2
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
+			message: "#^Call to an undefined static method IntervalForm\\:\\:getFormData\\(\\)\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Form/IntervalForm.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 4
+			path: src/devupscms/ModuleData/Form/IntervalForm.php
+
+		-
+			message: "#^Call to an undefined static method StatusForm\\:\\:getFormData\\(\\)\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Form/StatusForm.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 5
+			path: src/devupscms/ModuleData/Form/StatusForm.php
+
+		-
+			message: "#^File ends with a trailing whitespace\\. This may cause problems when running the code in the web browser\\. Remove the closing \\?\\> mark or remove the whitespace\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Resource/views/admin/layout.blade.php
+
+		-
+			message: "#^Access to an undefined property CountryController\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: src/devupscms/ModuleLocation/Controller/CountryController.php
+
+		-
+			message: "#^Instantiated class Lazyloading not found\\.$#"
+			count: 1
+			path: src/devupscms/ModuleLocation/Controller/CountryFrontController.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 17
+			path: src/devupscms/ModuleLocation/Datatable/CountryTable.php
+
+		-
+			message: "#^Call to an undefined static method CountryForm\\:\\:getFormData\\(\\)\\.$#"
+			count: 1
+			path: src/devupscms/ModuleLocation/Form/CountryForm.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 5
+			path: src/devupscms/ModuleLocation/Form/CountryForm.php
+
+		-
+			message: "#^File ends with a trailing whitespace\\. This may cause problems when running the code in the web browser\\. Remove the closing \\?\\> mark or remove the whitespace\\.$#"
+			count: 1
+			path: src/devupscms/ModuleLocation/Resource/views/admin/layout.blade.php
+
+		-
+			message: "#^File ends with a trailing whitespace\\. This may cause problems when running the code in the web browser\\. Remove the closing \\?\\> mark or remove the whitespace\\.$#"
+			count: 1
+			path: src/devupscms/ModuleLocation/Resource/views/front/layout.blade.php
+
+		-
+			message: "#^Access to an undefined property NotificationController\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: src/devupscms/ModuleNotification/Controller/NotificationController.php
+
+		-
+			message: "#^Access to an undefined property NotificationtypeController\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: src/devupscms/ModuleNotification/Controller/NotificationtypeController.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 9
+			path: src/devupscms/ModuleNotification/Datatable/NotificationTable.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 9
+			path: src/devupscms/ModuleNotification/Datatable/NotificationtypeTable.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 2
+			path: src/devupscms/ModuleNotification/Entity/Notification.php
+
+		-
+			message: "#^Call to an undefined static method NotificationForm\\:\\:getFormData\\(\\)\\.$#"
+			count: 1
+			path: src/devupscms/ModuleNotification/Form/NotificationForm.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 3
+			path: src/devupscms/ModuleNotification/Form/NotificationForm.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 4
+			path: src/devupscms/ModuleNotification/Form/NotificationtypeForm.php
+
+		-
+			message: "#^Call to static method init\\(\\) on an unknown class Dvups_module\\.$#"
+			count: 1
+			path: src/devupscms/ModuleNotification/ModuleNotification.php
+
+		-
+			message: "#^Variable \\$action might not be defined\\.$#"
+			count: 1
+			path: src/devupscms/ModuleNotification/Resource/views/admin/emailmodel/form.blade.php
+
+		-
+			message: "#^Variable \\$emailmodel might not be defined\\.$#"
+			count: 8
+			path: src/devupscms/ModuleNotification/Resource/views/admin/emailmodel/form.blade.php
+
+		-
+			message: "#^File ends with a trailing whitespace\\. This may cause problems when running the code in the web browser\\. Remove the closing \\?\\> mark or remove the whitespace\\.$#"
+			count: 1
+			path: src/devupscms/ModuleNotification/Resource/views/admin/emailmodel/formWidget.blade.php
+
+		-
+			message: "#^Variable \\$action might not be defined\\.$#"
+			count: 1
+			path: src/devupscms/ModuleNotification/Resource/views/admin/emailmodel/formWidget.blade.php
+
+		-
+			message: "#^Variable \\$emailmodel might not be defined\\.$#"
+			count: 7
+			path: src/devupscms/ModuleNotification/Resource/views/admin/emailmodel/formWidget.blade.php
+
+		-
+			message: "#^File ends with a trailing whitespace\\. This may cause problems when running the code in the web browser\\. Remove the closing \\?\\> mark or remove the whitespace\\.$#"
+			count: 1
+			path: src/devupscms/ModuleNotification/Resource/views/admin/layout.blade.php
+
+		-
+			message: "#^Access to an undefined property Push_subscriptionController\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: src/devupscms/ModulePushNotification/Controller/Push_subscriptionController.php
+
+		-
+			message: "#^Access to an undefined property WorkersController\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: src/devupscms/ModulePushNotification/Controller/WorkersController.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 1
+			path: src/devupscms/ModulePushNotification/Controller/WorkersController.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 11
+			path: src/devupscms/ModulePushNotification/Datatable/Push_subscriptionTable.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 12
+			path: src/devupscms/ModulePushNotification/Datatable/WorkersTable.php
+
+		-
+			message: "#^Call to an undefined static method Push_subscriptionForm\\:\\:getFormData\\(\\)\\.$#"
+			count: 1
+			path: src/devupscms/ModulePushNotification/Form/Push_subscriptionForm.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 6
+			path: src/devupscms/ModulePushNotification/Form/Push_subscriptionForm.php
+
+		-
+			message: "#^Call to an undefined static method WorkersForm\\:\\:getFormData\\(\\)\\.$#"
+			count: 1
+			path: src/devupscms/ModulePushNotification/Form/WorkersForm.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 5
+			path: src/devupscms/ModulePushNotification/Form/WorkersForm.php
+
+		-
+			message: "#^File ends with a trailing whitespace\\. This may cause problems when running the code in the web browser\\. Remove the closing \\?\\> mark or remove the whitespace\\.$#"
+			count: 1
+			path: src/devupscms/ModulePushNotification/Resource/views/admin/layout.blade.php
+
+		-
+			message: "#^Access to an undefined property EmaillogController\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Controller/EmaillogController.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 3
+			path: src/devupscms/ModuleReporting/Controller/EmaillogController.php
+
+		-
+			message: "#^Access to an undefined property ReportingmodelController\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Controller/ReportingmodelController.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 7
+			path: src/devupscms/ModuleReporting/Controller/ReportingmodelController.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 11
+			path: src/devupscms/ModuleReporting/Datatable/EmaillogTable.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 9
+			path: src/devupscms/ModuleReporting/Datatable/Push_emailTable.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 8
+			path: src/devupscms/ModuleReporting/Datatable/ReportingmodelTable.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Entity/Reportingmodel.php
+
+		-
+			message: "#^Call to an undefined static method EmaillogForm\\:\\:getFormData\\(\\)\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Form/EmaillogForm.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 5
+			path: src/devupscms/ModuleReporting/Form/EmaillogForm.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 7
+			path: src/devupscms/ModuleReporting/Form/Push_emailForm.php
+
+		-
+			message: "#^Call to an undefined static method ReportingmodelForm\\:\\:getFormData\\(\\)\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Form/ReportingmodelForm.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 6
+			path: src/devupscms/ModuleReporting/Form/ReportingmodelForm.php
+
+		-
+			message: "#^File ends with a trailing whitespace\\. This may cause problems when running the code in the web browser\\. Remove the closing \\?\\> mark or remove the whitespace\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Resource/views/admin/layout.blade.php
+
+		-
+			message: "#^Variable \\$action might not be defined\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Resource/views/admin/reportingmodel/form.blade.php
+
+		-
+			message: "#^Variable \\$lang might not be defined\\.$#"
+			count: 4
+			path: src/devupscms/ModuleReporting/Resource/views/admin/reportingmodel/form.blade.php
+
+		-
+			message: "#^Variable \\$reportingmodel might not be defined\\.$#"
+			count: 4
+			path: src/devupscms/ModuleReporting/Resource/views/admin/reportingmodel/form.blade.php
+
+		-
+			message: "#^File ends with a trailing whitespace\\. This may cause problems when running the code in the web browser\\. Remove the closing \\?\\> mark or remove the whitespace\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Resource/views/admin/reportingmodel/formWidget.blade.php
+
+		-
+			message: "#^Variable \\$action might not be defined\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Resource/views/admin/reportingmodel/formWidget.blade.php
+
+		-
+			message: "#^Variable \\$reportingmodel might not be defined\\.$#"
+			count: 7
+			path: src/devupscms/ModuleReporting/Resource/views/admin/reportingmodel/formWidget.blade.php
+
+		-
+			message: "#^Access to an undefined property TreeController\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Controller/TreeController.php
+
+		-
+			message: "#^Access to an undefined property Tree_itemController\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Controller/Tree_itemController.php
+
+		-
+			message: "#^Call to static method getmaincategory\\(\\) on an unknown class Category\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Controller/Tree_itemController.php
+
+		-
+			message: "#^Access to an undefined property Tree_item_imageController\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Controller/Tree_item_imageController.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 5
+			path: src/devupscms/ModuleTree/Datatable/TreeTable.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 17
+			path: src/devupscms/ModuleTree/Datatable/Tree_itemTable.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 7
+			path: src/devupscms/ModuleTree/Datatable/Tree_item_imageTable.php
+
+		-
+			message: "#^Method Tree_item\\:\\:getParent\\(\\) should return \\$this\\(Tree_item\\) but return statement is missing\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Entity/Tree_item.php
+
+		-
+			message: "#^Variable \\$ti might not be defined\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Entity/Tree_item.php
+
+		-
+			message: "#^Constructor of class Tree_item_lang has an unused parameter \\$id\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Entity/Tree_item_lang.php
+
+		-
+			message: "#^Constructor of class Tree_lang has an unused parameter \\$id\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Entity/Tree_lang.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 7
+			path: src/devupscms/ModuleTree/Form/TreeForm.php
+
+		-
+			message: "#^Variable \\$action might not be defined\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Form/TreeForm.php
+
+		-
+			message: "#^Call to an undefined static method Tree_itemForm\\:\\:getFormData\\(\\)\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Form/Tree_itemForm.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 12
+			path: src/devupscms/ModuleTree/Form/Tree_itemForm.php
+
+		-
+			message: "#^Call to an undefined static method Tree_item_imageForm\\:\\:getFormData\\(\\)\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Form/Tree_item_imageForm.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 3
+			path: src/devupscms/ModuleTree/Form/Tree_item_imageForm.php
+
+		-
+			message: "#^Instantiated class TreeFrontController not found\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/ModuleTree.php
+
+		-
+			message: "#^File ends with a trailing whitespace\\. This may cause problems when running the code in the web browser\\. Remove the closing \\?\\> mark or remove the whitespace\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Resource/views/admin/layout.blade.php
+
+		-
+			message: "#^Access to an undefined property Oauth_clientController\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: src/devupsfront/ModuleUser/Controller/Oauth_clientController.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 1
+			path: src/devupsfront/ModuleUser/Controller/Oauth_clientController.php
+
+		-
+			message: "#^Access to an undefined property UserController\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: src/devupsfront/ModuleUser/Controller/UserController.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 1
+			path: src/devupsfront/ModuleUser/Controller/UserController.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 25
+			path: src/devupsfront/ModuleUser/Controller/UserFrontController.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 11
+			path: src/devupsfront/ModuleUser/Datatable/Oauth_clientTable.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 23
+			path: src/devupsfront/ModuleUser/Datatable/UserTable.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 4
+			path: src/devupsfront/ModuleUser/Form/Oauth_clientForm.php
+
+		-
+			message: "#^Call to an undefined static method UserForm\\:\\:getFormData\\(\\)\\.$#"
+			count: 1
+			path: src/devupsfront/ModuleUser/Form/UserForm.php
+
+		-
+			message: "#^Function t not found\\.$#"
+			count: 7
+			path: src/devupsfront/ModuleUser/Form/UserForm.php
+
+		-
+			message: "#^File ends with a trailing whitespace\\. This may cause problems when running the code in the web browser\\. Remove the closing \\?\\> mark or remove the whitespace\\.$#"
+			count: 1
+			path: src/devupsfront/ModuleUser/Resource/views/admin/layout.blade.php
