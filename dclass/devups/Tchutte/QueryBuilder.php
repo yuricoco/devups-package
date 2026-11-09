@@ -2010,14 +2010,26 @@ class QueryBuilder extends \DBAL
         return $this->__findOneRow($this->query, $this->parameters) ?? new $this->objectName;
     }
 
+    /**
+     * ETAPE C.3 (v7.1) - D3 : setLang() devait etre appele AVANT
+     * initSelect() (mesure le 2026-11-04 : initSelect() lit
+     * $this->id_lang pour choisir entre la jointure mono-langue et le
+     * GROUP_CONCAT bilingue - appele apres, $id_lang ne servait jamais a
+     * RIEN ici, la requete etait TOUJOURS construite en mode bilingue,
+     * meme avec une langue explicitement demandee). Contourne jusqu'ici
+     * par plusieurs appelants (Status::buildCacheDataFor(),
+     * Tree_item::getmainmenu()) via ->setLang($id_lang)->get() explicite
+     * avant cet appel - toujours valide, setLang() est idempotente.
+     */
     public function get($column = "*", $id_lang = null)
     {
         $this->select($column);
-        $this->initSelect();
-        $this->sequensization();
 
         if (!$this->id_lang)
             $this->setLang($id_lang);
+
+        $this->initSelect();
+        $this->sequensization();
 
         if (self::$debug)
             return $this->getSqlQuery();
