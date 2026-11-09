@@ -1712,7 +1712,16 @@ class QueryBuilder extends \DBAL
                     $groupment[] = "  GROUP_CONCAT( CONCAT('[', l.iso_code, ']', $thislang.$col) SEPARATOR '' ) AS $col ";
                 $this->query .= ", " . implode(", ", $groupment) . " ";
                 $this->_join .= " left join $thislang on ($thislang.{$this->table}_id = `{$this->table}`.id ) ";
-                $this->_join .= " join dvups_lang l on ($thislang.lang_id = l.id ) ";
+                // ETAPE C.2 (v7.1) - D15 : cette jointure etait un INNER
+                // JOIN ("join" simple) - une ligne SANS aucune ligne
+                // "{$this->table}_lang" produit lang_id = NULL (jointure
+                // precedente), et "NULL = l.id" n'est VRAI pour aucune
+                // ligne de dvups_lang : l'INNER JOIN eliminait alors la
+                // ligne de base ENTIERE (pas seulement ses colonnes
+                // traduites). LEFT JOIN : la ligne de base reste, le
+                // GROUP_CONCAT devient simplement NULL/vide (jamais une
+                // ligne perdue ni une erreur).
+                $this->_join .= " left join dvups_lang l on ($thislang.lang_id = l.id ) ";
                 $this->_group_by .= ("{$this->table}.id");
             }
         }
