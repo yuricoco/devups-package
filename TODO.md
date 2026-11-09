@@ -2294,15 +2294,108 @@ supplementaires de meme nature) : reporte, pas de baseline silencieux.
 - `composer test` : 399 tests, 0 echec (inchange, documentation
   uniquement). `composer phpstan` : aucune erreur (niveau 1).
 
+## ETAPE F.2/F.3 - CI GitHub rouge depuis la 7.0.0, corrigee
+
+La CI GitHub (workflow `tests`, MySQL 8 reel) n'avait jamais ete verte,
+y compris pour la 7.0.0 - `composer test` passait en local uniquement
+parce que l'environnement local (MariaDB, cache/ deja peuple par un
+usage anterieur) etait plus tolerant que la CI sur deux points
+independants.
+
+### Reproduction locale prealable
+
+- `tests/bootstrap.php` force desormais `SET SESSION sql_mode =
+  'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,
+  ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'` (le defaut reel de
+  MySQL 8) sur la connexion PDO partagee de toute la suite - MariaDB
+  (utilise en local) ne l'impose pas par defaut, ce qui masquait les
+  deux causes ci-dessous. Permanent pour tout le run, pas de reset entre
+  tests : c'est le comportement reel d'un serveur MySQL 8.
+- Suite relancee depuis un clone neuf (`git clone` de la branche dans un
+  dossier temporaire, `composer install`, sans `cache/` prealable -
+  `cache/` est entierement ignore par git) : memes erreurs que la CI
+  reproduites (52 erreurs), confirmant les deux causes.
+
+### F.2 - sql_mode strict : colonnes omises de l'INSERT
+
+`DBAL::createDbal()` (chemin `->__insert()`) et `DBAL::_createDbal()`
+(chemin statique `Model::create()`) omettaient entierement une colonne
+du tableau transmis a l'INSERT quand elle n'etait pas fournie par
+l'appelant - jamais un NULL explicite, la colonne manquait de la
+requete SQL elle-meme. Sous sql_mode tolerant (MariaDB), le serveur
+complete silencieusement par la valeur par defaut du type ; sous
+sql_mode strict (MySQL 8), toute colonne NOT NULL sans defaut SQL et
+absente de l'INSERT leve l'erreur 1364.
+
+- Lignes `_lang` d'une entite traduite (`createDbal()` et la branche
+  traduite de `_createDbal()`) : une colonne traduite jamais fournie
+  par l'appelant (`Tree::create(['name' => ...])` sans `label`) est
+  desormais systematiquement presente dans l'INSERT - valeur fournie
+  pour cette langue, sinon celle de la langue par defaut
+  (`Dvups_lang::defaultLang()`, colonne `main`), sinon une chaine vide.
+  Le repli precedent (placeholder `"<id>_<iso>"`, du code mort/debug
+  jamais verifie par aucun test) est retire.
+- Ligne principale cree par `Model::create()` (`_createDbal()`) :
+  completee par les defauts PHP non nuls de l'entite UNIQUEMENT pour
+  les colonnes NOT NULL (`nullable === false` dans le mapping Doctrine)
+  absentes de `$keyvalue` - jamais pour une colonne nullable (une
+  colonne nullable omise reste NULL, comme avant ; verifie par
+  `NotificationDeprecatedApiTest`, qui s'appuie sur `User::$lang`
+  nullable restant NULL quand non fourni).
+- Test ajoute : `tests/Integration/TranslatedRowStrictSqlModeTest.php`.
+- Deux tests corriges (donnees de test incompletes, pas un defaut du
+  framework - aucun appelant reel n'omet ces colonnes, un formulaire
+  soumet toujours une valeur meme vide) :
+  `TreeStatusUniqueConstraintAnnotationsTest` (`Status::create()` sans
+  `color`), `TranslatedRowWithoutLangRowTest` (`Dvups_entity::create()`
+  sans `name`, herite de `Dvups_config_item`).
+- Un troisieme cas trouve en cherchant systematiquement toute erreur de
+  mode strict dans la suite n'etait pas une colonne omise mais une
+  chaine trop longue : `LangCacheTest` reutilisait un iso a 5 caracteres
+  comme valeur de `locale` (colonne a 2 caracteres) - tronque
+  silencieusement par MariaDB, erreur 1406 sous MySQL 8. Corrige dans le
+  test (`setLocale('en')`, valeur fixe non testee par les assertions).
+
+### F.3 - cache/views absent d'un clone neuf
+
+`cache/` est entierement ignore par git (`.gitignore`, `/cache/`) - un
+clone neuf n'a donc aucun de ses sous-dossiers. `cache/rights`,
+`cache/lang`, `cache/trees`, `cache/log` et `cache/ratelimit` se
+recreaient deja seuls a l'usage (verifie fichier par fichier) ;
+`cache/views` (compilation Blade) ne le faisait pas - `BladeD`
+(Genesis.php, point d'entree UNIQUE de toute instanciation de Blade
+dans ce framework) le cree desormais elle-meme si absent, avant
+d'initialiser Blade. Les deux instanciations directes de la classe
+vendor `Philo\Blade\Blade` dans `Controller.php` (qui contournaient
+`BladeD`) sont remplacees par `BladeD`, par coherence et pour beneficier
+du meme correctif.
+
+Test ajoute : `tests/Integration/BladeViewCacheAutoCreateTest.php`
+(supprime `cache/views`, rend une vue, verifie l'absence d'erreur et
+que le dossier est recree).
+
+### Workflow CI
+
+`.github/workflows/tests.yml` verifie : aucune etape manuelle
+(`mkdir cache`, `php devups install`) n'y figure et aucune n'est
+necessaire desormais - le code se suffit a lui-meme face a un clone
+neuf.
+
+`composer test` : 401 tests, 0 echec, sous sql_mode strict, depuis un
+clone neuf. `composer phpstan` : aucune erreur.
+
 ## Fin du chantier v7.1.0 - resume
 
-**Etat final** : `composer test` vert (399 tests, 0 echec, 2
+**Etat final** : `composer test` vert (401 tests, 0 echec, 2
 incomplets preexistants et hors perimetre - ecrans en lecture reel par
-design) ; `composer phpstan` vert (niveau 1, 0 erreur hors
+design), verifie depuis un clone neuf ET sous sql_mode strict
+(MySQL 8, le defaut reel de la CI) - plus seulement en local sous
+MariaDB ; `composer phpstan` vert (niveau 1, 0 erreur hors
 `phpstan-baseline.neon`, 836 erreurs gelees aucune dans ce chantier).
 Une seule migration v7.1 a jouer sur une base existante
 (`2026_11_09_v71_a5_unique_constraints.php`, non destructive) via
-`php devups migrate`.
+`php devups migrate`. CI GitHub (workflow `tests`) verte - voir le
+numero de run dans le dernier commit de ce chantier.
 
 **Recapitulatif par etape** :
 - A : contraintes d'unicite manquantes + divers correctifs mineurs
@@ -2314,7 +2407,9 @@ Une seule migration v7.1 a jouer sur une base existante
 - E : robustesse du coeur (`UndefinedPropertyException`, cellule vide
   Datatable au lieu d'un ecran casse, garde de session reelle de
   `manageServe()`, audit mort/vivant, PHPStan niveau 1 + CI).
-- F : documentation (CHANGELOG, 4 tomes, PDF, README) et sortie.
+- F : documentation (CHANGELOG, 4 tomes, PDF, README) et sortie ; puis
+  CI GitHub reparee (F.2 sql_mode strict, F.3 cache/views absent d'un
+  clone neuf) - rouge depuis la 7.0.0, jamais verte avant ce chantier.
 
 **Reporte a la v8.0** (dettes ouvertes restantes, tableau 10.2 du Tome
 IV) :

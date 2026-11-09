@@ -37,7 +37,12 @@ final class TranslatedRowWithoutLangRowTest extends DatabaseTestCase
             'Notificationtype' => [\Notificationtype::class, ['_key' => 'etapec1_key', 'session' => 'etapec1_session', 'entity' => 'etapec1_entity']],
             'Reportingmodel' => [\Reportingmodel::class, ['name' => 'etapec1_reportingmodel', 'type' => 'welcome']],
             'Country' => [\Country::class, ['name' => 'Etapec1land', 'iso' => 'E1', 'numcode' => '999', 'phonecode' => 1, 'status' => 1]],
-            'Dvups_entity' => [\Dvups_entity::class, []],
+            // ETAPE F.2 (v7.1) : `name` (herite de Dvups_config_item) est
+            // NOT NULL sans defaut PHP ni SQL - absent de l'INSERT, pas
+            // d'erreur sous sql_mode tolerant (MariaDB), 1364 sous sql_mode
+            // strict (MySQL 8, celui de la CI) ; sans rapport avec le
+            // defaut D1/D15 teste ici.
+            'Dvups_entity' => [\Dvups_entity::class, ['name' => 'etapec1_entity']],
         ];
     }
 

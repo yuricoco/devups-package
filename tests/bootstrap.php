@@ -92,6 +92,21 @@ if (dv_test_needs_db()) {
     $tool = new \Doctrine\ORM\Tools\SchemaTool($em);
     $tool->createSchema($em->getMetadataFactory()->getAllMetadata());
 
+    // Le sql_mode par defaut de MySQL 8 (utilise par la CI) inclut
+    // STRICT_TRANS_TABLES ; celui de MariaDB (utilise en local par la
+    // plupart des dev) ne l'inclut pas - un bug sensible au mode strict
+    // (colonne NOT NULL sans valeur fournie, par exemple) passait donc en
+    // local et seulement en local. Force ici, sur LA connexion PDO
+    // partagee de tout le framework (DBAL::pdo(), un seul objet pour tout
+    // le run de cette suite), le sql_mode par defaut de MySQL 8 - pour que
+    // `composer test` en local echoue exactement comme la CI plutot que de
+    // masquer ce genre de bug. Permanent pour toute la suite (pas de reset
+    // entre les tests) : c'est le comportement reel d'un serveur MySQL 8.
+    \Model::pdo()->exec(
+        "SET SESSION sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE," .
+        "ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'"
+    );
+
     $seed = file_get_contents(__DIR__ . '/../dclass/generator/config_data.sql');
     \Model::pdo()->exec($seed);
 }

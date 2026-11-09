@@ -77,6 +77,30 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 - **D7** : régénérer la même entité deux fois de suite (`core:g:crud`)
   dupliquait son bloc `require` (Entity/Form/Datatable/Controller) dans
   le fichier de dépendances du module.
+- **Compatibilité MySQL 8 en mode strict** (`STRICT_TRANS_TABLES`, le
+  défaut de MySQL 8 - absent par défaut de MariaDB, utilisé en local par
+  la plupart des développeurs) : la CI GitHub (MySQL 8) échouait depuis
+  la 7.0.0, invisible en local. `DBAL::createDbal()`/`_createDbal()`
+  omettaient entièrement une colonne traduite jamais fournie par
+  l'appelant (`Tree::create(['name' => ...])` sans `label`) de l'INSERT
+  de la ligne `_lang` - chaque colonne traduite reçoit désormais
+  systématiquement une valeur (celle fournie pour cette langue, sinon
+  celle de la langue par défaut, sinon une chaîne vide). `Model::create()`
+  (`DBAL::_createDbal()`) ne transmettait non plus que les colonnes
+  explicitement fournies par l'appelant à l'INSERT principal - toute
+  colonne `NOT NULL` sans défaut SQL mais avec un défaut PHP non nul sur
+  l'entité (ex. `Country::$iso3 = ''`) et omise par l'appelant est
+  désormais complétée par ce défaut (les colonnes nullable restent
+  inchangées : `NULL` si omises, comme avant).
+- **Caches créés automatiquement** : `cache/` est entièrement ignoré par
+  git - un clone neuf (celui de la CI) n'a donc aucun de ses
+  sous-dossiers. `cache/rights`, `cache/lang`, `cache/trees`,
+  `cache/log` et `cache/ratelimit` se recréaient déjà seuls à l'usage ;
+  `cache/views` (compilation Blade) ne le faisait pas
+  (`file_put_contents(.../cache/views/xxx.php): Failed to open stream`
+  au premier rendu de vue) - `BladeD` (point d'entrée unique de toute
+  instanciation de Blade dans ce framework) le crée désormais elle-même
+  si besoin, sans dépendre de `php devups install`.
 
 ### Migrations v7.1
 

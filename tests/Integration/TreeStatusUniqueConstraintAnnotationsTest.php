@@ -34,10 +34,16 @@ final class TreeStatusUniqueConstraintAnnotationsTest extends DatabaseTestCase
 
     public function testDuplicateStatusEntityKeyIsRejectedByTheDatabase(): void
     {
-        \Status::create(['entity' => 'etapea5_entity', '_key' => 'published']);
+        // ETAPE F.2 (v7.1) : `color` est NOT NULL sans defaut PHP ni SQL -
+        // omis ici (seuls `entity`/`_key` importent pour ce test), ca
+        // passait sous sql_mode tolerant (MariaDB) mais plantait (1364)
+        // sous sql_mode strict (MySQL 8, celui de la CI) ; aucun appelant
+        // reel ne cree de Status sans couleur (le formulaire back-office
+        // soumet toujours une valeur, meme vide).
+        \Status::create(['entity' => 'etapea5_entity', '_key' => 'published', 'color' => '#fff']);
 
         try {
-            \Status::create(['entity' => 'etapea5_entity', '_key' => 'published']);
+            \Status::create(['entity' => 'etapea5_entity', '_key' => 'published', 'color' => '#fff']);
             $this->fail("l'index uq_status_entity_key doit refuser un second status de meme (entity, _key)");
         } catch (\RuntimeException $e) {
             $this->assertStringContainsString('uq_status_entity_key', $e->getMessage());

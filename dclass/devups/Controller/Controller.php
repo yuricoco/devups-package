@@ -7,7 +7,6 @@ use dclass\devups\Datatable\Lazyloading;
 use Dvups_lang;
 use Exception;
 use Genesis as g;
-use Philo\Blade\Blade;
 use phpDocumentor\Reflection\Types\Self_;
 use QueryBuilder;
 use ReflectionAnnotatedClass;
@@ -707,7 +706,9 @@ class Controller
             }
         }
 
-        $blade = new Blade([web_dir . "views", admin_dir . 'views'], ROOT . "cache/views");
+        // ETAPE F.3 (v7.1) : BladeD (pas Blade directement) - seul son
+        // constructeur cree cache/views s'il manque (voir Genesis.php).
+        $blade = new \BladeD([web_dir . "views", admin_dir . 'views'], ROOT . "cache/views");
         echo $blade->view()->make($view, $compilate)->render();
         //die;
     }
@@ -723,7 +724,7 @@ class Controller
 
         $data["moduledata"] = $moduledata; //Genesis::top_action($action, $classroot);
 
-        $blade = new Blade($viewdir, ROOT . "cache/views");
+        $blade = new \BladeD($viewdir, ROOT . "cache/views");
         echo $blade->view()->make($view, $data)->render();
     }
 
