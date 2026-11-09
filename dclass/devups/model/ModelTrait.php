@@ -53,20 +53,24 @@ trait ModelTrait
                 if (!empty($this->dvtranslated_columns) && in_array($attribut, $this->dvtranslated_columns, true))
                     return null;
 
-                // Attribut inconnu : signale en developpement, sans jamais
-                // interrompre le rendu (un `die` ici tronquait silencieusement
-                // la page en cours, avec un statut 200).
-                if (!__prod) {
-                    $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
-                    trigger_error(
-                        'Propriété non-définie via __get() : ' . $attribut .
-                            ' de la class ' . get_class($this) .
-                            ' dans ' . ($trace[0]['file'] ?? '?') .
-                            ' à la ligne ' . ($trace[0]['line'] ?? '?'),
-                        E_USER_NOTICE
-                    );
-                }
-                return null;
+                // ETAPE E.1 (v7.1) : attribut inconnu - levait un
+                // trigger_error() (lui-meme un remplacement anterieur d'un
+                // die(), qui tronquait silencieusement la page en cours
+                // avec un statut 200) puis rendait null SANS JAMAIS
+                // interrompre quoi que ce soit, meme en production ou le
+                // trigger_error() n'etait pas emis du tout - une faute de
+                // frappe ou une colonne renommee/supprimee passait
+                // totalement inapercue. Leve desormais toujours
+                // UndefinedPropertyException, journalisee et transformee en
+                // reponse 500 par le gestionnaire global
+                // (Log::installGlobalHandler()).
+                $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
+                throw new UndefinedPropertyException(
+                    'Propriété non-définie via __get() : ' . $attribut .
+                        ' de la class ' . get_class($this) .
+                        ' dans ' . ($trace[0]['file'] ?? '?') .
+                        ' à la ligne ' . ($trace[0]['line'] ?? '?')
+                );
             }
             if (is_object($this->{$entityattribut})) { //  && isset($this->{$entityattribut . "_id"})
 
