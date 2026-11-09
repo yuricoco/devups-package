@@ -192,7 +192,7 @@ $about = Cmscontent::where('this.slug', '=', 'a-propos')
     ->firstOrNull();
 ```
 
-Lire par `slug` (clé machine), jamais par titre (libellé traduit), et forcer la langue (défaut D15, Tome II §7.4).
+Lire par `slug` (clé machine), jamais par titre (libellé traduit) ; forcer la langue reste utile pour obtenir une chaîne simple plutôt que le format bilingue, même si l'ancien défaut D1 (Tome II §7.4) ne rend plus la ligne invisible depuis 7.1.
 
 # Chapitre 5 — `ModuleTree` : les données de référence
 
@@ -494,7 +494,7 @@ Un paramètre modifiable par un administrateur va dans `Configuration`. Un secre
 
 Un défaut connu et nommé coûte une heure ; le même défaut redécouvert coûte une journée.
 
-## 10.1 Ce que la 7.0 a soldé
+## 10.1 Ce que la 7.0 et la 7.1 ont soldé
 
 | Dette des versions 4.x | Correction |
 |---|---|
@@ -511,26 +511,26 @@ Un défaut connu et nommé coûte une heure ; le même défaut redécouvert coû
 | secrets dans un fichier versionné | `.env` |
 | schéma modifié à la main par environnement | `php devups migrate` |
 | `Datatable` : 500 après toute création ou mise à jour par certains contrôleurs | `catch (\Throwable)` dans le rendu de ligne |
+| D1 : `INNER JOIN dvups_lang` après le `LEFT JOIN <entité>_lang` — une ligne traduite sans traduction disparaissait de toute lecture ORM | `LEFT JOIN` vers `dvups_lang` (7.1) |
+| D2 : colonne ambiguë sur une entité traduite (`l.name`) | qualification automatique `this.<colonne>` quand l'entité est traduite (7.1) |
+| D3 : `get($col, $id_lang)` — second argument sans effet sur la langue | langue posée avant `initSelect()` (7.1) |
+| D4 : `whereIn()`/`in()`/`notIn()`/`whereInReverse()` quotaient sans échapper réellement | valeurs liées en paramètre PDO (7.1) |
+| D5 : `whereBetween()`/`between()` interpolaient leurs bornes | bornes liées en paramètre PDO (7.1) |
+| D6 : `nullable` d'une relation obligatoire ignoré par le générateur | `nullable=false` sur `@JoinColumn` quand la relation est `'not'` (7.1) |
+| D7 : `core:g:crud` pouvait dupliquer le bloc de `require` du module | `__Generator::dependencies()` vérifie l'idempotence avant d'écrire (7.1) |
+| D10 : contrôle de session vide en tête de `manageServe()` | vrai refus 401 JSON, mêmes exceptions que `manage()` (7.1) |
+| D12 : une clé de colonne `Datatable` qui ne nomme aucune propriété arrêtait l'écran (`\TypeError` de `call_user_func()`) | `method_exists()` vérifié avant l'appel : cellule vide + `Log::warning()` (7.1) |
+| D13 (partie `StatusTrait`) : `StatusTrait` référençait une entité disparue | supprimée, aucun usage réel (7.1) — `Dvups_config_item`, déclarée dans la même dette, s'est révélée toujours utilisée (héritée par `Dvups_entity`) : retirée de la liste, ce n'était pas du code mort |
+| D15 : téléversement d'une image de 1×1 pixel — erreur de redimensionnement GD plantant toute la requête | `Dfile` conserve l'original déjà enregistré et renonce proprement à la seule variante redimensionnée en cas d'échec GD (7.1) |
 
 ## 10.2 Les dettes ouvertes
 
 | # | Dette | Emplacement | État |
 |---|---|---|---|
-| D1 | `INNER JOIN dvups_lang` après le `LEFT JOIN <entité>_lang` : une ligne traduite sans traduction disparaît de toute lecture ORM | `QueryBuilder::initSelect()` | non corrigé — racine partagée par toute entité traduite ; forcer la langue |
-| D2 | colonne ambiguë sur une entité traduite (`l.name`) | `QueryBuilder::initSelect()` | qualifier `this.<colonne>` |
-| D3 | `get($col, $id_lang)` : second argument sans effet sur la langue | `QueryBuilder::get()` | `setLang()` avant |
-| D4 | `whereIn()` quote sans échapper | `QueryBuilder`, `qb_sanitize()` | valider ou caster avant |
-| D5 | `whereBetween()` interpole ses bornes | `QueryBuilder` | valider avant |
-| D6 | `nullable` d'une relation ignoré par le générateur | `BackendGenerator.php` | `nullable=false` à la main |
-| D7 | `core:g:crud` peut dupliquer le bloc de `require` du module | générateur | relire le fichier après régénération |
 | D8 | `schema:update --force` peut répondre « success » sans appliquer un renommage d'index | Doctrine | passer par une migration |
-| D9 | `Router::cacheRoute()` commence par `return null;` | `Router.php` | laisser `ROUTE_CACHE=false` |
-| D10 | contrôle de session vide en tête de `manageServe()` | `Router.php` | protégé plus bas (`can()`, `header.php`) ; un `xxxService()` manuel doit se protéger |
-| D11 | `FORMTYPE_INJECT_COLLECTIONFORM` déclaré, sans rendu | `FormManager`, `FormFactory` | à ne pas utiliser |
-| D12 | une clé de colonne `Datatable` qui ne nomme aucune propriété arrête l'écran (`die` de `__get()`) | `Datatable`, `ModelTrait` | la clé doit nommer une propriété réelle |
-| D13 | `Dvups_config_item` déclarée traduite, sans table ni appelant ; `StatusTrait` référence une entité disparue | `dclass/extends/` | code mort |
+| D9 | `Router::cacheRoute()` commence par `return null;` | `Router.php` | confirmé en 7.1 (audit explicite, ÉTAPE E.4) : code mort par construction, documenté en commentaire plutôt que supprimé ; laisser `ROUTE_CACHE=false` |
+| D11 | `FORMTYPE_INJECT_COLLECTIONFORM` déclaré, sans rendu | `FormManager`, `FormFactory` | marqué `@deprecated` en 7.1 ; à ne pas utiliser |
 | D14 | `whereRaw()` et `where_str()` ont un corps identique | `QueryBuilder` | laissé tel quel ; jamais avec une donnée utilisateur |
-| D15 | téléversement d'une image de 1×1 pixel : erreur de redimensionnement | `Dfile` | cas limite, sans usage réel connu |
 
 ## 10.3 Les leçons de méthode
 
@@ -561,7 +561,7 @@ Un défaut connu et nommé coûte une heure ; le même défaut redécouvert coû
 |---|---|---|
 | 1 | `find()`, `first()`, `getInstance()` renvoient une entité vide, jamais `null` | Tome II §4.5 |
 | 2 | une relation `manyToOne` ne charge que son `id` sans `with()` | Tome II §4.4 |
-| 3 | une ligne traduite sans traduction est invisible à l'ORM (D15) | Tome II §7.4 |
+| 3 | une ligne traduite sans traduction était invisible à l'ORM (D1, corrigé en 7.1) | Tome II §7.4 |
 | 4 | `?<relation>_id=X` ne filtre rien ; la réponse est paginée à 30 | Tome III §2.1 |
 | 5 | `gte` / `lte` n'existent pas et deviennent un `LIKE` | Tome III §4.7 |
 | 6 | une méthode de `FrontController` sans annotation de verbe est morte | Tome III §2.2 |

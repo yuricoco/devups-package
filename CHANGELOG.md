@@ -2,6 +2,128 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 
+## [7.1.0] - 2026-11-09 - finitions et dettes du cœur (ÉTAPES A à F)
+
+### Sécurité
+
+- `QueryBuilder::whereIn()`/`in()`/`notIn()`/`whereInReverse()`/
+  `between()`/`whereBetween()` : les valeurs utilisateur sont désormais
+  liées en paramètre PDO plutôt qu'interpolées via `qb_sanitize()`
+  (guillemets simples sans échappement) - une valeur contenant une
+  apostrophe pouvait injecter ou casser la requête, y compris dans la
+  forme réputée "sûre" (`whereIn()`).
+- Opérateurs Lazyloading `rein`/`notin` (`Datatable/Lazyloading.php::filterswicher()`) :
+  mêmes correctifs côté appelant (`whereInReverse()` paramétrée,
+  `notin` désormais éclaté par virgule comme `in`).
+- `qb_sanitize()` (`dclass/dvups_functions.php`) : dépréciée, plus
+  aucun appelant interne ; échappe désormais via `PDO::quote()` au lieu
+  de concaténer des guillemets.
+- `Router::manageServe()` (point d'entrée partagé par `Admin`,
+  `AdminService`, `ModuleConfig`, `ModuleLog`, `ModuleUser` - et tout
+  module généré) : le garde de session était un bloc entièrement
+  commenté (aucun refus réel). Remplacé par un vrai refus 401 JSON,
+  mêmes exceptions que `Router::manage()` (`connexion-action`,
+  `$this->public_access`).
+
+### Comportements modifiés
+
+- **D1** : une ligne d'une entité traduite du socle (`Tree`,
+  `Tree_item`, `Status`, `Cmscontent`, `Notificationtype`,
+  `Reportingmodel`, `Country`, `Dvups_entity`) sans aucune ligne
+  `<table>_lang` était jusqu'ici invisible pour `find()`/`findOrNull()`/
+  `where()->get()`/`first()` (INNER JOIN éliminant la ligne de base
+  entière plutôt que ses seules colonnes traduites) - elle apparaît
+  désormais normalement, avec ses colonnes traduites à `null`/vides.
+- **D3** : `QueryBuilder::get($colonne, $id_lang)` ignorait
+  systématiquement l'`$id_lang` explicitement demandé (toujours
+  construit en mode bilingue) - respecte désormais la langue demandée.
+- **D2** : une colonne non qualifiée (`where('name', ...)`) sur une
+  entité traduite pouvait lever "Column ... is ambiguous" (1052) dès
+  qu'une jointure de traduction était présente - qualifiée
+  automatiquement désormais.
+- `ModelTrait::__get()` sur un attribut vraiment inconnu lève
+  désormais `UndefinedPropertyException` (`\LogicException`, journalisée
+  et transformée en réponse 500 par le gestionnaire global) au lieu de
+  rendre silencieusement `null` (`trigger_error()` en dev seulement,
+  rien du tout en production).
+- `Datatable` : une clé de colonne sans getter correspondant sur
+  l'entité rend désormais une cellule vide (+ `Log::warning()`) au lieu
+  de faire planter tout l'écran (`\TypeError` fatale).
+- `JWT_EXPIRE` vaut désormais `+72 hours` par défaut dans `.env.example`
+  (était `false`, jeton sans expiration) - un déploiement existant qui
+  ne définit pas explicitement `JWT_EXPIRE` dans son propre `.env`
+  n'est pas affecté (la constante effective reste celle de ce fichier,
+  jamais celle de l'exemple).
+
+### Corrigé
+
+- Swagger : le menu/la description du serveur codait en dur le port
+  `3333` au lieu du port réellement configuré (`__env`).
+- Un échec GD (fichier source illisible, PNG/JPEG corrompu, image 1×1
+  limite) au redimensionnement d'une image uploadée faisait planter
+  toute la requête (500) au lieu de conserver l'original déjà enregistré
+  et de renoncer proprement à la seule variante redimensionnée.
+- Création d'un `Reportingmodel` : chemin de gabarits inexistant dans
+  `ReportingmodelForm::buildForm()` (champ "type" sans aucune option) et
+  `Reportingmodel::setObject()` qui renvoyait `$this` (traité comme une
+  erreur de champ par `Controller::formWithPost()`, affiché
+  "[object Object]" côté client) - même anti-pattern corrigé par
+  précaution sur `Notification::setEmittedBy()`/`setRedirect()` et
+  `Push_subscription::setEndpoint()`.
+- Contraintes d'unicité manquantes (`tree.name`, `tree_item`, `status`).
+- **D6** : une relation déclarée `"not"` nullable dans le datacore ne se
+  répercutait jamais dans l'annotation Doctrine générée
+  (`@JoinColumn` sans `nullable=false`).
+- **D7** : régénérer la même entité deux fois de suite (`core:g:crud`)
+  dupliquait son bloc `require` (Entity/Form/Datatable/Controller) dans
+  le fichier de dépendances du module.
+
+### Migrations v7.1
+
+Une seule migration ajoutée par ce chantier, dans l'ordre d'exécution :
+
+1. `2026_11_09_v71_a5_unique_constraints.php` - contraintes d'unicité
+   `tree.name`, `tree_item`, `status` (ÉTAPE A.5).
+
+### Dépréciée
+
+- `qb_sanitize()` (`dclass/dvups_functions.php`) - plus aucun appelant
+  interne, gardée pour compatibilité d'un éventuel appelant externe.
+- `QueryBuilder::whereIn()`/`in()`/`notIn()` forme chaîne brute
+  (ex. `"1,2,3"`) - n'accepte plus qu'une liste d'entiers séparés par
+  des virgules (`InvalidArgumentException` sinon) ; aucun appelant du
+  dépôt n'utilisait cette forme.
+- `FORMTYPE_INJECT_COLLECTIONFORM` (`dclass/devups/Form/FormManager.php`) -
+  jamais implémentée, jamais référencée ailleurs dans le dépôt.
+- `__route_cache`/`ROUTE_CACHE` - `Router::runCache()`/`cacheRoute()`
+  sont du code mort par construction (retour précoce inconditionnel),
+  quelle que soit cette valeur.
+
+## Mise à jour depuis la version 7.0
+
+1. **Migration** : `php devups migrate --dry-run` puis `php devups migrate`
+   (une seule migration, non destructive : ajout de contraintes
+   d'unicité - voir "Migrations v7.1" ci-dessus).
+2. **PHPStan** : `composer phpstan` (niveau 1 désormais, était niveau 0)
+   est ajouté à la CI - sans effet sur une installation existante, les
+   836 erreurs préexistantes sont gelées dans `phpstan-baseline.neon`.
+3. **Points d'attention** (comportements changés, voir "Comportements
+   modifiés" ci-dessus) :
+   - une ligne d'une entité traduite sans ligne `_lang` (D1) qui était
+     jusqu'ici invisible va réapparaître dans les listes/recherches -
+     vérifier qu'aucun code appelant ne comptait implicitement sur son
+     absence ;
+   - tout code appelant qui accédait délibérément à une propriété
+     inexistante d'une entité (en s'appuyant sur le `null` silencieux
+     rendu auparavant) lèvera désormais `UndefinedPropertyException` -
+     chercher les accès `->` sur un nom de colonne incertain ;
+   - définir explicitement `JWT_EXPIRE` dans son propre `.env` si le
+     comportement "jeton sans expiration" doit être conservé
+     (`JWT_EXPIRE=` vide, ou ne pas copier la valeur de `.env.example`).
+4. Aucune rupture de compatibilité d'API dans ce chantier (uniquement
+   des correctifs et deux dépréciations de formes d'appel déjà inutilisées
+   dans ce dépôt).
+
 ## [7.0.0] - 2026-11-08 - chantier de durcissement (ÉTAPES D à R)
 
 ### Ajouté

@@ -354,7 +354,11 @@ Toute entité hérite de `ModelTrait`, qui expose ces méthodes directement sur 
 ->where($unProject)                              // project.id = :project_id
 ```
 
-Le préfixe `this.` désigne l'entité de base. Sans préfixe, la colonne devient ambiguë dès qu'une jointure est en jeu (§4.8).
+Le préfixe `this.` désigne l'entité de base. Sans préfixe, la colonne pouvait devenir ambiguë dès qu'une jointure était en jeu (§4.8).
+
+<div class="new" markdown="1">
+**Corrigé en 7.1 (D2), pour le cas de la jointure de traduction.** `where()`/`whereIn()`/`whereInReverse()`/`whereBetween()` qualifient désormais automatiquement (avec `this.`) une colonne non préfixée dès que l'entité est traduite (`dvtranslate`) — la jointure vers `<table>_lang` (toujours présente) et vers `dvups_lang` (en mode bilingue, sans `id_lang` forcé) exposent toutes les deux des colonnes `id`/`name` qui entraient en collision avec celles de l'entité de base. Préfixer en `this.` reste la bonne pratique pour toute AUTRE jointure (`->join()` explicite, §4.8) : seul le cas de la jointure de traduction est couvert automatiquement.
+</div>
 
 ### Les opérateurs reconnus
 
@@ -780,24 +784,26 @@ Le code se réfère à une **clé machine** non traduite, jamais au libellé : `
 
 Sans langue forcée, les colonnes traduites reviennent concaténées sur toutes les langues par un `GROUP_CONCAT`, et le consommateur les sépare — c'est ce qui produit l'objet `{fr: ..., en: ...}` qu'une application cliente reçoit.
 
-## 7.4 Le défaut D15 — les lignes invisibles
+## 7.4 Le défaut D1 — les lignes invisibles (corrigé en 7.1)
 
-C'est le défaut le plus sérieux de cette couche, et il touche toute entité traduite.
+C'était le défaut le plus sérieux de cette couche, et il touchait toute entité traduite.
 
-`QueryBuilder::initSelect()` — appelé par toute lecture ORM — construit, quand aucune langue n'est forcée :
+`QueryBuilder::initSelect()` — appelé par toute lecture ORM — construisait, quand aucune langue n'était forcée :
 
 ```sql
 left join <table>_lang on (<table>_lang.<table>_id = `<table>`.id)
 join dvups_lang l on (<table>_lang.lang_id = l.id)     -- INNER JOIN, pas LEFT
 ```
 
-Si la ligne de base n'a **aucune** ligne `<table>_lang`, le `LEFT JOIN` produit des colonnes `NULL`, et le `JOIN` suivant sur `NULL = l.id` élimine la ligne entière — y compris pour un `WHERE this.id = X`. La ligne existe en base, n'est pas perdue, et devient invisible à l'ORM, silencieusement.
+Si la ligne de base n'avait **aucune** ligne `<table>_lang`, le `LEFT JOIN` produisait des colonnes `NULL`, et le `JOIN` suivant sur `NULL = l.id` éliminait la ligne entière — y compris pour un `WHERE this.id = X`. La ligne existait en base, n'était pas perdue, et devenait invisible à l'ORM, silencieusement.
 
-Avec une langue forcée, la branche est différente : le filtre de langue est dans la clause `ON` du `LEFT JOIN`, sans `JOIN dvups_lang`. La ligne reste visible ; la colonne traduite revient `NULL`.
+Avec une langue forcée, la branche était différente : le filtre de langue est dans la clause `ON` du `LEFT JOIN`, sans `JOIN dvups_lang`. La ligne restait déjà visible dans ce cas ; la colonne traduite revenait `NULL`.
 
-**Contournement : forcer la langue.** La racine n'est pas corrigée : remplacer le `JOIN` par un `LEFT JOIN` changerait le résultat de chaque lecture traduite du framework, dans tout projet. C'est un arbitrage de l'auteur du socle.
+<div class="new" markdown="1">
+**Corrigé en 7.1.** Le `JOIN` vers `dvups_lang` est désormais un `LEFT JOIN` : une ligne sans aucune ligne `<table>_lang` reste visible dans les deux modes, ses colonnes traduites revenant simplement `NULL`/vides — jamais une ligne perdue ni une erreur. Forcer la langue n'est plus nécessaire pour cette seule raison ; cela reste utile pour obtenir une chaîne simple plutôt que le format bilingue (§7.3).
+</div>
 
-**Côté écriture**, mettre à jour une entité traduite sans ligne `_lang` produirait une erreur SQL illisible. `Model::__update()` refuse donc explicitement, avec un motif clair, avant d'y arriver.
+**Côté écriture**, mettre à jour une entité traduite sans ligne `_lang` produirait une erreur SQL illisible. `Model::__update()` refuse donc explicitement, avec un motif clair, avant d'y arriver — inchangé par ce correctif.
 
 ### L'outil de diagnostic
 
@@ -825,9 +831,9 @@ $branches = $stmt->fetchColumn();
 
 C'est ce que fait `Tree::buildCacheData()` (Tome IV).
 
-## 7.6 Un second défaut, dans la même famille
+## 7.6 Un second défaut, dans la même famille (corrigé en 7.1)
 
-`QueryBuilder::get($colonne, $id_lang)` appelle `initSelect()` **avant** de poser la langue. Passer `$id_lang` en second argument est donc sans effet : le libellé revient concaténé sur toutes les langues. La forme correcte :
+`QueryBuilder::get($colonne, $id_lang)` appelait `initSelect()` **avant** de poser la langue. Passer `$id_lang` en second argument était donc sans effet : le libellé revenait concaténé sur toutes les langues. La forme de contournement, encore valide (`setLang()` est idempotente) :
 
 ```php
 $rows = Status::where('this.entity', '=', 'task')
@@ -835,28 +841,32 @@ $rows = Status::where('this.entity', '=', 'task')
     ->get();
 ```
 
+<div class="new" markdown="1">
+**Corrigé en 7.1.** `get()` pose désormais la langue avant `initSelect()` : `get($colonne, $id_lang)` respecte l'`$id_lang` passé en second argument directement, sans détour par `setLang()`.
+</div>
+
 # Chapitre 8 — Pièges et vulnérabilités de la couche de données
 
-Récapitulatif, avec l'état réel de chacun en 7.0.
+Récapitulatif, avec l'état réel de chacun en 7.1.
 
 | # | Objet | État | Détail |
 |---|---|---|---|
 | 1 | `whereLike()`, `like()` et variantes | corrigé | paramétrés |
-| 2 | `whereIn()` sur des chaînes | **non corrigé** | quotes sans échappement ; valider ou caster avant |
-| 3 | `whereBetween()` | **non corrigé** | bornes interpolées ; valider avant |
+| 2 | `whereIn()`/`in()`/`notIn()`/`whereInReverse()` sur des chaînes | **corrigé en 7.1** | valeurs liées en paramètre ; forme chaîne brute dépréciée (entiers uniquement) |
+| 3 | `whereBetween()`/`between()` | **corrigé en 7.1** | bornes liées en paramètre |
 | 4 | forme à deux arguments de `where()` | corrigé | égalité, ou `IS NULL` |
 | 5 | relations `manyToOne` | documenté | seul l'`id` est chargé ; `with()` au-delà |
 | 6 | `getInstance()`, `first()`, `find()` sur zéro résultat | documenté | entité vide, jamais `null` ; `if ($x && $x->getId())` |
 | 7 | `whereRaw()` / `where_str()` | documenté | SQL brut, jamais avec une donnée utilisateur |
 | 8 | connexion PDO | corrigé | une seule connexion par processus |
-| 9 | `$dvold` par référence | **corrigé en 7.0** | `hydrate()` pose un vrai clone |
-| 10 | erreur SQL fatale | **corrigé en 7.0** | `DBALException`, rattrapable |
-| 11 | D15 — `INNER JOIN dvups_lang` | **non corrigé** | ligne traduite sans traduction invisible ; forcer la langue |
-| 12 | `get($col, $id_lang)` | **non corrigé** | second argument sans effet ; `setLang()` avant |
-| 13 | colonne ambiguë sur une entité traduite | documenté | toujours `this.<colonne>` |
-| 14 | `__get()` sur un attribut non déclaré | comportement du framework | arrêt de l'exécution ; la clé doit nommer une propriété réelle |
-| 15 | `StatusTrait` | code mort | référence une entité qui n'existe plus |
+| 9 | `$dvold` par référence | corrigé en 7.0 | `hydrate()` pose un vrai clone |
+| 10 | erreur SQL fatale | corrigé en 7.0 | `DBALException`, rattrapable |
+| 11 | D1 — `INNER JOIN dvups_lang` | **corrigé en 7.1** | `LEFT JOIN` ; ligne sans traduction reste visible (§7.4) |
+| 12 | `get($col, $id_lang)` | **corrigé en 7.1** | `setLang()` posée avant `initSelect()` (§7.6) |
+| 13 | D2 — colonne ambiguë sur une entité traduite | **corrigé en 7.1** | qualifiée automatiquement (`this.`) quand l'entité est traduite (§4.2) |
+| 14 | `__get()` sur un attribut non déclaré | **comportement changé en 7.1** | lève `UndefinedPropertyException` (`\LogicException`), journalisée par le gestionnaire global — plus un `null` silencieux |
+| 15 | `StatusTrait` | **supprimé en 7.1** | aucun usage, référençait une entité qui n'existait plus |
 
-La règle pratique qui découle des points 2 et 3 : toute valeur venant d'une requête HTTP qui doit entrer dans un `whereIn()` ou un `whereBetween()` doit être validée ou castée avant. Le `QueryBuilder` ne le fait pas à votre place sur ces deux méthodes précises — contrairement à `where()`, `whereLike()` et `whereGroup()`.
+Les points 2 et 3 restent une bonne pratique de validation/typage en amont (toute valeur venant d'une requête HTTP qui entre dans un `whereIn()`/`whereBetween()` gagne à être validée ou castée tôt), mais ce n'est plus une nécessité de sécurité depuis 7.1 : le `QueryBuilder` lie désormais lui-même ces valeurs en paramètre, comme il le fait déjà pour `where()`, `whereLike()` et `whereGroup()`.
 
 <p class="end">Fin du Tome II. Le Tome III traite de l'interface : les routes, les contrôleurs, les styles d'API, le moteur de listes, le moteur de formulaires, les vues et les langues, la sécurité et la documentation d'API.</p>

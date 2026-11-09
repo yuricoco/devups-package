@@ -5,6 +5,9 @@ décrivent les entités), Devups génère entités Doctrine, formulaires, tables
 contrôleurs, et fournit un back-office de suivi prêt à l'emploi (rôles, configuration,
 CMS, arbres, notifications, mails...).
 
+Version actuelle : **7.1.0** - voir [`CHANGELOG.md`](CHANGELOG.md) pour le détail
+de chaque version (une seule migration à jouer depuis la 7.0, `php devups migrate`).
+
 ## Prérequis
 
 - PHP 8.1 ou plus (extensions `pdo_mysql`, `mbstring`, `xml`, `gd`, `zip`, `curl`, `intl`)
@@ -164,6 +167,14 @@ cache) plutot que de se fier a `$_SESSION[ADMIN]` (snapshot serialise a la
 connexion) : un changement de role est pris en compte des la requete
 suivante, sans reconnexion.
 
+**Depuis 7.1**, un accès à une propriété vraiment inconnue d'une entité
+(`$entite->colonneInexistante`) lève `UndefinedPropertyException`
+(`\LogicException`, journalisée par `Log::`) au lieu de rendre
+silencieusement `null` ; une entité traduite (`Tree`, `Cmscontent`,
+`Status`...) sans aucune ligne de traduction n'est plus invisible aux
+lectures ORM (`find()`, `where()->get()`...), ses colonnes traduites
+revenant simplement vides. Voir `CHANGELOG.md`.
+
 ## Langues
 
 Reference unique = le code iso2 (`fr`, `en`, ...), partout : session
@@ -318,6 +329,13 @@ une migration destructive : confirmation requise, voir section
   seul le hash est stocké en base, avec expiration, rotation à chaque
   usage et invalidation à la déconnexion ou au changement de mot de
   passe. Voir `TODO.md` section "Phase 7 (Mots de passe) - ÉTAPE K".
+- **Depuis 7.1** : `QueryBuilder::whereIn()`/`between()` et apparentées
+  lient désormais leurs valeurs en paramètre PDO (plus d'interpolation
+  via `qb_sanitize()`, dépréciée) ; `Router::manageServe()` (point
+  d'entrée partagé par `Admin`, `AdminService` et tout module généré)
+  refuse désormais lui-même (401 JSON) toute requête sans session
+  d'administration, au lieu de dépendre uniquement du script qui
+  l'inclut. Voir `CHANGELOG.md` section "Sécurité" de la 7.1.0.
 
 ## Migrations (ÉTAPE Q)
 

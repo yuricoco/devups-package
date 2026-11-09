@@ -2254,3 +2254,93 @@ supplementaires de meme nature) : reporte, pas de baseline silencieux.
 `composer test` : 399 tests, 0 echec (390 + 9 nouveaux : 4 E.1 + 2 E.2
 + 3 E.3 ; E.4/E.5 sans nouveau test, documentation/outillage).
 
+## ETAPE F - Documentation et sortie 7.1.0
+
+- CHANGELOG.md : section `[7.1.0]` (securite, comportements modifies,
+  corrections, migrations v7.1, depreciations, mise a jour depuis la
+  7.0).
+- tuto_doc/source/ mis a jour (Tome I SS5.6/5.8/6.7, Tome II
+  SS4.2/7.4/7.6 + chapitre 8, Tome III SS4.2/9.1, Tome IV tableaux
+  10.1/10.2) ; `build.py` : `VERSION = "Devups 7.1.0"` ; les 4 PDF
+  regeneres dans `tuto_doc/`.
+- Correction d'une erreur de numerotation preexistante (anterieure a
+  ce chantier) decouverte en recoupant le tableau 10.2 du Tome IV avec
+  les references croisees : le defaut "ligne traduite invisible"
+  (`INNER JOIN dvups_lang`, corrige en 7.1) est **D1** dans le tableau
+  des dettes, pas D15 - D15 designe en realite le defaut, distinct,
+  du redimensionnement GD d'une image 1x1 (egalement corrige en 7.1).
+  Les deux etaient corriges, mais le premier etait cite "D15" a
+  plusieurs endroits de la documentation (Tome II SS7.4, Tome IV lignes
+  195/564) par reprise d'une confusion anterieure. Renomme en D1 dans
+  tous ces endroits, CHANGELOG.md inclus, pour rester coherent avec le
+  tableau 10.2 qui reste la source de verite.
+- A cette occasion, le tableau 10.2 lui-meme corrige : la partie
+  `Dvups_config_item` de l'ancienne entree D13 ("declaree traduite,
+  sans table ni appelant") etait fausse - l'audit E.4 avait deja
+  constate qu'elle est TOUJOURS utilisee (heritee par `Dvups_entity`) ;
+  seule la partie `StatusTrait` de D13 (code mort reel, supprime en
+  7.1) est deplacee en 10.1.
+- Blocage rencontre et leve (hors perimetre strictement applicatif,
+  mais necessaire pour honorer le point 3 de la consigne) :
+  WeasyPrint sur cette machine Windows ne pouvait pas charger
+  Pango/GObject (DLL manquantes) - installation du runtime GTK3 via
+  `winget install --id tschoonj.GTKForWindows` (confirmee par
+  l'utilisateur avant action, changement systeme persistant hors de ce
+  depot), puis fermeture de Foxit PDF Reader qui verrouillait un des
+  PDF en cours de regeneration (confirmee par l'utilisateur).
+- README.md : section "Version actuelle" ajoutee en tete (pointe vers
+  CHANGELOG.md), notes "Depuis 7.1" ajoutees aux sections "Droits" et
+  "Securite".
+- `composer test` : 399 tests, 0 echec (inchange, documentation
+  uniquement). `composer phpstan` : aucune erreur (niveau 1).
+
+## Fin du chantier v7.1.0 - resume
+
+**Etat final** : `composer test` vert (399 tests, 0 echec, 2
+incomplets preexistants et hors perimetre - ecrans en lecture reel par
+design) ; `composer phpstan` vert (niveau 1, 0 erreur hors
+`phpstan-baseline.neon`, 836 erreurs gelees aucune dans ce chantier).
+Une seule migration v7.1 a jouer sur une base existante
+(`2026_11_09_v71_a5_unique_constraints.php`, non destructive) via
+`php devups migrate`.
+
+**Recapitulatif par etape** :
+- A : contraintes d'unicite manquantes + divers correctifs mineurs
+  herites de l'audit initial (Swagger, GD, Reportingmodel).
+- B/C : securite QueryBuilder (`whereIn`/`whereBetween` parametres,
+  operateurs Lazyloading, depreciation `qb_sanitize()`).
+- D : generateur (D6 `nullable=false` sur une relation obligatoire,
+  D7 idempotence du bloc `require` a la regeneration).
+- E : robustesse du coeur (`UndefinedPropertyException`, cellule vide
+  Datatable au lieu d'un ecran casse, garde de session reelle de
+  `manageServe()`, audit mort/vivant, PHPStan niveau 1 + CI).
+- F : documentation (CHANGELOG, 4 tomes, PDF, README) et sortie.
+
+**Reporte a la v8.0** (dettes ouvertes restantes, tableau 10.2 du Tome
+IV) :
+- D8 : `schema:update --force` peut repondre "success" sans appliquer
+  un renommage d'index (Doctrine) - passer par une migration reste la
+  parade.
+- D9 : `Router::cacheRoute()`/`runCache()`, code mort par construction
+  (confirme par l'audit E.4) - documente en commentaire plutot que
+  supprime ; une suppression reelle toucherait des sites d'appel
+  jamais exerces par aucun test, a traiter avec son propre chantier de
+  non-regression.
+- D11 : `FORMTYPE_INJECT_COLLECTIONFORM`, marque `@deprecated` en 7.1
+  mais pas retire (aucune reference a sa valeur ailleurs dans ce
+  depot ; un projet client pourrait neanmoins s'y referer).
+- D14 : `whereRaw()`/`where_str()` corps identiques - laisses tels
+  quels, aucun des deux n'est jamais appele avec une donnee
+  utilisateur dans ce depot.
+- PHPStan niveau 2 (~200 erreurs supplementaires de meme nature que le
+  niveau 1) : tente en E.5, reporte - pas de baseline silencieux sans
+  l'avoir d'abord trie.
+- Toute dette ou piste notee "a ne pas faire sans accord" ailleurs
+  dans ce fichier (chaque entree ci-dessus porte sa propre
+  justification).
+
+**Ne pas oublier au prochain chantier** : relire ce fichier depuis le
+debut avant toute nouvelle ETAPE - les sections anterieures (phases
+1-7, ETAPES A-K) documentent des chantiers distincts, plus anciens,
+qui ne font pas partie de la v7.1.0 decrite ici.
+

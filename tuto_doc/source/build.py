@@ -20,7 +20,7 @@ TOMES = {
 }
 
 EDITION = "Deuxième édition — novembre 2026"
-VERSION = "Devups 7.0.0"
+VERSION = "Devups 7.1.0"
 
 
 def slug(text, used):

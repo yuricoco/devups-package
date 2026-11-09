@@ -380,12 +380,16 @@ class TaskTable extends Datatable
 C'est la forme que le générateur produit.
 
 <div class="warn" markdown="1">
-**La clé doit nommer une propriété réelle.** Sinon l'accès échoue dans `ModelTrait::__get()`, qui arrête l'exécution sur un attribut non déclaré : l'écran entier ne s'affiche pas.
+**La clé doit nommer une propriété réelle.** Sinon l'accès échoue dans `ModelTrait::__get()`, qui depuis 7.1 lève `UndefinedPropertyException` sur un attribut non déclaré (voir Tome II, chapitre 8, point 14) : l'écran entier ne s'affiche toujours pas, mais l'erreur est désormais explicite et journaliée plutôt qu'un `null` silencieux.
 </div>
 
 **Forme 3 — `'value'` appelable**, qui reçoit l'entité hydratée. La forme à utiliser pour tout calcul, formatage HTML ou lecture indirecte.
 
 **Forme 4 — `'value'` chaîne.** `'name'` → `$entity->name` ; une chaîne pointée (`'Project.name'`) est résolue **par accesseurs** (`getProject()` puis `getName()`). D'où la nécessité que les accesseurs existent — c'est la cause la plus fréquente des listes cassées : `class X does not have a method "getY"`.
+
+<div class="new" markdown="1">
+**Corrigé en 7.1.** Une colonne sans valeur jointe (`'.'` absente de `value`) dont le getter résolu (`get` + `ucfirst($value)`) n'existe pas sur l'entité levait une `\TypeError` fatale qui plantait tout l'écran. `Datatable::getTableEntityBody()` vérifie désormais `method_exists()` avant l'appel : une colonne sans getter rend une cellule vide et journalise un avertissement (`Log::warning()`), le reste de l'écran continue de s'afficher.
+</div>
 
 Deux préfixes spéciaux : `src:<champ>` appelle `show<Champ>()` (fichier ou image), `<Relation>::<collection>` parcourt une collection.
 
@@ -624,7 +628,7 @@ Autres méthodes : `number()`, `email()`, `password()`, `selectGroup()`, `autoco
 
 ## 5.8 Un champ traduit
 
-Si l'entité est traduite et que le champ porte `'lang' => true`, `FormFactory` rend un champ par langue. Une fiche d'une entité traduite sans aucune ligne de traduction se charge vide (défaut D15, Tome II §7.4) ; l'enregistrement, lui, refuse avec un motif clair.
+Si l'entité est traduite et que le champ porte `'lang' => true`, `FormFactory` rend un champ par langue. Une fiche d'une entité traduite sans aucune ligne de traduction se chargeait vide avant 7.1 (défaut D1, Tome II §7.4, désormais corrigé) ; l'enregistrement, lui, refuse avec un motif clair.
 
 # Chapitre 6 — Les vues
 
@@ -941,6 +945,10 @@ La documentation est construite par analyse statique des annotations Devups et d
 | `php devups doc:guide` | écrit une page HTML par entité sous `documentation/guide/<composant>/<module>/<entité>.html` | fichiers non versionnés |
 
 `Documentation` est une action « virtuelle » : `rights:sync` la crée comme n'importe quelle action d'entité, ce qui permet de donner accès au Swagger du back-office à un rôle autre que `admin`.
+
+<div class="new" markdown="1">
+**Corrigé en 7.1.** La description du serveur, dans la spécification OpenAPI, codait en dur `http://127.0.0.1:3333/api` — faux dès que `APP_PORT` différait de `3333` (par exemple `:3031` en développement, §1.4). `dv_build_openapi_spec()` utilise désormais `__env` (`APP_URL` + `APP_PORT`), la même valeur que partout ailleurs dans le framework ; `/documentation/` et le Swagger du back-office (`/admin/apidocs`) en héritent, puisqu'ils partagent le même générateur.
+</div>
 
 <div class="note" markdown="1">
 **`openapi.json` dans la chaîne d'intégration.** `php devups api:doc` en CI produit un fichier que l'on peut comparer d'une version à l'autre, ou donner à un générateur de client.

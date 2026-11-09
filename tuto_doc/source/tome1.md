@@ -558,8 +558,8 @@ Noter la différence de suffixe : `View` pour une page, `Serve` pour l'API publi
 **Nouveau en 7.0 — la garde des droits.** `Request::Controller()` est le point de passage unique de toute action CRUD d'entité, qu'elle arrive par une page (§5.5) ou par l'API du back-office. Avant d'appeler la méthode, il traduit son nom en action (`createAction` → `create`, `listView` et `formView` → `read`…) et appelle `can($action, $entité)`. Refus : 403. Le Tome IV, chapitre 2, décrit le système de droits.
 </div>
 
-<div class="warn" markdown="1">
-**À connaître.** Le contrôle de session en tête de `manageServe()` reste vide. L'API du back-office est protégée plus bas : par la redirection de `manage()` pour les pages, par `can()` (qui refuse toute requête sans session d'administration) pour les actions d'entité, et par `admin/header.php` pour les `services.php` historiques. Une méthode `xxxService()` écrite à la main sur `AdminService` doit faire son propre contrôle.
+<div class="new" markdown="1">
+**Corrigé en 7.1 — le garde de session de `manageServe()`.** Le contrôle de session en tête de `manageServe()` était jusqu'ici un bloc entièrement commenté (aucun refus réel) : `Admin`, `ModuleConfig`, `ModuleLog`, `ModuleUser` (et tout module généré sur le même patron) n'avaient donc aucun garde qui leur soit propre à ce point d'entrée partagé — protégés en pratique seulement par `admin/header.php` (par nom de script/chemin) pour les points d'entrée historiques, ou par le constructeur d'`AdminService`. `manageServe()` refuse désormais lui-même (401 JSON) toute requête sans session d'administration, avec les mêmes exceptions que `manage()` (`connexion-action`, `public_access`) — une méthode `xxxService()` écrite à la main sur n'importe quelle classe héritant de ce point d'entrée est donc protégée par construction, plus seulement par le script qui l'inclut.
 </div>
 
 ## 5.7 `mapFunction()` — le dernier kilomètre
@@ -579,6 +579,10 @@ Noter la différence de suffixe : `View` pour une page, `Serve` pour l'API publi
 ## 5.8 Le cache de routes
 
 Si `__route_cache` est vrai, `runCache()` consulte `cache/routes.php` avant le dispatch normal. Mais `Router::cacheRoute()`, qui devrait écrire ce fichier, commence par `return null;`. Le mécanisme est complet côté lecture et mort côté écriture : laisser `ROUTE_CACHE=false`.
+
+<div class="new" markdown="1">
+**Confirmé en 7.1.** Audit explicite (ÉTAPE E.4) : `cacheRoute()` a son propre `return null;` précoce et **inconditionnel** (atteint même si `__route_cache` est vrai), et `runCache()` ne dépasse jamais son `if (!__route_cache) return null;` puisque cette constante vaut toujours `false` par défaut. Les deux méthodes sont désormais commentées en ce sens dans le code plutôt que supprimées (plusieurs sites d'appel dans `Request.php`, jamais exercés par aucun test) — rien n'a changé fonctionnellement, le constat ci-dessus reste exact.
+</div>
 
 ## 5.9 Résumé en un tableau
 
@@ -689,11 +693,19 @@ php devups core:g:crud monprojet\ModuleTask\task
 
 ## 6.7 Ce qu'il faut savoir avant de régénérer
 
-**1. Régénérer une entité existante peut dupliquer ses `require`.** `core:g:crud` sur une entité déjà générée peut ajouter un second bloc de `require` à la fin de `<composant>.module<nom>.php`. Ce sont des `require` et non des `require_once` : le résultat est un `Cannot redeclare class X` qui dépend de l'ordre de chargement. Relire le fichier de module après chaque régénération.
+**1. Régénérer une entité existante pouvait dupliquer ses `require`.** `core:g:crud` sur une entité déjà générée pouvait ajouter un second bloc de `require` à la fin de `<composant>.module<nom>.php`. Ce sont des `require` et non des `require_once` : le résultat était un `Cannot redeclare class X` qui dépend de l'ordre de chargement.
 
-**2. Une entité éditée à la main pour une contrainte sort de la régénération.** Une `@UniqueConstraint`, un `nullable=false` sur une relation, une identité composite : tout cela est écrasé par `core:g:crud`. L'entité passe alors en édition manuelle permanente.
+<div class="new" markdown="1">
+**Corrigé en 7.1 (D7).** `__Generator::dependencies()` vérifie désormais si le `require` de l'entité est déjà présent avant d'ajouter un bloc en mode "append" — régénérer la même entité deux fois de suite n'écrit plus rien de nouveau si son bloc existe déjà. Relire quand même le fichier de module après une régénération manuelle reste une bonne pratique pour toute autre modification faite à la main.
+</div>
 
-**3. Le `nullable` d'une relation est ignoré par le générateur.** `BackendGenerator.php` interpole `nullable` pour une colonne simple, mais pour une relation il ne produit que `@JoinColumn(onDelete="...")`. La clé étrangère est donc toujours NULLable, quoi que dise le datacore. Une relation réellement obligatoire demande `nullable=false` à la main.
+**2. Une entité éditée à la main pour une contrainte sort de la régénération.** Une `@UniqueConstraint`, une identité composite : tout cela est écrasé par `core:g:crud`. L'entité passe alors en édition manuelle permanente.
+
+**3. Le `nullable` d'une relation était ignoré par le générateur.** `BackendGenerator.php` interpolait `nullable` pour une colonne simple, mais pour une relation ne produisait que `@JoinColumn(onDelete="...")` — la clé étrangère restait toujours NULLable, quoi que dise le datacore.
+
+<div class="new" markdown="1">
+**Corrigé en 7.1 (D6).** Une relation déclarée `"not"` nullable dans le datacore produit désormais `@JoinColumn(onDelete="...", nullable=false)`. Une relation `"default"` (le cas courant) reste inchangée.
+</div>
 
 <div class="new" markdown="1">
 **Corrigé en 7.0 — le `update()` généré écrit vraiment.** Dans les versions 4.x, `Model::hydrate()` posait `$this->dvold = $this`, une référence et non une copie. La mise à jour ne détectait donc jamais de changement et répondait `Empty parameters` avec un 200. `hydrate()` pose désormais un vrai clone : le gabarit `hydrateWithJson(new X($id), ...)` et l'`updateAction()` du back-office fonctionnent sans retouche. Des tests de régression le couvrent.
