@@ -1100,10 +1100,23 @@ EOF;
                     $file = call_user_func(array($entity, 'show' . ucfirst($src[1])));
                     $td = "" . $file . "";
                 } else {
-                    if (is_object(call_user_func(array($entity, 'get' . ucfirst($value)))) && get_class(call_user_func(array($entity, 'get' . ucfirst($value)))) == "DateTime") {
-                        $td = '' . call_user_func(array($entity, 'get' . ucfirst($value)))->format('d M Y') . '';
+                    $getter = 'get' . ucfirst($value);
+                    // ETAPE E.2 (v7.1) - cle de colonne du datatablemodel
+                    // sans getter correspondant sur l'entite (colonne
+                    // renommee/supprimee cote entite, faute de frappe dans
+                    // la config du Datatable) : call_user_func() levait une
+                    // \TypeError fatale qui plantait tout l'ecran.
+                    // Cellule vide + avertissement journalise a la place.
+                    if (!method_exists($entity, $getter)) {
+                        \Log::warning(
+                            "Datatable: cle de colonne '$value' inconnue sur " . get_class($entity) . " (methode $getter() absente) - cellule vide rendue",
+                            ['class' => get_class($entity)]
+                        );
+                        $td = '';
+                    } elseif (is_object(call_user_func(array($entity, $getter))) && get_class(call_user_func(array($entity, $getter))) == "DateTime") {
+                        $td = '' . call_user_func(array($entity, $getter))->format('d M Y') . '';
                     } else {
-                        $td = '' . call_user_func(array($entity, 'get' . ucfirst($value))) . '';
+                        $td = '' . call_user_func(array($entity, $getter)) . '';
                     }
                 }
             }
