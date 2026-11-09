@@ -2031,3 +2031,110 @@ colonne traduite) pour rester dans le perimetre de cette etape.
 `composer test` : 342 tests, 0 echec (334 + 8 nouveaux : 4 e2e
 injection + 4 QueryBuilder apostrophe/forme chaine depreciee).
 
+## ETAPE C - Le defaut D15 (lignes traduites invisibles) + D3 + D2
+
+### ETAPE C.1/C.2 - D15 : ligne sans aucune ligne "_lang" invisible
+
+Root cause : `QueryBuilder::initSelect()`, en mode bilingue (sans
+`id_lang` force), construit le format `{iso => valeur}` via
+`GROUP_CONCAT` sur un LEFT JOIN vers `<table>_lang`, PUIS joignait
+`dvups_lang` (alias `l`) via un INNER JOIN (`join dvups_lang l on
+($thislang.lang_id = l.id)`). Une ligne de base sans AUCUNE ligne
+`<table>_lang` produit `lang_id = NULL` (consequence du LEFT JOIN
+precedent) - et `NULL = l.id` n'est VRAI pour aucune ligne de
+`dvups_lang`. L'INNER JOIN eliminait alors la ligne de base ENTIERE
+(pas seulement ses colonnes traduites) : `find()`/`findOrNull()`/
+`where()->get()`/`first()` rendaient la ligne invisible. `count()`
+etait deja immune (son mode `$aggregation=true` saute entierement ce
+bloc de jointure).
+
+- `QueryBuilder::initSelect()` : le `join dvups_lang l on (...)`
+  devient un `left join dvups_lang l on (...)`. Une ligne sans
+  traduction reste visible, son `GROUP_CONCAT` devient simplement
+  NULL/vide - jamais une ligne perdue ni une erreur (`ModelTrait::
+  hydrateData()` ne pose la propriete traduite que si `isset($flowBD[$append])`,
+  qui est deja `false` pour une valeur NULL).
+- Verifie que le format bilingue `{fr:..., en:...}` renvoye par l'API
+  reste identique pour les lignes qui ONT des traductions (non-
+  regression, voir C.3 ci-dessous).
+
+Tests ajoutes (`tests/Integration/TranslatedRowWithoutLangRowTest.php`) :
+40 tests (5 methodes - `count()`/`find()`/`findOrNull()`/
+`where()->get()`/`first()` - x 8 entites traduites du socle : Tree,
+Tree_item, Status, Cmscontent, Notificationtype, Reportingmodel,
+Country, Dvups_entity), chacune creee sans aucune ligne `_lang`.
+Confirmes en echec avant le correctif (32/40 - les 8 `count()`
+passaient deja, immunises par construction) et passants apres (40/40).
+
+### ETAPE C.3 - D3 : `QueryBuilder::get($col, $id_lang)` ignorait la langue demandee
+
+Root cause : `get()` appelait `initSelect()` AVANT `setLang($id_lang)`.
+`initSelect()` lit `$this->id_lang` pour choisir entre la jointure
+mono-langue (colonne simple) et le mode bilingue (`GROUP_CONCAT`) -
+appele apres, un `id_lang` explicitement demande n'avait donc jamais
+d'effet sur la requete elle-meme : elle restait TOUJOURS construite en
+mode bilingue, meme avec une langue forcee. Plusieurs appelants
+(`Status::buildCacheDataFor()`, `Tree_item::getmainmenu()`)
+contournaient deja ce defaut en appelant eux-memes
+`->setLang($id_lang)->get()` avant - toujours valide, `setLang()` etant
+idempotente -, ce qui a limite l'impact reel du bug cote appelants
+existants.
+
+- Inverse l'ordre dans `get()` : `setLang()` est maintenant pose avant
+  `initSelect()`.
+
+Tests ajoutes (`tests/Integration/TranslatedRowBilingualFormatTest.php`) :
+2 tests de non-regression (ligne bilingue dans les deux langues, ligne
+traduite dans une seule langue) confirmant que le format `{iso =>
+valeur}` reste inchange pour les lignes qui ONT des traductions ;
+`testGetWithAnExplicitIdLangReturnsAPlainStringNotTheBilingualArray`,
+confirme en echec avant le correctif (rendait la chaine brute non
+parsee `'[fr]...[en]...'` au lieu de la chaine simple attendue) et
+passant apres.
+
+### ETAPE C.4 - D2 : colonne non qualifiee ambigue sur une entite traduite
+
+Root cause : toute colonne non qualifiee (sans `table.`/`this.`)
+referencee dans `where()`/`whereIn()`/`whereInReverse()`/
+`whereBetween()` devient ambigue des qu'une jointure de traduction est
+presente - `initSelect()` joint toujours `<table>_lang` (qui a sa
+propre colonne `id`, entre autres) et, en mode bilingue, joint aussi
+`dvups_lang` aliase `l` (colonnes `id`/`name`, entre autres) :
+MySQL/MariaDB refuse alors la reference non qualifiee ("Column 'x' in
+where clause is ambiguous", erreur 1052). Deja rencontre a l'ETAPE B
+(`LazyloadingInjectionTest`, operateurs `rein`/`btw` sur l'entite
+`Tree`) - contourne a l'epoque en utilisant l'entite `Interval` (non
+traduite), le vrai correctif etant deja planifie pour cette
+sous-etape.
+
+- Ajoute `QueryBuilder::qualifyIfAmbiguous()` : prefixe la colonne
+  avec le pseudo-alias `this.` (deja utilise ailleurs dans ce fichier,
+  resolu en fin de requete par `querysanitize()` vers le vrai nom de
+  table) quand l'entite est traduite (`dvtranslate`) et que la
+  colonne n'est pas deja qualifiee (pas de `.`, pas d'espace -
+  evite de toucher une colonne deja qualifiee ou une forme avec
+  suffixe SQL explicite type `"col DESC"`) - inoffensif pour une
+  entite non traduite (retournee inchangee).
+- Applique dans `where()`, `whereIn()`, `whereInReverse()`,
+  `whereBetween()`.
+- N'explique PAS la discrepance notee a l'ETAPE B entre `in`/`notin`
+  (qui ne declenchaient pas l'erreur sur `Tree` malgre une colonne
+  tout aussi non qualifiee) et `rein`/`btw` (qui la declenchaient) -
+  mais le correctif ci-dessus couvre desormais les deux cas
+  indifferemment, la discrepance devient sans consequence.
+
+Tests ajoutes (`tests/Integration/AmbiguousColumnOnTranslatedEntityTest.php`) :
+3 tests (`where()`/`whereInReverse()`/`whereBetween()` sur une colonne
+non qualifiee de l'entite `Tree`), confirmes en echec avant le
+correctif (erreur 1052) et passants apres.
+
+### ETAPE C.5 - clause d'abandon
+
+Non declenchee : aucun test preexistant ni ecran `AdminScreensTest`
+n'a casse a aucune des sous-etapes C.1 a C.4 (`composer test` reste a
+0 echec a chaque commit).
+
+`composer test` : 388 tests, 0 echec (342 + 46 nouveaux : 40 D15 + 3
+non-regression/D3 + 3 D2 ; 2 incomplete preexistants sans rapport avec
+cette etape).
+
