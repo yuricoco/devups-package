@@ -1861,3 +1861,32 @@ devrait donc jamais echouer).
 
 `composer test` : 330 tests, 0 echec (320 + 10 nouveaux).
 
+### ETAPE A.6 - JWT_EXPIRE par defaut
+
+`.env.example` : `JWT_EXPIRE=false` (jeton sans expiration) remplace
+par `JWT_EXPIRE=+72 hours`, avec un commentaire expliquant la valeur
+acceptee (tout ce que `DateTimeImmutable::modify()` comprend) et le
+risque de `false` (jeton vole jamais invalidable par expiration -
+deconseille hors cas particulier).
+
+`Auth::getJWT()`/`getAnyJWT()`/`execute()` (`dclass/lib/annotation/Auth.php`)
+geraient deja correctement les deux cas (code relu, aucun changement
+necessaire) : avec `jwt_expire_time` truthy, `iat`/`nbf`/`exp` sont
+emis a la creation et recontroles a la lecture (`execute()`, en plus
+du controle deja fait par la bibliotheque `firebase/php-jwt` elle-meme
+sur `exp`/`nbf`) ; sans, aucun des trois n'est jamais emis ni
+controle (jeton permanent, comportement volontaire).
+
+Test ajoute (`JwtExpirationTest.php`) - independant de la valeur
+EFFECTIVE de `JWT_EXPIRE` dans l'environnement de test (qui peut
+differer de `.env.example`) : construit directement un jeton de la
+meme forme que `Auth::getJWT()` emettrait, et verifie via
+`Auth::decodeJWTOrFail()` qu'un jeton expire est refuse, qu'un jeton
+pas encore valide (`nbf` futur) est refuse, qu'un jeton encore valide
+est accepte, et qu'un jeton sans aucune des trois claims (forme
+`JWT_EXPIRE=false`) n'expire jamais.
+
+Commit a suivre.
+
+`composer test` : 334 tests, 0 echec (330 + 4 nouveaux).
+
