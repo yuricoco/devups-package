@@ -167,8 +167,14 @@ class Reportingmodel extends Model implements JsonSerializable, DatatableOverwri
 
     public function setObject($object)
     {
+        // ETAPE A.4 (v7.1) : "return $this;" est traite comme un message
+        // d'erreur par Controller::formWithPost() (toute convention de
+        // setter du depot : une valeur truthy en retour = erreur du champ,
+        // null/void = succes) - la creation/mise a jour d'un
+        // Reportingmodel plantait TOUJOURS sur ce champ, l'entite elle-meme
+        // serialisee comme "erreur" ({"object":{"id":null,...}}), affichee
+        // cote client comme "[object Object]" (TODO.md ETAPE V).
         $this->object = $object;
-        return $this;
     }
 
     /**

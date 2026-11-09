@@ -111,8 +111,11 @@ class Notification extends Model implements JsonSerializable
 
     public function setEmittedBy($entityid)
     {
+        // ETAPE A.4 (v7.1) : "return $this;" est traite comme un message
+        // d'erreur par Controller::formWithPost() (voir le meme correctif
+        // sur Reportingmodel::setObject()) - sans appelant en chaine ici,
+        // retire par precaution avant qu'un formulaire n'expose ce champ.
         $this->emitted_by = $entityid;
-        return $this;
     }
 
     public static function unreaded($user)
@@ -164,8 +167,10 @@ class Notification extends Model implements JsonSerializable
      */
     public function setRedirect($redirect)
     {
+        // ETAPE A.4 (v7.1) : meme correctif que Reportingmodel::setObject()
+        // ci-dessus (lien) - "return $this;" casserait la creation/mise a
+        // jour via un formulaire admin qui exposerait ce champ.
         $this->redirect = $redirect;
-        return $this;
     }
 
     /**

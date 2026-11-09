@@ -17,8 +17,16 @@ class ReportingmodelForm extends FormManager
 
     public function buildForm()
     {
-        $dir = ROOT . "src/devupscms/ModuleReporting/Resource/views/models/";
+        // ETAPE A.4 (v7.1) : ce dossier n'a jamais existe - les gabarits
+        // reels vivent dans web/views/mails/ (meme convention que
+        // ReportingmodelController::collectAction()/ensureTemplateFile(),
+        // ETAPE M.4). $files restait donc toujours vide : le champ radio
+        // "type" (colonne NOT NULL) se rendait sans AUCUNE option, donc
+        // sans aucun input selectionnable - la creation echouait
+        // systematiquement ("Column 'type' cannot be null").
+        $dir = ROOT . "web/views/mails/";
         $files = is_dir($dir) ? array_values(array_diff(scandir($dir), ['.', '..'])) : [];
+        sort($files);
         if (!$this->emailmodel->type && $files)
             $this->emailmodel->type = explode(".", $files[0])[0];
 
