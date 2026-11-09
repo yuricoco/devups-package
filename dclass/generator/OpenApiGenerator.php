@@ -176,7 +176,10 @@ if (!function_exists('dv_build_openapi_spec')) {
                     . "## Authentification\n"
                     . "`Authorization: Bearer <jwt>`",
             ],
-            'servers' => [['url' => '/api', 'description' => 'http://127.0.0.1:3333/api']],
+            // ETAPE A.2 (v7.1) : le menu des serveurs Swagger affichait un
+            // port en dur (3333), different du port reel configure
+            // (APP_PORT/.env) - utilise desormais __env (APP_URL+APP_PORT).
+            'servers' => [['url' => '/api', 'description' => rtrim(__env, '/') . '/api']],
             'components' => ['securitySchemes' => ['BearerAuth' => ['type' => 'http', 'scheme' => 'bearer', 'bearerFormat' => 'JWT']]],
             'tags' => [],
             'paths' => [],

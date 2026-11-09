@@ -33,6 +33,19 @@ final class DocGenerationTest extends TestCase
         $this->assertSame(dv_build_openapi_spec(ROOT), dv_build_openapi_spec(ROOT));
     }
 
+    /**
+     * ETAPE A.2 (v7.1) : le menu "Servers" de Swagger affichait un port en
+     * dur (3333) au lieu du port reel (APP_URL/APP_PORT, constante __env) -
+     * desormais derive de __env, quel que soit l'environnement.
+     */
+    public function testServerDescriptionReflectsTheConfiguredEnv(): void
+    {
+        $spec = dv_build_openapi_spec(ROOT);
+
+        $this->assertSame(rtrim(__env, '/') . '/api', $spec['servers'][0]['description']);
+        $this->assertStringNotContainsString('3333', $spec['servers'][0]['description']);
+    }
+
     public function testBuildOpenapiSpecWithoutAdminOmitsSessionAuthAndAdminPaths(): void
     {
         $spec = dv_build_openapi_spec(ROOT);
