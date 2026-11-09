@@ -2138,3 +2138,53 @@ n'a casse a aucune des sous-etapes C.1 a C.4 (`composer test` reste a
 non-regression/D3 + 3 D2 ; 2 incomplete preexistants sans rapport avec
 cette etape).
 
+## ETAPE D - Generateur (D6, D7)
+
+### ETAPE D.6 - relation obligatoire generee sans nullable=false
+
+Root cause : `BackendGenerator::entityGenerator()` generait
+`@JoinColumn(onDelete="...")` pour chaque relation (branches `oneToOne`
+et `manyToOne`/`oneToMany`), sans jamais tenir compte de
+`$relation->nullable == 'not'` (relation declaree obligatoire dans le
+datacore, ex. toute relation `manyToMany` synthetique, ou toute
+relation du datacore configuree comme telle) - le schema genere par
+Doctrine (`Setup::createAnnotationMetadataConfiguration`) acceptait
+alors NULL sur une colonne de jointure censee etre obligatoire.
+
+- Ajoute `nullable=false` a `@JoinColumn` quand
+  `$relation->nullable === 'not'`, dans les deux branches - inchange
+  (toujours nullable par defaut) quand la relation est `'default'`.
+
+Test ajoute (`tests/Integration/GeneratorRequiredRelationNullableFalseTest.php`) :
+genere une entite avec une relation `'not'` et une relation
+`'default'`, confirme en echec avant le correctif (aucun
+`nullable=false` genere pour la relation obligatoire) et passant
+apres.
+
+### ETAPE D.7 - double bloc require a la regeneration d'une entite
+
+Root cause : `__Generator::dependencies()` maintient un fichier de
+dependances par module (`<projet>.<module>.php`, un bloc `require
+Entity/Form/Datatable/Controller` par entite). Quand ce fichier existe
+deja (pas de `--rewrite`), le bloc de l'entite etait ajoute en mode
+`"a+"` (append pur), SANS jamais verifier qu'il n'y etait pas deja -
+regenerer la meme entite deux fois de suite (deux `core:g:crud`
+successifs, cas normal en developpement : relancer le generateur apres
+avoir ajuste le datacore) dupliquait integralement son bloc require,
+chaque classe (Entity/Form/Datatable/Controller) redeclaree a
+l'inclusion (`Cannot redeclare class`).
+
+- Avant d'ecrire en mode `"a+"`, verifie si le require de l'entite
+  (`require 'Entity/<Nom>.php';`) est deja present dans le fichier
+  existant - si oui, le fichier reste inchange (regeneration
+  idempotente) plutot que d'accumuler un doublon. Mode `"w"` (fichier
+  absent ou `--rewrite` explicite) inchange.
+
+Test ajoute (`tests/Integration/GeneratorDependenciesNoDuplicateRequireTest.php`) :
+appelle `__Generator::dependencies()` (methode privee, via
+`ReflectionMethod`) deux fois de suite pour la meme entite dans un
+dossier temporaire isole, confirme en echec avant le correctif (bloc
+require present deux fois) et passant apres (une seule fois).
+
+`composer test` : 390 tests, 0 echec (388 + 2 nouveaux).
+
