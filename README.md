@@ -388,4 +388,17 @@ migration PHP, `migrate:status`, marquage de base de départ).
   Devups et des datacores, aucune classe PHP chargée) :
   `dclass/generator/OpenApiGenerator.php` et
   `dclass/generator/DocGuideGenerator.php`.
+- **Tutoriel complet (4 tomes, PDF)** : `tuto_doc/` - Tome I (le socle et
+  le démarrage), Tome II (les données), Tome III (l'interface), Tome IV
+  (les modules fournis, dont le chapitre "Les dettes connues du
+  framework"). Sources Markdown dans `tuto_doc/source/` ; pour
+  régénérer les PDF après une modification des sources :
+  ```bash
+  pip install weasyprint markdown
+  python tuto_doc/source/build.py
+  ```
+  (WeasyPrint dépend de GTK/Pango - sous Windows, installer le runtime
+  GTK3 si `import weasyprint` échoue avec "cannot load library
+  libgobject-2.0-0"). `build.py` écrit les 4 PDF directement dans
+  `tuto_doc/` (et des `.html` intermédiaires, non versionnés).
 - Site : https://devups.spacekola.com
