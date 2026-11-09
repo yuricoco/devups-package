@@ -2188,3 +2188,69 @@ require present deux fois) et passant apres (une seule fois).
 
 `composer test` : 390 tests, 0 echec (388 + 2 nouveaux).
 
+## ETAPE E - Robustesse du coeur
+
+### ETAPE E.1 - ModelTrait::__get() leve UndefinedPropertyException
+
+Un attribut vraiment inconnu (ni une colonne, ni une colonne traduite
+pas encore hydratee, ni la convention `_attribut` du lazyloading de
+relation) ne levait qu'un `trigger_error()` (lui-meme un remplacement
+anterieur d'un `die()`), SANS JAMAIS interrompre quoi que ce soit -
+en production, ce `trigger_error()` n'etait meme pas emis. Ajoute
+`UndefinedPropertyException` (`\LogicException`), levee
+systematiquement a la place - journalisee et transformee en reponse
+500 par `Log::installGlobalHandler()` (deja installe, admin/header.php
+et header.php). Test : `tests/Integration/ModelUndefinedPropertyTest.php`.
+
+### ETAPE E.2 - Datatable::getTableEntityBody() colonne inconnue
+
+Une cle de colonne du `datatablemodel` sans getter correspondant sur
+l'entite (colonne renommee/supprimee, faute de frappe) levait une
+`\TypeError` fatale (`call_user_func()`) qui plantait tout l'ecran.
+Verifie desormais `method_exists()` avant l'appel : cellule vide +
+`Log::warning()` a la place. Test :
+`tests/Integration/DatatableUnknownColumnKeyTest.php`.
+
+### ETAPE E.3 - Router::manageServe() sans garde de session propre
+
+Le garde de session de `manageServe()` (point d'entree partage par
+Admin, AdminService, ModuleConfig, ModuleLog, ModuleUser - et tout
+futur module genere) n'avait qu'un corps VIDE (commentaire mort).
+Protege en pratique par deux couches independantes du Router lui-meme
+(admin/header.php par nom de script/chemin, AdminService dans son
+propre constructeur) - mais Admin/ModuleConfig/ModuleLog/ModuleUser
+n'avaient aucun garde qui LEUR soit propre. Remplace par un vrai refus
+401 JSON au niveau du Router, memes exceptions que `manage()`
+(`connexion-action`, `$this->public_access`). Test :
+`tests/Integration/ManageServeSessionGuardTest.php` (+ script
+`tests/Support/scripts/trigger_manageserve_guard.php`, processus PHP
+separe pour isoler ce garde d'admin/header.php).
+
+### ETAPE E.4 - Audit mort/vivant
+
+- `StatusTrait` : supprime (aucun usage, reference `Status_entity`,
+  classe inexistante).
+- `Dvups_config_item` : verifie TOUJOURS utilise (`Dvups_entity` en
+  herite) - conserve, comme prevu.
+- `Router::runCache()`/`cacheRoute()` et la constante
+  `__route_cache`/`ROUTE_CACHE` : code mort par construction
+  (`cacheRoute()` a son propre `return null;` precoce inconditionnel) -
+  documente en commentaire plutot que supprime (sites d'appel dans
+  Request.php jamais exerces par aucun test).
+- `FORMTYPE_INJECT_COLLECTIONFORM` : marque `@deprecated` explicitement -
+  jamais reference par sa valeur ailleurs ; `FormFactory::__renderForm()`
+  a deja un rendu "type non gere" generique qui le couvrirait.
+
+### ETAPE E.5 - PHPStan niveau 1 + CI
+
+Passe de niveau 0 a niveau 1 (deja en place depuis l'ETAPE P.2). Les
+836 erreurs sont gelees dans `phpstan-baseline.neon` : aucune n'est
+sur une ligne touchee par ce chantier (verifie fichier par fichier) -
+rien a corriger dans son perimetre. Niveau 2 tente (~200 erreurs
+supplementaires de meme nature) : reporte, pas de baseline silencieux.
+`composer phpstan` ajoute a la CI (`.github/workflows/tests.yml`, PHP
+8.2 uniquement, apres `composer test`).
+
+`composer test` : 399 tests, 0 echec (390 + 9 nouveaux : 4 E.1 + 2 E.2
++ 3 E.3 ; E.4/E.5 sans nouveau test, documentation/outillage).
+
