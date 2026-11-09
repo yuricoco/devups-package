@@ -1929,3 +1929,105 @@ correcte etait incertaine) - rien a reporter de ce point de vue.
 `composer test` : 334 tests, 0 echec (inchange - aucun code execute
 n'a change, seulement lang/en.php et lang/fr.php).
 
+## ETAPE B - Securite du QueryBuilder
+
+### ETAPE B.1/B.2/B.3/B.4 - whereIn/whereBetween/operateurs Lazyloading/qb_sanitize
+
+Root cause commune : `qb_sanitize()` (`dclass/dvups_functions.php`)
+entourait une chaine de guillemets SIMPLES SANS echapper les
+guillemets qu'elle contiendrait deja (`"'$value'"`) - une injection
+SQL immediate pour toute valeur utilisateur avec une apostrophe,
+MEME passee dans le tableau "sur" d'un `whereIn()`/`in()`/`notIn()`
+(la forme reputee "sure" du depot). `between()`/`whereBetween()`
+avaient exactement le meme defaut (bornes interpolees entre
+guillemets simples, non echappees).
+
+- `QueryBuilder::whereIn()`/`in()`/`notIn()` (`dclass/devups/Tchutte/QueryBuilder.php`) :
+  chaque valeur est desormais liee en parametre (`:in_<hint>_<n>`,
+  compteur `$inParamSeq` dedie, jamais de collision). La forme chaine
+  brute (`$values` string, ex. `"1,2,3"`) est DEPRECIEE - journalise un
+  `Log::warning()` au premier appel et n'accepte plus qu'une liste
+  d'entiers separes par des virgules (sinon `InvalidArgumentException`,
+  jamais d'interpolation meme apres validation). Recherche exhaustive
+  dans le depot (`grep`) : AUCUN appelant n'utilise cette forme
+  chaine (tous passent deja un tableau) - changement de comportement
+  sans impact reel, documente ici et dans le CHANGELOG (ETAPE F).
+- `QueryBuilder::whereInReverse()` : `$value` (la donnee utilisateur a
+  chercher) est desormais lie en parametre ; `$columns` reste
+  interpole - ce sont des noms de colonnes (identifiants SQL), jamais
+  des valeurs, fournis par l'appelant (code), jamais par une requete.
+- `QueryBuilder::between()`/`whereBetween()` : memes principe, bornes
+  liees en parametres.
+- Operateurs Lazyloading (`dclass/devups/Datatable/Lazyloading.php::filterswicher()`) :
+  - `"rein"` interpolait directement `$value` dans `where_str(" $value IN ( $attr )")` -
+    injection SQL immediate. Remplace par `whereInReverse($value, $attr)`
+    (parametree).
+  - `"notin"` passait `$value` (la chaine ENTIERE, JAMAIS eclatee par
+    virgule - contrairement a `"in"` juste au-dessus, bug de coherence
+    preexistant) directement a `notIn()`, qui l'interpolait sans
+    echappement. Eclate desormais par virgule comme `"in"`, puis liee.
+  - `"in"`/`"btw"` passaient deja par `in()`/`between()` - desormais
+    parametrees automatiquement via le correctif ci-dessus, aucun
+    changement d'appel necessaire.
+- `qb_sanitize()` : plus aucun usage interne (les trois methodes
+  ci-dessus lient desormais leurs valeurs). Gardee `@deprecated` pour
+  compatibilite d'un appelant externe eventuel, mais echappe
+  desormais via `PDO::quote()` (toujours correct) au lieu de la
+  concatenation de guillemets.
+- Recherche exhaustive des appelants de `whereIn()`/`in()`/`notIn()`/
+  `whereBetween()`/`between()`/`where_str()` dans tout le depot
+  (`src/`, `dclass/`, `admin/`, `web/`, `route/`) : tous passent deja
+  un tableau ou une valeur structurelle (jamais une chaine utilisateur
+  brute a l'exception du bug `"notin"` ci-dessus, corrige) - aucune
+  signature d'appel changee.
+
+Test e2e ajoute : valeurs contenant une apostrophe et une tentative
+d'injection SQL classique (`' OR '1'='1`) a travers les operateurs
+Lazyloading `in`/`notin`/`btw`/`rein` - aucune erreur SQL, aucun
+resultat injecte (voir `LazyloadingInjectionTest.php`).
+
+### ETAPE B.5 - composer audit (2 alertes ignorees)
+
+- **firebase/php-jwt** (`PKSA-y2cr-5h3j-g3ys`, CVE-2025-45769,
+  "weak encryption") : CVE DISPUTEE par les mainteneurs eux-memes
+  (issue firebase/php-jwt#620) - le NVD la marque "Disputed", le
+  grief etant que la longueur de la cle releve de la responsabilite
+  de l'APPLICATION, pas de la bibliotheque. Corrigee en 7.0.0 par une
+  validation de la longueur de cle a l'encodage/decodage. Tente une
+  mise a jour (`composer require firebase/php-jwt:^7.0`) :
+  **impossible sans casser `google/apiclient`** (utilise pour FCM,
+  `Push_subscription::initPusher()`) - `google/auth` (toutes versions
+  1.37 a 1.55, la plage entiere disponible) exige
+  `firebase/php-jwt:^6.0`, incompatible avec 7.x. Mise a jour non
+  disponible sans retirer google/apiclient (hors perimetre, rupture
+  de compatibilite). Risque reel limite : `Auth.php` fixe toujours
+  l'algorithme `HS512` explicitement (jamais laisse au jeton de
+  choisir son algorithme - pas de confusion d'algorithme possible) et
+  `.env.example` documente deja `JWT_SECRET=change-me` comme valeur a
+  remplacer par un secret fort en production. Exception maintenue.
+- **illuminate/view** (`PKSA-h74q-2n9z-j6wq`, CVE-2021-43808, XSS
+  Blade) : le vecteur documente (GHSA-66hf-2p6w-jqfw) est precis -
+  directive Blade `@parent` combinee a `@section`/`@show` dans un
+  layout parent. `grep -rl "@parent" **/*.blade.php"` : **aucune vue
+  du depot n'utilise `@parent`** - le vecteur d'exploitation connu
+  est absent du code. Mise a jour non plus disponible : la
+  dependance vient de `philo/laravel-blade` (standalone Blade,
+  derniere release 2015, abandonne), qui epingle `illuminate/view` a
+  `~5` dans son PROPRE composer.json - ne peut jamais atteindre
+  6.20.42 (version corrigee) sans remplacer tout le moteur de
+  templating (hors perimetre d'un correctif sans rupture). Exception
+  maintenue, avec la raison precise (vecteur absent + mise a jour
+  impossible) documentee ici (jamais "None specified" comme
+  aujourd'hui dans `composer audit`).
+
+Note (trouvee en ecrivant le test e2e, pas corrigee ici - hors
+perimetre B, deja prevue a l'ETAPE C/D2) : toute colonne non
+qualifiee ("name", "id"...) d'une entite traduite (ex. `Tree`, dont
+la jointure `dvups_lang` expose aussi `id`/`name`) declenche
+"Column ... is ambiguous" des qu'un filtre Lazyloading l'utilise
+nue - le test e2e d'injection utilise donc `Interval` (pas de
+colonne traduite) pour rester dans le perimetre de cette etape.
+
+`composer test` : 342 tests, 0 echec (334 + 8 nouveaux : 4 e2e
+injection + 4 QueryBuilder apostrophe/forme chaine depreciee).
+

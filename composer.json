@@ -47,10 +47,10 @@
             "kylekatarnls/update-helper": false
         },
         "audit": {
-            "ignore": [
-                "PKSA-y2cr-5h3j-g3ys",
-                "PKSA-h74q-2n9z-j6wq"
-            ]
+            "ignore": {
+                "PKSA-y2cr-5h3j-g3ys": "CVE-2025-45769 (firebase/php-jwt) disputee par les mainteneurs (cle releve de l'appli, pas de la lib) - maj a ^7.0 impossible, google/apiclient->google/auth exige ^6.0. Auth.php fixe HS512 explicitement. Voir TODO.md ETAPE B.5.",
+                "PKSA-h74q-2n9z-j6wq": "CVE-2021-43808 (illuminate/view, Blade @parent XSS) - aucune vue du depot n'utilise @parent. Maj impossible : philo/laravel-blade (abandonne) epingle illuminate/view a ~5. Voir TODO.md ETAPE B.5."
+            }
         }
     },
     "autoload-dev": {

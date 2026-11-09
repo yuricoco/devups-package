@@ -252,9 +252,19 @@ function randomtoken(){
  * @param $value used in the querybuilder to sanitize select where in constraint
  * @return mixed|string
  */
+/**
+ * @deprecated ETAPE B.4 (v7.1) : entourait une chaine de guillemets SANS
+ * echapper les guillemets qu'elle contiendrait deja ("'$value'") -
+ * injection SQL pour toute valeur utilisateur avec une apostrophe. Plus
+ * aucun usage interne (QueryBuilder lie desormais ses valeurs en
+ * parametres - whereIn()/in()/notIn()/whereBetween()/between()). Gardee
+ * pour compatibilite d'un appelant externe eventuel, mais echappe
+ * desormais via PDO::quote() (toujours correct, jamais une simple
+ * concatenation de guillemets).
+ */
 function qb_sanitize($value){
     if(is_string($value))
-        return "'$value'";
+        return \Model::pdo()->quote($value);
 
     return $value;
 }
