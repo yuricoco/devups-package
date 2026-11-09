@@ -1890,3 +1890,42 @@ Commit a suivre.
 
 `composer test` : 334 tests, 0 echec (330 + 4 nouveaux).
 
+### ETAPE A.7 - traductions (lang:missing)
+
+`php devups lang:missing` signale toute cle dont la valeur est EGALE
+a la cle elle-meme (`$translations[$cle] === $cle`), qu'elle soit
+reellement absente du fichier OU presente mais non traduite - le
+script ne distingue pas les deux. Verifie une a une (159
+occurrences au total, 77 en.php + 82 fr.php) :
+
+- La grande majorite (153) sont de FAUX POSITIFS structurels, pas des
+  oublis : la convention du depot est que la CLE elle-meme porte deja
+  une langue (ex. "Erreur"/"Pays"/"oui" - cle francaise - ou
+  "Action"/"Date"/"Auth_token" - cle anglaise), et le fichier de CETTE
+  langue stocke necessairement `cle => cle` (deja verifie : chacune a
+  une traduction DIFFERENTE et correcte dans l'autre fichier - ex.
+  "Erreur" => "Erreur" en fr.php, "Erreur" => "Error" en en.php). Le
+  script ne peut pas distinguer ce cas (traduction correcte,
+  simplement identique a la cle pour la langue source) d'un oubli
+  reel - rien a corriger ici, et aucune des deux listes ne peut
+  descendre a zero sans changer le script lui-meme (hors perimetre).
+  Inclut aussi les noms de colonnes/entites techniques
+  (`country.iso`, `dvups_action`, `entity.cmscontent`, `constraint`...)
+  volontairement identiques dans les deux langues.
+- 6 cles etaient REELLEMENT absentes (`array_key_exists() === false`) -
+  ajoutees avec la valeur juste :
+  - fr.php (5) : "Apercu impossible : gabarit introuvable", "Modele
+    collecte automatiquement depuis :file", "Modele introuvable",
+    "Trop de tentatives, veuillez réessayer plus tard." (cles
+    deja en francais : valeur = cle) et "Si un compte existe avec ces
+    informations, un lien de reinitialisation a ete envoye." (idem).
+  - en.php (1) : la meme cle "Si un compte existe..." (absente aussi
+    de en.php), avec une vraie traduction anglaise ("If an account
+    exists with this information, a reset link has been sent.").
+
+Aucune vraie ambiguite trouvee (aucune cle dont la traduction
+correcte etait incertaine) - rien a reporter de ce point de vue.
+
+`composer test` : 334 tests, 0 echec (inchange - aucun code execute
+n'a change, seulement lang/en.php et lang/fr.php).
+
