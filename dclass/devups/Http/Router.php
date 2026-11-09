@@ -214,6 +214,19 @@ class Router // extends Request
         }
     }
 
+    /**
+     * ETAPE E.4 (v7.1) - audit mort/vivant (grep de __route_cache et de
+     * cacheRoute() dans tout le depot) : le reste de cette methode est du
+     * code mort EN PRATIQUE, pas supprime - __route_cache vaut
+     * TOUJOURS false dans config/constante.php (et dv_env('ROUTE_CACHE',
+     * false) dans l'exemple : jamais active par defaut), donc ce `return
+     * null` precoce est pris a chaque appel. cacheRoute() (plus bas) ne
+     * remplit d'ailleurs jamais self::$routes non plus - voir son propre
+     * commentaire. Risque de regression trop incertain pour retirer
+     * entierement le mecanisme (plusieurs sites d'appel dans Request.php,
+     * jamais exerces par aucun test existant) : documente ici plutot que
+     * supprime.
+     */
     public function runCache($url)
     {
         if (!__route_cache)
@@ -709,6 +722,15 @@ class Router // extends Request
         call_user_func_array(array($this, $function), $methoparams);
     }
 
+    /**
+     * ETAPE E.4 (v7.1) - audit mort/vivant : ce `return null;` precoce
+     * (deja present, pas ajoute ici) rend TOUT le reste du corps
+     * INATTEIGNABLE, quel que soit __route_cache - cacheRoute() ne
+     * remplit donc jamais self::$routes. Appele neanmoins depuis plusieurs
+     * sites de Request.php (jamais exerces par aucun test existant) :
+     * documente plutot que supprime, meme raison que runCache()
+     * ci-dessus.
+     */
     public static function cacheRoute($path, $methodview, $params = [], $auth = false, $request_method = "GET")
     {
 
