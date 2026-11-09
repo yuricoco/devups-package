@@ -804,6 +804,31 @@ class QueryBuilder extends \DBAL
      * @param mixed $value
      * @return $this
      */
+    /**
+     * ETAPE C.4 (v7.1) - D2 : une colonne NON qualifiee (sans "table."/"this.")
+     * qui appartient a l'entite de base devient ambigue dans un WHERE/IN/
+     * BETWEEN des qu'une jointure de traduction est presente - initSelect()
+     * joint toujours "<table>_lang" (colonne "id", entre autres), et en mode
+     * bilingue (sans id_lang) joint aussi "dvups_lang" aliase "l" (colonnes
+     * "id"/"name", entre autres) : MySQL/MariaDB refuse alors toute
+     * reference non qualifiee a une colonne presente des deux cotes
+     * ("Column 'x' in where clause is ambiguous", 1052).
+     *
+     * Prefixe la colonne avec le pseudo-alias "this." (deja utilise
+     * ailleurs dans ce fichier - resolu en fin de requete par
+     * querysanitize() vers le vrai nom de table) quand l'entite est
+     * traduite et que la colonne n'est pas deja qualifiee - inoffensif
+     * pour une entite non traduite (retournee inchangee).
+     */
+    private function qualifyIfAmbiguous(string $column): string
+    {
+        if ($this->object && $this->object->dvtranslate && strpos($column, '.') === false && strpos($column, ' ') === false) {
+            return 'this.' . $column;
+        }
+
+        return $column;
+    }
+
     public function where($column, $operator = self::NO_ARG, $value = self::NO_ARG, $link = "AND")
     {
         $this->endquery = "";
@@ -861,6 +886,7 @@ class QueryBuilder extends \DBAL
                 }
             }
         } else {
+            $column = $this->qualifyIfAmbiguous($column);
             $keymap = explode(".", $column);
             $attrib = str_replace(".", "_", $column);
             if (count($keymap) == 2) {
@@ -1081,6 +1107,8 @@ class QueryBuilder extends \DBAL
      */
     public function whereIn($column, $values, $negate = "")
     {
+        $column = $this->qualifyIfAmbiguous($column);
+
         if (is_array($values)) {
             $placeholders = [];
             foreach ($values as $value) {
@@ -1124,9 +1152,12 @@ class QueryBuilder extends \DBAL
         $this->parameters[$attrib] = $value;
 
         if (is_array($columns)) {
+            $columns = array_map(fn($col) => $this->qualifyIfAmbiguous($col), $columns);
             $this->_where .= " AND :$attrib $negate IN (" . implode(",", $columns) . ")";
-        } else
+        } else {
+            $columns = $this->qualifyIfAmbiguous($columns);
             $this->_where .= " AND :$attrib $negate IN ( $columns )";
+        }
 
         return $this;
         // return $this->where($column)->in($collection);
@@ -1306,6 +1337,7 @@ class QueryBuilder extends \DBAL
     {
         $attrib1 = $this->nextInParam($column . '_from');
         $attrib2 = $this->nextInParam($column . '_to');
+        $column = $this->qualifyIfAmbiguous($column);
         $this->_where .= " AND $column BETWEEN :$attrib1 AND :$attrib2";
         $this->parameters[$attrib1] = $values[0];
         $this->parameters[$attrib2] = $values[1];
