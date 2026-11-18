@@ -376,6 +376,51 @@ CREATE TABLE `$lc_entity\_lang` (
 
 }
 
+if ($argv[1] === 'upgrade:entities') {
+
+    // LOT 1.3 (v8.0) : convertit les entites Doctrine d'un projet
+    // utilisateur (docblocks annotations -> attributs PHP 8), avec le MEME
+    // convertisseur que celui utilise pour migrer le framework lui-meme
+    // (ETAPE 1.2 - voir TODO.md). `--dry-run` liste les fichiers qui
+    // seraient modifies sans rien ecrire. Cible par defaut : src/ a la
+    // racine du projet ; un chemin peut etre passe en $argv[2] (sauf si
+    // c'est l'option --dry-run elle-meme).
+    require __DIR__ . '/EntityAttributeConverter.php';
+
+    $dryRun = in_array('--dry-run', $argv, true);
+    $target = ROOT . 'src';
+    if (isset($argv[2]) && $argv[2] !== '--dry-run') {
+        $target = $argv[2];
+    }
+
+    if (!is_dir($target)) {
+        echo "\n > repertoire introuvable : $target\n";
+        die;
+    }
+
+    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($target, FilesystemIterator::SKIP_DOTS));
+    $changed = [];
+    $unchanged = 0;
+    foreach ($iterator as $file) {
+        if ($file->getExtension() !== 'php') {
+            continue;
+        }
+        $path = $file->getPathname();
+        if (EntityAttributeConverter::convertFile($path, $dryRun)) {
+            $changed[] = $path;
+        } else {
+            $unchanged++;
+        }
+    }
+
+    echo "\n" . ($dryRun ? "[dry-run] " : "") . count($changed) . " fichier(s) converti(s) (annotations -> attributs), $unchanged inchange(s) :\n";
+    foreach ($changed as $path) {
+        echo " - $path\n";
+    }
+    echo "\n";
+    die;
+}
+
 if ($argv[1] === 'transaction:rollback') {
 
     $lastdump = ROOT . 'database/dump/dump_' . $argv[2] . '.sql';
