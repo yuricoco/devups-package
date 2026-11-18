@@ -24,7 +24,33 @@ Decisions actees pour tout le chantier :
 - L'ORM maison Tchutte est conserve : Doctrine reste limite aux
   metadonnees et au schema (DBAL/SchemaTool/mapping), jamais au query
   runtime applicatif qui reste 100% Tchutte.
-- Namespace racine `Devups\`.
+- Namespace racine `Devups\` **pour le coeur du framework** (`dclass/`
+  uniquement - Controller, DBAL, Genesis/View, generator, etc., a
+  harmoniser sous ce prefixe au lot 5, choix laisse a l'implementation).
+  Precision actee (session suivante, directive explicite) : pour les
+  classes de **`src/`** (les composants/modules livres avec le
+  framework - `devups`, `devupscms`, `devupsfront`), la racine du
+  namespace est le **nom du composant lui-meme**, PAS `src` et PAS
+  `Devups\` - ex. `devupsfront\ModuleUser\Entity\User` (et non
+  `Devups\devupsfront\...` ni `src\devupsfront\...`). Cette convention
+  est deja PARTIELLEMENT en place pour les entites : `Core.php`
+  (generateur, methode qui ecrit `config/dvups_configurations.php`)
+  pre-declare pour chaque entite une cle `"$component\$module\Entity\
+  $entite"` en plus de la cle "nom court" historique (meme metadonnees
+  `component`/`module`/`namespace` dans les deux cas) - mais les
+  fichiers d'entite eux-memes restent en namespace global (pas de
+  `namespace ...;` reel dans le fichier), seule la config anticipe la
+  future FQCN. Le lot 5 doit donc : (a) ajouter le `namespace
+  $component\$module\Entity;` reel aux fichiers sous `src/**/Entity/*.php`
+  pour qu'il corresponde a ce que `dvups_configurations.php` annonce
+  deja ; (b) etendre la meme convention aux AUTRES sous-dossiers de
+  `src/<component>/<Module>/` non couverts par cette config (`Controller/`,
+  `Datatable/`, `Form/` - voir arborescence `src/` complete, pas
+  seulement `Entity/`) ; (c) s'assurer que tout code qui instancie ces
+  classes par leur nom court actuel (`new Dvups_action()`, lookups par
+  cle "nom court" dans `dvups_configurations.php`, etc.) continue de
+  fonctionner (alias de compatibilite ou double-cle, a trancher au
+  lot 5).
 - Framework neutre, aucun secret versionne, base de test dediee,
   sql_mode strict dans les tests.
 - Un commit par sous-etape, `composer test` et `composer phpstan`
@@ -247,14 +273,23 @@ lots 1/2, a traiter au moment de chaque lot, pas avant) :
   `src/`, tout `dclass/`) est aujourd'hui en **namespace global**,
   charge par `classmap` (voir `composer.json` `autoload.classmap`) - pas
   de PSR-4 du tout cote framework (seul `Devups\Tests\` l'utilise, en
-  `autoload-dev`). La decision actee "namespace racine `Devups\`"
-  (ligne 27 ci-dessus) implique donc de reellement deplacer/renommer
-  des dizaines de classes globales vers `Devups\...`, avec un risque de
-  rupture large (tout code utilisateur qui reference une classe par son
-  nom global court, par ex. `new Status()`, casserait). A detailler en
-  lot 5 avec un sous-plan dedie (alias de compatibilite
-  `class_alias()` ? namespace limite a un sous-ensemble du framework
-  seulement ? etc.) plutot que de se decider maintenant.
+  `autoload-dev`). Convention precisee (voir "Decisions actees" ci-dessus,
+  ligne 27) : `dclass/` -> `Devups\...` ; `src/<component>/<Module>/...`
+  -> `<component>\<Module>\...` (racine = nom du composant, pas `src`,
+  pas `Devups\`) - deux racines PSR-4 distinctes, pas une seule. Pour
+  `src/`, la cible exacte est deja ecrite par le generateur dans
+  `config/dvups_configurations.php` (cle FQCN pre-declaree pour chaque
+  entite) - "juste" rajouter le `namespace` reel dans les fichiers pour
+  matcher. Reste a traiter, dans tous les cas : (a) les sous-dossiers
+  `Controller/`/`Datatable/`/`Form/` de chaque module (non couverts par
+  cette config, qui ne concerne que `Entity/`) ; (b) le risque de
+  rupture pour tout code (framework ou projet utilisateur) qui
+  reference une classe par son nom court actuel (`new Status()`,
+  `new Dvups_action()`, lookup par cle "nom court" dans
+  `dvups_configurations.php`) - alias de compatibilite (`class_alias()`)
+  ou double-cle, a trancher au lot 5 ; (c) `dclass/` n'a lui aucune
+  config equivalente deja ecrite - le mapping `Devups\...` y est
+  entierement a construire.
 - **Lot 6 (HTTP)** : `dclass/devups/Http/Request.php` instancie encore
   `BladeD` directement (voir LOT 2) - a revisiter si ce lot introduit
   une abstraction Request/Response differente.
