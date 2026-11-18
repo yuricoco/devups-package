@@ -1,11 +1,14 @@
 <?php
+
+namespace devupscms\ModuleNotification\Entity;
+
 use Doctrine\ORM\Mapping as ORM;
 
 // user \dclass\devups\model\Model;
 
 #[ORM\Entity]
 #[ORM\Table(name: "notificationtype")]
-class Notificationtype extends Model implements JsonSerializable
+class Notificationtype extends \Model implements \JsonSerializable
 {
 
     /**
@@ -150,3 +153,6 @@ class Notificationtype extends Model implements JsonSerializable
         <button type="button" onclick="model.sendsms(this, ' . $this->id . ')" class="btn btn-info"> Test sms </button>';
     }
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Notificationtype::class, 'Notificationtype');

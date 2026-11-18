@@ -1,4 +1,7 @@
 <?php
+
+namespace devupscms\ModuleNotification\Entity;
+
 // user \dclass\devups\model\Model;
 use devupscms\ModulePushNotification\Entity\Workers;
 use Google\Auth\Credentials\ServiceAccountCredentials;
@@ -6,7 +9,7 @@ use Google\Auth\Credentials\ServiceAccountCredentials;
 use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity]
 #[ORM\Table(name: "notification")]
-class Notification extends Model implements JsonSerializable
+class Notification extends \Model implements \JsonSerializable
 {
 
     public static $send_sms = false;
@@ -344,7 +347,7 @@ class Notification extends Model implements JsonSerializable
 
         global $global_config;
         self::$send_sms = $sendsms;
-        $class = $global_config[Model::shortClassName($entity)];
+        $class = $global_config[\Model::shortClassName($entity)];
         $classname = strtolower($class['name']);
         $type = Notificationtype::where(["entity" => $classname, "_key" => $event])
             ->where("this.session", $session)
@@ -353,7 +356,7 @@ class Notification extends Model implements JsonSerializable
         //die(var_dump($type));
         if (is_null($type)) {
 
-            $langs = Dvups_lang::allrows();
+            $langs = \Dvups_lang::allrows();
             $content = [];
             foreach ($langs as $lang) {
                 $content[$lang->iso_code] = "no content";
@@ -394,11 +397,11 @@ class Notification extends Model implements JsonSerializable
         if (!__prod)
             return 0;
 
-        $sms_api_key2 = Configuration::get("sms_api_key2");
+        $sms_api_key2 = \Configuration::get("sms_api_key2");
         if (!$sms_api_key2)
             return 0;
 
-        $response = Request::initCurl("https://spacekolasms.com/api/sendsms?api_key=" . $sms_api_key2)
+        $response = \Request::initCurl("https://spacekolasms.com/api/sendsms?api_key=" . $sms_api_key2)
             ->data([
                 "phonenumber" => $receiver->phonenumber,
                 "message" => $notification->content,
@@ -422,15 +425,15 @@ class Notification extends Model implements JsonSerializable
                 'detail' => t("you most specify destination (s)"),
             ];
 
-        $from = Configuration::get("sms_sender_id");
-        $gateway_url = Configuration::get("sms_api");
+        $from = \Configuration::get("sms_sender_id");
+        $gateway_url = \Configuration::get("sms_api");
 
-        $access = Request::initCurl($gateway_url . "auth?type=" . Configuration::get("sms_refresh_token"))
+        $access = \Request::initCurl($gateway_url . "auth?type=" . \Configuration::get("sms_refresh_token"))
             ->raw_data(
                 [
-                    "type" => Configuration::get("sms_type"),
-                    "username" => Configuration::get("sms_username"),
-                    "password" => Configuration::get("sms_password"),
+                    "type" => \Configuration::get("sms_type"),
+                    "username" => \Configuration::get("sms_username"),
+                    "password" => \Configuration::get("sms_password"),
                 ]
             )
             ->send()
@@ -458,7 +461,7 @@ class Notification extends Model implements JsonSerializable
 
         try {
 
-            $output = Request::initCurl($gateway_url . "sms/mt/v2/send")
+            $output = \Request::initCurl($gateway_url . "sms/mt/v2/send")
                 ->raw_data([$sms_body])
                 ->addHeader('Authorization', "Bearer " . $access->payload->access_token)
                 ->send();
@@ -466,7 +469,7 @@ class Notification extends Model implements JsonSerializable
             \Log::info("sms sent" . $event . " dest: " . $destination . " : " . $output->_response);
             //var_dump($output);
 
-        } catch (Exception $exception) {
+        } catch (\Exception $exception) {
 
             \Log::error($exception);
             //echo $exception->getMessage();
@@ -478,7 +481,7 @@ class Notification extends Model implements JsonSerializable
         if ($mb === null)
             $mb = [sm_from => PROJECT_NAME];
         if ($this->id) {
-            Reportingmodel::init($this->notificationtype->getEmailmodel())
+            \Reportingmodel::init($this->notificationtype->getEmailmodel())
                 ->addReceiver($mb)
                 ->sendMail(["notification" => $this->content]);
         }
@@ -489,7 +492,7 @@ class Notification extends Model implements JsonSerializable
     public function jsonSerialize()
     {
         //        $entity = ucfirst($this->entity);
-        if (Request::get("jsonmodel") == "html") {
+        if (\Request::get("jsonmodel") == "html") {
             global $viewdir;
             $viewdir[] = ROOT . "admin/views";
             return [
@@ -497,7 +500,7 @@ class Notification extends Model implements JsonSerializable
                 'viewedat' => $this->viewedat,
                 'read' => $this->status > 0,
                 'notificationtype' => $this->notificationtype->_key,
-                'html' => Genesis::getView("default.notification_item", ["notification" => $this]),
+                'html' => \Genesis::getView("default.notification_item", ["notification" => $this]),
                 'status' => $this->status,
                 'created_at' => $this->getTimeStamp(),
                 //                'target' => $entity::find($this->entityid),
@@ -595,7 +598,7 @@ class Notification extends Model implements JsonSerializable
 
         $type = $notification->notificationtype;
         if (self::$send_push && __prod) {
-            Push_subscription::initPusher();
+            \Push_subscription::initPusher();
         }
 
         foreach ($receivers as $receiver) {
@@ -633,7 +636,7 @@ class Notification extends Model implements JsonSerializable
                 self::sendSMS($nb, $receiver);
 
             if ($next) {
-                Push_subscription::where([
+                \Push_subscription::where([
                     'status' => 1,
                     'user_id' => $receiver->id,
                 ])->cursor(function ($pusher) use ($msg, $next, $notification, $receiver) {
@@ -692,13 +695,13 @@ INSERT INTO mail_queues (mail_campaign_id, client_id, email, send)
             return [];
 
         if ($user)
-            $subscriptions = Push_subscription::where(
+            $subscriptions = \Push_subscription::where(
                 [
                     'user_id' => $user->id,
                 ]
             )->get();
         else
-            $subscriptions = Push_subscription::where(
+            $subscriptions = \Push_subscription::where(
                 [
                     'subscription_type' => 'user',
                 ]
@@ -714,3 +717,6 @@ INSERT INTO mail_queues (mail_campaign_id, client_id, email, send)
         }
     }
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Notification::class, 'Notification');

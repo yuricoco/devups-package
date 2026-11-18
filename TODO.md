@@ -598,10 +598,23 @@ fichier).
 **ModuleLocation (devupscms) - FAIT** : `Country`, `Country_lang`
 namespaces sous `devupscms\ModuleLocation\Entity`. Rien de notable.
 
-**Volume restant** : 17 entites sur 35 sous `src/**/Entity/*.php`
-(composants `devups` + ModuleCms/ModuleData/ModuleLocation de
-`devupscms` faits), repartiees sur 4 modules du composant `devupscms`
-+ 1 module de `devupsfront` (`devups` :
+**ModuleNotification (devupscms) - FAIT** : `Notification`,
+`Notificationtype`, `Notificationtype_lang` namespaces sous
+`devupscms\ModuleNotification\Entity`. Fichier `Notification.php` le
+plus charge rencontre jusqu'ici (~15 classes/sites a prefixer :
+`Model`, `Dvups_lang`, `Configuration`, `Request`, `Exception`,
+`Reportingmodel`, `Genesis`, `Push_subscription`...) - confirme que
+`Notification.php` importait DEJA `use devupscms\ModulePushNotification
+\Entity\Workers;` (FQCN complete) AVANT ce chantier, meme trouvaille
+que `Interval_group`/`Workers` lui-meme (ModulePushNotification) : la
+migration partielle anterieure touchait plusieurs modules, pas
+seulement ModuleData. Rien de casse par cette dependance croisee
+prematuree - l'import `use` pointait deja vers la FQCN correcte.
+
+**Volume restant** : 14 entites sur 35 sous `src/**/Entity/*.php`
+(composants `devups` + ModuleCms/ModuleData/ModuleLocation/
+ModuleNotification de `devupscms` faits), repartiees sur 3 modules du
+composant `devupscms` + 1 module de `devupsfront` (`devups` :
 ModuleAdmin/ModuleConfig/ModuleLog ; `devupscms` :
 ModuleCms/ModuleData/ModuleLocation/ModuleNotification/
 ModulePushNotification/ModuleReporting/ModuleTree ; `devupsfront` :

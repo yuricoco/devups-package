@@ -87,3 +87,15 @@ class Country extends \devupscms\ModuleLocation\Entity\Country
 class Country_lang extends \devupscms\ModuleLocation\Entity\Country_lang
 {
 }
+
+class Notification extends \devupscms\ModuleNotification\Entity\Notification
+{
+}
+
+class Notificationtype extends \devupscms\ModuleNotification\Entity\Notificationtype
+{
+}
+
+class Notificationtype_lang extends \devupscms\ModuleNotification\Entity\Notificationtype_lang
+{
+}
