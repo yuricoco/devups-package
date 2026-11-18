@@ -1,11 +1,12 @@
 <?php
 
+namespace devups\ModuleConfig\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: "dvups_entity_lang")]
-class Dvups_entity_lang extends Dv_langCore
+class Dvups_entity_lang extends \Dv_langCore
 {
 
     /**
@@ -25,3 +26,6 @@ class Dvups_entity_lang extends Dv_langCore
 
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Dvups_entity_lang::class, 'Dvups_entity_lang');

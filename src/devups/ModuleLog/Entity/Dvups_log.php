@@ -1,10 +1,13 @@
 <?php
+
+namespace devups\ModuleLog\Entity;
+
 use Doctrine\ORM\Mapping as ORM;
 
         // user \dclass\devups\model\Model;
 #[ORM\Entity]
     #[ORM\Table(name: "dvups_log")]
-    class Dvups_log extends Model implements JsonSerializable{
+    class Dvups_log extends \Model implements \JsonSerializable{
 
         /**
          * @var int
@@ -89,5 +92,8 @@ use Doctrine\ORM\Mapping as ORM;
                     ... $this->dvserialised,
                 ];
         }
-        
+
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Dvups_log::class, 'Dvups_log');

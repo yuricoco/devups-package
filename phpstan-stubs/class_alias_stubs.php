@@ -31,3 +31,19 @@ class Dvups_privilege extends \devups\ModuleAdmin\Entity\Dvups_privilege
 class Dvups_role extends \devups\ModuleAdmin\Entity\Dvups_role
 {
 }
+
+class Configuration extends \devups\ModuleConfig\Entity\Configuration
+{
+}
+
+class Dvups_entity extends \devups\ModuleConfig\Entity\Dvups_entity
+{
+}
+
+class Dvups_entity_lang extends \devups\ModuleConfig\Entity\Dvups_entity_lang
+{
+}
+
+class Dvups_log extends \devups\ModuleLog\Entity\Dvups_log
+{
+}

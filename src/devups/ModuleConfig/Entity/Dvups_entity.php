@@ -1,10 +1,12 @@
 <?php
 
+namespace devups\ModuleConfig\Entity;
+
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: "dvups_entity")]
-class Dvups_entity extends Dvups_config_item implements JsonSerializable
+class Dvups_entity extends \Dvups_config_item implements \JsonSerializable
 {
 
     // NB (v8.0, LOT 1.2) : $id est deja declare par la classe parente
@@ -85,12 +87,15 @@ class Dvups_entity extends Dvups_config_item implements JsonSerializable
         // n'etait d'ailleurs jamais requise par le module, donc toujours
         // en erreur fatale "classe introuvable" si appelee) -> Notification::of().
         if ($this->enablenotification == 1)
-            return Notification::of($this->name);
+            return \Notification::of($this->name);
     }
 
     public static function describe($table)
     {
-        return (new DBAL())->executeDbal("DESCRIBE `$table`; ", [], DBAL::$FETCHALL);
+        return (new \DBAL())->executeDbal("DESCRIBE `$table`; ", [], \DBAL::$FETCHALL);
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Dvups_entity::class, 'Dvups_entity');

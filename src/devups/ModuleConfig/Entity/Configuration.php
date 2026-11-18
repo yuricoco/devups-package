@@ -1,11 +1,14 @@
 <?php
+
+namespace devups\ModuleConfig\Entity;
+
 use Doctrine\ORM\Mapping as ORM;
 
 // user \dclass\devups\model\Model;
 
 #[ORM\Entity]
 #[ORM\Table(name: "configuration")]
-class Configuration extends Model implements JsonSerializable
+class Configuration extends \Model implements \JsonSerializable
 {
 
     /**
@@ -190,3 +193,6 @@ class Configuration extends Model implements JsonSerializable
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Configuration::class, 'Configuration');

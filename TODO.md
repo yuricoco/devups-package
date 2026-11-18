@@ -559,9 +559,17 @@ du code mort (commentaire) ou vivant - trouve par `composer test`
 n'est plus visible depuis le nouveau namespace au niveau du typage
 statique de ce depot - niveau 1).
 
-**Volume restant** : 30 entites sur 35 sous `src/**/Entity/*.php` (hors
-pilote `Dvups_lang` + `ModuleAdmin`), repartiees sur 10 modules/3
-composants (`devups` :
+**ModuleConfig + ModuleLog (devups) - FAITS** : `Configuration`,
+`Dvups_entity`, `Dvups_entity_lang`, `Dvups_log` namespaces. Composant
+`devups` entierement migre (8 entites : ModuleAdmin + ModuleConfig +
+ModuleLog). Rien de notable - la recherche large (voir recette
+ci-dessus) a directement trouve tous les sites (`Notification::of()`,
+`DBAL`/`new DBAL()` dans `Dvups_entity::describe()`), aucun miss cette
+fois.
+
+**Volume restant** : 27 entites sur 35 sous `src/**/Entity/*.php`
+(composant `devups` entierement fait), repartiees sur 7 modules du
+composant `devupscms` + 1 module de `devupsfront` (`devups` :
 ModuleAdmin/ModuleConfig/ModuleLog ; `devupscms` :
 ModuleCms/ModuleData/ModuleLocation/ModuleNotification/
 ModulePushNotification/ModuleReporting/ModuleTree ; `devupsfront` :
