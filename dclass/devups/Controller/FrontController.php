@@ -93,7 +93,7 @@ class FrontController extends Controller
 
         if (isset($_FILES[$classname . "_form"])) {
             foreach ($_FILES[$classname . "_form"]['name'] as $key_form => $value_form) {
-                self::addEventListenerAfterCreate(get_class($this->entity), 'upload' . ucfirst($key_form));
+                self::addEventListenerAfterCreate(\Model::shortClassName($this->entity), 'upload' . ucfirst($key_form));
             }
         }
 

@@ -344,7 +344,7 @@ class Notification extends Model implements JsonSerializable
 
         global $global_config;
         self::$send_sms = $sendsms;
-        $class = $global_config[get_class($entity)];
+        $class = $global_config[Model::shortClassName($entity)];
         $classname = strtolower($class['name']);
         $type = Notificationtype::where(["entity" => $classname, "_key" => $event])
             ->where("this.session", $session)

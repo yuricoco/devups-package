@@ -235,7 +235,7 @@ class Lazyloading implements \JsonSerializable
         global $global_config;
         if ($entity) {
             $this->entity = $entity;
-            $classname = get_class($entity);
+            $classname = \Model::shortClassName($entity);
             $this->classname = strtolower($classname);
             $this->entityname = $global_config[$classname]['name'];
             //            $this->class = $classname;
@@ -290,7 +290,7 @@ class Lazyloading implements \JsonSerializable
     { //
         if ($entity) {
             $this->entity = $entity;
-            $classname = strtolower(get_class($entity));
+            $classname = strtolower(\Model::shortClassName($entity));
             $this->classname = $classname;
             //            $this->class = $classname;
             // $this->id_lang = $id_lang;

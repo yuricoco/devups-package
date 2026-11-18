@@ -278,7 +278,7 @@ class DBAL extends Database
                 // valeur des attributs de la table
                 $values = [];
                 $keyvalue = [];
-                $entityName = strtolower(get_class($entity));
+                $entityName = strtolower(Model::shortClassName($entity));
 
                 if ($this->tableExists($entityName . '_' . $this->objectName)) {
                     $entityTable = $entityName . "_" . $this->objectName;
@@ -308,7 +308,7 @@ class DBAL extends Database
                     $this->link = null;
                 } else {
 
-                    $keyvalue[strtolower(get_class($entity)) . "_id"] = $entity->getId();
+                    $keyvalue[strtolower(Model::shortClassName($entity)) . "_id"] = $entity->getId();
                     $keyvalue[$this->table . "_id"] = $this->object->getId();
                     DBAL::_createDbal($entityTable, $keyvalue);
                 }
@@ -342,7 +342,7 @@ class DBAL extends Database
 
             if (!empty($listentity['todrop'])) {
 
-                $entityName = strtolower(get_class($listentity['todrop'][0]));
+                $entityName = strtolower(Model::shortClassName($listentity['todrop'][0]));
                 $objectarray = (array)$listentity['todrop'][0];
                 $arrayvalues = array_values($objectarray);
                 foreach ($arrayvalues as $value) {
@@ -381,7 +381,7 @@ class DBAL extends Database
                 return $relation->__show();
             else {
                 $obarray = (array)$entity;
-                $relationname = strtolower(get_class($relation));
+                $relationname = strtolower(Model::shortClassName($relation));
 
                 if (isset($obarray[$relationname . "_id"]))
                     $id = $obarray[$relationname . "_id"];
@@ -401,7 +401,7 @@ class DBAL extends Database
                     //$key = str_replace(get_class($entity), '', $obkey);
                     //$key = str_replace('*', '', $key);
 
-                    if (is_object($value) && strtolower(get_class($value)) == $relation) {
+                    if (is_object($value) && strtolower(Model::shortClassName($value)) == $relation) {
 
                         $id = $obarray[$obkey]->getId();
                         break;
@@ -420,7 +420,7 @@ class DBAL extends Database
     public function hasmany($entity, $collection, $exec = true, $incollectionof = null, $id_lang = null)
     {
 
-        $collectionName = strtolower(get_class($collection));
+        $collectionName = strtolower(Model::shortClassName($collection));
 
         $this->id_lang = $id_lang;
         if ($incollectionof != null) {
@@ -439,7 +439,7 @@ class DBAL extends Database
             else
                 return $qb;
         } else {
-            $objectName = strtolower(get_class($entity));
+            $objectName = strtolower(Model::shortClassName($entity));
 
             if ($this->tableExists($collectionName . '_' . $objectName)) {
                 $entityTable = $collectionName . '_' . $objectName;
@@ -508,7 +508,7 @@ class DBAL extends Database
     {
 
         if (is_object($table))
-            $table = strtolower(get_class($table));
+            $table = strtolower(Model::shortClassName($table));
 
         $ids = array_keys($arrayvalues);
         $sql = "";
@@ -1556,7 +1556,7 @@ class DBAL extends Database
         foreach ($object_array as $key => $value) {
             //                    $imbricateindex = 0;
 
-            $k = str_replace(get_class($object), '', $key);
+            $k = str_replace(Model::shortClassName($object), '', $key);
             $k = str_replace('*', '', $k);
             $k2 = substr($k, 2);
 
@@ -1566,7 +1566,7 @@ class DBAL extends Database
                     // object imbricate
                     $innerrecursif = $recursif;
 
-                    $attclassname = strtolower(get_class($value));
+                    $attclassname = strtolower(Model::shortClassName($value));
 
                     if (
                         isset($this->entity_link_list[$attclassname . ":" . $key])
@@ -1578,7 +1578,7 @@ class DBAL extends Database
                             die(var_dump($key, $flowBD, $flowBD[$key."_id"], $attclassname, $attclassname.":".substr($key, 0, -3)));
                         }*/
                         if (!empty($this->collect)) {
-                            $el = strtolower(get_class($object)) . "." . strtolower(get_class($value));
+                            $el = strtolower(Model::shortClassName($object)) . "." . strtolower(Model::shortClassName($value));
                             if (!in_array($el, $this->collect)) {
                                 //break;
                                 $innerrecursif = false;

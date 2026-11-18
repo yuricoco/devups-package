@@ -79,7 +79,7 @@ class Datatable extends Lazyloading
             $this->entity = $entity;
             $global_config = require ROOT.'config/dvups_configurations.php';
 //            dv_dump(get_class($this->entity), $global_config);
-            $dentity = $global_config["".get_class($this->entity)];
+            $dentity = $global_config["" . \Model::shortClassName($this->entity)];
             $this->class = strtolower($dentity['name']);
 //            $this->class = strtolower(get_class($this->entity));
 
@@ -449,7 +449,7 @@ EOF;
     public function addFilterParam($param, $value = null)
     {
         if (is_object($param))
-            $this->filterParam[strtolower(get_class($param)) . ".id:eq"] = $param->getId();
+            $this->filterParam[strtolower(\Model::shortClassName($param)) . ".id:eq"] = $param->getId();
         elseif (is_array($param)) {
             foreach ($param as $key => $value)
                 $this->filterParam[$key] = $value;
@@ -636,10 +636,10 @@ EOF;
             $this->entity = $entity;
         }
 
-        $this->class = get_class($entity);
+        $this->class = \Model::shortClassName($entity);
         $this->listentity = [$this->entity];
         if ($this->template) {
-            $this->classname = strtolower(get_class($entity));
+            $this->classname = strtolower(\Model::shortClassName($entity));
             return $this->buildCustomView( $this->entity);
         }
 
@@ -766,7 +766,7 @@ EOF;
         if ($this->template) {
             $column = null;
             $view = "";
-            $this->classname = strtolower(get_class($this->entity));
+            $this->classname = strtolower(\Model::shortClassName($this->entity));
             foreach ($this->listentity as $i => $entity) {
                 $view .= $this->buildCustomView($entity);
                 if (!$column) {

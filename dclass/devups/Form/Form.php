@@ -23,7 +23,7 @@ class Form extends FormFactory{
             $directives['method'] = "post";
 
         Form::$classname = get_class($enitty);
-        Form::$name = strtolower(Form::$classname);
+        Form::$name = strtolower(Model::shortClassName($enitty));
         $action = str_replace("\\", "/", trim($directives["action"]));
         //$directives["action"] = "index.php?path=".Form::$name."/".trim($action);
 //        if($overideaction){
@@ -44,7 +44,7 @@ class Form extends FormFactory{
     }
 
     public static function init($enitty) {
-        Form::$name = strtolower(get_class($enitty));
+        Form::$name = strtolower(Model::shortClassName($enitty));
     }
 
     public static function close() {
@@ -59,7 +59,7 @@ class Form extends FormFactory{
     public static function imbricate($enitty) {
         Form::$savestate = [Form::$name, Form::$fields];
         //Form::$fields = [];
-        Form::$name = strtolower(get_class($enitty));
+        Form::$name = strtolower(Model::shortClassName($enitty));
         return "";
     }
 

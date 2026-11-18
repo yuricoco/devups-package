@@ -670,7 +670,7 @@ trait ModelTrait
     public static function update($arrayvalues, $primarykey, $where = "", $classname = "")
     {
         if (!$classname)
-            $classname = get_called_class();
+            $classname = \Model::shortClassName(get_called_class());
 
         foreach ($primarykey as $key => $value) {
             $where .= " AND $key = $value ";
@@ -1024,7 +1024,7 @@ trait ModelTrait
         if (!$this->getId())
             return [];
 
-        $thisclass = get_class($this);
+        $thisclass = \Model::shortClassName($this);
         $entityTable = $collection;
         $entity_id = "id";
 
@@ -1196,7 +1196,7 @@ trait ModelTrait
     public static function truncate()
     {
 
-        $classname = strtolower(get_called_class());
+        $classname = strtolower(\Model::shortClassName(get_called_class()));
         $sql = "TRUNCATE `" . $classname . "`; ";
         $dbal = new DBAL();
         $dbal->executeDbal($sql);

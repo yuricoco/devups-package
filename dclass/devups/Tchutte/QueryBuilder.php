@@ -442,7 +442,7 @@ class QueryBuilder extends \DBAL
 
         // update a column on multiple rows
         if (is_object($arrayvalues)) {
-            $class = strtolower(get_class($arrayvalues));
+            $class = strtolower(Model::shortClassName($arrayvalues));
             $this->parameters[$class . "_id"] = $arrayvalues->getId();
             $this->_set .= " " . $this->table . "." . $class . "_id = :" . $class . "_id";
             if ($this->instanceid)
@@ -543,8 +543,8 @@ class QueryBuilder extends \DBAL
                         //$this->parameters[$attrib] = ;
                         $arrayset[] = $dot . implode('.`', $keymap) . "` = (" . $value->getSqlQuery()['query'] . ")";
                     } else {
-                        $this->parameters[strtolower(get_class($value)) . "_id"] = $value->getId();
-                        $arrayset[] = strtolower(get_class($value)) . "_id = :" . strtolower(get_class($value)) . "_id";
+                        $this->parameters[strtolower(Model::shortClassName($value)) . "_id"] = $value->getId();
+                        $arrayset[] = strtolower(Model::shortClassName($value)) . "_id = :" . strtolower(Model::shortClassName($value)) . "_id";
                     }
                 } else {
                     $this->parameters[$attrib] = $value;
@@ -706,7 +706,7 @@ class QueryBuilder extends \DBAL
     {
         //" left join `".strtolower(get_class($entity)).
 
-        $this->query .= " ON `" . $this->join . "`.id = `" . strtolower(get_class($entity)) . "`." . $this->join . "_id";
+        $this->query .= " ON `" . $this->join . "`.id = `" . strtolower(Model::shortClassName($entity)) . "`." . $this->join . "_id";
 
         return $this;
     }
@@ -851,8 +851,7 @@ class QueryBuilder extends \DBAL
         }
 
         if (is_object($column)) {
-            $colmnlinkname = explode("\\", get_class($column));
-            $colmnlinkname = $colmnlinkname[count($colmnlinkname) - 1];
+            $colmnlinkname = Model::shortClassName($column);
             $attrib = strtolower($colmnlinkname) . '_id';
             if ($this->defaultjoinsetted) {
                 $this->_where .= " " . $link . " " . strtolower($colmnlinkname) . '.id';

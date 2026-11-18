@@ -18,7 +18,7 @@ class Core extends stdClass
     {
         $this->entity = $entity;
         $this->classname = get_class($entity);
-        $this->name = strtolower(get_class($entity));
+        $this->name = strtolower(Model::shortClassName($entity));
         $this->addjs = [];
         return $this;
     }
@@ -43,7 +43,7 @@ class Core extends stdClass
 
         global $enittycollection;
 
-        $entityname = strtolower(get_class($entity));
+        $entityname = strtolower(Model::shortClassName($entity));
         $path = $enittycollection[$entityname] . '/Core/' . $entityname . 'Core.json';
 //        $path = $__DIR__ . '/../Core/' . ucfirst(get_class($entity)) . 'Core.json';
 

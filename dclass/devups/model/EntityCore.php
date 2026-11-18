@@ -22,7 +22,7 @@ class EntityCore
     public static function __extract($__DIR__, $entity, $asarray = false)
     {
 
-        $path = $__DIR__ . '../Core/' . strtolower(get_class($entity)) . '.json';
+        $path = $__DIR__ . '../Core/' . strtolower(Model::shortClassName($entity)) . '.json';
 
         $json_file_content = fopen(__DIR__ . $path, 'r+');
         if ($asarray)

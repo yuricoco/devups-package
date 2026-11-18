@@ -236,7 +236,7 @@ class Controller
      */
     public static function lastpersistance($entity)
     {
-        $classname = strtolower(get_class($entity));
+        $classname = strtolower(\Model::shortClassName($entity));
 
         return array(
             'success' => true, // pour le restservice
@@ -366,7 +366,7 @@ class Controller
         $fieldNames = array_keys($metadata->fieldNames);
         $fieldNames = array_merge($fieldNames, $object->dvtranslated_columns);
         $associationMappings = $metadata->associationMappings;
-        $classname = strtolower($classlang);
+        $classname = strtolower(\Model::shortClassName($object));
         if (isset($_FILES[$classname . '_form'])) {
 
             foreach ($_FILES[$classname . "_form"]['name'] as $key_form => $value_form) {
@@ -418,7 +418,7 @@ class Controller
             $key = $result[0];
             if (isset($result[1])) {
                 if ($result[1] == "upload") {
-                    self::addEventListenerAfterCreate(get_class($this->entity), 'upload' . ucfirst($result[1]));
+                    self::addEventListenerAfterCreate(\Model::shortClassName($this->entity), 'upload' . ucfirst($result[1]));
                     //self::$eventListners['after']['create'] = 'upload'.ucfirst($meta[1]);
                     continue;
                 }

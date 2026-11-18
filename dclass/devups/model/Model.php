@@ -14,6 +14,23 @@
 
 class Model extends \dclass\devups\model\ModelSerializer
 {
+    /**
+     * ETAPE 5.1 (v8.0) : nom court d'une classe/instance, independant
+     * de son namespace eventuel - groundwork pour le LOT 5 (voir
+     * TODO.md ETAPE 5.0). A utiliser partout ou get_class()/
+     * get_called_class() derive aujourd'hui un nom de table, de
+     * colonne, de cle de formulaire/filtre/cache - JAMAIS pour une
+     * reflection/instanciation/comparaison qui veut la vraie classe
+     * (getClassMetadata(), `new $x`, `::class`), ou ce helper romprait
+     * la resolution. Comportement strictement identique a
+     * get_class()/get_called_class() aujourd'hui (tout est encore en
+     * namespace global) - devient correct automatiquement une fois des
+     * classes namespacees (LOT 5.2, pas encore fait).
+     */
+    public static function shortClassName($classOrObject = null): string
+    {
+        return (new \ReflectionClass($classOrObject ?? get_called_class()))->getShortName();
+    }
 
     use ModelTrait;
     use \dclass\devups\model\DateTimeTrait;
@@ -219,7 +236,7 @@ class Model extends \dclass\devups\model\ModelSerializer
     public static function post($attribute, $default = null)
     {
 
-        $class = strtolower(get_called_class());
+        $class = strtolower(self::shortClassName());
         if (isset($_POST[$class . "_form"][$attribute]))
             return $_POST[$class . "_form"][$attribute];
         else
@@ -236,7 +253,7 @@ class Model extends \dclass\devups\model\ModelSerializer
     {
 //        $reflection = new ReflectionClass(get_called_class());
 //        $entity = $reflection->newInstance();
-        $entity = get_called_class();
+        $entity = self::shortClassName();
         $dfile = new Dfile($fileparam, $entity);
         return $dfile;
     }
@@ -341,7 +358,7 @@ class Model extends \dclass\devups\model\ModelSerializer
          * puis un refus.
          */
         if ($arrayvalues === null && $this->id && !empty($this->dvtranslate)) {
-            $diagnosis = DvtranslateInspector::diagnose(get_class($this), (int)$this->id);
+            $diagnosis = DvtranslateInspector::diagnose(self::shortClassName($this), (int)$this->id);
             if (in_array($diagnosis['case'], ['no_translation', 'orphan_lang'], true)) {
                 throw new \RuntimeException($diagnosis['message_admin']);
             }
@@ -465,9 +482,9 @@ class Model extends \dclass\devups\model\ModelSerializer
         $qb = new QueryBuilder($relation);
         $qb->setLang($id_lang);
         if ($get)
-            return $qb->select()->where("this." . strtolower(get_class($this)) . "_id", $this->getId())->getInstance();
+            return $qb->select()->where("this." . strtolower(self::shortClassName($this)) . "_id", $this->getId())->getInstance();
 
-        return $qb->select()->where("this." . strtolower(get_class($this)) . "_id", $this->getId());
+        return $qb->select()->where("this." . strtolower(self::shortClassName($this)) . "_id", $this->getId());
     }
 
     public function hydrate($idlang = false)
@@ -688,7 +705,7 @@ class Model extends \dclass\devups\model\ModelSerializer
     {
         $datareturn = [];
         $rawdata = \Request::raw();
-        $class = strtolower(get_class($this));
+        $class = strtolower(self::shortClassName($this));
         if (isset(Request::$uri_raw_param["dataset"])) {
             if (isset(Request::$uri_raw_param["dataset"][$class])) {
 
@@ -789,7 +806,7 @@ class Model extends \dclass\devups\model\ModelSerializer
 
     public static function link($path = "/index")
     {
-        $entity = strtolower(get_called_class());
+        $entity = strtolower(self::shortClassName());
         $admin = getadmin();
         $de = Dvups_role_dvups_entity::where($admin->dvups_role)->andwhere("dvups_entity.name", $entity)->getInstance();
 
@@ -805,14 +822,14 @@ class Model extends \dclass\devups\model\ModelSerializer
      */
     public static function getDvupsEntity()
     {
-        $entity = strtolower(get_called_class());
+        $entity = strtolower(self::shortClassName());
         return $entity;
 //        return Dvups_entity::getbyattribut("this.name", $entity, false);
 
     }
 
     public static function getStatusWhereKey($key){
-        $classname = get_called_class();
+        $classname = self::shortClassName();
         return Status::getStatus($key, strtolower($classname));
     }
 

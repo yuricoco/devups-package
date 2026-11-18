@@ -480,6 +480,123 @@ oublis plus tard.
    necessairement une seule CI verte en fin de lot comme pour les lots
    precedents - a juger a l'avancement).
 
+### LOT 5.1 - FAIT (helper `Model::shortClassName()` + conversion des sites "non surs")
+
+Revue ligne-par-ligne exhaustive des 19 fichiers listes en LOT 5.0 (plus
+`Notification.php`, deja dans la liste), confirmant/corrigeant
+l'echantillon initial. Introduction de `Model::shortClassName($classOrObject
+= null): string` (`dclass/devups/model/Model.php`, juste apres la
+declaration de classe) :
+
+```php
+public static function shortClassName($classOrObject = null): string
+{
+    return (new \ReflectionClass($classOrObject ?? get_called_class()))->getShortName();
+}
+```
+
+Comportement strictement IDENTIQUE a `get_class()`/`get_called_class()`
+aujourd'hui (tout est encore en namespace global) - zero changement de
+comportement observable, verifie par `composer test` (423 tests, 0
+echec, memes 2 incomplets/8 deprecations qu'avant ce lot) et `composer
+phpstan` (0 erreur). Donc **aucune entree `UPGRADE-8.0.md` requise** pour
+cette sous-etape (la regle "toute RUPTURE -> test + UPGRADE" ne
+s'applique pas : il n'y a pas de rupture ici, seulement une fondation
+pour la rupture a venir en 5.2).
+
+**Sites convertis** (tous confirmes par lecture du code appelant -
+derivation de nom de table SQL, de colonne `_id`, de cle de formulaire/
+filtre/cache `$global_config`, jamais de reflection/instanciation) :
+
+- `model/Model.php` : `post()`, `Dfile()`, le garde-fou
+  `DvtranslateInspector::diagnose()`, `__hasone()` (x2), `apimapper()`,
+  `link()`, `getDvupsEntity()`, `getStatusWhereKey()`.
+- `model/ModelTrait.php` : `update()`, `inCollectionOf()`, `truncate()`.
+- `model/EntityCore.php` : `__extract()`.
+- `Core.php` : constructeur, `__extract()`.
+- `Controller/Controller.php` : `lastpersistance()`, l'hydratation (le
+  `$classname` derive pour `$_FILES`, distinct du `$classlang` qui reste
+  la vraie classe pour `getClassMetadata()`), `addEventListenerAfterCreate()`.
+- `Controller/FrontController.php` : `addEventListenerAfterCreate()`.
+- `Datatable/Datatable.php` : constructeur, `addFilterParam()`, et les 2
+  sites qui alimentaient `$this->class`/`$this->classname`.
+- `Datatable/Lazyloading.php` : constructeur, `lazyloading()`.
+- `Form/Form.php` : `open()`, `init()`, `imbricate()` (toutes les
+  affectations de `Form::$name`).
+- `Form/FormManager.php` : constructeur, le `->where()` de
+  `Options_ToCollect_Helper()`.
+- `Tchutte/DBAL.php` : `manyToManyUpdate()` (x2), `manyToManyDelete()`,
+  `belongto()` (x2), `hasmany()` (x2, hors le site 1612 explique
+  ci-dessous), `updateserialiseDbal()`, `orm()` (x4, hors le commentaire
+  mort ligne 1546).
+- `Tchutte/QueryBuilder.php` : `set()` (x2 sites), `on()`, le site de
+  reflexion defensive `explode("\\", get_class($column))` simplifie en
+  un seul appel au helper.
+- `src/devupscms/ModuleNotification/Entity/Notification.php` : `on()`
+  (lookup `$global_config`).
+
+**Sites deliberement NON touches** (verifies un par un, tous ont besoin
+de la VRAIE classe ou sont du texte cosmetique) :
+
+- Partout : `getClassMetadata()`/`new $classname`/`ReflectionClass(...)
+  ->newInstance()`/`ReflectionMethod($class, $method)` - reflection ou
+  instanciation reelle (`DBAL::_createDbal()`, `DBAL::mappingProd()`,
+  `ModelTrait::update()`/`find()`/`findrow()`/... - une quarantaine de
+  sites, `Http/Request.php` x3).
+- `Http/Router.php` (3 sites, lignes 434/548/632) : `$named =
+  get_called_class()` alimente exclusivement `mapFunction($named,
+  $function)` -> `new ReflectionAnnotatedClass($classname)` - verifie en
+  lisant `mapFunction()` (ligne ~653).
+- `Tchutte/DBAL.php` : `dbrow()` (`new $classname` ligne 1179),
+  `djoin()` -> `Bugmanager::cast(..., get_class($object))` ligne 1660 -
+  `cast()` fait `is_subclass_of($class, get_class($object))` puis un
+  hack serialize/preg_replace/unserialize qui a besoin du VRAI FQCN pour
+  retrouver la bonne classe - le changer casserait le cast ;
+  `hasmany()` ligne 1612 - alimente `Model::__hasmany($collection)` qui
+  fait `new ReflectionClass($collection)` quand ce n'est pas deja un
+  objet - a besoin de la vraie classe ; `mappingProd()` ligne 1686 -
+  alimente `getClassMetadata()` - **confirme l'incoherence interne
+  deja signalee en LOT 5.0** (`$this->objectName` tantot court via
+  `setClassname()`, tantot complet ici) : probleme structurel pour 5.2,
+  pas touche ici.
+- `Tchutte/QueryBuilder.php` : les 4 comparaisons `get_class($value) ==
+  QueryBuilder::class` / `== \dclass\devups\Tchutte\Column::class`
+  (lignes 388/539/542/928/931) - comparaison a un FQCN deja qualifie.
+- `Tchutte/Bugmanager.php` : `cast()`, `is_subclass_of($class,
+  get_class($object))` - a besoin de la vraie classe.
+- `Log.php` : `get_class($t)` dans un message de log d'exception - texte
+  informatif, plus juste avec le FQCN complet.
+- `model/ModelSerializer.php`, `Controller/ModuleController.php`,
+  `Dfile.php` : occurrences deja confirmees sures (reflection ou
+  code mort/commentaire) - inchanges.
+- `model/ModelTrait.php` : cache process-local `Model::$columns[
+  get_called_class()]` - **garde intentionnellement le FQCN complet**
+  (pas de conversion), pour eviter une collision de cle entre deux
+  entites futures namespacees qui partageraient le meme nom court (5.2).
+
+**Piege rencontre et corrige** : `ModelTrait` est aussi utilise par
+`Dv_langCore` (`dclass/extends/Dv_langCore.php`) qui **n'etend PAS
+`Model`** (`extends \stdClass; use ModelTrait;`), et transitivement par
+toute entite traduite (ex. `Interval_group`). Les 3 premiers sites
+convertis dans `ModelTrait.php` utilisaient `self::shortClassName(...)`
+- erreur reelle (pas seulement phpstan) : `self::` dans un trait resout
+sur la classe qui l'utilise, et `Dv_langCore`/`Interval_group` n'ont pas
+de methode `shortClassName`, ce qui aurait ete une erreur fatale a
+l'execution pour toute entite traduite. Corrige en appelant
+`\Model::shortClassName(...)` explicitement (classe pleinement
+qualifiee, jamais `self::`) dans `ModelTrait.php`, en passant
+`get_called_class()` en argument explicite pour les 2 sites sans
+argument (prevaut la semantique de liaison statique tardive d'origine).
+Trouve par `composer phpstan` (`Call to an undefined static method
+Dv_langCore::shortClassName()`), confirme par relecture - aucune des 423
+tests ne l'avait detecte (chemin non exerce).
+
+**Test** : `tests/Unit/ShortClassNameTest.php` (4 tests) - equivalence
+stricte avec `get_class()`/`ReflectionClass::getShortName()` sur une
+instance, sur une chaine de nom de classe, et sans argument (defaut sur
+`get_called_class()`), suivant le meme piege/pattern namespace que
+`ReflectionAnnotatedTest.php` (LOT 3) pour la classe de fixture `eval()`e.
+
 ### Etat fin de session - LOT 1 (Socle), LOT 2 (Vues), LOT 3 (Routes) et LOT 4 (Generateur) : FAITS, CI verte
 
 **LOT 1 - Socle** : FAIT.

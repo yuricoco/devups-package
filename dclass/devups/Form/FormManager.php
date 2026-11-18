@@ -74,7 +74,7 @@ abstract class FormManager
         $this->formaction = $action;
         $this->formbutton = $action ? true : false;
         $this->entity = $entity;
-        $this->classname = get_class($entity);
+        $this->classname = Model::shortClassName($entity);
         $dentity = $global_config[$this->classname];
         $this->name = strtolower($dentity['name']);
         $this->js = [];
@@ -175,7 +175,7 @@ abstract class FormManager
             }
 
             $entitylist = $qb->select()
-                ->where(strtolower(get_class($entity)) . ".id")
+                ->where(strtolower(Model::shortClassName($entity)) . ".id")
                 ->notin($ids)
                 ->__getAll(false);
 
