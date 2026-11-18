@@ -1,73 +1,88 @@
 <?php
 
 
+use Doctrine\ORM\Mapping as ORM;
+
 /**
- * @MappedSuperclass
  * Colonnes heritees par les entites qui etendent cette classe.
  */
+#[ORM\MappedSuperclass]
 class UserCore extends \Model implements JsonSerializable
 {
+    // NB (v8.0, LOT 1.2) : voir Dvups_config_item.php - meme correctif
+    // (redeclaration explicite requise, pas un simple "use" du trait).
+    /** @var string */
+    #[ORM\Column(name: "created_at", type: "datetime", nullable: true)]
+    protected $created_at;
+    /** @var string */
+    #[ORM\Column(name: "updated_at", type: "datetime", nullable: true)]
+    protected $updated_at;
+    /** @var string */
+    #[ORM\Column(name: "deleted_at", type: "datetime", nullable: true)]
+    protected $deleted_at;
 
     /**
-     * @Id @GeneratedValue @Column(type="integer")
      * @var int
-     * */
+     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     protected $id;
     /**
-     * @Column(name="firstname", type="string" , length=55 , nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "firstname", type: "string", length: 55, nullable: true)]
     protected $firstname;
     /**
-     * @Column(name="lastname", type="string" , length=55 , nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "lastname", type: "string", length: 55, nullable: true)]
     protected $lastname;
     /**
-     * @Column(name="username", type="string" , length=55 , nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "username", type: "string", length: 55, nullable: true)]
     public $username;
 
     /**
-     * @Column(name="email", type="string" , length=55 , nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "email", type: "string", length: 55, nullable: true)]
     public $email;
 
     /**
-     * @Column(name="phonenumber", type="string" , length=25 , nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "phonenumber", type: "string", length: 25, nullable: true)]
     public $phonenumber;
     /**
-     * @Column(name="password", type="string" , length=255 , nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "password", type: "string", length: 255, nullable: true)]
     public $password;
     /**
-     * @Column(name="resettingpassword", type="integer"  , nullable=true)
      * @var integer
-     **/
+     */
+    #[ORM\Column(name: "resettingpassword", type: "integer", nullable: true)]
     public $resettingpassword;
     /**
-     * @Column(name="is_activated", type="integer"  , nullable=true)
      * @var integer
-     **/
+     */
+    #[ORM\Column(name: "is_activated", type: "integer", nullable: true)]
     public $is_activated = 1;
 
     /**
-     * @Column(name="activationcode", type="string" , length=255 , nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "activationcode", type: "string", length: 255, nullable: true)]
     public $activationcode;
     /**
      * ETAPE L.1 : type="datetime", pas "date" - l'expiration (defaut 15
      * min, ACTIVATION_CODE_TTL_MINUTES) a besoin d'une precision a la
      * minute, qu'une colonne DATE (sans heure) ne peut pas porter.
-     * @Column(name="activationcode_expired_at", type="datetime", nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "activationcode_expired_at", type: "datetime", nullable: true)]
     protected $activationcode_expired_at;
 
     public function getActivationcodeExpiredAt()
@@ -80,15 +95,15 @@ class UserCore extends \Model implements JsonSerializable
      * distinct du code court d'activation (activationcode, garde pour
      * l'activation de compte et le SMS). Seul le hash (sha256) du jeton
      * est stocke, jamais le jeton en clair.
-     * @Column(name="reset_token_hash", type="string", length=255, nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "reset_token_hash", type: "string", length: 255, nullable: true)]
     protected $reset_token_hash;
 
     /**
-     * @Column(name="reset_token_expired_at", type="datetime", nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "reset_token_expired_at", type: "datetime", nullable: true)]
     protected $reset_token_expired_at;
 
     /**
@@ -138,24 +153,24 @@ class UserCore extends \Model implements JsonSerializable
     }
 
     /**
-     * @Column(name="last_login", type="datetime"  , nullable=true)
      * @var date
-     **/
+     */
+    #[ORM\Column(name: "last_login", type: "datetime", nullable: true)]
     protected $last_login;
     /**
-     * @Column(name="lang", type="string" , length=2 , nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "lang", type: "string", length: 2, nullable: true)]
     protected $lang = "en";
     /**
-     * @Column(name="api_key", type="string" , length=255 , nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "api_key", type: "string", length: 255, nullable: true)]
     protected $api_key;
     /**
-     * @Column(name="session_token", type="string" , length=255 , nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "session_token", type: "string", length: 255, nullable: true)]
     protected $session_token;
 
     public function setTelephoneOrEmail($value)

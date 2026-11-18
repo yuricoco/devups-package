@@ -1,69 +1,72 @@
 <?php
+use Doctrine\ORM\Mapping as ORM;
+
         // user \dclass\devups\model\Model;
-    /**
-     * @Entity @Table(name="dvups_log")
-     * */
+#[ORM\Entity]
+    #[ORM\Table(name: "dvups_log")]
     class Dvups_log extends Model implements JsonSerializable{
 
         /**
-         * @Id @GeneratedValue @Column(type="integer")
          * @var int
-         * */
+         */
+        #[ORM\Id]
+        #[ORM\GeneratedValue]
+        #[ORM\Column(type: "integer")]
         protected $id;
         /**
-         * @Column(name="fingerprint", type="string" , length=64 )
          * @var string
-         **/
+         */
+        #[ORM\Column(name: "fingerprint", type: "string", length: 64)]
         protected $fingerprint;
         /**
-         * @Column(name="level", type="string" , length=20 )
          * @var string
-         **/
+         */
+        #[ORM\Column(name: "level", type: "string", length: 20)]
         protected $level;
         /**
-         * @Column(name="entity_class", type="string" , length=255 , nullable=true)
          * @var string
-         **/
+         */
+        #[ORM\Column(name: "entity_class", type: "string", length: 255, nullable: true)]
         protected $entity_class;
         /**
-         * @Column(name="file", type="string" , length=500 , nullable=true)
          * @var string
-         **/
+         */
+        #[ORM\Column(name: "file", type: "string", length: 500, nullable: true)]
         protected $file;
         /**
-         * @Column(name="line", type="integer"  , nullable=true)
          * @var integer
-         **/
+         */
+        #[ORM\Column(name: "line", type: "integer", nullable: true)]
         protected $line;
         /**
-         * @Column(name="message", type="string" , length=1000 , nullable=true)
          * @var string
-         **/
+         */
+        #[ORM\Column(name: "message", type: "string", length: 1000, nullable: true)]
         protected $message;
         /**
-         * @Column(name="occurrences", type="integer"  )
          * @var integer
-         **/
+         */
+        #[ORM\Column(name: "occurrences", type: "integer")]
         protected $occurrences;
         /**
-         * @Column(name="first_at", type="datetime"  , nullable=true)
          * @var datetime
-         **/
+         */
+        #[ORM\Column(name: "first_at", type: "datetime", nullable: true)]
         protected $first_at;
         /**
-         * @Column(name="last_at", type="datetime"  , nullable=true)
          * @var datetime
-         **/
+         */
+        #[ORM\Column(name: "last_at", type: "datetime", nullable: true)]
         protected $last_at;
         /**
-         * @Column(name="context", type="text"  , nullable=true)
          * @var text
-         **/
+         */
+        #[ORM\Column(name: "context", type: "text", nullable: true)]
         protected $context;
         /**
-         * @Column(name="log_file", type="string" , length=500 , nullable=true)
          * @var string
-         **/
+         */
+        #[ORM\Column(name: "log_file", type: "string", length: 500, nullable: true)]
         protected $log_file; 
         
 

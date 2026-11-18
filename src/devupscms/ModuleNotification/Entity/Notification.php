@@ -3,9 +3,9 @@
 use devupscms\ModulePushNotification\Entity\Workers;
 use Google\Auth\Credentials\ServiceAccountCredentials;
 
-/**
- * @Entity @Table(name="notification")
- * */
+use Doctrine\ORM\Mapping as ORM;
+#[ORM\Entity]
+#[ORM\Table(name: "notification")]
 class Notification extends Model implements JsonSerializable
 {
 
@@ -13,83 +13,85 @@ class Notification extends Model implements JsonSerializable
     public static $send_push = false;
 
     /**
-     * @Id @GeneratedValue @Column(type="integer")
      * @var int
-     * */
+     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     protected $id;
 
     /**
      * store the date when the notification has been read
-     * @Column(name="viewedat", type="datetime"  , nullable=true)
      * @var datetime
-     **/
+     */
+    #[ORM\Column(name: "viewedat", type: "datetime", nullable: true)]
     protected $viewedat;
 
     /**
      * specify if the notification has been seen in the list of notification (either on top widget or list view)
      * -1 : ping => the initial request will take all the notification less than the date of the device and where status=-1
-     *  then the timers request will take by the latest notification date and ping = 1
+     * then the timers request will take by the latest notification date and ping = 1
      * 0 : unread => specify if the notification has been seen in the list of notification (either on top widget or list view)
      * 1 : read
-     * @Column(name="status", type="integer" , length=1 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "status", type: "integer", length: 1)]
     protected $status = -1;
 
     /**
-     * @Column(name="entity", type="string" , length=55 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "entity", type: "string", length: 55)]
     protected $entity;
     /**
-     * @Column(name="entityid", type="integer"  )
      * @var integer
-     **/
+     */
+    #[ORM\Column(name: "entityid", type: "integer")]
     protected $entityid;
 
     /**
-     * @Column(name="path", type="string" , length=255 , nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "path", type: "string", length: 255, nullable: true)]
     protected $path;
     /**
-     * @Column(name="image", type="string" , length=255 , nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "image", type: "string", length: 255, nullable: true)]
     protected $image;
     /**
-     * @Column(name="content", type="string" , length=255 , nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "content", type: "string", length: 255, nullable: true)]
     protected $content;
     /**
-     * @Column(name="redirect", type="string" , length=255, nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "redirect", type: "string", length: 255, nullable: true)]
     protected $redirect;
 
     /**
-     * @ManyToOne(targetEntity="\Notificationtype")
-     * @JoinColumn(onDelete="set null")
      * @var \Notificationtype
      */
+    #[ORM\ManyToOne(targetEntity: "\Notificationtype")]
+    #[ORM\JoinColumn(onDelete: "set null")]
     public $notificationtype;
 
     /**
      * the user_id of the one who emitted the push notification
-     * @Column(name="emitted_by", type="integer" , nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "emitted_by", type: "integer", nullable: true)]
     protected $emitted_by;
     /**
-     * @Column(name="user_id", type="integer" , nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "user_id", type: "integer", nullable: true)]
     public $user_id;
     /**
-     * @Column(name="admin_id", type="integer" , nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "admin_id", type: "integer", nullable: true)]
     public $admin_id;
 
     public function __construct($id = null)

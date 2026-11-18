@@ -1,47 +1,50 @@
 <?php
+use Doctrine\ORM\Mapping as ORM;
+
 // user \dclass\devups\model\Model;
 
-/**
- * @Entity @Table(name="interval")
- * */
+#[ORM\Entity]
+#[ORM\Table(name: "interval")]
 class Interval extends Model implements JsonSerializable
 {
 
     /**
-     * @Id @GeneratedValue @Column(type="integer")
      * @var int
-     * */
+     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     protected $id;
     /**
-     * @Column(name="_min", type="float"  )
      * @var float
-     **/
+     */
+    #[ORM\Column(name: "_min", type: "float")]
     protected $_min;
     /**
-     * @Column(name="_max", type="float"  )
      * @var float
-     **/
+     */
+    #[ORM\Column(name: "_max", type: "float")]
     protected $_max;
     /**
-     * @Column(name="label", type="string" , length=150 , nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "label", type: "string", length: 150, nullable: true)]
     protected $label;
     /**
-     * @Column(name="_value", type="string" , length=120 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "_value", type: "string", length: 120)]
     protected $_value;
     /**
-     * @Column(name="description", type="text" , nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "description", type: "text", nullable: true)]
     protected $description;
 
     /**
-     * @Column(name="entity", type="string", length=55  )
      * @var integer
-     **/
+     */
+    #[ORM\Column(name: "entity", type: "string", length: 55)]
     public $entity;
 
     public function __construct($id = null)

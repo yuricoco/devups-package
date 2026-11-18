@@ -1,26 +1,29 @@
 <?php
+use Doctrine\ORM\Mapping as ORM;
+
 // user \dclass\devups\model\Model;
 
-/**
- * @Entity @Table(name="cmscontent")
- * */
+#[ORM\Entity]
+#[ORM\Table(name: "cmscontent")]
 class Cmscontent extends Model implements JsonSerializable, DatatableOverwrite, DvupsTranslation
 {
 
     /**
-     * @Id @GeneratedValue @Column(type="integer")
      * @var int
-     * */
+     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     protected $id;
     /**
-     * @Column(name="reference", type="string" , length=125 , nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "reference", type: "string", length: 125, nullable: true)]
     protected $reference;
     /**
-     * @Column(name="slug", type="string" , length=255 , nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "slug", type: "string", length: 255, nullable: true)]
     protected $slug;
     /**
      **/
@@ -29,20 +32,20 @@ class Cmscontent extends Model implements JsonSerializable, DatatableOverwrite, 
 
 
     /**
-     * @Column(name="active", type="integer" )
      * @var text
-     * */
+     */
+    #[ORM\Column(name: "active", type: "integer")]
     protected $active = 0;
     /**
-     * @Column(name="position", type="integer" )
      * @var text
-     * */
+     */
+    #[ORM\Column(name: "position", type: "integer")]
     protected $position = 0;
 
     /**
-     * @ManyToOne(targetEntity="\Tree_item")
      * @var \Tree_item
      */
+    #[ORM\ManyToOne(targetEntity: "\Tree_item")]
     public $tree_item;
 
     public $title;

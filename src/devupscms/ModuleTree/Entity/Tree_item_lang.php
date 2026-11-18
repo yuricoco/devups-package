@@ -1,27 +1,29 @@
 <?php
 
-/**
- * @Entity @Table(name="tree_item_lang")
- * */
+use Doctrine\ORM\Mapping as ORM;
+
+#[ORM\Entity]
+#[ORM\Table(name: "tree_item_lang")]
 class Tree_item_lang extends \Dv_langCore
 {
 
     /**
-     * @Column(name="name", type="string" , length=255 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "name", type: "string", length: 255)]
     protected $name;
     /**
-     * @Column(name="content", type="text"  , nullable=true)
      * @var text
-     **/
+     */
+    #[ORM\Column(name: "content", type: "text", nullable: true)]
     protected $content;
 
     /**
-     * @Id @ManyToOne(targetEntity="\Tree_item")
-     * @JoinColumn(onDelete="cascade")
      * @var \Tree_item
      */
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: "\Tree_item")]
+    #[ORM\JoinColumn(onDelete: "cascade")]
     public $tree_item;
 
     public function __construct($id = null){

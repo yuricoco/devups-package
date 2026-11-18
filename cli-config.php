@@ -8,4 +8,4 @@
 
 require_once "config/bootstrap.php";
 
-return \Doctrine\ORM\Tools\Console\ConsoleRunner::createHelperSet($entityManager);
+return new \Doctrine\ORM\Tools\Console\EntityManagerProvider\SingleManagerProvider($entityManager);

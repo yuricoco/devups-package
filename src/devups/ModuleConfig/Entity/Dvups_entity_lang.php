@@ -1,23 +1,25 @@
 <?php
 
 
-/**
- * @Entity @Table(name="dvups_entity_lang")
- * */
+use Doctrine\ORM\Mapping as ORM;
+
+#[ORM\Entity]
+#[ORM\Table(name: "dvups_entity_lang")]
 class Dvups_entity_lang extends Dv_langCore
 {
 
     /**
-     * @Column(name="label", type="string" , length=100 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "label", type: "string", length: 100)]
     protected $label;
 
     /**
-     * @Id @ManyToOne(targetEntity="\Dvups_entity")
-     * @JoinColumn(onDelete="cascade")
      * @var \Dvups_entity
      */
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: "\Dvups_entity")]
+    #[ORM\JoinColumn(onDelete: "cascade")]
     public $dvups_entity;
 
 

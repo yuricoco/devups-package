@@ -4,36 +4,38 @@ namespace devupsfront\ModuleUser\Entity;
 use JsonSerializable;
 use Model;
 
-/**
- * @Entity @Table(name="oauth_client")
- * */
+use Doctrine\ORM\Mapping as ORM;
+#[ORM\Entity]
+#[ORM\Table(name: "oauth_client")]
 class Oauth_client extends Model implements JsonSerializable
 {
 
     /**
-     * @Id @GeneratedValue @Column(type="integer")
      * @var int
-     * */
+     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     protected $id;
     /**
-     * @Column(name="client", type="string" , length=55 , nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "client", type: "string", length: 55, nullable: true)]
     protected $client;
     /**
-     * @Column(name="name", type="string" , length=155 , nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "name", type: "string", length: 155, nullable: true)]
     protected $name;
     /**
-     * @Column(name="user_ext_id", type="string" , length=55 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "user_ext_id", type: "string", length: 55)]
     protected $user_ext_id;
     /**
-     * @Column(name="user_id", type="integer" )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "user_id", type: "integer")]
     protected $user_id;
 
     public function __construct($id = null)

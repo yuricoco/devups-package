@@ -1,22 +1,24 @@
 <?php
+use Doctrine\ORM\Mapping as ORM;
+
 // user \dclass\devups\model\Model;
 
-/**
- * @Entity @Table(name="notificationtype_lang")
- * */
+#[ORM\Entity]
+#[ORM\Table(name: "notificationtype_lang")]
 class Notificationtype_lang extends Dv_langCore
 {
 
     /**
-     * @Id @ManyToOne(targetEntity="\Notificationtype")
-     * @JoinColumn(onDelete="cascade")
      * @var \Notificationtype
      */
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: "\Notificationtype")]
+    #[ORM\JoinColumn(onDelete: "cascade")]
     public $notificationtype;
     /**
-     * @Column(name="content", type="string" , length=255 )
      * @var integer
-     **/
+     */
+    #[ORM\Column(name: "content", type: "string", length: 255)]
     protected $content;
 
 

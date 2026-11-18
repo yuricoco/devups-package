@@ -1,73 +1,76 @@
 <?php
 
-/**
- * @Entity @Table(name="dvups_admin")
- * */
+use Doctrine\ORM\Mapping as ORM;
+
+#[ORM\Entity]
+#[ORM\Table(name: "dvups_admin")]
 class Dvups_admin extends Model implements JsonSerializable
 {
     /**
-     * @Id @GeneratedValue @Column(type="integer")
      * @var int
-     * */
+     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     protected $id;
 
     /**
-     * @Column(name="firstconnexion", type="integer", nullable=true )
      * @var string
-     * */
+     */
+    #[ORM\Column(name: "firstconnexion", type: "integer", nullable: true)]
     protected $firstconnexion = 1;
     /**
-     * @Column(name="lastlogin_at", type="datetime", nullable=true )
      * @var string
-     * */
+     */
+    #[ORM\Column(name: "lastlogin_at", type: "datetime", nullable: true)]
     protected $lastlogin_at;
     /**
-     * @Column(name="name", type="string" , length=255 )
      * @var string
-     * */
+     */
+    #[ORM\Column(name: "name", type: "string", length: 255)]
     protected $name;
     /**
-     * @Column(name="email", type="string" , length=255, nullable=true )
      * @var string
-     * */
+     */
+    #[ORM\Column(name: "email", type: "string", length: 255, nullable: true)]
     protected $email;
     /**
-     * @Column(name="lang", type="string" , length=2 , nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "lang", type: "string", length: 2, nullable: true)]
     protected $lang = "en";
 
     /**
-     * @Column(name="login", type="string" , length=255 )
      * @var string
-     * */
+     */
+    #[ORM\Column(name: "login", type: "string", length: 255)]
     protected $login;
 
     /**
-     * @Column(name="password", type="string" , length=255 )
      * @var string
-     * */
+     */
+    #[ORM\Column(name: "password", type: "string", length: 255)]
     protected $password;
 
     /**
      * ETAPE K.3 : hash (sha256) du token "remember me" courant, jamais le
      * token en clair ni le mot de passe. Null quand "remember me" n'est pas
      * actif (deconnexion, changement de mot de passe, jamais active).
-     * @Column(name="remember_token_hash", type="string" , length=255 , nullable=true )
      * @var string
-     * */
+     */
+    #[ORM\Column(name: "remember_token_hash", type: "string", length: 255, nullable: true)]
     protected $remember_token_hash;
 
     /**
-     * @Column(name="remember_token_expires_at", type="datetime" , nullable=true )
      * @var string
-     * */
+     */
+    #[ORM\Column(name: "remember_token_expires_at", type: "datetime", nullable: true)]
     protected $remember_token_expires_at;
 
     /**
-     * @ManyToOne(targetEntity="\Dvups_role")
      * @var \Dvups_role
      */
+    #[ORM\ManyToOne(targetEntity: "\Dvups_role")]
     public $dvups_role;
 
     public function __construct($id = null)

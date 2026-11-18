@@ -1,8 +1,9 @@
 <?php
 
 use dclass\devups\Tchutte\DB_dumper;
-use Doctrine\ORM\Tools\Setup;
+use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\ORMSetup;
 
 /**
  * Description of DBAL 3.1.0 *
@@ -194,12 +195,17 @@ class DBAL extends Database
             }
         }
 
-        // Create a simple "default" Doctrine ORM configuration for Annotations
+        // Create a simple "default" Doctrine ORM configuration for Attributes
         $isDevMode = true;
-        $config = Setup::createAnnotationMetadataConfiguration($enittyfoldes, $isDevMode);
-        // or if you prefer yaml or XML
-        //$config = Setup::createXMLMetadataConfiguration(array(__DIR__."/config/xml"), $isDevMode);
-        //$config = Setup::createYAMLMetadataConfiguration(array(__DIR__."/config/yaml"), $isDevMode);
+        $config = ORMSetup::createAttributeMetadataConfig($enittyfoldes, $isDevMode);
+        // L'EntityManager n'est utilise ici que pour les metadonnees
+        // (getClassMetadata/isTransient - voir DBAL::getDoctrineMetadata()) :
+        // aucune entite Doctrine n'est jamais persistee/chargee via lui (Tchutte
+        // reste le seul ORM d'execution), donc aucune proxy n'est reellement
+        // generee - mais le constructeur d'EntityManager (ORM 3) exige quand
+        // meme un repertoire de proxy configure.
+        $config->setProxyDir(sys_get_temp_dir());
+        $config->setProxyNamespace('DevupsDoctrineProxies');
         // database configuration parameters
         $conn = array(
             'driver' => 'pdo_mysql',
@@ -212,7 +218,7 @@ class DBAL extends Database
         );
 
         // obtaining the entity manager
-        return EntityManager::create($conn, $config);
+        return new EntityManager(DriverManager::getConnection($conn, $config), $config);
     }
 
 

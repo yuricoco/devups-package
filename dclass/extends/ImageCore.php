@@ -1,62 +1,77 @@
 <?php
+use Doctrine\ORM\Mapping as ORM;
+
 // user \dclass\devups\model\Model;
 
 /**
- * @MappedSuperclass
  * Colonnes heritees par les entites qui etendent cette classe.
  */
+#[ORM\MappedSuperclass]
 class ImageCore extends Model implements JsonSerializable
 {
+    // NB (v8.0, LOT 1.2) : voir Dvups_config_item.php - meme correctif
+    // (redeclaration explicite requise, pas un simple "use" du trait).
+    /** @var string */
+    #[ORM\Column(name: "created_at", type: "datetime", nullable: true)]
+    protected $created_at;
+    /** @var string */
+    #[ORM\Column(name: "updated_at", type: "datetime", nullable: true)]
+    protected $updated_at;
+    /** @var string */
+    #[ORM\Column(name: "deleted_at", type: "datetime", nullable: true)]
+    protected $deleted_at;
 
     /**
-     * @Id @GeneratedValue @Column(type="integer")
      * @var int
-     * */
+     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     protected $id;
     /**
-     * @Column(name="reference", type="string" , length=123  , nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "reference", type: "string", length: 123, nullable: true)]
     protected $reference;
     /**
-     * @Column(name="name", type="string" , length=123 , nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "name", type: "string", length: 123, nullable: true)]
     protected $name;
     /**
-     * @Column(name="description", type="text"  , nullable=true)
      * @var text
-     **/
+     */
+    #[ORM\Column(name: "description", type: "text", nullable: true)]
     protected $description;
     /**
-     * @Column(name="image", type="string" , length=255 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "image", type: "string", length: 255)]
     protected $image;
     /**
-     * @Column(name="uploaddir", type="string" , length=255 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "uploaddir", type: "string", length: 255)]
     protected $uploaddir;
     /**
-     * @Column(name="size", type="float"  , nullable=true)
      * @var float
-     **/
+     */
+    #[ORM\Column(name: "size", type: "float", nullable: true)]
     protected $size;
     /**
-     * @Column(name="width", type="float"  , nullable=true)
      * @var float
-     **/
+     */
+    #[ORM\Column(name: "width", type: "float", nullable: true)]
     protected $width;
     /**
-     * @Column(name="height", type="float"  , nullable=true)
      * @var float
-     **/
+     */
+    #[ORM\Column(name: "height", type: "float", nullable: true)]
     protected $height;
     /**
-     * @Column(name="extensionnpm", type="float"  , nullable=true)
      * @var float
-     **/
+     */
+    #[ORM\Column(name: "extensionnpm", type: "float", nullable: true)]
     protected $extension;
 
 

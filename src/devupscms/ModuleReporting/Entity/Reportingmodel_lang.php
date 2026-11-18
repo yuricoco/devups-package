@@ -1,37 +1,39 @@
 <?php
+use Doctrine\ORM\Mapping as ORM;
+
 // user \dclass\devups\model\Model;
 
-/**
- * @Entity @Table(name="reportingmodel_lang")
- * */
+#[ORM\Entity]
+#[ORM\Table(name: "reportingmodel_lang")]
 class Reportingmodel_lang extends Dv_langCore
 {
 
     /**
-     * @Column(name="title", type="string" , length=255, nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "title", type: "string", length: 255, nullable: true)]
     protected $title;
     /**
-     * @Column(name="object", type="string" , length=255, nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "object", type: "string", length: 255, nullable: true)]
     protected $object;
     /**
-     * @Column(name="contenttext", type="text"  , nullable=true)
      * @var text
-     **/
+     */
+    #[ORM\Column(name: "contenttext", type: "text", nullable: true)]
     protected $contenttext;
     /**
-     * @Column(name="content", type="text"  , nullable=true)
      * @var text
-     **/
+     */
+    #[ORM\Column(name: "content", type: "text", nullable: true)]
     protected $content;
     /**
-     * @Id @ManyToOne(targetEntity="\Reportingmodel")
-     * @JoinColumn(onDelete="cascade")
      * @var \Reportingmodel
      */
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: "\Reportingmodel")]
+    #[ORM\JoinColumn(onDelete: "cascade")]
     public $reportingmodel;
 
 }

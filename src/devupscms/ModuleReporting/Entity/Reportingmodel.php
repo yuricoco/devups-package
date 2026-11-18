@@ -2,31 +2,33 @@
 // user \dclass\devups\model\Model;
 use PHPMailer\PHPMailer\PHPMailer;
 
-/**
- * @Entity @Table(name="reportingmodel")
- * */
+use Doctrine\ORM\Mapping as ORM;
+#[ORM\Entity]
+#[ORM\Table(name: "reportingmodel")]
 class Reportingmodel extends Model implements JsonSerializable, DatatableOverwrite
 {
 
     /**
-     * @Id @GeneratedValue @Column(type="integer")
      * @var int
-     * */
+     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     protected $id;
     /**
-     * @Column(name="name", type="string" , length=255 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "name", type: "string", length: 255)]
     protected $name;
     /**
-     * @Column(name="type", type="string" , length=55 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "type", type: "string", length: 55)]
     protected $type;
     /**
-     * @Column(name="description", type="text" , nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "description", type: "text", nullable: true)]
     protected $description;
 
     /**

@@ -4,9 +4,9 @@ use Minishlink\WebPush\SubscriptionInterface;
 use Minishlink\WebPush\WebPush;
 use Google\Auth\Credentials\ServiceAccountCredentials;
 
-/**
- * @Entity @Table(name="push_subscription")
- * */
+use Doctrine\ORM\Mapping as ORM;
+#[ORM\Entity]
+#[ORM\Table(name: "push_subscription")]
 class Push_subscription extends Model implements JsonSerializable, SubscriptionInterface
 
 {
@@ -21,48 +21,50 @@ class Push_subscription extends Model implements JsonSerializable, SubscriptionI
     public static $webPushClient = null;
 
     /**
-     * @Id @GeneratedValue @Column(type="integer")
      * @var int
-     * */
+     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     protected $id;
     /**
-     * @Column(name="subscription_type", type="string" , length=25 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "subscription_type", type: "string", length: 25)]
     protected $subscription_type;
     /**
-     * @Column(name="user_id", type="integer"  )
      * @var integer
-     **/
+     */
+    #[ORM\Column(name: "user_id", type: "integer")]
     protected $user_id;
     /**
-     * @Column(name="status", type="integer" , options={"default": "1"} )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "status", type: "integer", options: ["default" => "1"])]
     protected $status;
     /**
      * ETAPE M.3 : endpoint du service de push du navigateur
      * (PushSubscription.endpoint cote client) - indispensable pour un
      * VRAI envoi Web Push, manquait jusqu'ici (getEndpoint() existait
      * deja mais lisait une propriete jamais declaree).
-     * @Column(name="endpoint", type="text", nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "endpoint", type: "text", nullable: true)]
     protected $endpoint;
     /**
-     * @Column(name="public_key",  type="text" , nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "public_key", type: "text", nullable: true)]
     protected $public_key;
     /**
-     * @Column(name="auth_token", type="text" , nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "auth_token", type: "text", nullable: true)]
     protected $auth_token;
     /**
-     * @Column(name="content_type", type="string" , length=25 , nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "content_type", type: "string", length: 25, nullable: true)]
     protected $content_type;
 
 

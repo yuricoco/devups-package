@@ -1,4 +1,4 @@
 @ECHO OFF
 setlocal DISABLEDELAYEDEXPANSION
-SET BIN_TARGET=%~dp0/../vendor/doctrine/orm/bin/doctrine
+SET BIN_TARGET=%~dp0doctrine.php
 php "%BIN_TARGET%" %*

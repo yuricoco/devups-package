@@ -1,42 +1,45 @@
 <?php
+use Doctrine\ORM\Mapping as ORM;
+
 // user \dclass\devups\model\Model;
 
-/**
- * @Entity @Table(name="notificationtype")
- * */
+#[ORM\Entity]
+#[ORM\Table(name: "notificationtype")]
 class Notificationtype extends Model implements JsonSerializable
 {
 
     /**
-     * @Id @GeneratedValue @Column(type="integer")
      * @var int
-     * */
+     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     protected $id;
     /**
-     * @Column(name="_key", type="string" , length=55 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "_key", type: "string", length: 55)]
     protected $_key;
     /**
-     * @Column(name="session", type="string" , length=55 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "session", type: "string", length: 55)]
     protected $session = 'user';
     /**
-     * @Column(name="redirect", type="string" , length=255, nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "redirect", type: "string", length: 255, nullable: true)]
     protected $redirect;
     /**
-     * @Column(name="emailmodel", type="string" , length=255, nullable=true )
      * @var integer
-     **/
+     */
+    #[ORM\Column(name: "emailmodel", type: "string", length: 255, nullable: true)]
     protected $emailmodel;
 
     /**
-     * @Column(name="entity", type="string", length=55  )
      * @var integer
-     **/
+     */
+    #[ORM\Column(name: "entity", type: "string", length: 55)]
     public $entity;
 
     public function __construct($id = null)

@@ -1,25 +1,28 @@
 <?php
 
-/**
- * @Entity @Table(name="country")
- * */
+use Doctrine\ORM\Mapping as ORM;
+
+#[ORM\Entity]
+#[ORM\Table(name: "country")]
 class Country extends \Model implements JsonSerializable
 {
 
     /**
-     * @Id @GeneratedValue @Column(type="integer")
      * @var int
-     * */
+     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     protected $id;
     /**
-     * @Column(name="name", type="string" , length=255 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "name", type: "string", length: 255)]
     protected $name;
     /**
-     * @Column(name="iso", type="string" , length=255 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "iso", type: "string", length: 255)]
     protected $iso;
     /**
      * ETAPE V : valeur par defaut '' (pas null) - la colonne SQL est
@@ -27,24 +30,24 @@ class Country extends \Model implements JsonSerializable
      * Country::seed() les renseigne depuis database/seed/countries.php) :
      * creer un pays depuis l'ecran admin levait "Column 'iso3' cannot be
      * null" (SQLSTATE 23000) a chaque fois.
-     * @Column(name="iso3", type="string" , length=255 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "iso3", type: "string", length: 255)]
     protected $iso3 = '';
     /**
-     * @Column(name="numcode", type="string" , length=255 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "numcode", type: "string", length: 255)]
     protected $numcode = '';
     /**
-     * @Column(name="phonecode", type="integer"  )
      * @var integer
-     **/
+     */
+    #[ORM\Column(name: "phonecode", type: "integer")]
     protected $phonecode;
     /**
-     * @Column(name="status", type="integer"  )
      * @var integer
-     **/
+     */
+    #[ORM\Column(name: "status", type: "integer")]
     protected $status;
 
 

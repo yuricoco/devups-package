@@ -1,28 +1,31 @@
 <?php
+use Doctrine\ORM\Mapping as ORM;
+
         // user \dclass\devups\model\Model;
-    /**
-     * @Entity @Table(name="dvups_privilege")
-     * */
+#[ORM\Entity]
+    #[ORM\Table(name: "dvups_privilege")]
     class Dvups_privilege extends Model implements JsonSerializable{
 
         /**
-         * @Id @GeneratedValue @Column(type="integer")
          * @var int
-         * */
+         */
+        #[ORM\Id]
+        #[ORM\GeneratedValue]
+        #[ORM\Column(type: "integer")]
         protected $id; 
         
         /**
-         * @ManyToOne(targetEntity="\Dvups_role")
-         * @JoinColumn(onDelete="cascade")
          * @var \Dvups_role
          */
+        #[ORM\ManyToOne(targetEntity: "\Dvups_role")]
+        #[ORM\JoinColumn(onDelete: "cascade")]
         public $dvups_role;
 
         /**
-         * @ManyToOne(targetEntity="\Dvups_action")
-         * @JoinColumn(onDelete="cascade")
          * @var \Dvups_action
          */
+        #[ORM\ManyToOne(targetEntity: "\Dvups_action")]
+        #[ORM\JoinColumn(onDelete: "cascade")]
         public $dvups_action;
 
 

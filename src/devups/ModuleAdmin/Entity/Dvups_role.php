@@ -1,47 +1,50 @@
 <?php
 
-/**
- * @Entity @Table(name="dvups_role")
- * */
+use Doctrine\ORM\Mapping as ORM;
+
+#[ORM\Entity]
+#[ORM\Table(name: "dvups_role")]
 class Dvups_role extends Model implements JsonSerializable
 {
 
     static $SELLER = "seller";
 
     /**
-     * @Id @GeneratedValue @Column(type="integer")
      * @var int
-     * */
+     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     protected $id;
     /**
-     * @Column(name="name", type="string" , length=255 )
      * @var string
-     * */
+     */
+    #[ORM\Column(name: "name", type: "string", length: 255)]
     protected $name;
     /**
-     * @Column(name="alias", type="string" , length=255 )
      * @var string
-     * */
+     */
+    #[ORM\Column(name: "alias", type: "string", length: 255)]
     protected $alias;
     /**
-     * @Column(name="configs", type="json" , nullable=true )
      * @var string
-     * */
+     */
+    #[ORM\Column(name: "configs", type: "json", nullable: true)]
     public $configs;
     /**
-     * @Column(name="components", type="text" , nullable=true )
      * @var string
-     * */
+     */
+    #[ORM\Column(name: "components", type: "text", nullable: true)]
     public $components;
     /**
-     * @Column(name="modules", type="text" , nullable=true )
      * @var string
-     * */
+     */
+    #[ORM\Column(name: "modules", type: "text", nullable: true)]
     public $modules;
     /**
-     * @Column(name="entities", type="text" , nullable=true )
      * @var string
-     * */
+     */
+    #[ORM\Column(name: "entities", type: "text", nullable: true)]
     public $entities;
 
     public function __construct($id = null)

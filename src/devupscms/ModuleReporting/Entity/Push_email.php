@@ -1,74 +1,77 @@
 <?php
+use Doctrine\ORM\Mapping as ORM;
+
 // user \dclass\devups\model\Model;
 
-/**
- * @Entity @Table(name="push_email")
- * */
+#[ORM\Entity]
+#[ORM\Table(name: "push_email")]
 class Push_email extends Model implements JsonSerializable, DatatableOverwrite
 {
 
     /**
-     * @Id @GeneratedValue @Column(type="integer")
      * @var int
-     * */
+     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     protected $id;
     /**
-     * @Column(name="date_start", type="date" , nullable=true )
      * @var date
-     **/
+     */
+    #[ORM\Column(name: "date_start", type: "date", nullable: true)]
     protected $date_start;
     /**
-     * @Column(name="date_end", type="date"  , nullable=true)
      * @var date
-     **/
+     */
+    #[ORM\Column(name: "date_end", type: "date", nullable: true)]
     protected $date_end;
     /**
-     * @Column(name="last_call", type="date"  , nullable=true)
      * @var date
-     **/
+     */
+    #[ORM\Column(name: "last_call", type: "date", nullable: true)]
     protected $last_call;
     /**
-     * @Column(name="next_call", type="date"  , nullable=true)
      * @var date
-     **/
+     */
+    #[ORM\Column(name: "next_call", type: "date", nullable: true)]
     protected $next_call;
     /**
-     * @Column(name="status", type="integer"  , nullable=true)
      * @var date
-     **/
+     */
+    #[ORM\Column(name: "status", type: "integer", nullable: true)]
     protected $status = 1;
     /**
-     * @Column(name="interval", type="integer"  , nullable=true)
      * @var integer
-     **/
+     */
+    #[ORM\Column(name: "interval", type: "integer", nullable: true)]
     protected $interval;
     /**
-     * @Column(name="reference", type="string", length=255 , nullable=true)
      * @var integer
-     **/
+     */
+    #[ORM\Column(name: "reference", type: "string", length: 255, nullable: true)]
     protected $reference;
     /**
-     * @Column(name="description", type="text"  , nullable=true)
      * @var integer
-     **/
+     */
+    #[ORM\Column(name: "description", type: "text", nullable: true)]
     protected $description;
     /**
-     * @ManyToOne(targetEntity="\Reportingmodel")
-     * @JoinColumn(onDelete="cascade")
      * @var \Reportingmodel
      */
+    #[ORM\ManyToOne(targetEntity: "\Reportingmodel")]
+    #[ORM\JoinColumn(onDelete: "cascade")]
     public $reportingmodel;
     /**
-     * @ManyToOne(targetEntity="\Notificationtype")
-     * @JoinColumn(onDelete="cascade")
      * @var \Notificationtype
      */
+    #[ORM\ManyToOne(targetEntity: "\Notificationtype")]
+    #[ORM\JoinColumn(onDelete: "cascade")]
     public $notificationtype;
 
     /**
-     * @Column(name="constraint", type="text"  , nullable=true)
      * @var integer
-     **/
+     */
+    #[ORM\Column(name: "constraint", type: "text", nullable: true)]
     protected $constraint;
 
 

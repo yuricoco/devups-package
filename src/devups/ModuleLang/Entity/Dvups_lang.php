@@ -1,56 +1,59 @@
 <?php
+use Doctrine\ORM\Mapping as ORM;
+
 // user \dclass\devups\model\Model;
 
-/**
- * @Entity @Table(name="dvups_lang")
- * */
+#[ORM\Entity]
+#[ORM\Table(name: "dvups_lang")]
 class Dvups_lang extends Model implements JsonSerializable
 {
 
     /**
-     * @Id @GeneratedValue @Column(type="integer")
      * @var int
-     * */
+     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     protected $id;
     /**
-     * @Column(name="name", type="string" , length=150 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "name", type: "string", length: 150)]
     protected $name;
     /**
-     * @Column(name="main", type="integer" , nullable=true )
      * @var int
-     **/
+     */
+    #[ORM\Column(name: "main", type: "integer", nullable: true)]
     protected $main;
     /**
-     * @Column(name="active", type="text"  )
      * @var text
-     **/
+     */
+    #[ORM\Column(name: "active", type: "text")]
     protected $active;
     /**
-     * @Column(name="iso_code", type="string" , length=55 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "iso_code", type: "string", length: 55)]
     protected $iso_code;
     /**
-     * @Column(name="language_code", type="string" , length=55 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "language_code", type: "string", length: 55)]
     protected $language_code;
     /**
-     * @Column(name="locale", type="string" , length=2 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "locale", type: "string", length: 2)]
     protected $locale;
     /**
-     * @Column(name="date_format_lite", type="string" , length=10 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "date_format_lite", type: "string", length: 10)]
     protected $date_format_lite;
     /**
-     * @Column(name="date_format_full", type="string" , length=15 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "date_format_full", type: "string", length: 15)]
     protected $date_format_full;
 
 

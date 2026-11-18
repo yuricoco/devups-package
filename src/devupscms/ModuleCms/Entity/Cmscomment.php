@@ -1,4 +1,6 @@
 <?php
+use Doctrine\ORM\Mapping as ORM;
+
 // user \dclass\devups\model\Model;
 
 /**
@@ -8,50 +10,52 @@
  * config/dvups_configurations.php / module_configurations.php) : la
  * table legacy `comment` n'a jamais existe (aucune entite generee),
  * donc aucune donnee a migrer.
- *
- * @Entity @Table(name="cmscomment")
- * */
+ */
+#[ORM\Entity]
+#[ORM\Table(name: "cmscomment")]
 class Cmscomment extends Model implements JsonSerializable
 {
 
     /**
-     * @Id @GeneratedValue @Column(type="integer")
      * @var int
-     * */
+     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     protected $id;
     /**
-     * @Column(name="pseudo", type="string", length=255)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "pseudo", type: "string", length: 255)]
     protected $pseudo;
     /**
-     * @Column(name="email", type="string", length=255, nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "email", type: "string", length: 255, nullable: true)]
     protected $email;
     /**
-     * @Column(name="comment", type="text")
      * @var text
-     **/
+     */
+    #[ORM\Column(name: "comment", type: "text")]
     protected $comment;
     /**
-     * @Column(name="seen", type="boolean")
      * @var bool
-     **/
+     */
+    #[ORM\Column(name: "seen", type: "boolean")]
     protected $seen = false;
 
     /**
-     * @ManyToOne(targetEntity="\Cmscontent")
-     * @JoinColumn(onDelete="cascade")
      * @var \Cmscontent
      */
+    #[ORM\ManyToOne(targetEntity: "\Cmscontent")]
+    #[ORM\JoinColumn(onDelete: "cascade")]
     public $cmscontent;
 
     /**
-     * @ManyToOne(targetEntity="\User")
-     * @JoinColumn(onDelete="cascade")
      * @var \User
      */
+    #[ORM\ManyToOne(targetEntity: "\User")]
+    #[ORM\JoinColumn(onDelete: "cascade")]
     public $user;
 
     public function __construct($id = null)

@@ -1,23 +1,25 @@
 <?php
+use Doctrine\ORM\Mapping as ORM;
+
 // user \dclass\devups\model\Model;
 
-/**
- * @Entity @Table(name="country_lang")
- * */
+#[ORM\Entity]
+#[ORM\Table(name: "country_lang")]
 class Country_lang extends Dv_langCore
 {
 
     /**
-     * @Column(name="nicename", type="string" , length=100 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "nicename", type: "string", length: 100)]
     protected $nicename;
 
     /**
-     * @Id @ManyToOne(targetEntity="\Country")
-     * @JoinColumn(onDelete="cascade")
      * @var \Country
      */
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: "\Country")]
+    #[ORM\JoinColumn(onDelete: "cascade")]
     public $country;
 
 

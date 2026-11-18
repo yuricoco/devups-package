@@ -1,32 +1,33 @@
 <?php
 
-/**
- * @Entity @Table(name="dvups_entity")
- * */
+use Doctrine\ORM\Mapping as ORM;
+
+#[ORM\Entity]
+#[ORM\Table(name: "dvups_entity")]
 class Dvups_entity extends Dvups_config_item implements JsonSerializable
 {
 
-    /**
-     * @Id @GeneratedValue @Column(type="integer")
-     * @var int
-     * */
-    protected $id;
+    // NB (v8.0, LOT 1.2) : $id est deja declare par la classe parente
+    // Dvups_config_item (MappedSuperclass) - une redeclaration ici, tolere
+    // sous l'ancien AnnotationDriver, devient un conflit "duplicate column"
+    // sous l'AttributeDriver (Doctrine ORM 3). Aucun changement de schema :
+    // la colonne id reste celle definie par Dvups_config_item.
 
     /**
-     * @Column(name="namespace", type="string" , length=250 , options={"default" : ""} )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "namespace", type: "string", length: 250, options: ["default" => ""])]
     protected $namespace = "";
     /**
-     * @Column(name="enablenotification", type="integer")
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "enablenotification", type: "integer")]
     protected $enablenotification = 0;
 
     /**
-     * @Column(name="multi_lang", type="integer", nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "multi_lang", type: "integer", nullable: true)]
     protected $multi_lang = 0;
 
     public function exist(){

@@ -1,32 +1,34 @@
 <?php
+use Doctrine\ORM\Mapping as ORM;
+
 // user \dclass\devups\model\Model;
 
-/**
- * @Entity @Table(name="cmscontent_lang")
- * */
+#[ORM\Entity]
+#[ORM\Table(name: "cmscontent_lang")]
 class Cmscontent_lang extends Dv_langCore
 {
 
     /**
-     * @Column(name="title", type="string" , length=255 , nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "title", type: "string", length: 255, nullable: true)]
     protected $title;
     /**
-     * @Column(name="content", type="text", nullable=true   )
      * @var text
-     **/
+     */
+    #[ORM\Column(name: "content", type: "text", nullable: true)]
     protected $content;
     /**
-     * @Column(name="sommary", type="text", nullable=true  )
      * @var text
-     * */
+     */
+    #[ORM\Column(name: "sommary", type: "text", nullable: true)]
     protected $sommary = "";
     /**
-     * @Id @ManyToOne(targetEntity="\Cmscontent")
-     * @JoinColumn(onDelete="cascade")
      * @var \Cmscontent
      */
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: "\Cmscontent")]
+    #[ORM\JoinColumn(onDelete: "cascade")]
     public $cmscontent;
 
 }

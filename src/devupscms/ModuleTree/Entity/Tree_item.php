@@ -1,50 +1,50 @@
 <?php
+use Doctrine\ORM\Mapping as ORM;
+
 // user \dclass\devups\model\Model;
 
-/**
- * @Entity @Table(name="tree_item", uniqueConstraints={
- *     @UniqueConstraint(name="uq_tree_item_tree_id_slug", columns={"tree_id", "slug"})
- * })
- * */
+#[ORM\Entity]
+#[ORM\Table(name: "tree_item", uniqueConstraints: [new ORM\UniqueConstraint(name: "uq_tree_item_tree_id_slug", columns: ["tree_id", "slug"])])]
 class Tree_item extends Model implements JsonSerializable
 {
 
     /**
-     * @Id @GeneratedValue @Column(type="integer")
      * @var int
-     * */
+     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     protected $id;
     /**
-     * @Column(name="position", type="integer" , nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "position", type: "integer", nullable: true)]
     protected $position;
     /**
-     * @Column(name="slug", type="string" , length=55 , nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "slug", type: "string", length: 55, nullable: true)]
     protected $slug;
     /**
-     * @Column(name="status", type="integer"  , nullable=true)
      * @var integer
-     **/
+     */
+    #[ORM\Column(name: "status", type: "integer", nullable: true)]
     protected $status;
     /**
-     * @Column(name="parent_id", type="integer"  , nullable=true)
      * @var integer
-     **/
+     */
+    #[ORM\Column(name: "parent_id", type: "integer", nullable: true)]
     protected $parent_id;
     /**
-     * @Column(name="main", type="integer"  , nullable=true)
      * @var integer
-     **/
+     */
+    #[ORM\Column(name: "main", type: "integer", nullable: true)]
     protected $main;
     /**
      * Decision du proprietaire (2026-11-03) : cette
      * colonne est POLYVALENTE PAR CONCEPTION, son format se definit PAR
      * USAGE (ex. setParents_id()/getParents_id() : ids separes par des
      * espaces). Il n'y a donc PAS de format unique a faire respecter.
-     *
      * CONSEQUENCE OBLIGATOIRE : aucun accesseur generique ne doit en
      * presumer le format. Mesure en base le 2026-11-04 : sur les 95 items
      * reels, `chain` contient aussi bien des listes d'ids (aucune
@@ -55,37 +55,35 @@ class Tree_item extends Model implements JsonSerializable
      * ces lignes reelles (ex. une virgule ou un espace dans le texte libre
      * fait exploser un explode() + whereIn() generique - voir l'ancienne
      * getParentsCatTree(), retiree pour cette raison,.
-     *
      * Avant d'ecrire un nouveau lecteur de `chain` : rattache-le
      * explicitement a L'USAGE qui ecrit ce format precis (comme
      * getParents_id() le fait pour le sien), jamais une methode partagee
      * qui s'appliquerait a tout item de tout arbre.
-     *
-     * @Column(name="chain", type="text"  , nullable=true)
      * @var text
-     **/
+     */
+    #[ORM\Column(name: "chain", type: "text", nullable: true)]
     protected $chain;
 
     /**
-     * @Column(name="icon", type="text" , nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "icon", type: "text", nullable: true)]
     protected $icon;
     /**
-     * @Column(name="image", type="string" , length=255, nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "image", type: "string", length: 255, nullable: true)]
     protected $image;
     /**
-     * @Column(name="uploaddir", type="string" , length=25, nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "uploaddir", type: "string", length: 25, nullable: true)]
     protected $uploaddir;
 
     /**
-     * @ManyToOne(targetEntity="\Tree")
      * @var \Tree
      */
+    #[ORM\ManyToOne(targetEntity: "\Tree")]
     public $tree;
 
 

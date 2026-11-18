@@ -1,53 +1,55 @@
 <?php
+use Doctrine\ORM\Mapping as ORM;
+
 // user \dclass\devups\model\Model;
 
-/**
- * @Entity @Table(name="user")
- * */
+#[ORM\Entity]
+#[ORM\Table(name: "user")]
 class User extends UserCore implements JsonSerializable, NotificationSerialize
 {
 
     public static $currentid;
-    /**
-     * @Id @GeneratedValue @Column(type="integer")
-     * @var int
-     * */
-    protected $id;
+
+    // NB (v8.0, LOT 1.2) : $id est deja declare par la classe parente
+    // UserCore (MappedSuperclass) - une redeclaration ici, tolere sous
+    // l'ancien AnnotationDriver, devient un conflit "duplicate column"
+    // sous l'AttributeDriver (Doctrine ORM 3). Aucun changement de schema :
+    // la colonne id reste celle definie par UserCore.
 
     /**
-     * @Column(name="phonecode", type="string", length=5 , nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "phonecode", type: "string", length: 5, nullable: true)]
     protected $phonecode;
     /**
-     * @Column(name="profile", type="string", length=255 , nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "profile", type: "string", length: 255, nullable: true)]
     protected $profile;
 
     /**
-     * @Column(name="birthdate", type="date", nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "birthdate", type: "date", nullable: true)]
     protected $birthdate;
 
     /**
-     * @Column(name="available", type="integer", nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "available", type: "integer", nullable: true)]
     protected $available;
 
     /**
-     * @ManyToOne(targetEntity="\Country")
-     * @JoinColumn(onDelete="set null")
      * @var \Country
      */
+    #[ORM\ManyToOne(targetEntity: "\Country")]
+    #[ORM\JoinColumn(onDelete: "set null")]
     public $country;
  
     /**
-     * @Column(name="avatar", type="text" , nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "avatar", type: "text", nullable: true)]
     protected $avatar; 
     public function __construct($id = null)
     {

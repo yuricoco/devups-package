@@ -1,36 +1,39 @@
 <?php
+use Doctrine\ORM\Mapping as ORM;
+
 // user \dclass\devups\model\Model;
 
-/**
- * @Entity @Table(name="configuration")
- * */
+#[ORM\Entity]
+#[ORM\Table(name: "configuration")]
 class Configuration extends Model implements JsonSerializable
 {
 
     /**
-     * @Id @GeneratedValue @Column(type="integer")
      * @var int
-     * */
+     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     protected $id;
     /**
-     * @Column(name="comment", type="text" , nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "comment", type: "text", nullable: true)]
     protected $comment;
     /**
-     * @Column(name="_key", type="string" , length=150 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "_key", type: "string", length: 150)]
     protected $_key;
     /**
-     * @Column(name="_value", type="string" , length=255 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "_value", type: "string", length: 255)]
     protected $_value;
     /**
-     * @Column(name="_type", type="string" , length=150 , nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "_type", type: "string", length: 150, nullable: true)]
     protected $_type = "string";
 
 

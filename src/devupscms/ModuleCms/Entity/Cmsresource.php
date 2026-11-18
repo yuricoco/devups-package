@@ -1,4 +1,6 @@
 <?php
+use Doctrine\ORM\Mapping as ORM;
+
 // user \dclass\devups\model\Model;
 
 /**
@@ -6,23 +8,23 @@
  * vers Dv_image, Cmsresource EST directement un fichier (etend
  * ImageCore, meme modele que Dv_image), associe a un Cmscontent -
  * plus de dependance a ModuleGallery pour les images de contenu CMS.
- *
- * @Entity @Table(name="cmsresource")
- * */
+ */
+#[ORM\Entity]
+#[ORM\Table(name: "cmsresource")]
 class Cmsresource extends ImageCore implements JsonSerializable
 {
 
-    /**
-     * @Id @GeneratedValue @Column(type="integer")
-     * @var int
-     * */
-    protected $id;
+    // NB (v8.0, LOT 1.2) : $id est deja declare par la classe parente
+    // ImageCore (MappedSuperclass) - une redeclaration ici, tolere sous
+    // l'ancien AnnotationDriver, devient un conflit "duplicate column"
+    // sous l'AttributeDriver (Doctrine ORM 3). Aucun changement de schema :
+    // la colonne id reste celle definie par ImageCore.
 
     /**
-     * @ManyToOne(targetEntity="\Cmscontent")
-     * @JoinColumn(onDelete="cascade")
      * @var \Cmscontent
      */
+    #[ORM\ManyToOne(targetEntity: "\Cmscontent")]
+    #[ORM\JoinColumn(onDelete: "cascade")]
     public $cmscontent;
 
     public function __construct($id = null)

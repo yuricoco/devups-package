@@ -1,29 +1,30 @@
 <?php
+use Doctrine\ORM\Mapping as ORM;
+
 // user \dclass\devups\model\Model;
 
-/**
- * @Entity @Table(name="tree", uniqueConstraints={
- *     @UniqueConstraint(name="uq_tree_name", columns={"name"})
- * })
- * */
+#[ORM\Entity]
+#[ORM\Table(name: "tree", uniqueConstraints: [new ORM\UniqueConstraint(name: "uq_tree_name", columns: ["name"])])]
 class Tree extends Model implements JsonSerializable
 {
 
     /**
-     * @Id @GeneratedValue @Column(type="integer")
      * @var int
-     * */
+     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     protected $id;
     /**
-     * @Column(name="name", type="string" , length=255 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "name", type: "string", length: 255)]
     protected $name;
     /**
      * use to organise the data in the tree view
-     * @Column(name="branches", type="string", length=120  , nullable=true)
      * @var text
-     **/
+     */
+    #[ORM\Column(name: "branches", type: "string", length: 120, nullable: true)]
     protected $branches;
     /**
      * defaut errone (entier 2) sur une colonne text
@@ -34,9 +35,9 @@ class Tree extends Model implements JsonSerializable
      * la main de l'autorite - voir rapport) ; seul le defaut, qui aurait
      * continue a ecrire "2" sur tout nouvel arbre non explicitement
      * renseigne, est corrige pour s'aligner sur la colonne nullable.
-     * @Column(name="description", type="text"  , nullable=true)
      * @var text
-     **/
+     */
+    #[ORM\Column(name: "description", type: "text", nullable: true)]
     protected $description = null;
 
     /**

@@ -1,44 +1,45 @@
 <?php
+use Doctrine\ORM\Mapping as ORM;
+
 // user \dclass\devups\model\Model;
 
-/**
- * @Entity @Table(name="status", uniqueConstraints={
- *     @UniqueConstraint(name="uq_status_entity_key", columns={"entity", "_key"})
- * })
- * */
+#[ORM\Entity]
+#[ORM\Table(name: "status", uniqueConstraints: [new ORM\UniqueConstraint(name: "uq_status_entity_key", columns: ["entity", "_key"])])]
 class Status extends Model implements JsonSerializable
 {
 
     /**
-     * @Id @GeneratedValue @Column(type="integer")
      * @var int
-     * */
+     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     protected $id;
     /**
-     * @Column(name="color", type="string" , length=25 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "color", type: "string", length: 25)]
     protected $color;
     /**
-     * @Column(name="_key", type="string", length=55  )
      * @var integer
-     **/
+     */
+    #[ORM\Column(name: "_key", type: "string", length: 55)]
     protected $_key;
     /**
-     * @Column(name="position", type="integer", nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "position", type: "integer", nullable: true)]
     protected $position = 1;
     /**
-     * @Column(name="description", type="text" , nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "description", type: "text", nullable: true)]
     protected $description;
 
     /**
-     * @Column(name="entity", type="string", length=55  )
      * @var integer
-     **/
+     */
+    #[ORM\Column(name: "entity", type: "string", length: 55)]
     public $entity;
 
     /**
@@ -50,10 +51,9 @@ class Status extends Model implements JsonSerializable
      * necessaire a partir du moment ou le cache (point 3) lit cette
      * valeur via l'ORM (`$row->value`) - sans elle, `__get()` la traite
      * comme non mappee (notice "Propriete non-definie").
-     *
-     * @Column(name="value", type="integer", nullable=true)
      * @var int|null
-     **/
+     */
+    #[ORM\Column(name: "value", type: "integer", nullable: true)]
     protected $value;
 
     public function __construct($id = null)

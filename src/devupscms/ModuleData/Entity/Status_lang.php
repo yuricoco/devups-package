@@ -1,22 +1,24 @@
 <?php
+use Doctrine\ORM\Mapping as ORM;
+
 // user \dclass\devups\model\Model;
 
-/**
- * @Entity @Table(name="status_lang")
- * */
+#[ORM\Entity]
+#[ORM\Table(name: "status_lang")]
 class Status_lang extends Dv_langCore
 {
 
     /**
-     * @Id @ManyToOne(targetEntity="\Status")
-     * @JoinColumn(onDelete="cascade")
      * @var \Status
      */
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: "\Status")]
+    #[ORM\JoinColumn(onDelete: "cascade")]
     public $status;
     /**
-     * @Column(name="label", type="string" , length=55 )
      * @var integer
-     **/
+     */
+    #[ORM\Column(name: "label", type: "string", length: 55)]
     protected $label;
 
 

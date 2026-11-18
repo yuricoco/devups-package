@@ -1,62 +1,66 @@
 <?php
+use Doctrine\ORM\Mapping as ORM;
+
 // user \dclass\devups\model\Model;
 
 /**
  * Journal des emails REELLEMENT envoyes (DMail::sendMail(),
  * Reportingmodel::sendMail()) - jamais des erreurs/evenements qui n'ont
  * rien a voir avec un envoi, voir Log:: pour cela (README.md#Logs).
- *
- * @Entity @Table(name="emaillog")
- * */
+ */
+#[ORM\Entity]
+#[ORM\Table(name: "emaillog")]
 class Emaillog extends Model implements JsonSerializable
 {
     const STATUT_ENVOYE = 'envoye';
     const STATUT_ECHEC = 'echec';
 
     /**
-     * @Id @GeneratedValue @Column(type="integer")
      * @var int
-     * */
+     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     protected $id;
     /**
-     * @Column(name="destinataire", type="string" , length=500 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "destinataire", type: "string", length: 500)]
     protected $destinataire;
     /**
-     * @Column(name="sujet", type="string" , length=500 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "sujet", type: "string", length: 500)]
     protected $sujet;
     /**
-     * @Column(name="modele", type="string" , length=255, nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "modele", type: "string", length: 255, nullable: true)]
     protected $modele;
     /**
-     * @Column(name="statut", type="string" , length=20 )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "statut", type: "string", length: 20)]
     protected $statut;
     /**
-     * @Column(name="erreur", type="text" , nullable=true)
      * @var text
-     **/
+     */
+    #[ORM\Column(name: "erreur", type: "text", nullable: true)]
     protected $erreur;
     /**
-     * @Column(name="created_at", type="datetime" , nullable=true)
      * @var datetime
-     **/
+     */
+    #[ORM\Column(name: "created_at", type: "datetime", nullable: true)]
     protected $created_at;
     /**
-     * @Column(name="updated_at", type="datetime" , nullable=true)
      * @var datetime
-     **/
+     */
+    #[ORM\Column(name: "updated_at", type: "datetime", nullable: true)]
     protected $updated_at;
     /**
-     * @Column(name="deleted_at", type="datetime" , nullable=true)
      * @var datetime
-     **/
+     */
+    #[ORM\Column(name: "deleted_at", type: "datetime", nullable: true)]
     protected $deleted_at;
 
     public function __construct($id = null)

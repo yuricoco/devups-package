@@ -1,4 +1,6 @@
 <?php
+use Doctrine\ORM\Mapping as ORM;
+
 // user \dclass\devups\model\Model;
 
 /**
@@ -6,28 +8,28 @@
  * Phase 4/ETAPE G.2/G.3) au lieu de pointer vers Dv_image/ModuleGallery
  * via une relation - plus de dependance a ModuleGallery pour les
  * images d'item d'arbre.
- *
- * @Entity @Table(name="tree_item_image")
- * */
+ */
+#[ORM\Entity]
+#[ORM\Table(name: "tree_item_image")]
 class Tree_item_image extends ImageCore implements JsonSerializable
 {
 
+    // NB (v8.0, LOT 1.2) : $id est deja declare par la classe parente
+    // ImageCore (MappedSuperclass) - une redeclaration ici, tolere sous
+    // l'ancien AnnotationDriver, devient un conflit "duplicate column"
+    // sous l'AttributeDriver (Doctrine ORM 3). Aucun changement de schema :
+    // la colonne id reste celle definie par ImageCore.
     /**
-     * @Id @GeneratedValue @Column(type="integer")
-     * @var int
-     * */
-    protected $id;
-    /**
-     * @Column(name="width_size", type="string" , length=255 , nullable=true)
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "width_size", type: "string", length: 255, nullable: true)]
     protected $width_size;
 
     /**
-     * @ManyToOne(targetEntity="\Tree_item")
-     * @JoinColumn(onDelete="cascade")
      * @var \Tree_item
      */
+    #[ORM\ManyToOne(targetEntity: "\Tree_item")]
+    #[ORM\JoinColumn(onDelete: "cascade")]
     public $tree_item;
 
     public function __construct($id = null)

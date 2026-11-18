@@ -1,29 +1,32 @@
 <?php
+use Doctrine\ORM\Mapping as ORM;
+
         // user \dclass\devups\model\Model;
-    /**
-     * @Entity @Table(name="dvups_action")
-     * */
+#[ORM\Entity]
+    #[ORM\Table(name: "dvups_action")]
     class Dvups_action extends Model implements JsonSerializable{
 
         /**
-         * @Id @GeneratedValue @Column(type="integer")
          * @var int
-         * */
+         */
+        #[ORM\Id]
+        #[ORM\GeneratedValue]
+        #[ORM\Column(type: "integer")]
         protected $id;
         /**
-         * @Column(name="entity", type="string" , length=100 )
          * @var string
-         **/
+         */
+        #[ORM\Column(name: "entity", type: "string", length: 100)]
         protected $entity;
         /**
-         * @Column(name="action", type="string" , length=50 )
          * @var string
-         **/
+         */
+        #[ORM\Column(name: "action", type: "string", length: 50)]
         protected $action;
         /**
-         * @Column(name="label", type="string" , length=150 )
          * @var string
-         **/
+         */
+        #[ORM\Column(name: "label", type: "string", length: 150)]
         protected $label; 
         
 

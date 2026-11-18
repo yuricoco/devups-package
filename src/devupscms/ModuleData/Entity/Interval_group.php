@@ -6,26 +6,28 @@ use JsonSerializable;
 use stdClass;
 use Tree_item;
 
-/**
- * @Entity @Table(name="interval_group")
- * */
+use Doctrine\ORM\Mapping as ORM;
+#[ORM\Entity]
+#[ORM\Table(name: "interval_group")]
 class Interval_group extends stdClass implements JsonSerializable
 {
 
     use \ModelTrait;
 
     /**
-     * @Id @ManyToOne(targetEntity="\Interval")
-     * @JoinColumn(onDelete="cascade")
      * @var \Interval
      */
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: "\Interval")]
+    #[ORM\JoinColumn(onDelete: "cascade")]
     public $interval;
 
     /**
-     * @Id @ManyToOne(targetEntity="\Tree_item")
-     * @JoinColumn(onDelete="cascade")
      * @var \Tree_item
      */
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: "\Tree_item")]
+    #[ORM\JoinColumn(onDelete: "cascade")]
     public $barem;
 
 

@@ -1,34 +1,39 @@
 <?php
 
+use Doctrine\ORM\Mapping as ORM;
+
 /**
- * @Entity @Table(name="dvups_migration")
  * Trace des fichiers de database/migration deja joues par
  * `php devups migrate` (MigrationRunner) - jamais modifiee a la main.
  */
+#[ORM\Entity]
+#[ORM\Table(name: "dvups_migration")]
 class Dvups_migration extends Model implements JsonSerializable
 {
     /**
-     * @Id @GeneratedValue @Column(type="integer")
      * @var int
      */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     protected $id;
 
     /**
-     * @Column(name="migration", type="string", length=255)
      * @var string
      */
+    #[ORM\Column(name: "migration", type: "string", length: 255)]
     protected $migration;
 
     /**
-     * @Column(name="batch", type="integer")
      * @var int
      */
+    #[ORM\Column(name: "batch", type: "integer")]
     protected $batch;
 
     /**
-     * @Column(name="executed_at", type="datetime")
      * @var datetime
      */
+    #[ORM\Column(name: "executed_at", type: "datetime")]
     protected $executed_at;
 
     public function __construct($id = null)

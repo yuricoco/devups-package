@@ -1,23 +1,25 @@
 <?php
 
 namespace dclass\devups\model;
+use Doctrine\ORM\Mapping as ORM;
+
 trait DateTimeTrait
 {
 
     /**
-     * @Column(name="created_at", type="datetime" , nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "created_at", type: "datetime", nullable: true)]
     protected $created_at;
     /**
-     * @Column(name="updated_at", type="datetime" , nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "updated_at", type: "datetime", nullable: true)]
     protected $updated_at;
     /**
-     * @Column(name="deleted_at", type="datetime" , nullable=true )
      * @var string
-     **/
+     */
+    #[ORM\Column(name: "deleted_at", type: "datetime", nullable: true)]
     protected $deleted_at;
 
     /**
