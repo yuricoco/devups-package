@@ -306,7 +306,60 @@ l'implementation sous-jacente) :
 5. 3.5 `UPGRADE-8.0.md` - section "LOT 3 - Routes".
 6. 3.6 Push + CI.
 
-### Etat fin de session - LOT 1 (Socle), LOT 2 (Vues) et LOT 3 (Routes) : FAITS, CI verte
+### LOT 4.0 - Plan (inventaire, sans code) - Generateur
+
+**Constat** : les deux seuls artefacts generes qui emettaient encore de
+l'annotation-style (docblocks) ont deja ete mis a jour PENDANT les lots
+precedents, chacun "en meme temps que le reste" comme prevu : le
+template d'entite (`entityGenerator()`) a l'ETAPE 1.4 (attributs
+Doctrine), le template de *FrontController*
+(`controllerGenerator()`/`frontCtrlContent()`) a l'ETAPE 3.3 (attributs
+de routage). Il ne reste donc, pour ce lot, qu'a VERIFIER qu'aucun
+autre artefact genere ou aucun autre fichier de `dclass/generator/`
+(le generateur lui-meme, pas son output) n'a besoin d'etre touche -
+audit exhaustif, pas de changement attendu a priori.
+
+**Audit effectue** (tous les fichiers PHP de `dclass/generator/` et
+`admin/generator/`, hors le generateur Android/Java qui produit du
+code client mobile, HORS PERIMETRE PHP - voir LOT 3.0) :
+
+1. Recherche des 7 motifs d'annotation de routage
+   (`@Api(|@GET\b|@POST(|@PUT(|@DELETE(|@Auth(|@MethodView(`) et des
+   motifs Doctrine (`@Entity|@Column|@Id\b|@GeneratedValue|@ManyToOne|
+   @OneToMany|@JoinColumn`) sur tout `dclass/generator/` : AUCUNE
+   occurrence reelle (les 2 seules trouvailles sont des commentaires de
+   code, pas du code genere).
+2. Autres templates du generateur non couverts par les lots 1/3
+   (`tableGenerator()`, `formGenerator()`, `coreGenerator()`,
+   `entityLangGenerator()`, `detailWidgetGenerator()`,
+   `formWidgetGenerator()`, `postmandocGenerator()`,
+   `dclass/generator/template/{DvAdmin,Templatedependences}.php`,
+   `OpenApiGenerator.php`, `RequestGenerator.php`,
+   `DocGuideGenerator.php`) : aucun n'emet de code annote (le
+   controleur ADMIN genere par `defaultCtrlContent()`, distinct du
+   *FrontController* public, n'a jamais utilise d'annotations de
+   routage - dispatch par convention de nom de methode, pas par
+   attribut/annotation) ; `OpenApiGenerator.php`/`RequestGenerator.php`
+   ne dependent ni de `hasAnnotation()`/`getAnnotation()` ni de
+   `ReflectionAnnotated*` (verifie par recherche) - ils lisent les
+   datacores JSON directement, aucun risque de rupture lie au LOT 3.
+3. Recherche de constructions PHP devenues obsoletes/suppimees
+   (`each(`, `create_function`, `utf8_decode`/`utf8_encode`,
+   `strftime(`, `money_format`, syntaxe d'acces caractere par accolade
+   `$var{0}`) sur `dclass/generator/` et `admin/generator/` : aucune
+   occurrence.
+4. `php -l` sur chaque fichier PHP du generateur (hors `android/`) :
+   tous valides. `composer phpstan` (niveau 1, baseline, chemin
+   `dclass` inclus) : aucune nouvelle erreur sur ce lot.
+
+**Conclusion** : LOT 4 ne necessite aucun changement de code - le
+travail reel du lot (templates generes modernises) a deja ete livre
+aux lots 1 et 3, "en meme temps que le reste" comme anticipe par leurs
+propres plans. Ce lot se limite donc a cet audit de cloture (ecrit
+ici) + mise a jour de `TODO.md`/`UPGRADE-8.0.md` constatant l'absence
+de rupture, sans commit de code attendu.
+
+### Etat fin de session - LOT 1 (Socle), LOT 2 (Vues), LOT 3 (Routes) et LOT 4 (Generateur) : FAITS, CI verte
 
 **LOT 1 - Socle** : FAIT.
 
@@ -406,20 +459,28 @@ l'implementation sous-jacente) :
   couverture etait indirecte (E2E qui exercent les routes reelles) ;
   ce test isole le shim de la base de donnees et du serveur HTTP.
 
+**LOT 4 - Generateur** : FAIT (audit, aucun changement de code
+necessaire).
+
+- Les deux templates qui emettaient de l'annotation-style avaient deja
+  ete convertis "en meme temps que le reste" aux lots 1 (entites) et 3
+  (routage), comme anticipe par leurs propres plans. Audit exhaustif de
+  cloture (voir "LOT 4.0" ci-dessus) : tout le reste de
+  `dclass/generator/`/`admin/generator/` (templates admin/datatable/
+  form/doc/OpenAPI/Postman) n'emet ni n'exploite d'annotation-style, ne
+  depend pas de `ReflectionAnnotated*`, ne contient aucune construction
+  PHP obsolete, et lint/phpstan sans erreur. Aucun commit de code pour
+  ce lot - seule cette synthese dans `TODO.md`.
+
 **Etat des tests/CI a la fin de cette session** : `composer test` ->
-412 tests, 1705 assertions, 0 echec (8 deprecations et 2 incomplets
+419 tests, 1728 assertions, 0 echec (8 deprecations et 2 incomplets
 preexistants et sans rapport, voir `AdminScreensTest::KNOWN_BROKEN`) ;
 `composer phpstan` -> aucune erreur ; CI GitHub verte sur `release/v8.0`
-pour les trois lots (matrice PHP 8.3/8.4/8.5).
+pour les quatre lots (matrice PHP 8.3/8.4/8.5).
 
-**Risques et points ouverts pour les lots 4 a 8** (observes pendant les
-lots 1/2/3, a traiter au moment de chaque lot, pas avant) :
+**Risques et points ouverts pour les lots 5 a 8** (observes pendant les
+lots 1/2/3/4, a traiter au moment de chaque lot, pas avant) :
 
-- **Lot 4 (Generateur)** : les templates d'entite (1.4) et de routing
-  (LOT 3, `controllerGenerator()`/`frontCtrlContent()`) emettent deja
-  des attributs PHP 8 - verifier s'il reste d'autres artefacts generes
-  (vues, datatables/forms) en style docblock avant de considerer le
-  generateur "a jour PHP 8" dans son ensemble.
 - **Lot 5 (PSR-4 + conteneur PSR-11 + Log PSR-3)** : risque le plus
   structurant du chantier. Tout le framework (41 entites + le reste de
   `src/`, tout `dclass/`) est aujourd'hui en **namespace global**,
