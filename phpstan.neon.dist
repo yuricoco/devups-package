@@ -37,6 +37,13 @@ parameters:
     # pour un contributeur qui vient de cloner le depot.
     bootstrapFiles:
         - config/constante.example.php
+    # ETAPE 5.2 (v8.0) : class_alias() (voir TODO.md "LOT 5.2") rend un nom
+    # court d'entite utilisable a l'execution mais est invisible pour phpstan
+    # - scanFiles lui fait lire ces stubs pour la decouverte de symboles
+    # seulement (pas de double-declaration a l'execution : ce dossier n'est
+    # jamais dans le classmap composer.json).
+    scanFiles:
+        - phpstan-stubs/class_alias_stubs.php
     paths:
         - src
         - dclass

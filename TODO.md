@@ -480,6 +480,77 @@ oublis plus tard.
    necessairement une seule CI verte en fin de lot comme pour les lots
    precedents - a juger a l'avancement).
 
+### LOT 5.2 - EN COURS (namespacer les entites, strategie class_alias validee sur pilote)
+
+**Strategie de compatibilite tranchee** (point (c) laisse ouvert en LOT
+5.0) : `class_alias(FQCN, 'NomCourt')` juste apres chaque classe
+d'entite nouvellement namespacee, PLUTOT que de reecrire les centaines
+de sites qui l'instancient/l'appellent par son nom court
+(`new Dvups_lang()`, `Dvups_lang::xxx()`, `targetEntity: "\Dvups_lang"`,
+type hints...). Justifie par un audit exhaustif : `grep` de
+`get_class\([^)]*\)\s*==` sur tout le depot hors vendor ne trouve QUE 2
+occurrences, toutes deux en commentaire mort (`ModelTrait.php:1264`,
+`DBAL.php:1546`) - donc aucun site vivant ne fait la comparaison de
+chaine que `class_alias()` ne survit pas (voir note Lot 5.0). Valide
+de bout en bout sur un pilote complet (`Dvups_lang`, entite de base
+utilisee par toutes les entites traduites via `Dv_langCore`) :
+`composer test` (423 tests, 0 echec) et `composer phpstan` (0 erreur,
+apres ajout du mecanisme de stub ci-dessous) inchanges.
+
+**Recette mecanique par entite** (a repeter module par module, un
+commit par module ou petit groupe de modules) :
+
+1. Ajouter `namespace $component\$Module\Entity;` juste apres `<?php`
+   (convention deja actee en LOT 5.0 - `$component` = nom du
+   sous-dossier racine de `src/` : `devups`/`devupscms`/`devupsfront`,
+   PAS `Devups\` ni `src\`).
+2. Prefixer d'un `\` chaque reference a une classe du namespace global
+   utilisee SANS qualification DANS ce fichier (`extends Model` ->
+   `extends \Model`, `implements JsonSerializable` ->
+   `implements \JsonSerializable`, `catch (Exception $e)` ->
+   `catch (\Exception $e)`, `Request::get(...)` -> `\Request::get(...)`,
+   etc.) - les FONCTIONS globales (`dv_valid_lang()`...) et les
+   CONSTANTES (`ROOT`, `__lang`...) n'ont pas besoin de ce prefixe (PHP
+   retombe automatiquement sur le global pour elles, PAS pour les
+   classes). Une reference non qualifiee a une AUTRE classe DEJA dans
+   le MEME nouveau namespace (rare, cas d'auto-reference type
+   `Dvups_lang::xxx()` dans `Dvups_lang` lui-meme) n'a besoin d'aucun
+   prefixe - elle se resout directement.
+3. Juste apres l'accolade fermante de la classe :
+   `class_alias(<FQCN>::class, '<NomCourt>');` (commentaire-type a
+   reprendre : voir `Dvups_lang.php`).
+4. PHPStan ne voit pas les alias crees par `class_alias()` a
+   l'execution - sans action, chaque site qui reference encore le nom
+   court devient "Call to method on an unknown class"/"Instantiated
+   class not found" (~50 erreurs sur `Dvups_lang` seul). Corrige une
+   fois pour toutes par un mecanisme de stub : `phpstan-stubs/
+   class_alias_stubs.php` (jamais autoload a l'execution - hors
+   `classmap` de `composer.json`, lu uniquement par phpstan via
+   `scanFiles` dans `phpstan.neon.dist`) declare `class <NomCourt>
+   extends <FQCN> {}` pour chaque entite migree - une ligne a AJOUTER
+   dans ce fichier a chaque nouvelle entite namespacee.
+5. Si l'entite a deja une entree `phpstan-baseline.neon` referencant
+   son ancien nom court (`Dvups_lang::xxx()`), la basculer vers le FQCN
+   complet (`devups\ModuleLang\Entity\Dvups_lang::xxx()`) - sinon le
+   baseline ne matche plus et `composer phpstan` echoue (meme message,
+   signale "non matched" + rapporte comme nouvelle erreur).
+6. `composer test` + `composer phpstan` verts avant de passer a
+   l'entite/module suivant.
+
+**Volume restant** : 34 entites sur 35 sous `src/**/Entity/*.php` (hors
+pilote `Dvups_lang`), repartiees sur 12 modules/3 composants (`devups` :
+ModuleAdmin/ModuleConfig/ModuleLog ; `devupscms` :
+ModuleCms/ModuleData/ModuleLocation/ModuleNotification/
+ModulePushNotification/ModuleReporting/ModuleTree ; `devupsfront` :
+ModuleUser), plus `dclass/extends/{Dvups_config_item,Dvups_migration,
+ImageCore,UserCore}.php` (classes de base d'entites, namespace
+`Devups\` - coeur du framework, PAS `src/`) et `Dv_langCore.php`
+(deja observe : reste en namespace global, utilise par `use
+ModelTrait` sans etendre `Model` - cas particulier a traiter avec soin,
+voir le piege deja rencontre en LOT 5.1). Les sous-dossiers `Controller/
+`/`Datatable/`/`Form/` de chaque module (point (b) du LOT 5.0) restent
+a traiter ensuite, meme recette.
+
 ### LOT 5.1 - FAIT (helper `Model::shortClassName()` + conversion des sites "non surs")
 
 Revue ligne-par-ligne exhaustive des 19 fichiers listes en LOT 5.0 (plus

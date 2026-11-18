@@ -831,7 +831,7 @@ parameters:
 			path: src/devups/ModuleLang/Datatable/Dvups_langTable.php
 
 		-
-			message: "#^Method Dvups_lang\\:\\:cacheData\\(\\) should return Dvups_lang but return statement is missing\\.$#"
+			message: "#^Method devups\\\\ModuleLang\\\\Entity\\\\Dvups_lang\\:\\:cacheData\\(\\) should return devups\\\\ModuleLang\\\\Entity\\\\Dvups_lang but return statement is missing\\.$#"
 			count: 1
 			path: src/devups/ModuleLang/Entity/Dvups_lang.php
 

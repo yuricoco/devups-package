@@ -1,0 +1,17 @@
+<?php
+
+/**
+ * ETAPE 5.2 (v8.0) : stubs PHPStan uniquement - jamais executes, jamais
+ * autoloades (hors du classmap composer.json), seulement scannes par
+ * phpstan (`scanFiles` dans phpstan.neon.dist) pour qu'il resolve les noms
+ * courts d'entites que class_alias() rend utilisables a l'execution (voir
+ * TODO.md "LOT 5.2" - class_alias() n'est pas visible par l'analyse
+ * statique, qui sinon rapporte "Instantiated class X not found" / "Call to
+ * static method on an unknown class X" pour chaque site qui reference
+ * encore l'entite par son nom court). Une ligne par entite namespacee ;
+ * ajouter la ligne correspondante ici au moment ou l'entite est migree.
+ */
+
+class Dvups_lang extends \devups\ModuleLang\Entity\Dvups_lang
+{
+}

@@ -1,11 +1,14 @@
 <?php
+
+namespace devups\ModuleLang\Entity;
+
 use Doctrine\ORM\Mapping as ORM;
 
 // user \dclass\devups\model\Model;
 
 #[ORM\Entity]
 #[ORM\Table(name: "dvups_lang")]
-class Dvups_lang extends Model implements JsonSerializable
+class Dvups_lang extends \Model implements \JsonSerializable
 {
 
     /**
@@ -236,7 +239,7 @@ class Dvups_lang extends Model implements JsonSerializable
         // validation de langue (ETAPE H) - meme si le where() parametre ne
         // risquait aucune injection, seul un code a 2 lettres ACTIF doit
         // etre accepte, jamais la valeur brute du parametre.
-        if ($iso = dv_valid_lang(Request::get('lang')))
+        if ($iso = dv_valid_lang(\Request::get('lang')))
             $lang = self::where("this.iso_code", $iso)->firstOrNull();
         else
             $lang = self::where("this.main", 1)->firstOrNull();
@@ -288,7 +291,7 @@ class Dvups_lang extends Model implements JsonSerializable
 
         try {
             $content = file_get_contents(ROOT . "cache/local/lang.json");
-        } catch (Exception $exception) {
+        } catch (\Exception $exception) {
             //if (__prod)
             return null;
         }
@@ -301,7 +304,7 @@ class Dvups_lang extends Model implements JsonSerializable
 
         try {
             $content = file_get_contents(ROOT . "cache/local/lang.json");
-        } catch (Exception $exception) {
+        } catch (\Exception $exception) {
             //if (__prod)
             return null;
         }
@@ -311,3 +314,13 @@ class Dvups_lang extends Model implements JsonSerializable
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - des centaines de sites du
+// depot referencent encore cette entite par son nom court (new Dvups_lang(),
+// Dvups_lang::xxx(), targetEntity: "\Dvups_lang", type hints...) - voir
+// TODO.md "LOT 5.2". class_alias() rend le nom court utilisable pour
+// instanceof/new/call_user_func/getClassMetadata() comme avant ce namespace,
+// mais PAS pour une comparaison de chaine `get_class($x) === 'Dvups_lang'`
+// (confirme par audit : aucun site vivant du depot ne fait cette
+// comparaison - uniquement 2 occurrences, toutes deux en commentaire mort).
+class_alias(Dvups_lang::class, 'Dvups_lang');
