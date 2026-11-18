@@ -2,10 +2,27 @@
 
 //namespace dclass\lib\annotation;
 
+// ETAPE 3.1 (v8.0) : @DELETE(...) -> #[DELETE(...)]. Meme defaut
+// path='/:id' preserve que PUT (voir PUT.php) - aucun usage reel de ce
+// defaut non plus, verifie.
+#[\Attribute(\Attribute::TARGET_METHOD)]
 class DELETE extends \Api
 {
-
-    public $path = '/:id';
+    public function __construct(
+        $name = null,
+        $path = '/:id',
+        $GET = null,
+        $POST = null,
+        $PUT = null,
+        $DELETE = null,
+        $UPDATE = null,
+        $route = null,
+        $methods = null,
+        $description = null,
+        $Auth = null
+    ) {
+        parent::__construct($name, $path, $GET, $POST, $PUT, $DELETE, $UPDATE, $route, $methods, $description, $Auth);
+    }
 
     public function execute(\Router &$route)
     {

@@ -1,9 +1,18 @@
 <?php
 
-class DDoc extends Annotation
+// ETAPE 3.1 (v8.0) : @DDoc(...) -> #[DDoc(...)]. Aucun usage reel dans le
+// depot (verifie - meme pas require-e dans lib_dependances.php avant ce
+// lot) - converti par coherence avec le reste des annotations de routage.
+#[\Attribute(\Attribute::TARGET_METHOD | \Attribute::TARGET_CLASS)]
+class DDoc
 {
 
     public $comment;
+
+    public function __construct($comment = null)
+    {
+        $this->comment = $comment;
+    }
 
     public function execute(\Router &$route)
     {

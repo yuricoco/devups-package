@@ -1,6 +1,11 @@
 <?php
 
-class MethodView extends Annotation
+// ETAPE 3.1 (v8.0) : @MethodView(...) -> #[MethodView(...)]. Utilisee
+// directement sur les methodes de route/Admin.php et route/AdminService.php
+// (hors FrontController - pas de prefixe @Api). Meme conversion que Api
+// (voir Api.php).
+#[\Attribute(\Attribute::TARGET_METHOD)]
+class MethodView
 {
 
     public $path;
@@ -14,6 +19,30 @@ class MethodView extends Annotation
     public $DELETE;
     public $PUT;
     public $UPDATE;
+
+    public function __construct(
+        $path = null,
+        $GET = null,
+        $POST = null,
+        $PUT = null,
+        $DELETE = null,
+        $UPDATE = null,
+        $Auth = null,
+        $name = null,
+        $route = null,
+        $methods = null
+    ) {
+        $this->path = $path;
+        $this->GET = $GET;
+        $this->POST = $POST;
+        $this->PUT = $PUT;
+        $this->DELETE = $DELETE;
+        $this->UPDATE = $UPDATE;
+        $this->Auth = $Auth;
+        $this->name = $name;
+        $this->route = $route;
+        $this->methods = $methods;
+    }
 
     public function execute( \Router &$route){
 

@@ -2,6 +2,9 @@
 
 //namespace dclass\lib\annotation;
 
+// ETAPE 3.1 (v8.0) : @POST(...) -> #[POST(...)]. Herite du constructeur
+// d'Api (voir Api.php) - rien a redeclarer ici.
+#[\Attribute(\Attribute::TARGET_METHOD)]
 class POST extends \Api
 {
 

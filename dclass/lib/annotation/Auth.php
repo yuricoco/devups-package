@@ -4,7 +4,11 @@
 //use Annotation;
 use Firebase\JWT\JWT;
 
-class Auth extends Annotation
+// ETAPE 3.1 (v8.0) : @Auth(authorized=1) -> #[Auth(authorized: 1)]. Meme
+// conversion que Api (voir Api.php) - execute()/authorize() et le reste
+// de la logique JWT sont inchanges.
+#[\Attribute(\Attribute::TARGET_METHOD | \Attribute::TARGET_CLASS)]
+class Auth
 {
 
     public $authorized;
@@ -13,6 +17,13 @@ class Auth extends Annotation
     public static $user_id;
     public static $systemic = false;
     public static $restrictions = [];
+
+    public function __construct($authorized = null, $userId = null, $user = null)
+    {
+        $this->authorized = $authorized;
+        $this->userId = $userId;
+        $this->user = $user;
+    }
 
     /**
      * add entity that are restricted by authentification.

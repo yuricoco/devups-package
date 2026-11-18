@@ -1,6 +1,14 @@
 <?php
 
-class Api extends Annotation
+// ETAPE 3.1 (v8.0) : annotation docblock (@Api(name='/prefix')) -> attribut
+// PHP 8 natif. L'ancienne classe Annotation (dclass/lib/addendum/, retiree)
+// hydratait ces proprietes publiques par reflexion a partir du tableau
+// clef/valeur extrait du docblock - un constructeur explicite fait
+// desormais le meme travail, alimente par les arguments nommes de
+// l'attribut (#[Api(name: '/prefix')]). execute() et le reste du
+// comportement metier sont inchanges.
+#[\Attribute(\Attribute::TARGET_CLASS | \Attribute::TARGET_METHOD)]
+class Api
 {
 
     public $path;
@@ -15,6 +23,32 @@ class Api extends Annotation
     public $DELETE;
     public $PUT;
     public $UPDATE;
+
+    public function __construct(
+        $name = null,
+        $path = null,
+        $GET = null,
+        $POST = null,
+        $PUT = null,
+        $DELETE = null,
+        $UPDATE = null,
+        $route = null,
+        $methods = null,
+        $description = null,
+        $Auth = null
+    ) {
+        $this->name = $name;
+        $this->path = $path;
+        $this->GET = $GET;
+        $this->POST = $POST;
+        $this->PUT = $PUT;
+        $this->DELETE = $DELETE;
+        $this->UPDATE = $UPDATE;
+        $this->route = $route;
+        $this->methods = $methods;
+        $this->description = $description;
+        $this->Auth = $Auth;
+    }
 
     public function execute(\Router &$route)
     {
