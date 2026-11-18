@@ -306,7 +306,7 @@ l'implementation sous-jacente) :
 5. 3.5 `UPGRADE-8.0.md` - section "LOT 3 - Routes".
 6. 3.6 Push + CI.
 
-### Etat fin de session - LOT 1 (Socle) et LOT 2 (Vues) : FAITS, CI verte
+### Etat fin de session - LOT 1 (Socle), LOT 2 (Vues) et LOT 3 (Routes) : FAITS, CI verte
 
 **LOT 1 - Socle** : FAIT.
 
@@ -362,30 +362,53 @@ l'implementation sous-jacente) :
 - `UPGRADE-8.0.md` - section "LOT 2 - Vues".
 - Push + CI GitHub verte (run `44322908859`, commit `ce17982`).
 
+**LOT 3 - Routes** : FAIT.
+
+- `dclass/lib/addendum/` (bibliotheque "Addendum" vendoree en arbre,
+  docblocks, non maintenue - distincte du paquet Composer homonyme
+  `maslosoft/addendum`, verifie totalement inutilise) retiree ; les 9
+  classes d'annotation (`Api`, `GET`, `POST`, `PUT`, `DELETE`,
+  `MethodView`, `Auth`, `ApiLazyloading`, `DDoc`) deviennent des
+  attributs PHP 8 natifs avec constructeur explicite.
+  `hasAnnotation()`/`getAnnotation()` preserves a l'identique via
+  `dclass/lib/ReflectionAnnotated.php` (`ReflectionAnnotatedClass`/
+  `ReflectionAnnotatedMethod`), meme pattern que `BladeD`/
+  `Devups\View` au LOT 2.
+- Sites d'usage reels convertis : `route/Admin.php`,
+  `route/AdminService.php` (`@MethodView`), les 3 FrontControllers
+  reels (`UserFrontController`, `NotificationFrontController`,
+  `Push_subscriptionFrontController`) et `BackendGenerator.php`
+  (templates de FrontController genere) - perimetre confirme exhaustif
+  par recherche des 7 motifs d'annotation sur tout `src/`, `dclass/`,
+  `route/`.
+- Piege rencontre et corrige : dans un fichier avec un `namespace`
+  reel (`route/Admin.php`, `route/AdminService.php` - `namespace
+  route;`), un attribut dont la classe est dans l'espace de noms
+  global doit etre qualifie absolu (`#[\MethodView(...)]`), sinon PHP
+  resout `route\MethodView` et non `\MethodView` - erreur detectee par
+  `composer phpstan` ("Attribute class route\MethodView does not
+  exist"), pas par `php -l` ni par les tests (la resolution
+  d'attribut echoue uniquement si l'attribut est effectivement lu via
+  reflection, ce que ne font pas ces deux routes dans la suite de
+  tests).
+- `UPGRADE-8.0.md` - section "LOT 3 - Routes".
+- Push + CI GitHub verte (run `44377778060`, commits `080b6d7`,
+  `17e8678`, `077ccf0`).
+
 **Etat des tests/CI a la fin de cette session** : `composer test` ->
 412 tests, 1705 assertions, 0 echec (8 deprecations et 2 incomplets
 preexistants et sans rapport, voir `AdminScreensTest::KNOWN_BROKEN`) ;
 `composer phpstan` -> aucune erreur ; CI GitHub verte sur `release/v8.0`
-pour les deux lots (matrice PHP 8.3/8.4/8.5).
+pour les trois lots (matrice PHP 8.3/8.4/8.5).
 
-**Risques et points ouverts pour les lots 3 a 8** (observes pendant les
-lots 1/2, a traiter au moment de chaque lot, pas avant) :
+**Risques et points ouverts pour les lots 4 a 8** (observes pendant les
+lots 1/2/3, a traiter au moment de chaque lot, pas avant) :
 
-- **Lot 3 (Routes, fin d'addendum)** : `maslosoft/addendum` (routage par
-  annotations docblock, cf. inventaire LOT 1.0) est une dependance
-  distincte du mapping Doctrine mais relevant du meme pattern
-  "annotations -> attributs" - `EntityAttributeConverter` ne le couvre
-  pas (formes d'annotations differentes, pas des `@Entity`/`@Column`) ;
-  prevoir soit son propre petit convertisseur, soit une conversion
-  manuelle (perimetre probablement plus restreint que les 41 entites).
-  A verifier : `addendum` est deja a sa derniere version (7.0.6) mais
-  son statut de maintenance (abandon ?) n'a pas ete audite - a faire en
-  debut de lot 3.
-- **Lot 4 (Generateur)** : au-dela du template d'entite deja traite
-  (1.4), le generateur produit aussi d'autres artefacts (controllers,
-  vues, routes) a partir des datacores JSON - verifier si l'un d'eux
-  emet encore de l'annotation-style (routing, notamment, en lien avec le
-  lot 3) avant de considerer le generateur "a jour PHP 8".
+- **Lot 4 (Generateur)** : les templates d'entite (1.4) et de routing
+  (LOT 3, `controllerGenerator()`/`frontCtrlContent()`) emettent deja
+  des attributs PHP 8 - verifier s'il reste d'autres artefacts generes
+  (vues, datatables/forms) en style docblock avant de considerer le
+  generateur "a jour PHP 8" dans son ensemble.
 - **Lot 5 (PSR-4 + conteneur PSR-11 + Log PSR-3)** : risque le plus
   structurant du chantier. Tout le framework (41 entites + le reste de
   `src/`, tout `dclass/`) est aujourd'hui en **namespace global**,
