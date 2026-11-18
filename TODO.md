@@ -567,9 +567,25 @@ ci-dessus) a directement trouve tous les sites (`Notification::of()`,
 `DBAL`/`new DBAL()` dans `Dvups_entity::describe()`), aucun miss cette
 fois.
 
-**Volume restant** : 27 entites sur 35 sous `src/**/Entity/*.php`
-(composant `devups` entierement fait), repartiees sur 7 modules du
-composant `devupscms` + 1 module de `devupsfront` (`devups` :
+**ModuleCms (devupscms) - FAIT** : `Cmscomment`, `Cmscontent`,
+`Cmscontent_lang`, `Cmsresource` namespaces sous `devupscms\ModuleCms\
+Entity`. Confirme une nuance importante de la recette (etape 2) :
+une reference non qualifiee a une AUTRE entite reste SANS prefixe
+uniquement si cette entite vit dans le MEME module (donc le meme
+namespace `$component\$Module\Entity` - ex. `new Cmscontent()` dans
+`Cmscomment.php`, toutes deux dans `ModuleCms`) ; une reference a une
+entite d'un AUTRE module (ex. `new User()`, `Tree_item::...` dans
+`Cmscomment.php`/`Cmscontent.php`, modules `ModuleUser`/`ModuleTree`)
+a BESOIN du prefixe `\`, qu'elle soit deja migree ou pas (l'alias
+rend le nom court valide globalement, mais ne change rien a la regle
+de resolution PHP : une classe non qualifiee se resout TOUJOURS dans
+le namespace courant du fichier, jamais par repli automatique vers le
+global, contrairement aux fonctions/constantes - voir etape 2 de la
+recette, precisee ici).
+
+**Volume restant** : 23 entites sur 35 sous `src/**/Entity/*.php`
+(composants `devups` + ModuleCms de `devupscms` faits), repartiees sur
+6 modules du composant `devupscms` + 1 module de `devupsfront` (`devups` :
 ModuleAdmin/ModuleConfig/ModuleLog ; `devupscms` :
 ModuleCms/ModuleData/ModuleLocation/ModuleNotification/
 ModulePushNotification/ModuleReporting/ModuleTree ; `devupsfront` :

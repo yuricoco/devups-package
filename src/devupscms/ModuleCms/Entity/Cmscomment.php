@@ -1,4 +1,7 @@
 <?php
+
+namespace devupscms\ModuleCms\Entity;
+
 use Doctrine\ORM\Mapping as ORM;
 
 // user \dclass\devups\model\Model;
@@ -13,7 +16,7 @@ use Doctrine\ORM\Mapping as ORM;
  */
 #[ORM\Entity]
 #[ORM\Table(name: "cmscomment")]
-class Cmscomment extends Model implements JsonSerializable
+class Cmscomment extends \Model implements \JsonSerializable
 {
 
     /**
@@ -64,7 +67,7 @@ class Cmscomment extends Model implements JsonSerializable
             $this->id = $id;
         }
         $this->cmscontent = new Cmscontent();
-        $this->user = new User();
+        $this->user = new \User();
     }
 
     public function getId()
@@ -125,3 +128,6 @@ class Cmscomment extends Model implements JsonSerializable
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Cmscomment::class, 'Cmscomment');

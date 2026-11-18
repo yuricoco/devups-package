@@ -47,3 +47,19 @@ class Dvups_entity_lang extends \devups\ModuleConfig\Entity\Dvups_entity_lang
 class Dvups_log extends \devups\ModuleLog\Entity\Dvups_log
 {
 }
+
+class Cmscomment extends \devupscms\ModuleCms\Entity\Cmscomment
+{
+}
+
+class Cmscontent extends \devupscms\ModuleCms\Entity\Cmscontent
+{
+}
+
+class Cmscontent_lang extends \devupscms\ModuleCms\Entity\Cmscontent_lang
+{
+}
+
+class Cmsresource extends \devupscms\ModuleCms\Entity\Cmsresource
+{
+}

@@ -1,11 +1,14 @@
 <?php
+
+namespace devupscms\ModuleCms\Entity;
+
 use Doctrine\ORM\Mapping as ORM;
 
 // user \dclass\devups\model\Model;
 
 #[ORM\Entity]
 #[ORM\Table(name: "cmscontent")]
-class Cmscontent extends Model implements JsonSerializable, DatatableOverwrite, DvupsTranslation
+class Cmscontent extends \Model implements \JsonSerializable, \DatatableOverwrite, \DvupsTranslation
 {
 
     /**
@@ -59,7 +62,7 @@ class Cmscontent extends Model implements JsonSerializable, DatatableOverwrite, 
             $this->id = $id;
         }
 
-        $this->tree_item = new Tree_item();
+        $this->tree_item = new \Tree_item();
 
     }
 
@@ -236,7 +239,7 @@ class Cmscontent extends Model implements JsonSerializable, DatatableOverwrite, 
     }
 
     public static function getActiveCmscontent(){
-        return Cmscontent::where(Tree_item::getbyattribut("this.name", "news"))
+        return Cmscontent::where(\Tree_item::getbyattribut("this.name", "news"))
             ->andwhere("active", 1);
     }
 
@@ -260,3 +263,6 @@ class Cmscontent extends Model implements JsonSerializable, DatatableOverwrite, 
 
     }
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Cmscontent::class, 'Cmscontent');

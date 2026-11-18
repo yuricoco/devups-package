@@ -1,11 +1,14 @@
 <?php
+
+namespace devupscms\ModuleCms\Entity;
+
 use Doctrine\ORM\Mapping as ORM;
 
 // user \dclass\devups\model\Model;
 
 #[ORM\Entity]
 #[ORM\Table(name: "cmscontent_lang")]
-class Cmscontent_lang extends Dv_langCore
+class Cmscontent_lang extends \Dv_langCore
 {
 
     /**
@@ -32,3 +35,6 @@ class Cmscontent_lang extends Dv_langCore
     public $cmscontent;
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Cmscontent_lang::class, 'Cmscontent_lang');
