@@ -1,11 +1,14 @@
 <?php
+
+namespace devupscms\ModuleData\Entity;
+
 use Doctrine\ORM\Mapping as ORM;
 
 // user \dclass\devups\model\Model;
 
 #[ORM\Entity]
 #[ORM\Table(name: "interval")]
-class Interval extends Model implements JsonSerializable
+class Interval extends \Model implements \JsonSerializable
 {
 
     /**
@@ -80,7 +83,7 @@ class Interval extends Model implements JsonSerializable
     public static function lazyloading($order = "", $qb = null, $debug = false)
     {
         $qb = self::select();
-        if ($member_id = Request::get('member_id')) {
+        if ($member_id = \Request::get('member_id')) {
             $qb->addColumn(" select COUNT(*) from member_interval where interval_id = this.id AND member_id = $member_id ", 'checked');
         }
 
@@ -123,5 +126,8 @@ class Interval extends Model implements JsonSerializable
     {
         return self::group($group, $member, $session)->get();
     }
-    
+
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Interval::class, 'Interval');

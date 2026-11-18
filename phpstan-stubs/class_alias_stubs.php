@@ -63,3 +63,19 @@ class Cmscontent_lang extends \devupscms\ModuleCms\Entity\Cmscontent_lang
 class Cmsresource extends \devupscms\ModuleCms\Entity\Cmsresource
 {
 }
+
+class Interval extends \devupscms\ModuleData\Entity\Interval
+{
+}
+
+class Interval_group extends \devupscms\ModuleData\Entity\Interval_group
+{
+}
+
+class Status extends \devupscms\ModuleData\Entity\Status
+{
+}
+
+class Status_lang extends \devupscms\ModuleData\Entity\Status_lang
+{
+}

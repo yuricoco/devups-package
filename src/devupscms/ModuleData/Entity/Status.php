@@ -1,11 +1,14 @@
 <?php
+
+namespace devupscms\ModuleData\Entity;
+
 use Doctrine\ORM\Mapping as ORM;
 
 // user \dclass\devups\model\Model;
 
 #[ORM\Entity]
 #[ORM\Table(name: "status", uniqueConstraints: [new ORM\UniqueConstraint(name: "uq_status_entity_key", columns: ["entity", "_key"])])]
-class Status extends Model implements JsonSerializable
+class Status extends \Model implements \JsonSerializable
 {
 
     /**
@@ -494,3 +497,6 @@ class Status extends Model implements JsonSerializable
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Status::class, 'Status');

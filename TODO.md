@@ -583,9 +583,22 @@ le namespace courant du fichier, jamais par repli automatique vers le
 global, contrairement aux fonctions/constantes - voir etape 2 de la
 recette, precisee ici).
 
-**Volume restant** : 23 entites sur 35 sous `src/**/Entity/*.php`
-(composants `devups` + ModuleCms de `devupscms` faits), repartiees sur
-6 modules du composant `devupscms` + 1 module de `devupsfront` (`devups` :
+**ModuleData (devupscms) - FAIT** : `Interval`, `Status`, `Status_lang`
+namespaces sous `devupscms\ModuleData\Entity`. `Interval_group` etait
+deja namespace (meme namespace) **avant ce chantier** - trouvaille
+confirmant l'hypothese du LOT 5.1 (le bug `self::shortClassName()` dans
+`ModelTrait` trouve par phpstan le mentionnait deja) : une tentative de
+migration partielle anterieure, non documentee, a laisse cette seule
+entite `extends \stdClass { use \ModelTrait; }` namespacee - sans
+alias, mais sans consequence puisque son seul appelant
+(`IntervalController.php`) l'importe deja par sa FQCN. Alias ajoute ici
+par coherence avec le reste du module (voir commentaire dans le
+fichier).
+
+**Volume restant** : 19 entites sur 35 sous `src/**/Entity/*.php`
+(composants `devups` + ModuleCms/ModuleData de `devupscms` faits),
+repartiees sur 5 modules du composant `devupscms` + 1 module de
+`devupsfront` (`devups` :
 ModuleAdmin/ModuleConfig/ModuleLog ; `devupscms` :
 ModuleCms/ModuleData/ModuleLocation/ModuleNotification/
 ModulePushNotification/ModuleReporting/ModuleTree ; `devupsfront` :
