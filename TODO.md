@@ -359,6 +359,127 @@ propres plans. Ce lot se limite donc a cet audit de cloture (ecrit
 ici) + mise a jour de `TODO.md`/`UPGRADE-8.0.md` constatant l'absence
 de rupture, sans commit de code attendu.
 
+### LOT 5.0 - Plan (inventaire, sans code) - PSR-4 + conteneur PSR-11 + Log PSR-3
+
+**EN COURS** - inventaire fait cette session, implementation PAS
+commencee (lot trop risque pour etre code sans cet audit prealable -
+voir la decision "choix le plus prudent, on continue" des regles du
+chantier).
+
+**Etat reel de l'autoload aujourd'hui** (corrige par rapport a une
+hypothese fausse notee plus tot dans cette session, avant audit
+exhaustif) :
+
+- `composer.json` : `classmap: ["dclass/", "src/"]` - scanne les
+  fichiers pour toute declaration `class`/`interface`/`trait`, QUEL QUE
+  SOIT son namespace (un namespace n'est PAS un pre-requis du
+  `classmap`, contrairement au PSR-4 reel). Donc le mix actuel
+  (certains fichiers namespaces, d'autres non) fonctionne deja sans
+  aucun probleme d'autoload.
+- Quinze fichiers "infrastructure" de `dclass/devups/` portent un vrai
+  `namespace dclass\devups\...;` actif (liste complete : `Api.php`,
+  `Controller/{Controller,ControllerCore,CrudTrait,FrontController,
+  ModuleController}.php`, `Datatable/{Datatable,Dbutton,Lazyloading,
+  ListeView,TableData,TableRow}.php`, `Migration/MigrationRunner.php`,
+  `model/{DateTimeTrait,ModelSerializer}.php`,
+  `Tchutte/{Column,DBALException,DB_dumper}.php`) et sont references
+  PARTOUT ailleurs par leur FQCN explicite - y compris dans des
+  templates Blade admin non-PHP-namespaces
+  (`admin/views/layout/*.blade.php`, `admin/views/dashboard.blade.php`)
+  et dans le generateur (`admin/generator/AdminTemplateGenerator.php`,
+  template de vue genere). Ce mix est deja en production, stable,
+  verifie par `php -l` + la suite de tests complete (aucune de ces
+  classes n'est jamais referencee par son nom court).
+- `dclass/devups/model/Model.php` (classe de base de TOUTES les
+  entites, sans exception) a un `//namespace dclass\devups;` **commente**
+  a la ligne 13 - etat herite du commit squash initial du depot
+  (`95c538e`), aucune trace du contexte d'origine. `Model` reste donc
+  en namespace global aujourd'hui, et c'est la classe la PLUS
+  referencee par nom court de tout le framework (des centaines
+  d'entites `extends Model`).
+- `dclass/devups/View.php` (ETAPE 2, cree par ce chantier) utilise
+  `namespace Devups;` (racine courte, sans segment `dclass`) - DIFFERENT
+  du schema `dclass\devups\...` ci-dessus. Cout de reconciliation tres
+  faible si decide un jour (seuls `Genesis.php` - alias `BladeD` -,
+  `Controller.php` et `Http/Request.php` y font reference, tous par
+  FQCN `\Devups\View`/`\BladeD`) - PAS traite ce lot, pas bloquant.
+
+**Le risque reel, confirme par audit** : toute la logique de
+derivation table/colonne/cle de filtre/cle de cache de l'ORM maison
+Tchutte repose sur `get_class($entity)`/`get_called_class()`
+**en assumant que le resultat est deja le nom court** (c'est vrai
+aujourd'hui puisque toute entite est en namespace global). Fichiers
+concernes (19, audit exhaustif par recherche de
+`get_class(|get_called_class(` sur tout le depot hors vendor/tests/
+cache) : `dclass/devups/Controller/{Controller,FrontController,
+ModuleController}.php`, `Core.php`, `Datatable/{Datatable,
+Lazyloading}.php`, `Dfile.php`, `Form/{Form,FormManager}.php`,
+`Http/{Request,Router}.php`, `Log.php`, `model/{EntityCore,Model,
+ModelSerializer,ModelTrait}.php`, `Tchutte/{Bugmanager,DBAL,
+QueryBuilder}.php`, et `src/devupscms/ModuleNotification/Entity/
+Notification.php`. Exemples representatifs confirmes NON-SURS (a
+corriger AVANT tout renommage de classe feuille) :
+`Datatable.php:452` (`$this->filterParam[strtolower(get_class($param))
+. ".id:eq"]`), `DBAL.php:281/311/345/384/404/423/442/511` (table/colonne
+derivees), `QueryBuilder.php:546-547/709` (parametre/colonne SQL),
+`ModelTrait.php:116` (colonne `_id` de table de traduction),
+`Core.php:20/21/46` (chemin JSON de configuration d'entite),
+`Form.php:25/47/62` (nom de formulaire). A l'inverse, SURS - ne pas
+toucher - toute utilisation qui veut la VRAIE classe pour
+reflection/instanciation/comparaison exacte : `new
+ReflectionClass(get_called_class())` (tres majoritaire dans
+`ModelTrait.php`), `get_class($value) == QueryBuilder::class` /
+`== \dclass\devups\Tchutte\Column::class` (deja qualifies), `get_class(
+...) == "DateTime"` (classe native, toujours globale).
+
+**Avertissement sur la completude de cet audit** : les fichiers/lignes
+listes ci-dessus sont une recherche par grep + lecture representative,
+PAS encore une revue ligne-par-ligne exhaustive - deja constate en
+relisant `Model.php` seul apres l'avoir "classe" : une methode
+supplementaire (`Model::post()`, ligne ~222,
+`strtolower(get_called_class())` -> cle `$_POST[...]`) etait absente
+de la premiere liste. A traiter en debut de 5.1 : repasser CHAQUE
+fichier des 19 un par un (pas un echantillon) avant d'ecrire le moindre
+correctif, plutot que de corriger au fur et a mesure et decouvrir des
+oublis plus tard.
+
+**Ordre d'execution propose** (rien de code ci-dessous n'est fait) :
+
+1. 5.1 Revue ligne-par-ligne exhaustive des 19 fichiers (pas
+   d'echantillonnage - voir avertissement ci-dessus), puis introduire
+   un point unique de derivation du nom court (helper base sur
+   `ReflectionClass::getShortName()`) et convertir chaque site "non
+   sur" pour l'utiliser au lieu de `get_class()`/`get_called_class()`
+   brut. Comportement strictement IDENTIQUE aujourd'hui (tout est
+   encore global, nom court == FQCN actuel) - donc ce sous-pas est
+   testable et commitable SANS AUCUN risque, avant meme de toucher un
+   seul `namespace`. C'est la fondation qui rend tout le reste du lot
+   sur - et le sous-pas le plus consommateur de temps/attention de ce
+   lot, a traiter dans une passe dediee plutot qu'en fin de session.
+2. 5.2 Namespacer les 41 entites du coeur + le reste de `src/`
+   (`Controller/`/`Datatable/`/`Form/` par module, pas seulement
+   `Entity/`) suivant la convention actee (`<component>\<Module>\...`
+   pour `src/`). Strategie de compatibilite nom court a trancher et
+   verifier specifiquement contre toute comparaison `get_class($x) ===
+   'NomCourt'` (ne survit PAS a un `class_alias()` - necessite soit de
+   corriger ces comparaisons vers `(new ReflectionClass($x))
+   ->getShortName() === 'NomCourt'`, soit de les recenser et accepter
+   le changement de comportement au cas par cas).
+3. 5.3 Completer la harmonisation `dclass/` -> `Devups\...` pour ce qui
+   reste en namespace global (hors les ~15 fichiers deja migres,
+   coexistence saine, pas de priorite).
+4. 5.4 Conteneur PSR-11 (nouveau, pas de conversion a risque - *ajout*
+   pur).
+5. 5.5 Log PSR-3 (`dclass/devups/Log.php` existe deja - verifier son
+   API contre l'interface PSR-3 `Psr\Log\LoggerInterface`, adapter si
+   besoin).
+6. 5.6 Tests + `UPGRADE-8.0.md` - section "LOT 5 - PSR-4, conteneur,
+   Log" (sera la plus longue du document, plusieurs sous-sections).
+7. 5.7 Push + CI, probablement en plusieurs commits/plusieurs passes
+   de verification CI intermediaires compte tenu du risque (pas
+   necessairement une seule CI verte en fin de lot comme pour les lots
+   precedents - a juger a l'avancement).
+
 ### Etat fin de session - LOT 1 (Socle), LOT 2 (Vues), LOT 3 (Routes) et LOT 4 (Generateur) : FAITS, CI verte
 
 **LOT 1 - Socle** : FAIT.
@@ -482,27 +603,62 @@ pour les quatre lots (matrice PHP 8.3/8.4/8.5).
 lots 1/2/3/4, a traiter au moment de chaque lot, pas avant) :
 
 - **Lot 5 (PSR-4 + conteneur PSR-11 + Log PSR-3)** : risque le plus
-  structurant du chantier. Tout le framework (41 entites + le reste de
-  `src/`, tout `dclass/`) est aujourd'hui en **namespace global**,
-  charge par `classmap` (voir `composer.json` `autoload.classmap`) - pas
-  de PSR-4 du tout cote framework (seul `Devups\Tests\` l'utilise, en
-  `autoload-dev`). Convention precisee (voir "Decisions actees" ci-dessus,
-  ligne 27) : `dclass/` -> `Devups\...` ; `src/<component>/<Module>/...`
-  -> `<component>\<Module>\...` (racine = nom du composant, pas `src`,
-  pas `Devups\`) - deux racines PSR-4 distinctes, pas une seule. Pour
-  `src/`, la cible exacte est deja ecrite par le generateur dans
-  `config/dvups_configurations.php` (cle FQCN pre-declaree pour chaque
-  entite) - "juste" rajouter le `namespace` reel dans les fichiers pour
-  matcher. Reste a traiter, dans tous les cas : (a) les sous-dossiers
-  `Controller/`/`Datatable/`/`Form/` de chaque module (non couverts par
-  cette config, qui ne concerne que `Entity/`) ; (b) le risque de
-  rupture pour tout code (framework ou projet utilisateur) qui
-  reference une classe par son nom court actuel (`new Status()`,
-  `new Dvups_action()`, lookup par cle "nom court" dans
-  `dvups_configurations.php`) - alias de compatibilite (`class_alias()`)
-  ou double-cle, a trancher au lot 5 ; (c) `dclass/` n'a lui aucune
-  config equivalente deja ecrite - le mapping `Devups\...` y est
-  entierement a construire.
+  structurant du chantier - **EN COURS**, voir "LOT 5.0" ci-dessous pour
+  l'inventaire detaille. Correction importante par rapport a ce qui
+  etait note ici avant audit : `dclass/` n'est PAS entierement en
+  namespace global - une quinzaine de fichiers "infrastructure"
+  (`Controller`/`FrontController`/`ModuleController`/`ControllerCore`/
+  `CrudTrait`, `Datatable`/`TableData`/`TableRow`/`Dbutton`/`ListeView`/
+  `Lazyloading`, `Tchutte\{Column,DBALException,DB_dumper}`,
+  `model\{ModelSerializer,DateTimeTrait}`, `Migration\MigrationRunner`,
+  `Api`) portent deja un **vrai** `namespace dclass\devups\...;` et sont
+  references partout ailleurs par leur FQCN explicite (`\dclass\devups\
+  Controller\FrontController`, y compris dans des templates Blade
+  admin). `dclass/devups/model/Model.php` (la classe de base de TOUTES
+  les entites) a LUI un `//namespace dclass\devups;` **commente** -
+  tentative de migration visiblement abandonnee avant ce chantier (etat
+  herite, aucune trace de pourquoi dans l'historique - voir commit
+  `95c538e`, squash initial du depot). Risque identifie en l'auditant :
+  `Model`/`Core`/`Datatable`/`Lazyloading`/`Form`/`FormManager`/
+  `ModelTrait`/`DBAL`/`QueryBuilder`/`Bugmanager`/`Log`/`EntityCore`
+  derivent massivement des noms de table/colonne/cle de filtre/cle de
+  cache a partir de `strtolower(get_class($entity))` ou
+  `get_called_class()` **en assumant que c'est le nom court actuel**
+  (ex. `Datatable.php:452`
+  `$this->filterParam[strtolower(get_class($param)) . ".id:eq"]`,
+  `DBAL.php:281` `$entityName = strtolower(get_class($entity))`,
+  `QueryBuilder.php:546-547` cle de parametre SQL via
+  `strtolower(get_class($value)) . "_id"`, `ModelTrait.php:116` nom de
+  colonne `_id` genere pareil). Namespacer une entite (41 du coeur +
+  tout `src/`) SANS corriger ces sites d'abord **casserait
+  silencieusement** la derivation de nom de table/colonne/cle - pas une
+  simple erreur d'autoload, un risque de corruption/incoherence de
+  donnees. D'autres usages de `get_called_class()`/`get_class()` dans
+  les memes fichiers sont en revanche SURS (reflection reelle -
+  `new ReflectionClass(get_called_class())`, comparaisons a des classes
+  elles-memes deja qualifiees comme `QueryBuilder::class` ou au
+  `DateTime` natif) - a ne pas toucher.
+  **Decision retenue pour la suite (la plus prudente)** : avant tout
+  renommage de classe "feuille" (entite, `src/`), introduire un point
+  unique de derivation du nom court (ex. methode/helper
+  `shortClassName($objetOuFqcn)` base sur
+  `(new \ReflectionClass(...))->getShortName()`), convertir
+  exhaustivement chaque site "non sur" identifie ci-dessus vers ce
+  helper (comportement strictement identique aujourd'hui puisque tout
+  est encore global - donc testable sans aucun risque avant meme de
+  toucher un seul namespace), PUIS seulement alors namespacer les
+  classes feuilles avec une strategie de compatibilite (`class_alias()`
+  vers le nom court, a verifier contre tout usage par nom de classe
+  EN CHAINE - `get_class($x) === 'NomCourt'`, qui lui ne survit PAS a un
+  alias puisque `get_class()` renvoie toujours le FQCN REEL, jamais le
+  nom de l'alias). La convention `dclass/` -> `Devups\...` /
+  `src/<component>/...` -> `<component>\...` (voir "Decisions actees")
+  reste visee pour les classes encore globales ; la quinzaine de
+  fichiers deja sous `dclass\devups\...` n'est PAS une priorite a
+  renommer vers `Devups\...` (coexistence sure aujourd'hui, cout de
+  renommage faible si fait un jour - 15 fichiers + ~10 references FQCN
+  dans `admin/views/*.blade.php`/`admin/generator/
+  AdminTemplateGenerator.php` - mais pas bloquant pour ce lot).
 - **Lot 6 (HTTP)** : `dclass/devups/Http/Request.php` instancie encore
   `BladeD` directement (voir LOT 2) - a revisiter si ce lot introduit
   une abstraction Request/Response differente.
