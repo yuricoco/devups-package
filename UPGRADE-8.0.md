@@ -212,3 +212,95 @@ que `BladeViewCacheAutoCreateTest`, `CountryCreateViaFormTest`,
 `CmscontentListWithTranslatedTitleTest`, `CountryListWithDataTest`,
 `LegacyServicesFormEndpointsTest`), toutes vertes a l'identique avant/
 apres ce changement.
+
+## LOT 3 - Routes
+
+### Annotations de routage : docblocks + bibliotheque vendoree -> attributs PHP 8 natifs
+
+**Avant** : le routage par annotations (`@Api`, `@GET`, `@POST`, `@PUT`,
+`@DELETE`, `@Auth`, `@MethodView`, lues par `Router`/`Request` via
+`hasAnnotation()`/`getAnnotation()`) s'appuyait sur deux choses
+distinctes :
+- `dclass/lib/addendum/` : une copie en arbre (pas Composer) de la
+  bibliotheque "Addendum PHP Reflection Annotations" (Jan Suchal,
+  2006), qui parse les docblocks a l'execution pour simuler des
+  annotations avant l'existence des attributs natifs PHP.
+- `maslosoft/addendum` (`composer.json`, `require`) : un paquet
+  Composer homonyme mais totalement independant et non utilise (verifie
+  par recherche exhaustive dans le depot) - seule la bibliotheque
+  vendoree ci-dessus faisait le travail reel.
+
+Les deux etaient devenus inutiles face aux attributs natifs disponibles
+depuis PHP 8.0, et `dclass/lib/addendum/` en particulier n'est plus
+maintenue depuis des annees.
+
+**Apres** : `dclass/lib/addendum/` est retiree, `maslosoft/addendum`
+est retire de `composer.json`. Les 7 classes d'annotation
+(`dclass/lib/annotation/Api.php`, `GET.php`, `POST.php`, `PUT.php`,
+`DELETE.php`, `MethodView.php`, `Auth.php`, plus `ApiLazyloading.php`
+et `DDoc.php` sans usage reel) deviennent des attributs PHP 8 natifs
+(`#[\Attribute(...)]`), avec un constructeur explicite assignant
+chaque propriete (au lieu de l'ancienne hydratation par tableau de
+`Annotation::__construct()`). `hasAnnotation()`/`getAnnotation()` sont
+preserves a l'identique via une nouvelle classe
+`dclass/lib/ReflectionAnnotated.php` (`ReflectionAnnotatedClass`/
+`ReflectionAnnotatedMethod`, sous-classes de `ReflectionClass`/
+`ReflectionMethod` s'appuyant sur `getAttributes()->newInstance()`) -
+meme pattern "garder l'API d'appel, remplacer l'implementation" que
+`BladeD`/`\Devups\View` au LOT 2.
+
+Exemple (`route/Admin.php`) :
+
+```php
+// avant
+/**
+ * @MethodView(GET="hello", Auth=1)
+ */
+public function helloService() { ... }
+
+// apres
+#[\MethodView(GET: "hello", Auth: 1)]
+public function helloService() { ... }
+```
+
+Point d'attention PHP (pas specifique a Devups) : un attribut utilise
+dans une classe qui declare un `namespace` doit etre reference par son
+nom pleinement qualifie (`#[\MethodView(...)]`) si la classe
+d'attribut elle-meme est dans l'espace de noms global - sans quoi PHP
+cherche `route\MethodView` et non `\MethodView`. C'est le cas de
+`route/Admin.php` et `route/AdminService.php` (`namespace route;`) ;
+les 3 FrontControllers convertis sont, eux, dans l'espace de noms
+global (namespace commente dans leur fichier), donc `#[GET]`/`#[POST]`/
+etc. s'y resolvent sans prefixe.
+
+`dclass/generator/BackendGenerator.php` emet desormais directement des
+attributs PHP 8 pour toute NOUVELLE entite/controleur genere (meme
+remarque qu'au LOT 2 pour une entite generee avant ce chantier et
+jamais regeneree : elle reste en docblocks tant qu'elle n'est pas
+repassee par le generateur - ces docblocks ne sont alors plus lus,
+`dclass/lib/addendum/` etant retiree. Cette situation n'existe dans
+aucun composant genere present dans ce depot, verifie par recherche
+exhaustive des 4 motifs `@Api(`/`@GET`/`@POST(`/`@PUT(`/`@DELETE(`/
+`@Auth(`/`@MethodView(` sur `src/`, `dclass/` et `route/`).
+
+**Comment migrer** : meme transformation mecanique pour un projet
+utilisateur ayant ses propres FrontControllers annotes : chaque
+`@Nom(arg='valeur')` devient `#[Nom(arg: 'valeur')]` (guillemets simples
+ou doubles, pas de virgule finale). Aucune commande de migration
+dediee n'est fournie : la surface reelle dans ce depot est entierement
+enumeree (3 FrontControllers + `route/Admin.php` +
+`route/AdminService.php`), une conversion manuelle a la main suffit
+pour un projet de taille comparable ; un projet avec un grand nombre de
+controleurs annotes peut s'appuyer sur une regle de recherche/
+remplacement simple (`@(\w+)\(([^)]*)\)` -> `#[$1($2)]`, puis remplacer
+les `=` par `:` dans les arguments) suivie d'un `php -l` systematique.
+
+Verifie par : la suite de tests complete (412 tests, aucun echec reel -
+voir note ci-dessous - 2 incomplets pre-existants sans rapport), qui
+exerce le routage annote de bout en bout via les E2E (connexion,
+notifications, push, administration) ; `composer phpstan` sans erreur.
+Note locale : deux executions paralleles de `composer test` sur la
+meme base de test dediee produisent de faux echecs par collision
+(cache des langues actives, cle de configuration dupliquee, hash de
+mot de passe) - sans rapport avec ce lot, resolu en executant la suite
+en serie.
