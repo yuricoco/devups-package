@@ -162,6 +162,116 @@ documentait comme ouverts ont ete traites dans cette session (voir
 "Resume phase par phase" plus bas). Seul le point Phase 4 (CMS) reste
 ouvert, voir ci-dessous.
 
+### Etat fin de session - LOT 1 (Socle) et LOT 2 (Vues) : FAITS, CI verte
+
+**LOT 1 - Socle** : FAIT.
+
+- 1.1 `composer.json` : `php >=8.3`, `doctrine/orm` ^3.7, `phpunit` ^11.5 ;
+  retrait de `doctrine/cache`/`doctrine/annotations` (plus necessaires,
+  `AttributeDriver` + cache PSR-6 `symfony/cache`) ; CI (`tests.yml`) sur
+  la matrice 8.3/8.4/8.5.
+- 1.2 Les 41 entites du framework (`src/**/Entity/*.php`,
+  `dclass/extends/{Dv_langCore,Dvups_config_item,Dvups_migration,
+  ImageCore,UserCore}.php`, trait `DateTimeTrait`) converties des
+  annotations Doctrine vers les attributs PHP 8, via le convertisseur
+  reutilisable `dclass/generator/EntityAttributeConverter.php`. `DBAL::
+  getEntityManager()` reconstruit sur `ORMSetup::
+  createAttributeMetadataConfig()` + `AttributeDriver` ; `cli-config.php`
+  et `bin/doctrine(.php)(.bat)` reecrits (ORM3 ne fournit plus de
+  binaire console). **Aucun changement de schema** - garde-fou verifie
+  par `TreeStatusUniqueConstraintAttributesTest::
+  testSchemaUpdateReportsNoPendingDifference`. Piege rencontre et
+  corrige : colonnes dupliquees (`id` redeclare par 4 entites filles
+  d'une `MappedSuperclass`, `created_at`/`updated_at`/`deleted_at`
+  herites via trait dans un ancetre non mappe) - voir
+  `UPGRADE-8.0.md`.
+- 1.3 Commande `php devups upgrade:entities [--dry-run] [chemin]` -
+  applique le meme convertisseur a un projet utilisateur, idempotente,
+  testee sur les formes reellement rencontrees (entite simple,
+  `MappedSuperclass`, relation, identite composite, contrainte unique,
+  argument `options`).
+- 1.4 `BackendGenerator.php` emet desormais des attributs PHP 8 pour
+  toute nouvelle entite generee (`GeneratorRequiredRelationNullableFalseTest`
+  mis a jour, memes garanties). Les autres consommateurs de metadonnees
+  (DBAL, QueryBuilder, Model, Controller, generator) n'ont necessite
+  AUCUN changement : les objets `FieldMapping`/`AssociationMapping` de
+  l'ORM3 restent accessibles par cle de tableau (compatibilite
+  `ArrayAccess` conservee par Doctrine).
+- 1.5 `UPGRADE-8.0.md` - sections "PHP 8.3 minimum", "Doctrine ORM 3
+  (DBAL 4)", "Entites : annotations -> attributs", "Generateur".
+- 1.6 Push + CI GitHub verte (run `44318900374`, commit `c285989`).
+
+**LOT 2 - Vues** : FAIT.
+
+- `philo/laravel-blade` (abandonne, epinglait `illuminate/view` a `~5`,
+  source de l'exception `composer audit` `PKSA-h74q-2n9z-j6wq`/
+  CVE-2021-43808) retire, remplace par `illuminate/view` ^11 +
+  `illuminate/events` ^11 directement, derriere une nouvelle classe
+  `dclass/devups/View.php` (`\Devups\View`) qui reconstruit le meme
+  assemblage (Container/Filesystem/Dispatcher/EngineResolver/
+  FileViewFinder/Factory, moteurs php/blade, directive `@tt`) que faisait
+  `philo/laravel-blade`. `BladeD` (`Genesis.php`, seul point d'entree du
+  moteur de vues dans le framework - utilise par `Genesis`/`Controller`/
+  `Http\Request`) devient un alias `class BladeD extends \Devups\View {}`
+  - meme API publique, aucun changement d'appel. Exception
+  `composer audit` retiree (plus necessaire).
+- `UPGRADE-8.0.md` - section "LOT 2 - Vues".
+- Push + CI GitHub verte (run `44322908859`, commit `ce17982`).
+
+**Etat des tests/CI a la fin de cette session** : `composer test` ->
+412 tests, 1705 assertions, 0 echec (8 deprecations et 2 incomplets
+preexistants et sans rapport, voir `AdminScreensTest::KNOWN_BROKEN`) ;
+`composer phpstan` -> aucune erreur ; CI GitHub verte sur `release/v8.0`
+pour les deux lots (matrice PHP 8.3/8.4/8.5).
+
+**Risques et points ouverts pour les lots 3 a 8** (observes pendant les
+lots 1/2, a traiter au moment de chaque lot, pas avant) :
+
+- **Lot 3 (Routes, fin d'addendum)** : `maslosoft/addendum` (routage par
+  annotations docblock, cf. inventaire LOT 1.0) est une dependance
+  distincte du mapping Doctrine mais relevant du meme pattern
+  "annotations -> attributs" - `EntityAttributeConverter` ne le couvre
+  pas (formes d'annotations differentes, pas des `@Entity`/`@Column`) ;
+  prevoir soit son propre petit convertisseur, soit une conversion
+  manuelle (perimetre probablement plus restreint que les 41 entites).
+  A verifier : `addendum` est deja a sa derniere version (7.0.6) mais
+  son statut de maintenance (abandon ?) n'a pas ete audite - a faire en
+  debut de lot 3.
+- **Lot 4 (Generateur)** : au-dela du template d'entite deja traite
+  (1.4), le generateur produit aussi d'autres artefacts (controllers,
+  vues, routes) a partir des datacores JSON - verifier si l'un d'eux
+  emet encore de l'annotation-style (routing, notamment, en lien avec le
+  lot 3) avant de considerer le generateur "a jour PHP 8".
+- **Lot 5 (PSR-4 + conteneur PSR-11 + Log PSR-3)** : risque le plus
+  structurant du chantier. Tout le framework (41 entites + le reste de
+  `src/`, tout `dclass/`) est aujourd'hui en **namespace global**,
+  charge par `classmap` (voir `composer.json` `autoload.classmap`) - pas
+  de PSR-4 du tout cote framework (seul `Devups\Tests\` l'utilise, en
+  `autoload-dev`). La decision actee "namespace racine `Devups\`"
+  (ligne 27 ci-dessus) implique donc de reellement deplacer/renommer
+  des dizaines de classes globales vers `Devups\...`, avec un risque de
+  rupture large (tout code utilisateur qui reference une classe par son
+  nom global court, par ex. `new Status()`, casserait). A detailler en
+  lot 5 avec un sous-plan dedie (alias de compatibilite
+  `class_alias()` ? namespace limite a un sous-ensemble du framework
+  seulement ? etc.) plutot que de se decider maintenant.
+- **Lot 6 (HTTP)** : `dclass/devups/Http/Request.php` instancie encore
+  `BladeD` directement (voir LOT 2) - a revisiter si ce lot introduit
+  une abstraction Request/Response differente.
+- **Lot 7 (Qualite, PHPStan 5)** : le projet est reste sur
+  `phpstan/phpstan` ^1.10 en lot 1 (voir inventaire LOT 1.0 - bascule
+  vers ^2 volontairement reportee a ce lot, regles/niveaux potentiellement
+  changes). `phpstan.neon.dist` utilise encore l'option depreciee
+  `checkMissingIterableValueType` (avertissement vu a chaque run depuis
+  le lot 1) - a traiter avec la bascule PHPStan 2.
+- **Lot 8 (Livraison)** : `UPGRADE-8.0.md` a deja ses sections LOT 1 et
+  LOT 2 - poursuivre le meme format (avant/apres/comment migrer) pour
+  chaque lot restant plutot que de le reecrire a la fin.
+- **Rappel general** : l'ORM maison Tchutte reste l'ORM d'execution
+  reel (Doctrine limite aux metadonnees/schema) - aucun lot de ce
+  chantier ne doit faire glisser une requete applicative vers
+  `EntityManager`/`QueryBuilder` Doctrine.
+
 ## Securite langue - ETAPE H
 
 ### H.1/H.2/H.3 - dv_valid_lang(), tests e2e et realpath : FAITS
