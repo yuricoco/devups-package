@@ -626,7 +626,7 @@ parameters:
 			path: src/devups/ModuleAdmin/Entity/Dvups_admin.php
 
 		-
-			message: "#^Method Dvups_admin\\:\\:generateLogin\\(\\) invoked with 1 parameter, 0 required\\.$#"
+			message: "#^Method devups\\\\ModuleAdmin\\\\Entity\\\\Dvups_admin\\:\\:generateLogin\\(\\) invoked with 1 parameter, 0 required\\.$#"
 			count: 1
 			path: src/devups/ModuleAdmin/Entity/Dvups_admin.php
 

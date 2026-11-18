@@ -15,3 +15,19 @@
 class Dvups_lang extends \devups\ModuleLang\Entity\Dvups_lang
 {
 }
+
+class Dvups_action extends \devups\ModuleAdmin\Entity\Dvups_action
+{
+}
+
+class Dvups_admin extends \devups\ModuleAdmin\Entity\Dvups_admin
+{
+}
+
+class Dvups_privilege extends \devups\ModuleAdmin\Entity\Dvups_privilege
+{
+}
+
+class Dvups_role extends \devups\ModuleAdmin\Entity\Dvups_role
+{
+}

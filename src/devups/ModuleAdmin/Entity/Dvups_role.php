@@ -1,10 +1,12 @@
 <?php
 
+namespace devups\ModuleAdmin\Entity;
+
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: "dvups_role")]
-class Dvups_role extends Model implements JsonSerializable
+class Dvups_role extends \Model implements \JsonSerializable
 {
 
     static $SELLER = "seller";
@@ -107,7 +109,7 @@ class Dvups_role extends Model implements JsonSerializable
         $ents = $this->getAttribute('entities');
         $globalconfig = require ROOT.'config/dvups_configurations.php';
 //        dv_dump($globalconfig);
-        $global_navigation = Core::buildOriginCore(function ($core, $type) use ($globalconfig, $comps, $mods, $ents){
+        $global_navigation = \Core::buildOriginCore(function ($core, $type) use ($globalconfig, $comps, $mods, $ents){
             if ($type == 'component'){
                 return in_array($core, $comps);
             }elseif ($type == 'module'){
@@ -204,7 +206,7 @@ class Dvups_role extends Model implements JsonSerializable
 
     private static function buildRights(int $roleId): array
     {
-        $rows = Model::pdo()->prepare(
+        $rows = \Model::pdo()->prepare(
             'SELECT a.entity, a.action FROM dvups_privilege p
              INNER JOIN dvups_action a ON a.id = p.dvups_action_id
              WHERE p.dvups_role_id = :role_id'
@@ -219,3 +221,6 @@ class Dvups_role extends Model implements JsonSerializable
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Dvups_role::class, 'Dvups_role');

@@ -537,8 +537,31 @@ commit par module ou petit groupe de modules) :
 6. `composer test` + `composer phpstan` verts avant de passer a
    l'entite/module suivant.
 
-**Volume restant** : 34 entites sur 35 sous `src/**/Entity/*.php` (hors
-pilote `Dvups_lang`), repartiees sur 12 modules/3 composants (`devups` :
+**ModuleAdmin (devups) - FAIT** : `Dvups_action`, `Dvups_admin`,
+`Dvups_privilege`, `Dvups_role` namespaces sous `devups\ModuleAdmin\
+Entity`, alias + stubs phpstan ajoutes. Piege confirme pendant cette
+passe : la recherche initiale de `extends Model implements
+JsonSerializable` ne suffit PAS a trouver tous les sites a prefixer -
+`Dvups_role::buildRights()` appelait `Model::pdo()` plus loin dans le
+fichier (erreur `Class "devups\ModuleAdmin\Entity\Model" not found`),
+de meme `Dvups_admin::dropDvups_roleCollection()` (`EntityCollection::`)
+et `Dvups_role::updateConfigs()` (`Core::buildOriginCore()`) - tous
+caches dans des methodes, pas vus par une recherche limitee a la
+declaration de classe. **Recherche fiable retenue** (etape 2 de la
+recette ci-dessus, a refaire pour CHAQUE entite plutot que scanner
+seulement l'entete) : `grep -oE '\b[A-Z][A-Za-z0-9_]*::|new
+[A-Z][A-Za-z0-9_]*|catch \([A-Z][A-Za-z0-9_]*|instanceof
+[A-Z][A-Za-z0-9_]*' <fichier>` puis verifier un par un si chaque hit est
+du code mort (commentaire) ou vivant - trouve par `composer test`
+(seule execution reelle du code revele l'erreur), confirme que
+`composer phpstan` seul ne l'aurait pas signale non plus (la classe
+`Model` existe bien globalement, phpstan ne sait juste pas qu'elle
+n'est plus visible depuis le nouveau namespace au niveau du typage
+statique de ce depot - niveau 1).
+
+**Volume restant** : 30 entites sur 35 sous `src/**/Entity/*.php` (hors
+pilote `Dvups_lang` + `ModuleAdmin`), repartiees sur 10 modules/3
+composants (`devups` :
 ModuleAdmin/ModuleConfig/ModuleLog ; `devupscms` :
 ModuleCms/ModuleData/ModuleLocation/ModuleNotification/
 ModulePushNotification/ModuleReporting/ModuleTree ; `devupsfront` :

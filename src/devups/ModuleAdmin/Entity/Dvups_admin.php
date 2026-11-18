@@ -1,10 +1,12 @@
 <?php
 
+namespace devups\ModuleAdmin\Entity;
+
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: "dvups_admin")]
-class Dvups_admin extends Model implements JsonSerializable
+class Dvups_admin extends \Model implements \JsonSerializable
 {
     /**
      * @var int
@@ -290,7 +292,7 @@ class Dvups_admin extends Model implements JsonSerializable
 
     function dropDvups_roleCollection()
     {
-        $this->dvups_role = EntityCollection::entity_collection('dvups_role');
+        $this->dvups_role = \EntityCollection::entity_collection('dvups_role');
     }
 
     function availableentityright($action)
@@ -387,3 +389,6 @@ class Dvups_admin extends Model implements JsonSerializable
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Dvups_admin::class, 'Dvups_admin');
