@@ -71,9 +71,7 @@ class AdminService extends \dclass\devups\Controller\ModuleController
         $this->frontController = new FrontController();
     }
 
-    /**
-     * @MethodView(GET="hello", Auth=1)
-     */
+    #[\MethodView(GET: "hello", Auth: 1)]
     public function helloService()
     {
         Genesis::json_encode(["success" => true, "message" => "hello devups you made your first apicall"]);
@@ -163,9 +161,7 @@ class AdminService extends \dclass\devups\Controller\ModuleController
         (new Dvups_entityController())->exportCsv();
     }
 
-    /**
-     * @MethodView(path="dvups-admin/complete-registration")
-     */
+    #[\MethodView(path: "dvups-admin/complete-registration")]
     public function completeRegistrationView($id)
     {
         \devups\ModuleAdmin\ModuleAdmin::renderView('admin.dvups_admin.complete_registration', (new \Dvups_adminController())->completeRegistration($id));

@@ -4,9 +4,7 @@ use devupsfront\ModuleUser\Entity\Oauth_client;
 use Google\Client;
 
 
-/**
- * @Api(name='/user')
- */
+#[Api(name: '/user')]
 class UserFrontController extends \dclass\devups\Controller\FrontController
 {
 
@@ -28,10 +26,8 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
         return rtrim($base, '/') . '/' . ltrim($path, '/');
     }
 
-    /**
-     * @Auth(authorized=1)
-     * @GET(path='/me')
-     */
+    #[Auth(authorized: 1)]
+    #[GET(path: '/me')]
     public function me()
     {
         $unreaded = Notification::where("user_id", Auth::$user_id)
@@ -42,9 +38,7 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
         ] + $this->detail(Auth::$user_id);
     }
  
-    /**
-     * @GET
-     */
+    #[GET]
     public function index()
     {
 
@@ -59,29 +53,25 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
             ->lazyloading();
     }
  
-    /**
-     * @Auth(authorized=1)
-     * @PUT(path='/:id')
-     */
+    #[Auth(authorized: 1)]
+    #[PUT(path: '/:id')]
     public function update($id)
     {
         parent::updateCore($id);
         return $this->me();
     }
 
-    /**
-     * @Auth(authorized=1)
-     * @POST(path='/profile/:id')
-     */
+    #[Auth(authorized: 1)]
+    #[POST(path: '/profile/:id')]
     public function profile($id)
     {
         return parent::updateCore($id);
     }
 
     /**
-     * @POST(path='/registration')
      * @return array
      */
+    #[POST(path: '/registration')]
     public function registration()
     {
 
@@ -178,9 +168,9 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     }
 
     /**
-     * @POST(path='/googleAuth')
      * @return void
      */
+    #[POST(path: '/googleAuth')]
     public function googleAuth()
     {
         $input = \Request::raw();
@@ -282,9 +272,9 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     }
 
     /**
-     * @POST(path='/appleAuth')
      * @return array
      */
+    #[POST(path: '/appleAuth')]
     public function appleAuth()
     {
         $input = \Request::raw();
@@ -377,9 +367,9 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
 
 
     /**
-     * @POST(path='/authentification')
      * @return array
      */
+    #[POST(path: '/authentification')]
     public function authentification()
     {
         // ETAPE V : un login sans "login" (ou "password") levait "Undefined
@@ -459,8 +449,8 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
         );
     }
 
+    #[POST(path: '/tokenize')]
     /**
-     * @POST(path='/tokenize')
      * @return array
      *
      * Reemet un jeton pour l'utilisateur porte par un JWT deja valide
@@ -496,9 +486,7 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
         );
     }
 
-    /**
-     * @GET(path='/:id')
-     */
+    #[GET(path: '/:id')]
     public function detail($id)
     {
 
@@ -601,11 +589,11 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     }
 
     /**
-     * @POST(path='/initresetpassword')
      * ETAPE P.1 : reponse IDENTIQUE que le compte existe ou non (pas
      * d'enumeration de comptes) - jeton dedie envoye par email uniquement,
      * plus de code court ni de push ici (voir issueResetPasswordToken()).
      */
+    #[POST(path: '/initresetpassword')]
     public function initresetpassword()
     {
         $login = (string)($_POST['user_form']['login'] ?? '');
@@ -628,12 +616,12 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     }
 
     /**
-     * @POST(path='/resetpassword')
      * ETAPE P.1 : identifie l'utilisateur par le jeton dedie (plus par
      * :id/code court) - usage unique, consomme par clearResetPasswordToken()
      * ci-dessous quelle que soit l'issue d'une tentative avec ce jeton.
      * @return array
      */
+    #[POST(path: '/resetpassword')]
     public function resetpassword()
     {
         $token = (string)($_POST['token'] ?? '');
@@ -714,10 +702,10 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     }
 
     /**
-     * @Auth(authorized=1)
-     * @POST(path='/activateaccount')
      * @return array
      */
+    #[Auth(authorized: 1)]
+    #[POST(path: '/activateaccount')]
     public function activateaccount()
     {
         $activationcode = Request::post("activationcode");
@@ -744,10 +732,10 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     }
 
     /**
-     * @Auth(authorized=1)
-     * @GET(path='/resentactivationcode')
      * @return array
      */
+    #[Auth(authorized: 1)]
+    #[GET(path: '/resentactivationcode')]
     public function resentactivationcode()
     {
         $result = self::resendactivationcode();
@@ -782,10 +770,8 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
         return $result;
     }
 
-    /**
-     * @POST(path='/changepassword')
-     * @Auth(authorized=1)
-     */
+    #[POST(path: '/changepassword')]
+    #[Auth(authorized: 1)]
     public function changepassword()
     {
         $user = User::find(Auth::$user_id);
@@ -819,10 +805,8 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
         }
     }
 
-    /**
-     * @GET(path='/checktelephone')
-     * @Auth(authorized=1)
-     */
+    #[GET(path: '/checktelephone')]
+    #[Auth(authorized: 1)]
     public function checktelephone()
     {
         if (isset($_POST['phonecode']))
@@ -865,10 +849,8 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     }
 
 
-    /**
-     * @POST(path='/changetelephone')
-     * @Auth(authorized=1)
-     */
+    #[POST(path: '/changetelephone')]
+    #[Auth(authorized: 1)]
     public function changetelephone()
     {
         $user = User::find(Auth::$user_id);
@@ -936,10 +918,10 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     }
 
     /**
-     * @Auth(authorized=1)
-     * @DELETE(path='/delete-account')
      * @return array
      */
+    #[Auth(authorized: 1)]
+    #[DELETE(path: '/delete-account')]
     public function deleteAccount()
     {
         $user = User::find(Auth::$user_id);
@@ -953,10 +935,10 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     }
 
     /**
-     * @Auth(authorized=1)
-     * @DELETE(path='/cancel-delete-account')
      * @return array
      */
+    #[Auth(authorized: 1)]
+    #[DELETE(path: '/cancel-delete-account')]
     public function cancelDeleteAccount()
     {
         $user = User::find(Auth::$user_id);
@@ -971,10 +953,8 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
 
     
 
-    /**
-     * @Auth(authorized=1)
-     * @GET(path='/notifications')
-     */
+    #[Auth(authorized: 1)]
+    #[GET(path: '/notifications')]
     public function notifications()
     {
         $qb = Notification::initQb()
@@ -990,10 +970,10 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     }
 
     /**
-     * @Auth(authorized=1)
-     * @PUT(path='/notified')
      * @return array
      */
+    #[Auth(authorized: 1)]
+    #[PUT(path: '/notified')]
     public function notified()
     {
 
@@ -1008,10 +988,8 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
             ]);
     }
 
-    /**
-     * @Auth(authorized=1)
-     * @GET(path='/alert')
-     */
+    #[Auth(authorized: 1)]
+    #[GET(path: '/alert')]
     public function alert()
     {
 
@@ -1039,10 +1017,10 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     }
 
     /**
-     * @Auth(authorized=1)
-     * @POST(path='/update-push-token')
      * @return array
      */
+    #[Auth(authorized: 1)]
+    #[POST(path: '/update-push-token')]
     public function updatePushToken()
     {
         $user_id = Auth::$user_id;

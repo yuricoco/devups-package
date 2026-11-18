@@ -13,9 +13,7 @@ use User;*/
 use Minishlink\WebPush\VAPID;
 use dclass\devups\Controller\Controller;
 
-/**
- * @Api(name='/push_subscription')
- */
+#[Api(name: '/push_subscription')]
 class Push_subscriptionFrontController extends \dclass\devups\Controller\FrontController
 {
 
@@ -34,11 +32,11 @@ class Push_subscriptionFrontController extends \dclass\devups\Controller\FrontCo
      * ici (voir PUSH-NOTES.md - mesure, pas suppose) : elle a son
      * propre Push_subscriptionController, une classe distincte.
      *
-     * @Auth(authorized=1)
-     * @GET
      * @return Lazyloading|QueryBuilder
      * @throws ReflectionException
      */
+    #[Auth(authorized: 1)]
+    #[GET]
      public function index(){
 
             $qb = Push_subscription::initQb()->where('this.user_id', (int)Auth::$user_id);
@@ -55,10 +53,10 @@ class Push_subscriptionFrontController extends \dclass\devups\Controller\FrontCo
      * prudence). `subscription_type`/`status` poses explicitement par le
      * serveur, jamais par le client.
      *
-     * @Auth(authorized=1)
-     * @POST(path='/register')
      * @return array
      */
+    #[Auth(authorized: 1)]
+    #[POST(path: '/register')]
     public function register()
     {
         $raw = Request::raw()['push_subscription'] ?? [];

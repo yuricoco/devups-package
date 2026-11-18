@@ -638,10 +638,10 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
 
         $contenu = "
     /**
-     * @GET
      * @return Lazyloading|QueryBuilder
      * @throws ReflectionException
      */
+    #[GET]
      public function index(){
         
             \$qb = " . ucfirst($name) . "::initQb();
@@ -650,9 +650,7 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
 
     }
 
-    /**
-     * @POST
-     */
+    #[POST]
     public function create(){
     
         $" . "rawdata = \Request::raw();
@@ -702,9 +700,7 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
 
     }
 
-    /**
-     * @GET(path='/:id')
-     */
+    #[GET(path: '/:id')]
     public function detail(\$id){
     
         $" . $name . " = " . ucfirst($name) . "::find($" . "id);
@@ -715,9 +711,7 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
                         
     }
 
-    /**
-     * @PUT(path='/:id')
-     */
+    #[PUT(path: '/:id')]
     public function update($" . "id){
     
         $" . "rawdata = \Request::raw();
@@ -743,9 +737,7 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
     }
     
 
-    /**
-     * @DELETE(path='/:id')
-     */
+    #[DELETE(path: '/:id')]
     public function delete(\$id){
 
         $" . $name . " = " . ucfirst($name) . "::find($" . "id);
@@ -777,9 +769,7 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
 
             $contenu = "<?php \n
 
-/**
- * @Api(name='/$name')
- */
+#[Api(name: '/$name')]
 class " . $ctrlname . " extends $extend{
 
     $content

@@ -9,15 +9,11 @@ use NotificationForm;
 use NotificationTable;
 use Request;*/
 
-/**
- * @Api(name='/notification')
- */
+#[Api(name: '/notification')]
 class NotificationFrontController extends \dclass\devups\Controller\FrontController
 {
 
-    /**
-     * @GET
-     */
+    #[GET]
     public function index()
     {
         $qb = Notification::initQb()->with('notificationtype', ['_key']);
@@ -30,10 +26,10 @@ class NotificationFrontController extends \dclass\devups\Controller\FrontControl
     }
 
     /**
-     * @Auth(authorized=1)
-     * @PUT(path='/notified')
      * @return array
      */
+    #[Auth(authorized: 1)]
+    #[PUT(path: '/notified')]
     public function notified()
     {
 
@@ -49,10 +45,10 @@ class NotificationFrontController extends \dclass\devups\Controller\FrontControl
     }
 
     /**
-     * @Auth(authorized=1)
-     * @PUT(path='/readall')
      * @return array
      */
+    #[Auth(authorized: 1)]
+    #[PUT(path: '/readall')]
     public function readall()
     {
         Notification::where("user_id", Auth::$user_id)
@@ -65,18 +61,16 @@ class NotificationFrontController extends \dclass\devups\Controller\FrontControl
     }
 
     /**
-     * @Auth(authorized=1)
-     * @PUT(path='/:id')
      * @return array
      */
+    #[Auth(authorized: 1)]
+    #[PUT(path: '/:id')]
     public function update($id)
     {
         return parent::updateCore($id);
     }
 
-    /**
-     * @GET(path='/alert')
-     */
+    #[GET(path: '/alert')]
     public function alert()
     {
 
