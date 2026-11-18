@@ -163,3 +163,52 @@ attributs PHP 8 pour toute NOUVELLE entite generee - aucune action
 requise, mais un composant genere avant ce chantier et jamais
 regenere depuis reste en annotations tant qu'il n'est pas repasse par
 `upgrade:entities` ou regenere.
+
+## LOT 2 - Vues
+
+### Moteur de vues : philo/laravel-blade -> illuminate/view directement
+
+**Avant** : `philo/laravel-blade` (`3.*`) assemblait un moteur Blade
+autonome (hors application Laravel) en epinglant `illuminate/view` a
+`~5` - version abandonnee depuis 2017, source de l'exception
+`composer audit` `PKSA-h74q-2n9z-j6wq` (CVE-2021-43808, XSS sur
+`@parent`), impossible a lever tant que `philo/laravel-blade` (lui
+aussi abandonne) restait dans l'arbre des dependances.
+
+**Apres** : `philo/laravel-blade` est retire. Le meme assemblage
+(Container/Filesystem/Dispatcher/EngineResolver/FileViewFinder/Factory,
+moteurs `php` et `blade`, directive personnalisee `@tt(...)`) est
+desormais construit directement sur `illuminate/view` ^11 (+
+`illuminate/events` ^11) par une nouvelle classe
+`dclass/devups/View.php` (`\Devups\View`), point d'entree UNIQUE du
+moteur de vues dans le framework. `BladeD` (`dclass/devups/Genesis.php`,
+utilisee par `Genesis`, `Controller` et `Http\Request`) devient un
+simple alias `class BladeD extends \Devups\View {}` : meme nom, meme
+API publique (`->view()->make($view, $data)->render()`), aucun
+changement d'appel necessaire cote framework ni cote projet utilisateur
+qui passerait par `Genesis::render()`/`renderView()`/`getView()`/
+`renderBladeView()`.
+
+Consequence directe : l'exception `composer audit`
+`PKSA-h74q-2n9z-j6wq` est retiree de `composer.json` - `illuminate/view`
+^11 est une version maintenue, le correctif du CVE y est inclus depuis
+longtemps.
+
+**Comment migrer** : executer `composer update`. Aucune action requise
+pour un projet qui rendait ses vues via `Genesis::render()`/
+`renderView()`/`getView()`/`renderBladeView()` ou via `Controller`/
+`Http\Request` (seul point d'entree possible dans ce framework - aucune
+instanciation directe de `Philo\Blade\Blade` n'existe ailleurs dans le
+depot). Un projet qui instancierait directement
+`Philo\Blade\Blade`/`BladeD` avec des options avancees non couvertes
+par `\Devups\View` (rare) devra adapter son code a l'API de
+`\Devups\View` (constructeur identique : `$viewPaths, $cachePath,
+?Dispatcher $events = null`).
+
+Verifie par : la suite de tests complete (toutes les vues Blade du
+depot sont exercees via `AdminScreensTest` - chaque entite declaree
+dans `config/dvups_configurations.php`, page liste + formulaire - ainsi
+que `BladeViewCacheAutoCreateTest`, `CountryCreateViaFormTest`,
+`CmscontentListWithTranslatedTitleTest`, `CountryListWithDataTest`,
+`LegacyServicesFormEndpointsTest`), toutes vertes a l'identique avant/
+apres ce changement.
