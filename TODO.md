@@ -394,6 +394,17 @@ l'implementation sous-jacente) :
 - `UPGRADE-8.0.md` - section "LOT 3 - Routes".
 - Push + CI GitHub verte (run `44377778060`, commits `080b6d7`,
   `17e8678`, `077ccf0`).
+- Correction apportee apres coup (ETAPE 3.4, oubliee au premier passage
+  malgre le plan ecrit a LOT 3.0) : test unitaire dedie
+  `tests/Unit/ReflectionAnnotatedTest.php` sur le nouveau shim
+  (annotation de classe, annotation de methode verb-specifique,
+  plusieurs attributs sur la meme methode, `DELETE` sans `path` ->
+  defaut `/:id`, `@Api` generique sur une methode distincte d'un verbe,
+  methode sans aucune annotation, `getMethods()` renvoie bien des
+  instances `ReflectionAnnotatedMethod`) - meme rigueur que
+  `EntityAttributeConverterTest` au lot 1. Jusqu'ici la seule
+  couverture etait indirecte (E2E qui exercent les routes reelles) ;
+  ce test isole le shim de la base de donnees et du serveur HTTP.
 
 **Etat des tests/CI a la fin de cette session** : `composer test` ->
 412 tests, 1705 assertions, 0 echec (8 deprecations et 2 incomplets
