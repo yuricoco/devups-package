@@ -1,10 +1,12 @@
 <?php
 
+namespace devupscms\ModuleLocation\Entity;
+
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: "country")]
-class Country extends \Model implements JsonSerializable
+class Country extends \Model implements \JsonSerializable
 {
 
     /**
@@ -255,3 +257,6 @@ class Country extends \Model implements JsonSerializable
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Country::class, 'Country');

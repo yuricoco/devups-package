@@ -595,10 +595,13 @@ alias, mais sans consequence puisque son seul appelant
 par coherence avec le reste du module (voir commentaire dans le
 fichier).
 
-**Volume restant** : 19 entites sur 35 sous `src/**/Entity/*.php`
-(composants `devups` + ModuleCms/ModuleData de `devupscms` faits),
-repartiees sur 5 modules du composant `devupscms` + 1 module de
-`devupsfront` (`devups` :
+**ModuleLocation (devupscms) - FAIT** : `Country`, `Country_lang`
+namespaces sous `devupscms\ModuleLocation\Entity`. Rien de notable.
+
+**Volume restant** : 17 entites sur 35 sous `src/**/Entity/*.php`
+(composants `devups` + ModuleCms/ModuleData/ModuleLocation de
+`devupscms` faits), repartiees sur 4 modules du composant `devupscms`
++ 1 module de `devupsfront` (`devups` :
 ModuleAdmin/ModuleConfig/ModuleLog ; `devupscms` :
 ModuleCms/ModuleData/ModuleLocation/ModuleNotification/
 ModulePushNotification/ModuleReporting/ModuleTree ; `devupsfront` :

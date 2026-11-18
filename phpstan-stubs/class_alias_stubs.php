@@ -79,3 +79,11 @@ class Status extends \devupscms\ModuleData\Entity\Status
 class Status_lang extends \devupscms\ModuleData\Entity\Status_lang
 {
 }
+
+class Country extends \devupscms\ModuleLocation\Entity\Country
+{
+}
+
+class Country_lang extends \devupscms\ModuleLocation\Entity\Country_lang
+{
+}
