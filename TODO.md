@@ -188,6 +188,124 @@ documentait comme ouverts ont ete traites dans cette session (voir
 "Resume phase par phase" plus bas). Seul le point Phase 4 (CMS) reste
 ouvert, voir ci-dessous.
 
+### LOT 3.0 - Plan (inventaire, sans code) - Routes
+
+**Ce que fait reellement le routage par annotations aujourd'hui** (a ne
+pas confondre avec `maslosoft/addendum`, la dependance Composer du meme
+nom - voir plus bas) :
+
+- Le moteur d'annotations reellement utilise est une copie VENDOREE en
+  arbre, PAS la dependance Composer : `dclass/lib/addendum/annotations.php`
+  (+ `annotations/annotation_parser.php`) - "Addendum PHP Reflection
+  Annotations" (Jan Suchal, 2006-2009, LGPL), chargee par un `require`
+  manuel dans `dclass/lib/lib_dependances.php` (ligne 12), independamment
+  de l'autoload Composer. Definit la classe `Annotation` (base commune)
+  et `ReflectionAnnotatedClass`/`ReflectionAnnotatedMethod`/
+  `ReflectionAnnotatedProperty` (sous-classes de `ReflectionClass`/
+  `ReflectionMethod`/`ReflectionProperty` qui parsent le docblock pour
+  exposer `hasAnnotation($nom)`/`getAnnotation($nom)`).
+- **`maslosoft/addendum` (le paquet Composer, `composer.json`) n'est
+  utilise NULLE PART dans le code** (`grep -r "Maslosoft\\Addendum"` :
+  aucun resultat) - c'est une dependance morte, sans rapport avec le
+  moteur reel ci-dessus malgre le nom partage (meme lignage historique,
+  fork different). A retirer en 3.1, independamment du reste.
+- 7 classes d'annotation metier (`dclass/lib/annotation/*.php`,
+  `extends Annotation`) portent la logique de routage : `Api` (classe,
+  `@Api(name='/prefix')` - prefixe d'URL d'un *FrontController*),
+  `Auth` (methode, `@Auth(authorized=1)` - verifie `Auth::$user_id`
+  avant d'executer la methode), `GET`/`POST`/`PUT`/`DELETE` (`extends
+  Api`, methode - verbe HTTP + `path` optionnel, resolvent les
+  parametres de route via `Route::parseRoute()`), `MethodView` (meme
+  forme qu'`Api` mais utilisee directement sur les methodes de
+  `route/Admin.php`/`route/AdminService.php`, hors *FrontController*).
+  `ApiLazyloading` et `DDoc` existent mais n'ont **aucun usage reel**
+  dans tout le depot (greps confirmes) - `DDoc` n'est meme pas
+  `require`-e dans `lib_dependances.php`.
+- Consommateurs de `ReflectionAnnotatedClass`/`Method` (API reellement
+  utilisee - exhaustif, verifie par grep) : `dclass/devups/Http/Router.php`
+  et `dclass/devups/Http/Request.php` (`new ReflectionAnnotatedClass($ctrl)`,
+  puis `->getMethod($m)`, `->getMethods(ReflectionMethod::IS_PUBLIC)`,
+  `->getAnnotation('Api')`, et sur la methode : `->hasAnnotation($nom)`,
+  `->getAnnotation($nom)`, `->getParameters()` - herite de
+  `ReflectionMethod`, inchange). Rien d'autre (pas de
+  `ReflectionAnnotatedProperty`, pas de `getAllAnnotations()`) hors de
+  la lib elle-meme et ses propres tests bundles.
+- **Fichiers avec des annotations de routage REELLES a convertir**
+  (3 *FrontController* + 2 fichiers `route/`, verifie exhaustivement par
+  grep - tout le reste de `src/*/Controller/*.php` n'utilise aucune de
+  ces annotations) :
+  - `src/devupsfront/ModuleUser/Controller/UserFrontController.php` :
+    1x `@Api(name=...)` (classe) + ~20x `@GET`/`@POST`/`@PUT`/`@DELETE`
+    (bareword ou avec `path=`) + ~8x `@Auth(authorized=1)`.
+  - `src/devupscms/ModuleNotification/Controller/NotificationFrontController.php` :
+    1x `@Api` + 4x verbe HTTP + 3x `@Auth`.
+  - `src/devupscms/ModulePushNotification/Controller/Push_subscriptionFrontController.php` :
+    1x `@Api` + 2x verbe HTTP + 2x `@Auth`.
+  - `route/Admin.php` et `route/AdminService.php` : 2x `@MethodView`
+    chacun (`@MethodView(GET="hello", Auth=1)` et
+    `@MethodView(path="...")`).
+  - `dclass/generator/BackendGenerator.php` (lignes ~639-787) : emet
+    ces memes annotations dans le template d'un *FrontController*
+    genere - a mettre a jour en meme temps que le reste (meme logique
+    que l'ETAPE 1.4 pour les entites).
+  - (`dclass/generator/android/BackendGeneratorJava.php` utilise aussi
+    `@GET`/`@POST` mais ce sont des annotations JAVA/Retrofit pour un
+    client mobile genere - HORS PERIMETRE, aucun rapport avec le
+    routage PHP de ce framework.)
+
+**Design retenu** (meme pattern qu'au lot 2 - `BladeD`/`Devups\View` -
+garder l'API d'appel strictement identique, remplacer uniquement
+l'implementation sous-jacente) :
+
+1. Les 7 classes d'annotation (`Api`, `Auth`, `GET`, `POST`, `PUT`,
+   `DELETE`, `MethodView`, + `ApiLazyloading`/`DDoc` par coherence bien
+   que mortes) deviennent des attributs PHP 8 natifs : `#[\Attribute
+   (\Attribute::TARGET_CLASS | \Attribute::TARGET_METHOD)]`, un
+   constructeur explicite a parametres nommes (remplace l'hydratation
+   par tableau de l'ancienne classe `Annotation`, qui disparait), MEME
+   proprietes publiques, MEME corps de methode (`execute()`,
+   `authorize()`, etc. - logique metier non affectee par le mecanisme
+   d'annotation). Toutes globales (pas de namespace) - coherent avec
+   les chaines passees a `hasAnnotation('Auth')`/`getAnnotation('GET')`
+   dans Router.php/Request.php, aucun changement de resolution de nom
+   necessaire la non plus.
+2. `ReflectionAnnotatedClass`/`ReflectionAnnotatedMethod` (nouvelles
+   classes globales du framework, PAS la lib vendoree) deviennent de
+   fines sous-classes de `\ReflectionClass`/`\ReflectionMethod` :
+   `hasAnnotation($nom)`/`getAnnotation($nom)` lisent
+   `getAttributes($nom)` + `newInstance()` au lieu de parser le
+   docblock ; `getMethod($nom)`/`getMethods($filter)` renvoient des
+   instances de `ReflectionAnnotatedMethod` (pas de simples
+   `ReflectionMethod`). Aucun autre changement d'API - Router.php et
+   Request.php n'ont besoin d'AUCUNE modification de leurs appels.
+3. `dclass/lib/addendum/` (toute la lib vendoree, Annotation +
+   parser + ses tests bundles) et la ligne `require` correspondante
+   dans `lib_dependances.php` sont retires. `maslosoft/addendum` est
+   retire de `composer.json` (dependance morte, sans lien avec ce qui
+   precede).
+4. Les 5 fichiers avec annotations reelles (3 controllers + 2
+   `route/*.php`) sont convertis vers la syntaxe attribut. Le template
+   de `BackendGenerator.php` emet desormais des attributs pour tout
+   nouveau *FrontController* genere.
+
+**Ordre d'execution** :
+
+1. 3.1 Classes d'annotation -> attributs PHP 8 + retrait de
+   `maslosoft/addendum` de `composer.json`.
+2. 3.2 Nouveau shim `ReflectionAnnotatedClass`/`ReflectionAnnotatedMethod`
+   (natif, base sur `getAttributes()`) + retrait de
+   `dclass/lib/addendum/` et de son `require`.
+3. 3.3 Conversion des 5 fichiers (3 *FrontController* + `route/Admin.php`/
+   `AdminService.php`) + mise a jour du template `BackendGenerator.php`.
+4. 3.4 Tests : la suite E2E existante (`AdminScreensTest`,
+   `CountryCreateViaFormTest`, `LegacyServicesFormEndpointsTest`, etc.)
+   exerce deja ces routes de bout en bout - garde-fou de non-regression
+   suffisant, complete par un test unitaire dedie sur le nouveau shim
+   (annotation presente/absente, heritage GET/POST/PUT/DELETE -> Api),
+   meme rigueur que `EntityAttributeConverterTest` au lot 1.
+5. 3.5 `UPGRADE-8.0.md` - section "LOT 3 - Routes".
+6. 3.6 Push + CI.
+
 ### Etat fin de session - LOT 1 (Socle) et LOT 2 (Vues) : FAITS, CI verte
 
 **LOT 1 - Socle** : FAIT.
