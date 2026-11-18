@@ -11,6 +11,9 @@ use PHPUnit\Framework\TestCase;
  * BackendGenerator::entityGenerator() - @JoinColumn ne portait que
  * "onDelete", jamais "nullable=false" : le schema genere par Doctrine
  * acceptait alors NULL sur une relation censee etre obligatoire.
+ * ETAPE 1.4 (v8.0) : BackendGenerator emet desormais des attributs PHP 8
+ * (#[ORM\JoinColumn(...)]) plutot que des annotations docblock - memes
+ * assertions, forme mise a jour.
  */
 final class GeneratorRequiredRelationNullableFalseTest extends TestCase
 {
@@ -52,14 +55,14 @@ final class GeneratorRequiredRelationNullableFalseTest extends TestCase
         $contenu = file_get_contents($this->workdir . '/Entity/Widget.php');
 
         $this->assertMatchesRegularExpression(
-            '/@JoinColumn\(onDelete="cascade", nullable=false\)\s*\n\s*\* @var .*Parent/',
+            '/\* @var .*Parent\s*\n\s*\*\/\s*\n\s*#\[ORM\\\\ManyToOne\(targetEntity: "[^"]*Parent"\)\]\s*\n\s*#\[ORM\\\\JoinColumn\(onDelete: "cascade", nullable: false\)\]/',
             $contenu,
-            "une relation 'not' nullable doit produire nullable=false"
+            "une relation 'not' nullable doit produire nullable: false"
         );
         $this->assertDoesNotMatchRegularExpression(
-            '/@JoinColumn\(onDelete="cascade", nullable=false\)\s*\n\s*\* @var .*Optionalfoo/',
+            '/\* @var .*Optionalfoo\s*\n\s*\*\/\s*\n\s*#\[ORM\\\\ManyToOne\(targetEntity: "[^"]*Optionalfoo"\)\]\s*\n\s*#\[ORM\\\\JoinColumn\(onDelete: "cascade", nullable: false\)\]/',
             $contenu,
-            "une relation 'default' nullable ne doit pas produire nullable=false"
+            "une relation 'default' nullable ne doit pas produire nullable: false"
         );
     }
 }

@@ -31,17 +31,20 @@ class BackendGenerator
 
         fputs($fichier, "<?php
         // user \dclass\devups\model\Model;
-    /**
-     * @Entity @Table(name=\"" . $name . "\")
-     * */
+use Doctrine\ORM\Mapping as ORM;
+
+    #[ORM\Entity]
+    #[ORM\Table(name: \"" . $name . "\")]
     class " . $entityfile . " extends Model implements JsonSerializable{\n");
         $method = "";
 
         $construt = "
         /**
-         * @Id @GeneratedValue @Column(type=\"integer\")
          * @var int
          * */
+        #[ORM\Id]
+        #[ORM\GeneratedValue]
+        #[ORM\Column(type: \"integer\")]
         protected $" . "id;";
         $otherattrib = false;
 
@@ -96,9 +99,9 @@ class BackendGenerator
             }
             $construt .= "
         /**
-         * @Column(name=\"" . $attribut->name . "\", type=\"" . $attribut->datatype . "\" $length $nullable)
          * @var " . $attribut->datatype . "
          **/
+        #[ORM\Column(name: \"" . $attribut->name . "\", type: \"" . $attribut->datatype . "\" " . str_replace(['length=', 'nullable='], ['length: ', 'nullable: '], "$length $nullable") . ")]
         protected $" . $attribut->name . "$defaultvalue;";
         }
         $otherattrib = true;
@@ -202,10 +205,10 @@ class BackendGenerator
                     $attrib .= "
         /**
          * " . ucfirst($relation->cardinality) . "
-         * @ManyToOne(targetEntity=\"" . $antislash . $entitytype . "\")
-         * @JoinColumn(onDelete=\"" . ($relation->ondelete ) . "\"" . $relationNullable . ")
          * @var " . $antislash . $entitytype . "
          */
+        #[ORM\ManyToOne(targetEntity: \"" . $antislash . $entitytype . "\")]
+        #[ORM\JoinColumn(onDelete: \"" . ($relation->ondelete ) . "\"" . str_replace('nullable=false', 'nullable: false', $relationNullable) . ")]
         public $" . $relation->entity . ";\n";
 
                     $method .= "
@@ -231,10 +234,10 @@ class BackendGenerator
 
                     $attrib .= "
         /**
-         * @" . ucfirst($relation->cardinality) . "(targetEntity=\"" . $antislash . $entitytype . "\")
-         * @JoinColumn(onDelete=\"" . $relation->ondelete . "\"" . $relationNullable . ")
          * @var " . $antislash . $entitytype . "
          */
+        #[ORM\\" . ucfirst($relation->cardinality) . "(targetEntity: \"" . $antislash . $entitytype . "\")]
+        #[ORM\JoinColumn(onDelete: \"" . $relation->ondelete . "\"" . str_replace('nullable=false', 'nullable: false', $relationNullable) . ")]
         public $" . $relation->entity . ";\n";
 
                     $method .= "
@@ -395,9 +398,10 @@ class BackendGenerator
         $fichier = fopen('php://memory', 'w+');
 
         fputs($fichier, "<?php
-/**
- * @Entity @Table(name=\"" . $name . "_lang\")
- * */
+use Doctrine\ORM\Mapping as ORM;
+
+#[ORM\Entity]
+#[ORM\Table(name: \"" . $name . "_lang\")]
 class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
         $method = "";
         $construteur = " ";
@@ -423,20 +427,21 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
             $attributs[]=$attribut->name;
             $construt .= "
     /**
-     * @Column(name=\"" . $attribut->name . "\", type=\"" . $attribut->datatype . "\" $length $nullable)
      * @var " . $attribut->datatype . "
      **/
+    #[ORM\Column(name: \"" . $attribut->name . "\", type: \"" . $attribut->datatype . "\" " . str_replace(['length=', 'nullable='], ['length: ', 'nullable: '], "$length $nullable") . ")]
     protected $" . $attribut->name . "$defaultvalue;";
 
         }
 
         $construt .= "
-        
+
     /**
-     * @Id @ManyToOne(targetEntity=\"\\" . ucfirst($name) . "\")
-     * @JoinColumn(onDelete=\"cascade\")
      * @var \\" . ucfirst($name) . "
      */
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: \"\\" . ucfirst($name) . "\")]
+    #[ORM\JoinColumn(onDelete: \"cascade\")]
     public \$$name;
     ";
 
