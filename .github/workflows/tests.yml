@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php-version: ['8.2', '8.3', '8.4']
+        php-version: ['8.3', '8.4', '8.5']
 
     services:
       mysql:
@@ -58,5 +58,5 @@ jobs:
       # phpstan-baseline.neon (voir phpstan.neon.dist) - ce job echoue
       # seulement sur une NOUVELLE erreur.
       - name: Run phpstan
-        if: matrix.php-version == '8.2'
+        if: matrix.php-version == '8.3'
         run: composer phpstan
