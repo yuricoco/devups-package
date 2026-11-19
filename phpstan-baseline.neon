@@ -781,7 +781,7 @@ parameters:
 			path: src/devups/ModuleAdmin/services.php
 
 		-
-			message: "#^Access to an undefined property ConfigurationController\\:\\:\\$datatable\\.$#"
+			message: "#^Access to an undefined property devups\\\\ModuleConfig\\\\Controller\\\\ConfigurationController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devups/ModuleConfig/Controller/ConfigurationController.php
 
@@ -801,7 +801,7 @@ parameters:
 			path: src/devups/ModuleConfig/Entity/Configuration.php
 
 		-
-			message: "#^Call to an undefined static method ConfigurationForm\\:\\:getFormData\\(\\)\\.$#"
+			message: "#^Call to an undefined static method devups\\\\ModuleConfig\\\\Form\\\\ConfigurationForm\\:\\:getFormData\\(\\)\\.$#"
 			count: 1
 			path: src/devups/ModuleConfig/Form/ConfigurationForm.php
 
@@ -856,7 +856,7 @@ parameters:
 			path: src/devups/ModuleLang/Resource/views/admin/layout.blade.php
 
 		-
-			message: "#^Access to an undefined property Dvups_logController\\:\\:\\$datatable\\.$#"
+			message: "#^Access to an undefined property devups\\\\ModuleLog\\\\Controller\\\\Dvups_logController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devups/ModuleLog/Controller/Dvups_logController.php
 
@@ -871,7 +871,7 @@ parameters:
 			path: src/devups/ModuleLog/Datatable/Dvups_logTable.php
 
 		-
-			message: "#^Call to an undefined static method Dvups_logForm\\:\\:getFormData\\(\\)\\.$#"
+			message: "#^Call to an undefined static method devups\\\\ModuleLog\\\\Form\\\\Dvups_logForm\\:\\:getFormData\\(\\)\\.$#"
 			count: 1
 			path: src/devups/ModuleLog/Form/Dvups_logForm.php
 

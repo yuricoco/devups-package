@@ -168,3 +168,27 @@ class Dvups_langTable extends \devups\ModuleLang\Datatable\Dvups_langTable
 class Dvups_langForm extends \devups\ModuleLang\Form\Dvups_langForm
 {
 }
+
+class ConfigurationController extends \devups\ModuleConfig\Controller\ConfigurationController
+{
+}
+
+class ConfigurationTable extends \devups\ModuleConfig\Datatable\ConfigurationTable
+{
+}
+
+class ConfigurationForm extends \devups\ModuleConfig\Form\ConfigurationForm
+{
+}
+
+class Dvups_logController extends \devups\ModuleLog\Controller\Dvups_logController
+{
+}
+
+class Dvups_logTable extends \devups\ModuleLog\Datatable\Dvups_logTable
+{
+}
+
+class Dvups_logForm extends \devups\ModuleLog\Form\Dvups_logForm
+{
+}

@@ -1,5 +1,6 @@
-<?php 
+<?php
 
+namespace devups\ModuleLog\Datatable;
 
 use dclass\devups\Datatable\Datatable as Datatable;
 
@@ -37,7 +38,7 @@ class Dvups_logTable extends Datatable{
         // Filtres back-office (lecture seule) : level exact, plage de dates
         // sur last_at, recherche libre sur entity_class/file/message (sert
         // aussi de filtre "par module" via le chemin du fichier source).
-        $qb = Dvups_log::select();
+        $qb = \Dvups_log::select();
         if ($level = \Request::get('level'))
             $qb = $qb->where('this.level', $level);
         if ($from = \Request::get('from'))
@@ -79,7 +80,7 @@ class Dvups_logTable extends Datatable{
 
     public function router()
     {
-        $tablemodel = Request::get("tablemodel", null);
+        $tablemodel = \Request::get("tablemodel", null);
         if ($tablemodel && method_exists($this, "build" . $tablemodel . "table") && $result = call_user_func(array($this, "build" . $tablemodel . "table"))) {
             return $result;
         } else
@@ -92,3 +93,6 @@ class Dvups_logTable extends Datatable{
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Dvups_logTable::class, 'Dvups_logTable');

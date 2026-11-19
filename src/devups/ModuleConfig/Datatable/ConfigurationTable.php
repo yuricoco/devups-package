@@ -1,5 +1,6 @@
 <?php
 
+namespace devups\ModuleConfig\Datatable;
 
 use dclass\devups\Datatable\Datatable as Datatable;
 
@@ -15,7 +16,7 @@ class ConfigurationTable extends Datatable
     public static function init(\Configuration $configuration = null)
     {
 
-        $dt = new ConfigurationTable(new Configuration());
+        $dt = new ConfigurationTable(new \Configuration());
         $dt->entity = $configuration;
 
         return $dt;
@@ -68,3 +69,6 @@ class ConfigurationTable extends Datatable
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(ConfigurationTable::class, 'ConfigurationTable');

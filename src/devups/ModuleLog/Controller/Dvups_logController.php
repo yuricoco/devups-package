@@ -1,5 +1,6 @@
 <?php
 
+namespace devups\ModuleLog\Controller;
 
 use dclass\devups\Controller\Controller;
 
@@ -19,9 +20,9 @@ class Dvups_logController extends Controller
             die;
         }
 
-        $this->datatable = Dvups_logTable::init(new Dvups_log())->buildindextable();
+        $this->datatable = \Dvups_logTable::init(new \Dvups_log())->buildindextable();
 
-        self::$jsfiles[] = Dvups_log::classpath('Resource/js/dvups_logCtrl.js');
+        self::$jsfiles[] = \Dvups_log::classpath('Resource/js/dvups_logCtrl.js');
 
         $this->entitytarget = 'Dvups_log';
         $this->title = "Journal";
@@ -42,7 +43,7 @@ class Dvups_logController extends Controller
             return ['success' => false, 'detail' => t('Action non autorisee')];
 
         return ['success' => true,
-            'datatable' => Dvups_logTable::init(new Dvups_log())->router()->getTableRest(),
+            'datatable' => \Dvups_logTable::init(new \Dvups_log())->router()->getTableRest(),
         ];
 
     }
@@ -57,9 +58,9 @@ class Dvups_logController extends Controller
         $this->entitytarget = 'Dvups_log';
         $this->title = "Detail du journal";
 
-        $dvups_log = Dvups_log::find($id);
+        $dvups_log = \Dvups_log::find($id);
 
-        $detailHtml = Dvups_logTable::init()
+        $detailHtml = \Dvups_logTable::init()
             ->builddetailtable()
             ->renderentitydata($dvups_log);
 
@@ -75,3 +76,6 @@ class Dvups_logController extends Controller
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Dvups_logController::class, 'Dvups_logController');
