@@ -936,6 +936,24 @@ migration de namespace).
 `composer test` (423 tests, 0 echec, 2 incomplete - inchange) et
 `composer phpstan` (0 erreur) verts apres ce point (c).
 
+**LOT 5.3 - REPORTE (decision prise avec l'utilisateur).** Perimetre
+reel verifie avant toute edition : 58 fichiers de `dclass/` sont
+encore en namespace global (ni `dclass\devups\...` ni `Devups\...`),
+dont le **coeur runtime du framework** - `model/Model.php`,
+`model/ModelTrait.php` (magie `__get`/`__set` tres utilisee),
+`Tchutte/QueryBuilder.php`, `Tchutte/DBAL.php`, `Http/Router.php`,
+`Http/Request.php`, `Genesis.php`, `RateLimiter.php`, les classes
+`Form*`, et les classes-attributs `Api`/`Auth`/`GET`/`POST`/`PUT`/
+`DELETE` utilisees comme attributs PHP dans tout le depot. Risque et
+rayon d'impact largement superieurs aux points (a)/(b)/(c) (qui ne
+touchaient que des classes feuilles, jamais etendues/appelees par le
+reste du framework) - et le LOT 5.0 qualifiait deja explicitement ce
+point de "pas de priorite". Decision : **reporte**, on passe a 5.4 (qui
+est un ajout pur, sans conversion a risque). A reprendre plus tard,
+eventuellement par sous-lot (ex. `Http/`/`annotation/` seuls, en
+laissant `Model`/`ModelTrait`/`QueryBuilder`/`Router` pour une passe
+dediee separee) plutot qu'en un seul bloc de 58 fichiers.
+
 ### LOT 5.1 - FAIT (helper `Model::shortClassName()` + conversion des sites "non surs")
 
 Revue ligne-par-ligne exhaustive des 19 fichiers listes en LOT 5.0 (plus
