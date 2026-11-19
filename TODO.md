@@ -954,6 +954,65 @@ eventuellement par sous-lot (ex. `Http/`/`annotation/` seuls, en
 laissant `Model`/`ModelTrait`/`QueryBuilder`/`Router` pour une passe
 dediee separee) plutot qu'en un seul bloc de 58 fichiers.
 
+### LOT 5.4 - FAIT (conteneur PSR-11, ajout pur)
+
+**Ajout pur, aucune conversion a risque** - conforme a la description
+initiale du lot ("nouveau, pas de conversion a risque"). Aucun site
+existant n'a ete modifie pour s'y brancher : le conteneur est
+disponible pour du code futur qui choisirait de l'utiliser, sans
+changer le comportement actuel de l'application (toute la resolution
+de services existante - globals, `new X()` directs, statics -
+continue de fonctionner exactement comme avant).
+
+`psr/container` (`^2.0`, deja resolu a 2.0.2 de maniere transitive via
+`illuminate/view` -> `illuminate/container`) ajoute comme dependance
+EXPLICITE dans `composer.json` (`composer require psr/container:^2.0
+--no-update` puis `composer update psr/container
+--ignore-platform-req=php` - necessaire car le PHP CLI local est en
+8.2.12, alors que `composer.json` exige `>=8.3` ; la CI GitHub, sur
+8.3/8.4/8.5, n'a pas ce probleme. Aucun changement de version dans
+`composer.lock`, seule la nouvelle dependance directe y apparait).
+
+Deux nouvelles classes, namespace `Devups` (meme convention que
+`Devups\View`, seul precedent existant pour du code neuf de ce
+chantier - voir note LOT 5.3 ci-dessus sur la cible de namespace) :
+
+- `dclass/devups/Container.php` - `Devups\Container implements
+  Psr\Container\ContainerInterface`. API minimale : `set($id, $value)`
+  (valeur deja construite), `bind($id, callable $factory)` (fabrique
+  appelee a CHAQUE resolution), `singleton($id, callable $factory)`
+  (fabrique resolue une seule fois, resultat mis en cache), plus
+  `get()`/`has()` du contrat PSR-11.
+- `dclass/devups/ContainerNotFoundException.php` - `Devups\
+  ContainerNotFoundException extends RuntimeException implements
+  Psr\Container\NotFoundExceptionInterface`, levee par `get()` pour un
+  identifiant inconnu.
+
+`tests/Unit/ContainerTest.php` (8 tests, namespace `Devups\Tests\Unit`
+comme le reste de la suite) : contrat PSR-11 (`instanceof
+ContainerInterface`), `set`/`get`, `has` apres `set`/`bind`, `bind`
+rappelle la fabrique a chaque resolution (valeurs distinctes),
+`singleton` ne resout qu'une fois (meme instance, fabrique appelee 1
+seule fois), la fabrique recoit bien le conteneur en argument,
+`get()` sur un identifiant inconnu leve `ContainerNotFoundException`
+(et `NotFoundExceptionInterface`), `set()` ecrase une fabrique
+precedemment `bind()`ee pour le meme identifiant.
+
+`composer dump-autoload --ignore-platform-req=php` requis apres
+l'ajout des 2 nouveaux fichiers (classmap, pas de regeneration
+automatique). `composer test` (431 tests = 423 + 8 nouveaux, 0 echec,
+2 incomplete inchanges) et `composer phpstan` (0 erreur, aucun stub
+necessaire - `psr/container` est un paquet reellement installe, pas un
+alias `class_alias()`) verts.
+
+**Portee explicitement non traitee ici** (ajout pur, pas une
+conversion) : aucun site existant (View.php/Container Illuminate
+interne, globals `$enittycollection`/`$user`, instanciations directes
+`new Model()`-like...) n'a ete bascule vers ce conteneur. Le brancher
+reellement dans le framework (ex. resolution de services dans
+`Router`/`Controller`) serait une conversion a risque, hors perimetre
+de ce lot - a decider au cas par cas plus tard si besoin.
+
 ### LOT 5.1 - FAIT (helper `Model::shortClassName()` + conversion des sites "non surs")
 
 Revue ligne-par-ligne exhaustive des 19 fichiers listes en LOT 5.0 (plus

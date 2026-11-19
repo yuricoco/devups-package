@@ -25,7 +25,8 @@
         "minishlink/web-push": "^10.0",
         "symfony/cache": "^7.4",
         "illuminate/view": "^11.0",
-        "illuminate/events": "^11.0"
+        "illuminate/events": "^11.0",
+        "psr/container": "^2.0"
     },
     "autoload": {
         "classmap": [
