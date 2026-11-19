@@ -143,3 +143,11 @@ class Tree_item_lang extends \devupscms\ModuleTree\Entity\Tree_item_lang
 class Tree_lang extends \devupscms\ModuleTree\Entity\Tree_lang
 {
 }
+
+class Oauth_client extends \devupsfront\ModuleUser\Entity\Oauth_client
+{
+}
+
+class User extends \devupsfront\ModuleUser\Entity\User
+{
+}

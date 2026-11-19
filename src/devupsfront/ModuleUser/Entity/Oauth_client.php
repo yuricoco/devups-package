@@ -54,3 +54,6 @@ class Oauth_client extends Model implements JsonSerializable
 
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Oauth_client::class, 'Oauth_client');

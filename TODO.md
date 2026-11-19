@@ -641,16 +641,40 @@ entrees `phpstan-baseline.neon` mises a jour vers la FQCN
 (`Tree_item::getParent()`, constructeurs `Tree_item_lang`/`Tree_lang`
 avec parametre `$id` inutilise).
 
-**Volume restant** : 2 entites sur 35 sous `src/**/Entity/*.php`,
-toutes dans 1 module de `devupsfront` (`ModuleUser` :
-`Oauth_client`, `User`) - dernier module de l'arborescence `src/`
-avant le passage aux sous-dossiers `Controller/`/`Datatable/`/`Form/`
-(point (b) du LOT 5.0) et aux classes de base
-`dclass/extends/{Dvups_config_item,Dvups_migration,ImageCore,
-UserCore}.php` (namespace `Devups\` - coeur du framework, PAS `src/`)
-et `Dv_langCore.php` (deja observe : reste en namespace global, utilise
-par `use ModelTrait` sans etendre `Model` - cas particulier a traiter
-avec soin, voir le piege deja rencontre en LOT 5.1).
+**ModuleUser (devupsfront) - FAIT** : `Oauth_client`, `User`
+namespaces sous `devupsfront\ModuleUser\Entity`. `Oauth_client.php`
+etait DEJA namespace avant ce chantier (4e survivante de la migration
+partielle anterieure, apres `Interval_group`, `Workers` et le `use`
+FQCN dans `Notification.php`) - seul l'alias manquait. `User.php` :
+fichier le plus charge en volume (300+ lignes) mais peu de sites a
+corriger - `extends UserCore implements JsonSerializable,
+NotificationSerialize` prefixes, `new Country()` (module
+ModuleLocation) prefixe, 6x `Dfile::` prefixees, `Push_subscription::
+where(...)` (module ModulePushNotification) prefixe ; `new
+\RateLimiter(...)` deja prefixe, `self::Dfile($file)` (liaison statique
+tardive) et `User::classpath(...)` (auto-reference meme module)
+laisses tels quels. Aucune entree `phpstan-baseline.neon` a mettre a
+jour pour ce module.
+
+**LOT 5.2 : les 35 entites de `src/**/Entity/*.php` sont desormais
+toutes namespacees** (`devups` : ModuleAdmin/ModuleConfig/ModuleLog ;
+`devupscms` : ModuleCms/ModuleData/ModuleLocation/ModuleNotification/
+ModulePushNotification/ModuleReporting/ModuleTree ; `devupsfront` :
+ModuleUser), chacune avec son alias `class_alias()` de compatibilite
+et son stub `phpstan-stubs/class_alias_stubs.php` correspondant.
+`composer test` (423 tests, 0 echec) et `composer phpstan` (0 erreur)
+verifies verts apres chaque module tout au long du lot.
+
+**Reste a faire pour clore LOT 5.2 (point (b) du LOT 5.0, pas encore
+commence)** : namespacer les sous-dossiers `Controller/`/`Datatable/`/
+`Form/` de chaque module `src/<component>/<Module>/`, meme recette ;
+et les classes de base `dclass/extends/{Dvups_config_item,
+Dvups_migration,ImageCore,UserCore}.php` (convention coeur du
+framework, racine `Devups\`, PAS `src/`) ; decider quoi faire (si
+necessaire) de l'exception volontaire de `Dv_langCore.php` qui reste
+en namespace global (deja observe : utilise `ModelTrait` sans etendre
+`Model` - cas particulier a traiter avec soin, voir le piege deja
+rencontre en LOT 5.1).
 
 ### LOT 5.1 - FAIT (helper `Model::shortClassName()` + conversion des sites "non surs")
 
