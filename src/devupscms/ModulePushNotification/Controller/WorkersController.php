@@ -1,5 +1,6 @@
 <?php
 
+namespace devupscms\ModulePushNotification\Controller;
 
 use dclass\devups\Controller\Controller;
 use devupscms\ModulePushNotification\Entity\Workers;
@@ -10,7 +11,7 @@ class WorkersController extends Controller
     public function listView()
     {
 
-        $this->datatable = WorkersTable::init(new Workers())->buildindextable();
+        $this->datatable = \WorkersTable::init(new Workers())->buildindextable();
 
         self::$jsfiles[] = Workers::classpath('Resource/js/workersCtrl.js');
 
@@ -25,7 +26,7 @@ class WorkersController extends Controller
 
         return [
             'success' => true,
-            'datatable' => WorkersTable::init(new Workers())->router()->getTableRest(),
+            'datatable' => \WorkersTable::init(new Workers())->router()->getTableRest(),
         ];
     }
 
@@ -40,7 +41,7 @@ class WorkersController extends Controller
 
         return [
             'success' => true,
-            'form' => WorkersForm::init($workers, $action)
+            'form' => \WorkersForm::init($workers, $action)
                 ->buildForm()
                 ->addDformjs()
                 ->renderForm(),
@@ -66,7 +67,7 @@ class WorkersController extends Controller
         return array(
             'success' => true,
             'workers' => $workers,
-            'tablerow' => WorkersTable::init()->router()->getSingleRowRest($workers),
+            'tablerow' => \WorkersTable::init()->router()->getSingleRowRest($workers),
             'detail' => ''
         );
     }
@@ -90,7 +91,7 @@ class WorkersController extends Controller
         return array(
             'success' => true,
             'workers' => $workers,
-            'tablerow' => WorkersTable::init()->router()->getSingleRowRest($workers),
+            'tablerow' => \WorkersTable::init()->router()->getSingleRowRest($workers),
             'detail' => ''
         );
     }
@@ -105,7 +106,7 @@ class WorkersController extends Controller
         $workers = Workers::find($id);
 
         $this->renderDetailView(
-            WorkersTable::init()
+            \WorkersTable::init()
                 ->builddetailtable()
                 ->renderentitydata($workers)
         );
@@ -142,14 +143,14 @@ class WorkersController extends Controller
             ->whereId($id)
             ->where("this.type", 'push_notification')->count()
         )
-            Push_subscription::initPusher();
+            \Push_subscription::initPusher();
 
         Workers::initQb()
             ->whereId($id)
             //            ->where("this.type", 'push_notification')
             ->cursor(function (\devupscms\ModulePushNotification\Entity\Workers $worker) {
                 if ($worker->type === 'push_notification') {
-                    $pusher = Push_subscription::find($worker->queue);
+                    $pusher = \Push_subscription::find($worker->queue);
                     $payload = json_decode($worker->payload, true);
                     $result = $pusher->fcmPushNotification($payload['message'], $payload['data']);
                 }
@@ -174,7 +175,7 @@ class WorkersController extends Controller
             ->whereNull("this.log")
             ->where("this.type", 'push_notification')->count()
         )
-            Push_subscription::initPusher();
+            \Push_subscription::initPusher();
 
         $date = date('Y-m-d H:i:s');
         Workers::initQb()
@@ -196,7 +197,7 @@ class WorkersController extends Controller
                         return null;
                     }
 
-                    $pusher = Push_subscription::find($worker->queue);
+                    $pusher = \Push_subscription::find($worker->queue);
                     $payload = json_decode($worker->payload, true);
                     // ETAPE M.3 : Web Push (VAPID) a cote du FCM/Expo existant,
                     // selon le type d'abonnement - jamais les deux pour le meme.
@@ -237,3 +238,6 @@ class WorkersController extends Controller
             });
     }
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(WorkersController::class, 'WorkersController');

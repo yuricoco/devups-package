@@ -791,12 +791,30 @@ prefixees par `\`). Les attributs PHP (`#[Api(...)]`, `#[GET]`,
 prefixes par `\` comme toute autre reference de classe (meme regle de
 resolution de nom).
 
+**ModulePushNotification (devupscms) - FAIT (7 fichiers)** :
+`WorkersController`, `Push_subscriptionController` (+
+`Push_subscriptionFrontController`), `WorkersTable`,
+`Push_subscriptionTable`, `WorkersForm`, `Push_subscriptionForm`
+namespaces. `WorkersController.php` conservait un `use
+devupscms\ModulePushNotification\Entity\Workers;` preexistant - garde
+tel quel (resolution par `use`, aucun `\` ajoute devant `Workers`
+contrairement a `Push_subscription`, qui n'avait pas cet import et a
+donc ete prefixe). Meme trouvaille que `NotificationFrontController` :
+`Push_subscriptionFrontController.php` avait une declaration
+`namespace ...;` + `use ...;` entierement commentee - remplacee par la
+vraie declaration ; attributs PHP (`#[Api]`, `#[Auth]`, `#[GET]`,
+`#[POST]`) prefixes par coherence. L'import `use
+Minishlink\WebPush\VAPID;` (bibliotheque externe) laisse tel quel -
+resolution par `use` independante du namespace du fichier, `VAPID`
+reste donc non-prefixe dans le code (meme regle que pour les entites
+importees par `use`).
+
 **Volume de ce point (b)** : 83 fichiers (33 Controller + 25 Datatable +
 25 Form) repartis sur `devups` (ModuleAdmin 13 FAIT, ModuleConfig 3 FAIT,
 ModuleLang 3 FAIT, ModuleLog 3 FAIT), `devupscms` (ModuleCms 11 FAIT,
 ModuleData 6 FAIT, ModuleLocation 4 FAIT, ModuleNotification 7 FAIT,
-ModulePushNotification 7, ModuleReporting 9, ModuleTree 10),
-`devupsfront` (ModuleUser 7). **50 fichiers sur 83 termines.**
+ModulePushNotification 7 FAIT, ModuleReporting 9, ModuleTree 10),
+`devupsfront` (ModuleUser 7). **57 fichiers sur 83 termines.**
 **devups entierement termine (22 fichiers).**
 
 ### LOT 5.1 - FAIT (helper `Model::shortClassName()` + conversion des sites "non surs")

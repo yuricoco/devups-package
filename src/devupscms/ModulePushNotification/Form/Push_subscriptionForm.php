@@ -1,9 +1,10 @@
-<?php 
+<?php
 
-        
-use Genesis as g;
+namespace devupscms\ModulePushNotification\Form;
 
-class Push_subscriptionForm extends FormManager{
+use \Genesis as g;
+
+class Push_subscriptionForm extends \FormManager{
 
     public $push_subscription;
 
@@ -59,8 +60,11 @@ class Push_subscriptionForm extends FormManager{
 
     public static function renderWidget($id = null, $action = "create")
     {
-        Genesis::renderView("push_subscription.formWidget", self::getFormData($id, $action));
+        \Genesis::renderView("push_subscription.formWidget", self::getFormData($id, $action));
     }
-    
+
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Push_subscriptionForm::class, 'Push_subscriptionForm');
     

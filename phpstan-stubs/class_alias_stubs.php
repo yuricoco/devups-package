@@ -356,3 +356,31 @@ class NotificationForm extends \devupscms\ModuleNotification\Form\NotificationFo
 class NotificationtypeForm extends \devupscms\ModuleNotification\Form\NotificationtypeForm
 {
 }
+
+class WorkersController extends \devupscms\ModulePushNotification\Controller\WorkersController
+{
+}
+
+class Push_subscriptionController extends \devupscms\ModulePushNotification\Controller\Push_subscriptionController
+{
+}
+
+class Push_subscriptionFrontController extends \devupscms\ModulePushNotification\Controller\Push_subscriptionFrontController
+{
+}
+
+class WorkersTable extends \devupscms\ModulePushNotification\Datatable\WorkersTable
+{
+}
+
+class Push_subscriptionTable extends \devupscms\ModulePushNotification\Datatable\Push_subscriptionTable
+{
+}
+
+class WorkersForm extends \devupscms\ModulePushNotification\Form\WorkersForm
+{
+}
+
+class Push_subscriptionForm extends \devupscms\ModulePushNotification\Form\Push_subscriptionForm
+{
+}

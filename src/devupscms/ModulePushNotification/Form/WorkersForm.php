@@ -1,9 +1,10 @@
 <?php
 
+namespace devupscms\ModulePushNotification\Form;
 
-use Genesis as g;
+use \Genesis as g;
 
-class WorkersForm extends FormManager{
+class WorkersForm extends \FormManager{
 
     public $workers;
 
@@ -54,7 +55,10 @@ class WorkersForm extends FormManager{
 
     public static function renderWidget($id = null, $action = "create")
     {
-        Genesis::renderView("workers.formWidget", self::getFormData($id, $action));
+        \Genesis::renderView("workers.formWidget", self::getFormData($id, $action));
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(WorkersForm::class, 'WorkersForm');

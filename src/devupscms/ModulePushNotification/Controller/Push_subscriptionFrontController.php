@@ -1,26 +1,18 @@
 <?php
 
-
-/*namespace devupscms\ModulePushNotification\Controller;
-
-use Configuration;
-use Emaillog;
-use Push_subscription;
-use Push_subscriptionTable;
-use Request;
-use User;*/
+namespace devupscms\ModulePushNotification\Controller;
 
 use Minishlink\WebPush\VAPID;
 use dclass\devups\Controller\Controller;
 
-#[Api(name: '/push_subscription')]
+#[\Api(name: '/push_subscription')]
 class Push_subscriptionFrontController extends \dclass\devups\Controller\FrontController
 {
 
     /** Reservee a l'administration : seul le back-office peut l'appeler. */
     private static function denyUnlessAdmin(): ?array
     {
-        if (Router::$admin_route === true) {
+        if (\Router::$admin_route === true) {
             return null;
         }
         http_response_code(403);
@@ -35,11 +27,11 @@ class Push_subscriptionFrontController extends \dclass\devups\Controller\FrontCo
      * @return Lazyloading|QueryBuilder
      * @throws ReflectionException
      */
-    #[Auth(authorized: 1)]
-    #[GET]
+    #[\Auth(authorized: 1)]
+    #[\GET]
      public function index(){
 
-            $qb = Push_subscription::initQb()->where('this.user_id', (int)Auth::$user_id);
+            $qb = \Push_subscription::initQb()->where('this.user_id', (int)\Auth::$user_id);
 
             return $qb->lazyloading();
 
@@ -55,23 +47,23 @@ class Push_subscriptionFrontController extends \dclass\devups\Controller\FrontCo
      *
      * @return array
      */
-    #[Auth(authorized: 1)]
-    #[POST(path: '/register')]
+    #[\Auth(authorized: 1)]
+    #[\POST(path: '/register')]
     public function register()
     {
-        $raw = Request::raw()['push_subscription'] ?? [];
+        $raw = \Request::raw()['push_subscription'] ?? [];
         $data = array_intersect_key($raw, array_flip(['auth_token']));
-        $data['user_id'] = (int)Auth::$user_id;
+        $data['user_id'] = (int)\Auth::$user_id;
         $data['subscription_type'] = 'user';
         $data['status'] = 1;
 
-        $exist = Push_subscription::where(
+        $exist = \Push_subscription::where(
             [
                 'auth_token' => $data['auth_token'] ?? null,
                 'user_id' => $data['user_id'],
             ])->firstOrNull();
         if (!$exist)
-            $exist = Push_subscription::create($data);
+            $exist = \Push_subscription::create($data);
         /*else
             $exist->__update([
                 'public_key' => $subscription['public_key'],
@@ -103,8 +95,8 @@ class Push_subscriptionFrontController extends \dclass\devups\Controller\FrontCo
 
         $data = VAPID::createVapidKeys();
 
-        Configuration::set('VAPID_PUBLIC_KEY', $data['publicKey']);
-        Configuration::set('VAPID_PRIVATE_KEY', $data['privateKey']);
+        \Configuration::set('VAPID_PUBLIC_KEY', $data['publicKey']);
+        \Configuration::set('VAPID_PRIVATE_KEY', $data['privateKey']);
         return [
             'key' => $data['publicKey'],
         ];
@@ -118,9 +110,12 @@ class Push_subscriptionFrontController extends \dclass\devups\Controller\FrontCo
     public function key()
     {
         return [
-            'key' => Configuration::get('VAPID_PUBLIC_KEY'),
+            'key' => \Configuration::get('VAPID_PUBLIC_KEY'),
             //'key'=>'BIbPxqOqlFtjC4vHDXWWMRDtXEAg2_llqsYj2uprShJBbbIXsPksaKjAojNJzTyezeMeP3xaFDu6o_G5QVZAmvw'
         ];
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Push_subscriptionFrontController::class, 'Push_subscriptionFrontController');

@@ -1211,12 +1211,12 @@ parameters:
 			path: src/devupscms/ModuleNotification/Resource/views/admin/layout.blade.php
 
 		-
-			message: "#^Access to an undefined property Push_subscriptionController\\:\\:\\$datatable\\.$#"
+			message: "#^Access to an undefined property devupscms\\\\ModulePushNotification\\\\Controller\\\\Push_subscriptionController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devupscms/ModulePushNotification/Controller/Push_subscriptionController.php
 
 		-
-			message: "#^Access to an undefined property WorkersController\\:\\:\\$datatable\\.$#"
+			message: "#^Access to an undefined property devupscms\\\\ModulePushNotification\\\\Controller\\\\WorkersController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devupscms/ModulePushNotification/Controller/WorkersController.php
 
@@ -1236,7 +1236,7 @@ parameters:
 			path: src/devupscms/ModulePushNotification/Datatable/WorkersTable.php
 
 		-
-			message: "#^Call to an undefined static method Push_subscriptionForm\\:\\:getFormData\\(\\)\\.$#"
+			message: "#^Call to an undefined static method devupscms\\\\ModulePushNotification\\\\Form\\\\Push_subscriptionForm\\:\\:getFormData\\(\\)\\.$#"
 			count: 1
 			path: src/devupscms/ModulePushNotification/Form/Push_subscriptionForm.php
 
@@ -1246,7 +1246,7 @@ parameters:
 			path: src/devupscms/ModulePushNotification/Form/Push_subscriptionForm.php
 
 		-
-			message: "#^Call to an undefined static method WorkersForm\\:\\:getFormData\\(\\)\\.$#"
+			message: "#^Call to an undefined static method devupscms\\\\ModulePushNotification\\\\Form\\\\WorkersForm\\:\\:getFormData\\(\\)\\.$#"
 			count: 1
 			path: src/devupscms/ModulePushNotification/Form/WorkersForm.php
 
