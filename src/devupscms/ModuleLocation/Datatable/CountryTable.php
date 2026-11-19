@@ -1,5 +1,6 @@
-<?php 
+<?php
 
+namespace devupscms\ModuleLocation\Datatable;
 
 use dclass\devups\Datatable\Datatable as Datatable;
 
@@ -60,3 +61,6 @@ class CountryTable extends Datatable{
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(CountryTable::class, 'CountryTable');

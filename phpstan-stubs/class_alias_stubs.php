@@ -312,3 +312,19 @@ class IntervalForm extends \devupscms\ModuleData\Form\IntervalForm
 class StatusForm extends \devupscms\ModuleData\Form\StatusForm
 {
 }
+
+class CountryController extends \devupscms\ModuleLocation\Controller\CountryController
+{
+}
+
+class CountryFrontController extends \devupscms\ModuleLocation\Controller\CountryFrontController
+{
+}
+
+class CountryTable extends \devupscms\ModuleLocation\Datatable\CountryTable
+{
+}
+
+class CountryForm extends \devupscms\ModuleLocation\Form\CountryForm
+{
+}

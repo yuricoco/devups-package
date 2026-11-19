@@ -1,19 +1,20 @@
-<?php 
+<?php
 
+namespace devupscms\ModuleLocation\Controller;
 
 class CountryFrontController extends CountryController{
 
     public function ll($next = 1, $per_page = 10){
         
-            $ll = new Lazyloading();
-            $ll->lazyloading(new Country());
+            $ll = new \Lazyloading();
+            $ll->lazyloading(new \Country());
             return $ll;
 
     }
 
     public function createAction($country_form = null ){
         $rawdata = \Request::raw();
-        $country = $this->hydrateWithJson(new Country(), $rawdata["country"]);
+        $country = $this->hydrateWithJson(new \Country(), $rawdata["country"]);
  
 
         
@@ -27,7 +28,7 @@ class CountryFrontController extends CountryController{
     public function updateAction($id, $country_form = null){
         $rawdata = \Request::raw();
             
-        $country = $this->hydrateWithJson(new Country($id), $rawdata["country"]);
+        $country = $this->hydrateWithJson(new \Country($id), $rawdata["country"]);
 
                   
         
@@ -42,13 +43,16 @@ class CountryFrontController extends CountryController{
     public function detailAction($id)
     {
 
-        $country = Country::find($id);
+        $country = \Country::find($id);
 
         return 	array(	'success' => true,
                         'country' => $country,
                         'detail' => '');
-          
-}       
+
+}
 
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(CountryFrontController::class, 'CountryFrontController');

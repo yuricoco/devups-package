@@ -1,15 +1,16 @@
-<?php 
+<?php
 
-            
+namespace devupscms\ModuleLocation\Controller;
+
 use dclass\devups\Controller\Controller;
 
 class CountryController extends Controller{
 
     public function listView($next = 1, $per_page = 10){
 
-        $this->datatable = CountryTable::init(new Country())->buildindextable();
+        $this->datatable = \CountryTable::init(new \Country())->buildindextable();
 
-        self::$jsfiles[] = Country::classpath('Resource/js/countryCtrl.js');
+        self::$jsfiles[] = \Country::classpath('Resource/js/countryCtrl.js');
 
         $this->entitytarget = 'Country';
         $this->title = "Manage Country";
@@ -21,22 +22,22 @@ class CountryController extends Controller{
     public function datatable($next, $per_page) {
     
         return ['success' => true,
-            'datatable' => CountryTable::init(new Country())->router()->getTableRest(),
+            'datatable' => \CountryTable::init(new \Country())->router()->getTableRest(),
         ];
         
     }
 
     public function formView($id = null)
     {
-        $country = new Country();
+        $country = new \Country();
         $action = __env . ("admin/api/country/create");
         if ($id) {
             $action = __env . ("admin/api/country/update?id=" . $id);
-            $country = Country::find($id);
+            $country = \Country::find($id);
         }
 
         return ['success' => true,
-            'form' => CountryForm::init($country, $action)
+            'form' => \CountryForm::init($country, $action)
                 ->buildForm()
                 ->addDformjs()
                 ->renderForm(),
@@ -46,7 +47,7 @@ class CountryController extends Controller{
     public function createAction($country_form = null ){
         extract($_POST);
 
-        $country = $this->form_fillingentity(new Country(), $country_form);
+        $country = $this->form_fillingentity(new \Country(), $country_form);
         if ( $this->error ) {
             return 	array(	'success' => false,
                             'country' => $country,
@@ -57,8 +58,8 @@ class CountryController extends Controller{
 
         $id = $country->__insert();
         return 	array(	'success' => true,
-                        'country' => Country::find($id, 1),
-                        'tablerow' => CountryTable::init()->router()->getSingleRowRest($country),
+                        'country' => \Country::find($id, 1),
+                        'tablerow' => \CountryTable::init()->router()->getSingleRowRest($country),
                         'detail' => '');
 
     }
@@ -66,11 +67,11 @@ class CountryController extends Controller{
     public function updateAction($id, $country_form = null){
         extract($_POST);
             
-        $country = $this->form_fillingentity(new Country($id), $country_form);
+        $country = $this->form_fillingentity(new \Country($id), $country_form);
      
         if ( $this->error ) {
             return 	array(	'success' => false,
-                'country' => Country::find($id, 1),
+                'country' => \Country::find($id, 1),
                             'action_form' => 'update&id='.$id,
                             'error' => $this->error);
         }
@@ -78,7 +79,7 @@ class CountryController extends Controller{
         $country->__update();
         return 	array(	'success' => true,
                         'country' => $country,
-                        'tablerow' => CountryTable::init()->router()->getSingleRowRest($country),
+                        'tablerow' => \CountryTable::init()->router()->getSingleRowRest($country),
                         'detail' => '');
                         
     }
@@ -90,10 +91,10 @@ class CountryController extends Controller{
         $this->entitytarget = 'Country';
         $this->title = "Detail Country";
 
-        $country = Country::find($id);
+        $country = \Country::find($id);
 
         $this->renderDetailView(
-            CountryTable::init()
+            \CountryTable::init()
                 ->builddetailtable()
                 ->renderentitydata($country)
         );
@@ -102,7 +103,7 @@ class CountryController extends Controller{
     
     public function deleteAction($id){
     
-        Country::delete($id);
+        \Country::delete($id);
         
         return 	array(	'success' => true, 
                         'detail' => ''); 
@@ -112,11 +113,14 @@ class CountryController extends Controller{
     public function deletegroupAction($ids)
     {
 
-        Country::where("id")->in($ids)->delete();
+        \Country::where("id")->in($ids)->delete();
 
         return array('success' => true,
-                'detail' => ''); 
+                'detail' => '');
 
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(CountryController::class, 'CountryController');

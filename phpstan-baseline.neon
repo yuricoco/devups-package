@@ -1101,7 +1101,7 @@ parameters:
 			path: src/devupscms/ModuleData/Resource/views/admin/layout.blade.php
 
 		-
-			message: "#^Access to an undefined property CountryController\\:\\:\\$datatable\\.$#"
+			message: "#^Access to an undefined property devupscms\\\\ModuleLocation\\\\Controller\\\\CountryController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devupscms/ModuleLocation/Controller/CountryController.php
 
@@ -1116,7 +1116,7 @@ parameters:
 			path: src/devupscms/ModuleLocation/Datatable/CountryTable.php
 
 		-
-			message: "#^Call to an undefined static method CountryForm\\:\\:getFormData\\(\\)\\.$#"
+			message: "#^Call to an undefined static method devupscms\\\\ModuleLocation\\\\Form\\\\CountryForm\\:\\:getFormData\\(\\)\\.$#"
 			count: 1
 			path: src/devupscms/ModuleLocation/Form/CountryForm.php
 

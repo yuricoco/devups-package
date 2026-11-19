@@ -1,9 +1,10 @@
 <?php
 
+namespace devupscms\ModuleLocation\Form;
 
-use Genesis as g;
+use \Genesis as g;
 
-class CountryForm extends FormManager
+class CountryForm extends \FormManager
 {
 
     public $country;
@@ -57,8 +58,11 @@ class CountryForm extends FormManager
 
     public static function renderWidget($id = null, $action = "create")
     {
-        Genesis::renderView("country.formWidget", self::getFormData($id, $action));
+        \Genesis::renderView("country.formWidget", self::getFormData($id, $action));
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(CountryForm::class, 'CountryForm');
     
