@@ -1136,12 +1136,12 @@ parameters:
 			path: src/devupscms/ModuleLocation/Resource/views/front/layout.blade.php
 
 		-
-			message: "#^Access to an undefined property NotificationController\\:\\:\\$datatable\\.$#"
+			message: "#^Access to an undefined property devupscms\\\\ModuleNotification\\\\Controller\\\\NotificationController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devupscms/ModuleNotification/Controller/NotificationController.php
 
 		-
-			message: "#^Access to an undefined property NotificationtypeController\\:\\:\\$datatable\\.$#"
+			message: "#^Access to an undefined property devupscms\\\\ModuleNotification\\\\Controller\\\\NotificationtypeController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devupscms/ModuleNotification/Controller/NotificationtypeController.php
 
@@ -1161,7 +1161,7 @@ parameters:
 			path: src/devupscms/ModuleNotification/Entity/Notification.php
 
 		-
-			message: "#^Call to an undefined static method NotificationForm\\:\\:getFormData\\(\\)\\.$#"
+			message: "#^Call to an undefined static method devupscms\\\\ModuleNotification\\\\Form\\\\NotificationForm\\:\\:getFormData\\(\\)\\.$#"
 			count: 1
 			path: src/devupscms/ModuleNotification/Form/NotificationForm.php
 

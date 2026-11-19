@@ -1,15 +1,16 @@
-<?php 
+<?php
 
-            
+namespace devupscms\ModuleNotification\Controller;
+
 use dclass\devups\Controller\Controller;
 
 class NotificationtypeController extends Controller{
 
     public function listView($next = 1, $per_page = 10){
 
-        $this->datatable = NotificationtypeTable::init(new Notificationtype())->buildindextable();
+        $this->datatable = \NotificationtypeTable::init(new \Notificationtype())->buildindextable();
 
-        self::$jsfiles[] = Notificationtype::classpath('Resource/js/notificationtypeCtrl.js');
+        self::$jsfiles[] = \Notificationtype::classpath('Resource/js/notificationtypeCtrl.js');
 
         $this->entitytarget = 'Notificationtype';
         $this->title = "Manage Notificationtype";
@@ -21,22 +22,22 @@ class NotificationtypeController extends Controller{
     public function datatable($next, $per_page) {
     
         return ['success' => true,
-            'datatable' => NotificationtypeTable::init(new Notificationtype())->router()->getTableRest(),
+            'datatable' => \NotificationtypeTable::init(new \Notificationtype())->router()->getTableRest(),
         ];
         
     }
 
     public function formView($id = null)
     {
-        $notificationtype = new Notificationtype();
+        $notificationtype = new \Notificationtype();
         $action = __env . ("admin/api/notificationtype/create");
         if ($id) {
             $action = __env . ("admin/api/notificationtype/update?id=" . $id);
-            $notificationtype = Notificationtype::find($id);
+            $notificationtype = \Notificationtype::find($id);
         }
 
         return ['success' => true,
-            'form' => NotificationtypeForm::init($notificationtype, $action)
+            'form' => \NotificationtypeForm::init($notificationtype, $action)
                 ->buildForm()
                 ->addDformjs()
                 ->renderForm(),
@@ -46,7 +47,7 @@ class NotificationtypeController extends Controller{
     public function createAction($notificationtype_form = null ){
         extract($_POST);
 
-        $notificationtype = $this->form_fillingentity(new Notificationtype(), $notificationtype_form);
+        $notificationtype = $this->form_fillingentity(new \Notificationtype(), $notificationtype_form);
         if ( $this->error ) {
             return 	array(	'success' => false,
                             'notificationtype' => $notificationtype,
@@ -59,7 +60,7 @@ class NotificationtypeController extends Controller{
         $id = $notificationtype->__insert();
         return 	array(	'success' => true,
                         'notificationtype' => $notificationtype,
-                        'tablerow' => NotificationtypeTable::init()->router()->getSingleRowRest($notificationtype),
+                        'tablerow' => \NotificationtypeTable::init()->router()->getSingleRowRest($notificationtype),
                         'detail' => '');
 
     }
@@ -67,7 +68,7 @@ class NotificationtypeController extends Controller{
     public function updateAction($id, $notificationtype_form = null){
         extract($_POST);
             
-        $notificationtype = $this->form_fillingentity(new Notificationtype($id), $notificationtype_form);
+        $notificationtype = $this->form_fillingentity(new \Notificationtype($id), $notificationtype_form);
      
         if ( $this->error ) {
             return 	array(	'success' => false,
@@ -79,7 +80,7 @@ class NotificationtypeController extends Controller{
         $notificationtype->__update();
         return 	array(	'success' => true,
                         //'notificationtype' => $notificationtype,
-                        'tablerow' => NotificationtypeTable::init()->router()->getSingleRowRest(Notificationtype::find($id, 1)),
+                        'tablerow' => \NotificationtypeTable::init()->router()->getSingleRowRest(\Notificationtype::find($id, 1)),
                         'detail' => '');
                         
     }
@@ -91,10 +92,10 @@ class NotificationtypeController extends Controller{
         $this->entitytarget = 'Notificationtype';
         $this->title = "Detail Notificationtype";
 
-        $notificationtype = Notificationtype::find($id);
+        $notificationtype = \Notificationtype::find($id);
 
         $this->renderDetailView(
-            NotificationtypeTable::init()
+            \NotificationtypeTable::init()
                 ->builddetailtable()
                 ->renderentitydata($notificationtype)
         );
@@ -107,7 +108,7 @@ class NotificationtypeController extends Controller{
 
     public function deleteAction($id){
 
-        Notificationtype::delete($id);
+        \Notificationtype::delete($id);
         
         return 	array(	'success' => true, 
                         'detail' => ''); 
@@ -117,7 +118,7 @@ class NotificationtypeController extends Controller{
     public function deletegroupAction($ids)
     {
 
-        Notificationtype::where("id")->in($ids)->delete();
+        \Notificationtype::where("id")->in($ids)->delete();
         return array('success' => true,
                 'detail' => ''); 
 
@@ -125,18 +126,21 @@ class NotificationtypeController extends Controller{
 
     public function testnotificationAction($id, $number)
     {
-        $nt = Notificationtype::find($id, 1);
-        $user = new User();
-        $user->country = Country::getbyattribut("iso_code", "CM");
+        $nt = \Notificationtype::find($id, 1);
+        $user = new \User();
+        $user->country = \Country::getbyattribut("iso_code", "CM");
         $user->phonenumber = $number;
 
-        $notification = new Notification();
+        $notification = new \Notification();
         $notification->notificationtype = $nt;
         $notification->content = $nt->content;
 
-        Notification::sendSMS($notification, $user);
+        \Notification::sendSMS($notification, $user);
         return $notification;
 
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(NotificationtypeController::class, 'NotificationtypeController');

@@ -1,25 +1,18 @@
 <?php
 
-/*
 namespace devupscms\ModuleNotification\Controller;
 
-use dclass\devups\Controller\Controller;
-use Notification;
-use NotificationForm;
-use NotificationTable;
-use Request;*/
-
-#[Api(name: '/notification')]
+#[\Api(name: '/notification')]
 class NotificationFrontController extends \dclass\devups\Controller\FrontController
 {
 
-    #[GET]
+    #[\GET]
     public function index()
     {
-        $qb = Notification::initQb()->with('notificationtype', ['_key']);
+        $qb = \Notification::initQb()->with('notificationtype', ['_key']);
 
         return $qb->lazyloading(function (\dclass\devups\Datatable\Lazyloading $ll) {
-            $ll->append('nbunread', Notification::where("user_id", Auth::$user_id)
+            $ll->append('nbunread', \Notification::where("user_id", \Auth::$user_id)
                 ->where("status", "<", 1)
                 ->count());
         });
@@ -28,13 +21,13 @@ class NotificationFrontController extends \dclass\devups\Controller\FrontControl
     /**
      * @return array
      */
-    #[Auth(authorized: 1)]
-    #[PUT(path: '/notified')]
+    #[\Auth(authorized: 1)]
+    #[\PUT(path: '/notified')]
     public function notified()
     {
 
         //        $ids = Request::post("ids");
-        return Notification::where("user_id", Auth::$user_id)
+        return \Notification::where("user_id", \Auth::$user_id)
             ->where('this.status', "=", -1)
             //        where("this.id")
             //            ->in($ids)
@@ -47,11 +40,11 @@ class NotificationFrontController extends \dclass\devups\Controller\FrontControl
     /**
      * @return array
      */
-    #[Auth(authorized: 1)]
-    #[PUT(path: '/readall')]
+    #[\Auth(authorized: 1)]
+    #[\PUT(path: '/readall')]
     public function readall()
     {
-        Notification::where("user_id", Auth::$user_id)
+        \Notification::where("user_id", \Auth::$user_id)
             ->where('this.status', "<", 1)
             ->update([
                 "status" => 1,
@@ -63,22 +56,22 @@ class NotificationFrontController extends \dclass\devups\Controller\FrontControl
     /**
      * @return array
      */
-    #[Auth(authorized: 1)]
-    #[PUT(path: '/:id')]
+    #[\Auth(authorized: 1)]
+    #[\PUT(path: '/:id')]
     public function update($id)
     {
         return parent::updateCore($id);
     }
 
-    #[GET(path: '/alert')]
+    #[\GET(path: '/alert')]
     public function alert()
     {
 
-        $notifications = Notification::where("user_id", Auth::$user_id)
+        $notifications = \Notification::where("user_id", \Auth::$user_id)
             ->where("status", -1)
             ->orderBy('this.created_at', 'desc')
             ->get();
-        $unreaded = Notification::where("user_id", Auth::$user_id)
+        $unreaded = \Notification::where("user_id", \Auth::$user_id)
             ->where("status", "=", 0)
             ->count();
 
@@ -97,3 +90,6 @@ class NotificationFrontController extends \dclass\devups\Controller\FrontControl
         );
     }
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(NotificationFrontController::class, 'NotificationFrontController');

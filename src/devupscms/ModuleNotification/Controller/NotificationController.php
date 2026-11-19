@@ -1,5 +1,6 @@
 <?php
 
+namespace devupscms\ModuleNotification\Controller;
 
 use dclass\devups\Controller\Controller;
 
@@ -9,9 +10,9 @@ class NotificationController extends Controller
     public function listView($next = 1, $per_page = 10)
     {
 
-        $this->datatable = NotificationTable::init(new Notification())->buildindextable();
+        $this->datatable = \NotificationTable::init(new \Notification())->buildindextable();
 
-        self::$jsfiles[] = Notification::classpath('Resource/js/notificationCtrl.js');
+        self::$jsfiles[] = \Notification::classpath('Resource/js/notificationCtrl.js');
 
         $this->entitytarget = 'Notification';
         $this->title = "Manage Notification";
@@ -24,22 +25,22 @@ class NotificationController extends Controller
     {
 
         return ['success' => true,
-            'datatable' => NotificationTable::init(new Notification())->router()->getTableRest(),
+            'datatable' => \NotificationTable::init(new \Notification())->router()->getTableRest(),
         ];
 
     }
 
     public function formView($id = null)
     {
-        $notification = new Notification();
+        $notification = new \Notification();
         $action = __env . ("admin/api/notification/create");
         if ($id) {
             $action = __env . ("admin/api/notification/update?id=" . $id);
-            $notification = Notification::find($id);
+            $notification = \Notification::find($id);
         }
 
         return ['success' => true,
-            'form' => NotificationForm::init($notification, $action)
+            'form' => \NotificationForm::init($notification, $action)
                 ->buildForm()
                 ->addDformjs()
                 ->renderForm(),
@@ -50,7 +51,7 @@ class NotificationController extends Controller
     {
         extract($_POST);
 
-        $notification = $this->form_fillingentity(new Notification(), $notification_form);
+        $notification = $this->form_fillingentity(new \Notification(), $notification_form);
         if ($this->error) {
             return array('success' => false,
                 'notification' => $notification,
@@ -62,7 +63,7 @@ class NotificationController extends Controller
         $id = $notification->__insert();
         return array('success' => true,
             'notification' => $notification,
-            'tablerow' => NotificationTable::init()->router()->getSingleRowRest($notification),
+            'tablerow' => \NotificationTable::init()->router()->getSingleRowRest($notification),
             'detail' => '');
 
     }
@@ -71,7 +72,7 @@ class NotificationController extends Controller
     {
         extract($_POST);
 
-        $notification = $this->form_fillingentity(new Notification($id), $notification_form);
+        $notification = $this->form_fillingentity(new \Notification($id), $notification_form);
 
         if ($this->error) {
             return array('success' => false,
@@ -83,7 +84,7 @@ class NotificationController extends Controller
         $notification->__update();
         return array('success' => true,
             'notification' => $notification,
-            'tablerow' => NotificationTable::init()->router()->getSingleRowRest($notification),
+            'tablerow' => \NotificationTable::init()->router()->getSingleRowRest($notification),
             'detail' => '');
 
     }
@@ -95,10 +96,10 @@ class NotificationController extends Controller
         $this->entitytarget = 'Notification';
         $this->title = "Detail Notification";
 
-        $notification = Notification::find($id);
+        $notification = \Notification::find($id);
 
         $this->renderDetailView(
-            NotificationTable::init()
+            \NotificationTable::init()
                 ->builddetailtable()
                 ->renderentitydata($notification)
         );
@@ -108,7 +109,7 @@ class NotificationController extends Controller
     public function deleteAction($id)
     {
 
-        Notification::delete($id);
+        \Notification::delete($id);
 
         return array('success' => true,
             'detail' => '');
@@ -118,7 +119,7 @@ class NotificationController extends Controller
     public function deletegroupAction($ids)
     {
 
-        Notification::where("id")->in($ids)->delete();
+        \Notification::where("id")->in($ids)->delete();
 
         return array('success' => true,
             'detail' => '');
@@ -128,8 +129,8 @@ class NotificationController extends Controller
     public function notifiedAction()
     {
 
-        $ids = Request::post("ids");
-        Notification::where("this.id")->in($ids)->update([
+        $ids = \Request::post("ids");
+        \Notification::where("this.id")->in($ids)->update([
             "status" => 1,
             "ping" => 0,
         ]);
@@ -143,31 +144,31 @@ class NotificationController extends Controller
     {
 
         if ($session == "admin") {
-            $notifications = Notification::where("this.created_at", ">", Request::get("date"))
-                ->where("admin_id", Request::get("adminid"))
+            $notifications = \Notification::where("this.created_at", ">", \Request::get("date"))
+                ->where("admin_id", \Request::get("adminid"))
                 ->where("ping", 1)
                 ->get();
-            $unreaded = Notification::where("admin_id", Request::get("adminid"))
+            $unreaded = \Notification::where("admin_id", \Request::get("adminid"))
                 ->where("status", "=", 0)
                 ->count();
 
             if (count($notifications))
-                Notification::where("admin_id", Request::get("adminid"))
+                \Notification::where("admin_id", \Request::get("adminid"))
                     //->where("ping", 1)
                     ->update([
                         "ping" => 0
                     ]);
         }else{
-            $notifications = Notification::where("this.created_at", ">", Request::get("date"))
-                ->where("user_id", Request::get("user_id"))
+            $notifications = \Notification::where("this.created_at", ">", \Request::get("date"))
+                ->where("user_id", \Request::get("user_id"))
                 ->where("ping", 1)
                 ->get();
-            $unreaded = Notification::where("user_id", Request::get("user_id"))
+            $unreaded = \Notification::where("user_id", \Request::get("user_id"))
                 ->where("status", "=", 0)
                 ->count();
 
             if (count($notifications))
-                Notification::where("user_id", Request::get("user_id"))
+                \Notification::where("user_id", \Request::get("user_id"))
                     //->where("ping", 1)
                     ->update([
                         "ping" => 0
@@ -183,8 +184,8 @@ class NotificationController extends Controller
     public function notified()
     {
 
-        $ids = Request::post("ids");
-        Notification::where("this.id")->in($ids)->update([
+        $ids = \Request::post("ids");
+        \Notification::where("this.id")->in($ids)->update([
             "status" => 1,
             "viewedat" => date('Y-m-d'),
             "read" => 1,
@@ -197,3 +198,6 @@ class NotificationController extends Controller
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(NotificationController::class, 'NotificationController');

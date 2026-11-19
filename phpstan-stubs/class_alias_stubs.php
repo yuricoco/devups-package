@@ -328,3 +328,31 @@ class CountryTable extends \devupscms\ModuleLocation\Datatable\CountryTable
 class CountryForm extends \devupscms\ModuleLocation\Form\CountryForm
 {
 }
+
+class NotificationController extends \devupscms\ModuleNotification\Controller\NotificationController
+{
+}
+
+class NotificationtypeController extends \devupscms\ModuleNotification\Controller\NotificationtypeController
+{
+}
+
+class NotificationFrontController extends \devupscms\ModuleNotification\Controller\NotificationFrontController
+{
+}
+
+class NotificationTable extends \devupscms\ModuleNotification\Datatable\NotificationTable
+{
+}
+
+class NotificationtypeTable extends \devupscms\ModuleNotification\Datatable\NotificationtypeTable
+{
+}
+
+class NotificationForm extends \devupscms\ModuleNotification\Form\NotificationForm
+{
+}
+
+class NotificationtypeForm extends \devupscms\ModuleNotification\Form\NotificationtypeForm
+{
+}

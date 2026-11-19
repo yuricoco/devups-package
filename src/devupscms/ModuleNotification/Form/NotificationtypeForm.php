@@ -1,9 +1,10 @@
 <?php
 
+namespace devupscms\ModuleNotification\Form;
 
-use Genesis as g;
+use \Genesis as g;
 
-class NotificationtypeForm extends FormManager
+class NotificationtypeForm extends \FormManager
 {
 
     public $notificationtype;
@@ -24,7 +25,7 @@ class NotificationtypeForm extends FormManager
         try {
             $names = array_map(function ($entity) {
                 return $entity->name;
-            }, Dvups_entity::allrows());
+            }, \Dvups_entity::allrows());
             sort($names);
             return $names;
         } catch (\Throwable $e) {
@@ -38,7 +39,7 @@ class NotificationtypeForm extends FormManager
         $this->fields['entity'] = [
             "label" => t('Entity'),
             "type" => FORMTYPE_SELECT,
-            "options" => FormManager::key_as_value(self::entityOptions()),
+            "options" => \FormManager::key_as_value(self::entityOptions()),
             "value" => $this->notificationtype->entity,
         ];
         $this->fields['_key'] = [
@@ -51,7 +52,7 @@ class NotificationtypeForm extends FormManager
             "label" => t('Session'),
             "type" => FORMTYPE_RADIO,
             "value" => $this->notificationtype->getSession(),
-            "options" => FormManager::key_as_value(["user", "admin"]),
+            "options" => \FormManager::key_as_value(["user", "admin"]),
         ];
 
         $this->fields['content'] = [
@@ -78,3 +79,6 @@ class NotificationtypeForm extends FormManager
 
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(NotificationtypeForm::class, 'NotificationtypeForm');

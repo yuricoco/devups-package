@@ -776,12 +776,27 @@ introuvable en global, confirme par l'entree baseline deja presente
 AVANT notre edition) - **non corrige ici**, meme decision que pour
 `CmsresourceFrontController` (hors scope du point (b)).
 
+**ModuleNotification (devupscms) - FAIT (7 fichiers)** :
+`NotificationController`, `NotificationtypeController` (+
+`NotificationFrontController`), `NotificationTable`,
+`NotificationtypeTable`, `NotificationForm`, `NotificationtypeForm`
+namespaces. Trouvaille : `NotificationFrontController.php` avait deja
+une declaration `namespace ...;` + plusieurs `use ...;` mais entierement
+commentee (`/* ... */`), laissant le fichier reellement dans le
+namespace global - remplacee par la vraie declaration `namespace
+devupscms\ModuleNotification\Controller;` (les `use` n'etaient plus
+necessaires, les references etant deja qualifiees ou desormais
+prefixees par `\`). Les attributs PHP (`#[Api(...)]`, `#[GET]`,
+`#[Auth(...)]`, `#[PUT(...)]`) referencent aussi des classes globales -
+prefixes par `\` comme toute autre reference de classe (meme regle de
+resolution de nom).
+
 **Volume de ce point (b)** : 83 fichiers (33 Controller + 25 Datatable +
 25 Form) repartis sur `devups` (ModuleAdmin 13 FAIT, ModuleConfig 3 FAIT,
 ModuleLang 3 FAIT, ModuleLog 3 FAIT), `devupscms` (ModuleCms 11 FAIT,
-ModuleData 6 FAIT, ModuleLocation 4 FAIT, ModuleNotification 7,
+ModuleData 6 FAIT, ModuleLocation 4 FAIT, ModuleNotification 7 FAIT,
 ModulePushNotification 7, ModuleReporting 9, ModuleTree 10),
-`devupsfront` (ModuleUser 7). **43 fichiers sur 83 termines.**
+`devupsfront` (ModuleUser 7). **50 fichiers sur 83 termines.**
 **devups entierement termine (22 fichiers).**
 
 ### LOT 5.1 - FAIT (helper `Model::shortClassName()` + conversion des sites "non surs")
