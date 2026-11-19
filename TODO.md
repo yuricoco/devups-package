@@ -1013,6 +1013,69 @@ reellement dans le framework (ex. resolution de services dans
 `Router`/`Controller`) serait une conversion a risque, hors perimetre
 de ce lot - a decider au cas par cas plus tard si besoin.
 
+### LOT 5.5 - FAIT (adaptateur PSR-3 au-dessus de `\Log`)
+
+**Audit prealable** (cf. description initiale du lot : "`Log.php`
+existe deja - verifier son API contre `Psr\Log\LoggerInterface`,
+adapter si besoin") : `\Log` (dclass/devups/Log.php) est une facade
+**statique** (`Log::error()`/`warning()`/`info()`, 3 niveaux, agregation
+par empreinte en base + debordement fichier + gardes globales) alors
+que `Psr\Log\LoggerInterface` (psr/log ^3, deja resolu a 3.0.2 de
+maniere transitive) est un contrat **d'instance** a 8 niveaux
+(emergency/alert/critical/error/warning/notice/info/debug) plus
+`log($level, $message, $context)`. Une classe statique ne peut pas
+implementer une interface PHP (les methodes d'interface sont
+necessairement d'instance) - **reecrire `\Log` en instance casserait
+tous les appelants existants** (11 fichiers de production + plusieurs
+tests, `Log::error(...)` partout). Decision (la plus prudente, comme
+pour le LOT 5.4) : **adaptateur**, pas de reecriture - `\Log` reste
+l'implementation reelle unique, inchangee.
+
+`psr/log` (`^3.0`) ajoute comme dependance EXPLICITE dans
+`composer.json` (meme procedure que `psr/container` en LOT 5.4 :
+`composer require psr/log:^3.0 --no-update` puis `composer update
+psr/log --ignore-platform-req=php` - aucun changement de version dans
+`composer.lock`).
+
+`dclass/devups/Logger.php` - `Devups\Logger implements
+Psr\Log\LoggerInterface`. Mapping delibere (le plus simple possible,
+documente dans le fichier) : les 4 niveaux PSR-3 les plus graves
+(`emergency`/`alert`/`critical`/`error`) vers `Log::error()`,
+`warning` vers `Log::warning()`, les 3 plus benins
+(`notice`/`info`/`debug`) vers `Log::info()` - `\Log` n'a jamais eu
+que 3 niveaux et aucun appelant existant n'a besoin de plus de
+finesse. `log($level, ...)` inconnu leve `Psr\Log\
+InvalidArgumentException` (conforme au contrat PSR-3). Convention
+PSR-3 pour les exceptions : si `$context['exception']` est un
+`\Throwable`, c'est LUI (pas le message texte) qui est transmis a
+`\Log::`, pour garder la capture reelle classe/fichier/ligne/trace de
+`\Log::write()` - la cle `exception` est retiree du contexte transmis
+(un `\Throwable` brut ferait echouer le `json_encode()` de
+`\Log::persist()`).
+
+**Ajout pur** : les 11 fichiers appelant deja `Log::error()`/
+`warning()`/`info()` directement n'ont pas ete touches - `Devups\
+Logger` est disponible pour du code qui attend specifiquement un
+`Psr\Log\LoggerInterface` (ex. une bibliotheque tierce), sans rien
+changer au comportement actuel.
+
+`tests/Integration/LoggerTest.php` (14 tests, `DatabaseTestCase` comme
+`LogTest.php` existant - ne re-teste PAS l'agregation/le debordement
+fichier/la purge, deja couverts par `LogTest.php`, seulement la
+traduction de niveaux et le contexte) : implements `LoggerInterface`,
+chacun des 8 niveaux + `log()` generique route vers le bon niveau
+`\Log::`, niveau inconnu leve `InvalidArgumentException`, `exception`
+en contexte devient le sujet du log avec sa vraie classe/fichier,
+contexte arbitraire transmis, cle `exception` jamais persistee.
+Attributs `#[DataProvider(...)]` (PHPUnit 11, pas l'annotation
+`@dataProvider` deja deprecated ailleurs dans la suite - pas de
+nouvelle deprecation ajoutee).
+
+`composer dump-autoload --ignore-platform-req=php` requis apres le
+nouveau fichier. `composer test` (445 tests = 431 + 14 nouveaux, 0
+echec, 8 deprecations preexistantes inchangees, 2 incomplete
+inchanges) et `composer phpstan` (0 erreur) verts.
+
 ### LOT 5.1 - FAIT (helper `Model::shortClassName()` + conversion des sites "non surs")
 
 Revue ligne-par-ligne exhaustive des 19 fichiers listes en LOT 5.0 (plus

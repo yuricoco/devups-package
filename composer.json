@@ -26,7 +26,8 @@
         "symfony/cache": "^7.4",
         "illuminate/view": "^11.0",
         "illuminate/events": "^11.0",
-        "psr/container": "^2.0"
+        "psr/container": "^2.0",
+        "psr/log": "^3.0"
     },
     "autoload": {
         "classmap": [
