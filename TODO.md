@@ -836,14 +836,51 @@ point (b)).
 
 **Point (b) : `devupscms` entierement termine (54 fichiers).**
 
-**Volume de ce point (b)** : 83 fichiers (33 Controller + 25 Datatable +
-25 Form) repartis sur `devups` (ModuleAdmin 13 FAIT, ModuleConfig 3 FAIT,
-ModuleLang 3 FAIT, ModuleLog 3 FAIT), `devupscms` (ModuleCms 11 FAIT,
-ModuleData 6 FAIT, ModuleLocation 4 FAIT, ModuleNotification 7 FAIT,
-ModulePushNotification 7 FAIT, ModuleReporting 9 FAIT, ModuleTree 10
-FAIT), `devupsfront` (ModuleUser 7). **76 fichiers sur 83 termines.**
-**devups + devupscms entierement termines (76 fichiers). Reste :
-devupsfront/ModuleUser (7 fichiers).**
+**ModuleUser (devupsfront) - FAIT (7 fichiers)** : `UserController`
+(+ `UserFrontController`), `Oauth_clientController`, `UserTable`,
+`Oauth_clientTable`, `UserForm`, `Oauth_clientForm` namespaces.
+`Oauth_clientController.php`/`Oauth_clientTable.php`/`Oauth_clientForm.php`
+conservaient un `use devupsfront\ModuleUser\Entity\Oauth_client;`
+preexistant - garde tel quel (resolution par `use`, `Oauth_client`
+reste non-prefixe). **Fichier le plus volumineux de tout le point (b)**
+(`UserFrontController.php`, ~1050 lignes, OAuth Google/Apple,
+JWT, RateLimiter, reset password) - deux corrections necessaires
+AU-DELA de la simple recette de prefixage, toutes deux liees a des
+particularites de resolution de nom PHP sous namespace qui n'avaient
+pas encore ete rencontrees dans ce chantier :
+- `new Google\Client()` : nom QUALIFIE (contient un `\`) different
+  d'un nom simple - un `use Google\Client;` n'affecte PAS la
+  resolution d'un nom qualifie comme `Google\Client` (seuls les noms
+  SIMPLES profitent d'un alias `use`). Sous namespace, ce
+  `Google\Client` bare se serait resolu vers
+  `devupsfront\ModuleUser\Controller\Google\Client` (inexistant) au
+  lieu du `\Google\Client` de la librairie Composer - corrige en
+  `new \Google\Client()`.
+- `catch (Throwable $e)` (une seule occurrence sur les 3 de ce fichier)
+  etait deja bare SANS backslash avant ce chantier (contrairement aux
+  2 autres `catch (\Throwable $e)` du meme fichier, deja corrects) -
+  sous namespace global (avant notre edit) cela resolvait
+  correctement vers l'interface SPL globale par accident ; sous
+  namespace (apres `namespace devupsfront\ModuleUser\Controller;`)
+  cela aurait cherche une classe `devupsfront\ModuleUser\Controller\Throwable`
+  inexistante. **Bug qui aurait ete introduit par cette migration si
+  non corrige** - repere en relisant le fichier entierement apres le
+  passage de `prefix.py` (qui ne traite que les noms simples, jamais
+  les `catch()`/noms qualifies) - corrige en `catch (\Throwable $e)`.
+
+**Point (b) : TERMINE - les 83 fichiers Controller/Datatable/Form des
+17 modules (devups + devupscms + devupsfront) sont desormais tous
+namespaces.** Bugs latents pre-existants trouves et **corriges** dans
+le cadre de cette migration (classe deja namespacee avec une reference
+non prefixee oubliee) : `RateLimiter` dans
+`Dvups_adminFrontController.php` (ModuleAdmin). Bugs latents
+pre-existants trouves et **deliberement non corriges** (hors scope -
+pure migration de namespace, pas une revue fonctionnelle) : classe
+`Lazyloading` introuvable dans `CmsresourceFrontController.php`
+(ModuleCms) et `CountryFrontController.php` (ModuleLocation), classe
+`Category` introuvable dans `Tree_itemController.php::getdata()`
+(ModuleTree) - chacun confirme par une entree `phpstan-baseline.neon`
+deja presente avant toute edition de ce chantier.
 
 ### LOT 5.1 - FAIT (helper `Model::shortClassName()` + conversion des sites "non surs")
 

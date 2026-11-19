@@ -1,5 +1,6 @@
 <?php
 
+namespace devupsfront\ModuleUser\Datatable;
 
 use dclass\devups\Datatable\Datatable as Datatable;
 use devupsfront\ModuleUser\Entity\Oauth_client;
@@ -34,7 +35,7 @@ class Oauth_clientTable extends Datatable
             'user_ext_id' => ['header' => t('User_ext_id'),],
             'user_id' => ['header' => t('User_id'), 'value' => 'user_id', 'get' => function ($item) {
                 if ($item->user_id)
-                    return "<a href='" . User::classview('user/detail?id=' . $item->user_id) . "'>Detail user {$item->user_id}</a>";
+                    return "<a href='" . \User::classview('user/detail?id=' . $item->user_id) . "'>Detail user {$item->user_id}</a>";
                 return '-';
             }],
             'created_at' => ['header' => t('Date'),],
@@ -58,7 +59,7 @@ class Oauth_clientTable extends Datatable
 
     public function router()
     {
-        $tablemodel = Request::get("tablemodel", null);
+        $tablemodel = \Request::get("tablemodel", null);
         if ($tablemodel && method_exists($this, "build" . $tablemodel . "table") && $result = call_user_func(array($this, "build" . $tablemodel . "table"))) {
             return $result;
         } else
@@ -71,3 +72,6 @@ class Oauth_clientTable extends Datatable
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Oauth_clientTable::class, 'Oauth_clientTable');

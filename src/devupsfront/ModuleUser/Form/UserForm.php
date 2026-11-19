@@ -1,9 +1,10 @@
 <?php
 
+namespace devupsfront\ModuleUser\Form;
 
-use Genesis as g;
+use \Genesis as g;
 
-class UserForm extends FormManager
+class UserForm extends \FormManager
 {
 
     public $user;
@@ -82,8 +83,11 @@ class UserForm extends FormManager
 
     public static function renderWidget($id = null, $action = "create")
     {
-        Genesis::renderView("user.formWidget", self::getFormData($id, $action));
+        \Genesis::renderView("user.formWidget", self::getFormData($id, $action));
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(UserForm::class, 'UserForm');
     

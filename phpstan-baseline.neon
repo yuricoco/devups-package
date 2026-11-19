@@ -1456,7 +1456,7 @@ parameters:
 			path: src/devupscms/ModuleTree/Resource/views/admin/layout.blade.php
 
 		-
-			message: "#^Access to an undefined property Oauth_clientController\\:\\:\\$datatable\\.$#"
+			message: "#^Access to an undefined property devupsfront\\\\ModuleUser\\\\Controller\\\\Oauth_clientController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devupsfront/ModuleUser/Controller/Oauth_clientController.php
 
@@ -1466,7 +1466,7 @@ parameters:
 			path: src/devupsfront/ModuleUser/Controller/Oauth_clientController.php
 
 		-
-			message: "#^Access to an undefined property UserController\\:\\:\\$datatable\\.$#"
+			message: "#^Access to an undefined property devupsfront\\\\ModuleUser\\\\Controller\\\\UserController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devupsfront/ModuleUser/Controller/UserController.php
 
@@ -1496,7 +1496,7 @@ parameters:
 			path: src/devupsfront/ModuleUser/Form/Oauth_clientForm.php
 
 		-
-			message: "#^Call to an undefined static method UserForm\\:\\:getFormData\\(\\)\\.$#"
+			message: "#^Call to an undefined static method devupsfront\\\\ModuleUser\\\\Form\\\\UserForm\\:\\:getFormData\\(\\)\\.$#"
 			count: 1
 			path: src/devupsfront/ModuleUser/Form/UserForm.php
 

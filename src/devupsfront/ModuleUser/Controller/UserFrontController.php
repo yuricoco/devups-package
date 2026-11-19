@@ -1,10 +1,12 @@
 <?php
 
+namespace devupsfront\ModuleUser\Controller;
+
 use devupsfront\ModuleUser\Entity\Oauth_client;
 use Google\Client;
 
 
-#[Api(name: '/user')]
+#[\Api(name: '/user')]
 class UserFrontController extends \dclass\devups\Controller\FrontController
 {
 
@@ -17,7 +19,7 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     public static function appLink(string $path = ''): string
     {
         try {
-            $base = Configuration::get('APP_DEEPLINK');
+            $base = \Configuration::get('APP_DEEPLINK');
         } catch (\Throwable $e) {
             $base = null;
         }
@@ -26,25 +28,25 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
         return rtrim($base, '/') . '/' . ltrim($path, '/');
     }
 
-    #[Auth(authorized: 1)]
-    #[GET(path: '/me')]
+    #[\Auth(authorized: 1)]
+    #[\GET(path: '/me')]
     public function me()
     {
-        $unreaded = Notification::where("user_id", Auth::$user_id)
+        $unreaded = \Notification::where("user_id", \Auth::$user_id)
             ->where("status", "<=", 0)
             ->count(); 
         return [
             'notification_unreaded' => $unreaded, 
-        ] + $this->detail(Auth::$user_id);
+        ] + $this->detail(\Auth::$user_id);
     }
  
-    #[GET]
+    #[\GET]
     public function index()
     {
 
-        $qb = User::initQb();
+        $qb = \User::initQb();
 
-        $term = Request::get("term"); 
+        $term = \Request::get("term"); 
         if ($term) {
             $qb->where_str(" ( this.username LIKE '%$term%' OR this.firstname LIKE '%$term%' OR this.lastname  LIKE '%$term%' ) ");
         } 
@@ -53,16 +55,16 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
             ->lazyloading();
     }
  
-    #[Auth(authorized: 1)]
-    #[PUT(path: '/:id')]
+    #[\Auth(authorized: 1)]
+    #[\PUT(path: '/:id')]
     public function update($id)
     {
         parent::updateCore($id);
         return $this->me();
     }
 
-    #[Auth(authorized: 1)]
-    #[POST(path: '/profile/:id')]
+    #[\Auth(authorized: 1)]
+    #[\POST(path: '/profile/:id')]
     public function profile($id)
     {
         return parent::updateCore($id);
@@ -71,14 +73,14 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     /**
      * @return array
      */
-    #[POST(path: '/registration')]
+    #[\POST(path: '/registration')]
     public function registration()
     {
 
         try{ 
         $rawdata = \Request::raw();
 
-        $userhydrate = $this->hydrateWithJson(new User(), $rawdata["user"]);
+        $userhydrate = $this->hydrateWithJson(new \User(), $rawdata["user"]);
  
         if ($this->error) {
             return array(
@@ -90,7 +92,7 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
             );
         }
 
-        $activationcode = User::generatecode();
+        $activationcode = \User::generatecode();
         $userhydrate->setActivationcode($activationcode);
 
         // todo: handle it better
@@ -100,14 +102,14 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
         //        $userhydrate->setApiKey(\DClass\lib\Util::randomcode());
         $id = $userhydrate->__insert();
 
-        $userhydrate = User::find($id);
+        $userhydrate = \User::find($id);
         // send mail with activation code $codeactivation
         if ($userhydrate->email) {
             $data = [
                 "activation_code" => $activationcode,
                 "username" => $userhydrate->username,
             ];
-            DMail::init("mails.otp", 'fr')
+            \DMail::init("mails.otp", 'fr')
                 ->addReceiver($userhydrate->email, $userhydrate->username)
                 ->setTitle("Verification du compte")
                 ->setObject("Code d'activation")
@@ -117,7 +119,7 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
         }
         $pusher = null;
         if (isset($rawdata["fcm_token"])) {
-            $pusher = Push_subscription::createInstance([
+            $pusher = \Push_subscription::createInstance([
                 'status' => 1,
                 'auth_token' => $rawdata["fcm_token"],
                 'user_id' => $userhydrate->id,
@@ -153,11 +155,11 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
             'success' => true,
             'user' => $userhydrate,
             'pusher' => $pusher,
-            "jwt" => Auth::getJWT($userhydrate),
+            "jwt" => \Auth::getJWT($userhydrate),
             'detail' => ''
         );
         
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             // dv_dump($e->getMessage(),$this->table, $data);
             // return debug_backtrace();
             return[
@@ -170,7 +172,7 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     /**
      * @return void
      */
-    #[POST(path: '/googleAuth')]
+    #[\POST(path: '/googleAuth')]
     public function googleAuth()
     {
         $input = \Request::raw();
@@ -190,7 +192,7 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
         //        return($payload);
 
 
-        $client = new Google\Client();
+        $client = new \Google\Client();
         $payload = $client->verifyIdToken($input['idToken']);
 
         if (!$payload || !in_array($payload['aud'], $allowedClientIds)) {
@@ -259,12 +261,12 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
 
         // Enregistrer l'utilisateur en session ou en base
         //        $_SESSION['user'] = $user;
-        $newuser = User::find($newuser->id);
+        $newuser = \User::find($newuser->id);
         return (array(
             'success' => true,
             'newuser_id' => $newuser->id,
             'user' => $newuser,
-            "jwt" => Auth::getJWT($newuser),
+            "jwt" => \Auth::getJWT($newuser),
             'detail' => 'ok',
             'isNewAccount' => $isNewAccount
         ));
@@ -274,7 +276,7 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     /**
      * @return array
      */
-    #[POST(path: '/appleAuth')]
+    #[\POST(path: '/appleAuth')]
     public function appleAuth()
     {
         $input = \Request::raw();
@@ -354,12 +356,12 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
             $isNewAccount = true;
         }
 
-        $newuser = User::find($newuser->id);
+        $newuser = \User::find($newuser->id);
         return (array(
             'success' => true,
             'newuser_id' => $newuser->id,
             'user' => $newuser,
-            "jwt" => Auth::getJWT($newuser),
+            "jwt" => \Auth::getJWT($newuser),
             'detail' => 'ok',
             'isNewAccount' => $isNewAccount
         ));
@@ -369,7 +371,7 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     /**
      * @return array
      */
-    #[POST(path: '/authentification')]
+    #[\POST(path: '/authentification')]
     public function authentification()
     {
         // ETAPE V : un login sans "login" (ou "password") levait "Undefined
@@ -388,8 +390,8 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
         }
 
         // ETAPE L.1 : limite par compte ET par IP.
-        $ipLimiter = new RateLimiter('login_user_ip:' . (\DClass\lib\Util::get_IP_address() ?? 'unknown'), RATE_LIMIT_LOGIN_WINDOW_SECONDS, RATE_LIMIT_LOGIN_MAX_ATTEMPTS_IP);
-        $loginLimiter = new RateLimiter('login_user:' . strtolower((string)$login), RATE_LIMIT_LOGIN_WINDOW_SECONDS, RATE_LIMIT_LOGIN_MAX_ATTEMPTS);
+        $ipLimiter = new \RateLimiter('login_user_ip:' . (\DClass\lib\Util::get_IP_address() ?? 'unknown'), RATE_LIMIT_LOGIN_WINDOW_SECONDS, RATE_LIMIT_LOGIN_MAX_ATTEMPTS_IP);
+        $loginLimiter = new \RateLimiter('login_user:' . strtolower((string)$login), RATE_LIMIT_LOGIN_WINDOW_SECONDS, RATE_LIMIT_LOGIN_MAX_ATTEMPTS);
 
         if ($ipLimiter->tooManyAttempts() || $loginLimiter->tooManyAttempts()) {
             http_response_code(429);
@@ -400,26 +402,26 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
         }
 
         if($login == 'force' && !__prod){
-            $user = User::select()
+            $user = \User::select()
                 ->where('user.id', "=", $password)
                 ->first();
         } else {
-            $user = User::select()
+            $user = \User::select()
                 ->where('user.email', "=", $login)
                 ->first();
             if (!$user->getId() || !$user->verifyPassword($password))
-                $user = new User();
+                $user = new \User();
         }
 
         if (!$user->getId()) {
-            $candidate = User::select()
+            $candidate = \User::select()
                 ->where('user.phonenumber', "=", $login)
                 ->first();
             if ($candidate->getId() && $candidate->verifyPassword($password))
                 $user = $candidate;
 
             if (!$user->getId()) {
-                $candidate = User::select()
+                $candidate = \User::select()
                     ->where('user.username', "=", $login)
                     ->first();
                 if ($candidate->getId() && $candidate->verifyPassword($password))
@@ -439,17 +441,17 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
         }
         $ipLimiter->clear();
         $loginLimiter->clear();
-        Auth::$user_id = $user->id;
+        \Auth::$user_id = $user->id;
         return array(
             'success' => true,
             'detail' => t("Connexion reussi investisseur"),
-            "jwt" => Auth::getJWT($user),
+            "jwt" => \Auth::getJWT($user),
             ...$this->detail($user->id)
             //"userserialize" => $_SESSION[USERAPP]
         );
     }
 
-    #[POST(path: '/tokenize')]
+    #[\POST(path: '/tokenize')]
     /**
      * @return array
      *
@@ -461,7 +463,7 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     public function tokenize()
     {
         try {
-            $token = Auth::decodeJWTOrFail(Request::raw('token'));
+            $token = \Auth::decodeJWTOrFail(\Request::raw('token'));
         } catch (\Throwable $e) {
             http_response_code(401);
             return array('success' => false, 'detail' => 'Jeton invalide ou expiré');
@@ -472,7 +474,7 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
             return array('success' => false, 'detail' => 'Jeton invalide ou expiré');
         }
 
-        $user = User::find($token->userId);
+        $user = \User::find($token->userId);
         if (!$user->getId()) {
             http_response_code(401);
             return array('success' => false, 'detail' => 'Jeton invalide ou expiré');
@@ -482,15 +484,15 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
             'success' => true,
             'detail' => t("Connexion reussi investisseur"),
             "user" => $user,
-            "jwt" => Auth::getJWT($user)
+            "jwt" => \Auth::getJWT($user)
         );
     }
 
-    #[GET(path: '/:id')]
+    #[\GET(path: '/:id')]
     public function detail($id)
     {
 
-        $user = User::whereId($id)->first();
+        $user = \User::whereId($id)->first();
 
         return array(
             'success' => true,
@@ -511,7 +513,7 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     public static function resendactivationcode(\User $user = null): array
     {
         if (!$user)
-            $user = User::find(Auth::$user_id);
+            $user = \User::find(\Auth::$user_id);
 
         if (!$user || !$user->getId())
             return ['success' => false, 'detail' => t("Utilisateur introuvable")];
@@ -523,12 +525,12 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
         if ($resendCheck !== true)
             return $resendCheck;
 
-        $activationcode = User::generatecode();
+        $activationcode = \User::generatecode();
         $user->setActivationcode($activationcode);
         $user->__update();
 
         if ($user->email) {
-            DMail::init("mails.otp", $user->lang ?: __default_lang)
+            \DMail::init("mails.otp", $user->lang ?: __default_lang)
                 ->addReceiver($user->email, $user->username)
                 ->setTitle(t("Verification du compte"))
                 ->setObject(t("Code d'activation"))
@@ -557,8 +559,8 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
      */
     public static function issueResetPasswordToken(\User $user): array
     {
-        $accountLimiter = new RateLimiter('reset_password_init:' . $user->getId(), RATE_LIMIT_RESEND_WINDOW_SECONDS, RATE_LIMIT_RESEND_MAX_ATTEMPTS);
-        $ipLimiter = new RateLimiter('reset_password_init_ip:' . (\DClass\lib\Util::get_IP_address() ?? 'unknown'), RATE_LIMIT_RESEND_WINDOW_SECONDS, RATE_LIMIT_RESEND_MAX_ATTEMPTS);
+        $accountLimiter = new \RateLimiter('reset_password_init:' . $user->getId(), RATE_LIMIT_RESEND_WINDOW_SECONDS, RATE_LIMIT_RESEND_MAX_ATTEMPTS);
+        $ipLimiter = new \RateLimiter('reset_password_init_ip:' . (\DClass\lib\Util::get_IP_address() ?? 'unknown'), RATE_LIMIT_RESEND_WINDOW_SECONDS, RATE_LIMIT_RESEND_MAX_ATTEMPTS);
 
         if ($accountLimiter->tooManyAttempts() || $ipLimiter->tooManyAttempts())
             return ['success' => false];
@@ -572,7 +574,7 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
         $user->__update();
 
         if ($user->email) {
-            DMail::init("mails.resetpassword", $user->lang)
+            \DMail::init("mails.resetpassword", $user->lang)
                 ->addReceiver($user->email, $user->username)
                 ->setTitle(t("reset password"))
                 ->setObject(t("reset password"))
@@ -593,13 +595,13 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
      * d'enumeration de comptes) - jeton dedie envoye par email uniquement,
      * plus de code court ni de push ici (voir issueResetPasswordToken()).
      */
-    #[POST(path: '/initresetpassword')]
+    #[\POST(path: '/initresetpassword')]
     public function initresetpassword()
     {
         $login = (string)($_POST['user_form']['login'] ?? '');
 
         if ($login !== '') {
-            $user = User::select()
+            $user = \User::select()
                 ->where('user.username', $login)
                 ->orwhere('user.email', $login)
                 ->orwhere('user.phonenumber', $login)
@@ -621,7 +623,7 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
      * ci-dessous quelle que soit l'issue d'une tentative avec ce jeton.
      * @return array
      */
-    #[POST(path: '/resetpassword')]
+    #[\POST(path: '/resetpassword')]
     public function resetpassword()
     {
         $token = (string)($_POST['token'] ?? '');
@@ -630,7 +632,7 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
         if ($token === '' || $password === '')
             return ['success' => false, 'detail' => t("Tous les champs sont important")];
 
-        $user = User::where('reset_token_hash', hash('sha256', $token))->firstOrNull();
+        $user = \User::where('reset_token_hash', hash('sha256', $token))->firstOrNull();
 
         if (!$user || !$user->getId() || !$user->verifyResetPasswordToken($token))
             return ['success' => false, 'detail' => t("Code d'activation incorrect!")];
@@ -643,7 +645,7 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
         return [
             "user" => $user,
             "success" => true,
-            "jwt" => Auth::getJWT($user)
+            "jwt" => \Auth::getJWT($user)
         ];
     }
 
@@ -664,8 +666,8 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
      */
     private static function checkResendAllowed(\User $user)
     {
-        $accountLimiter = new RateLimiter('resend_code:' . $user->getId(), RATE_LIMIT_RESEND_WINDOW_SECONDS, RATE_LIMIT_RESEND_MAX_ATTEMPTS);
-        $ipLimiter = new RateLimiter('resend_code_ip:' . (\DClass\lib\Util::get_IP_address() ?? 'unknown'), RATE_LIMIT_RESEND_WINDOW_SECONDS, RATE_LIMIT_RESEND_MAX_ATTEMPTS);
+        $accountLimiter = new \RateLimiter('resend_code:' . $user->getId(), RATE_LIMIT_RESEND_WINDOW_SECONDS, RATE_LIMIT_RESEND_MAX_ATTEMPTS);
+        $ipLimiter = new \RateLimiter('resend_code_ip:' . (\DClass\lib\Util::get_IP_address() ?? 'unknown'), RATE_LIMIT_RESEND_WINDOW_SECONDS, RATE_LIMIT_RESEND_MAX_ATTEMPTS);
 
         if ($accountLimiter->tooManyAttempts() || $ipLimiter->tooManyAttempts()) {
             http_response_code(429);
@@ -679,8 +681,8 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
 
     private function checkActivationCode(\User $user, string $submittedCode, string $purpose)
     {
-        $accountLimiter = new RateLimiter($purpose . ':' . $user->getId(), ACTIVATION_CODE_TTL_MINUTES * 60, RATE_LIMIT_CODE_MAX_ATTEMPTS);
-        $ipLimiter = new RateLimiter($purpose . '_ip:' . (\DClass\lib\Util::get_IP_address() ?? 'unknown'), ACTIVATION_CODE_TTL_MINUTES * 60, RATE_LIMIT_CODE_MAX_ATTEMPTS);
+        $accountLimiter = new \RateLimiter($purpose . ':' . $user->getId(), ACTIVATION_CODE_TTL_MINUTES * 60, RATE_LIMIT_CODE_MAX_ATTEMPTS);
+        $ipLimiter = new \RateLimiter($purpose . '_ip:' . (\DClass\lib\Util::get_IP_address() ?? 'unknown'), ACTIVATION_CODE_TTL_MINUTES * 60, RATE_LIMIT_CODE_MAX_ATTEMPTS);
 
         if ($accountLimiter->tooManyAttempts() || $ipLimiter->tooManyAttempts()) {
             http_response_code(429);
@@ -704,12 +706,12 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     /**
      * @return array
      */
-    #[Auth(authorized: 1)]
-    #[POST(path: '/activateaccount')]
+    #[\Auth(authorized: 1)]
+    #[\POST(path: '/activateaccount')]
     public function activateaccount()
     {
-        $activationcode = Request::post("activationcode");
-        $appuser = User::find(Auth::$user_id);
+        $activationcode = \Request::post("activationcode");
+        $appuser = \User::find(\Auth::$user_id);
         if ($appuser->isActivated())
             return ["success" => true, "url" => route('home')];
         else {
@@ -720,7 +722,7 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
             $appuser->is_activated = (1);
             $appuser->__update();
 
-            DMail::init("mails.welcome", 'fr')
+            \DMail::init("mails.welcome", 'fr')
                 ->addReceiver($appuser->email, $appuser->username)
                 ->setTitle("Compte active")
                 ->setObject(t("Bienvenue sur") . " " . PROJECT_NAME)
@@ -734,28 +736,28 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     /**
      * @return array
      */
-    #[Auth(authorized: 1)]
-    #[GET(path: '/resentactivationcode')]
+    #[\Auth(authorized: 1)]
+    #[\GET(path: '/resentactivationcode')]
     public function resentactivationcode()
     {
         $result = self::resendactivationcode();
         if (!$result['success'])
             return $result;
 
-        $pushers = Push_subscription::where([
-            'user_id' => Auth::$user_id,
+        $pushers = \Push_subscription::where([
+            'user_id' => \Auth::$user_id,
         ])->get();
 
         //  notification -1 send only sms
         //            Notification::on($userhydrate, "registered", -1)
         //                ->send([$userhydrate], ["username" => $userhydrate->getFirstname(), "code" => $activationcode],
 
-        Push_subscription::initPusher();
+        \Push_subscription::initPusher();
         foreach ($pushers as $pusher) {
             $pusher->fcmPushNotification(
                 "Votre code d'activation : " . $result['activationcode'],
                 [
-                    "entity_id" => Auth::$user_id,
+                    "entity_id" => \Auth::$user_id,
                     "entity" => "user",
                     "code" => $result['activationcode'],
                     "action" => "activate_account",
@@ -770,11 +772,11 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
         return $result;
     }
 
-    #[POST(path: '/changepassword')]
-    #[Auth(authorized: 1)]
+    #[\POST(path: '/changepassword')]
+    #[\Auth(authorized: 1)]
     public function changepassword()
     {
-        $user = User::find(Auth::$user_id);
+        $user = \User::find(\Auth::$user_id);
         extract($_POST);
 
         if (!$_POST['currentpassword'] || !$_POST['newpassword'] || !$_POST['confirmpassword'])
@@ -805,14 +807,14 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
         }
     }
 
-    #[GET(path: '/checktelephone')]
-    #[Auth(authorized: 1)]
+    #[\GET(path: '/checktelephone')]
+    #[\Auth(authorized: 1)]
     public function checktelephone()
     {
         if (isset($_POST['phonecode']))
-            $country = Country::where("phonecode", Request::post("phonecode"))->firstOrNull();
+            $country = \Country::where("phonecode", \Request::post("phonecode"))->firstOrNull();
         else
-            $country = Country::where("iso", Request::post("country_iso"))->firstOrNull();
+            $country = \Country::where("iso", \Request::post("country_iso"))->firstOrNull();
 
         if (is_null($country)) {
             return [
@@ -821,46 +823,46 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
             ];
         }
 
-        $phonenumber = User::sanitizePhonenumber(Request::post("phonenumber"), $country->getPhonecode());
+        $phonenumber = \User::sanitizePhonenumber(\Request::post("phonenumber"), $country->getPhonecode());
 
-        $nbuser = User::select()
+        $nbuser = \User::select()
             ->where('user.phonenumber', "=", $phonenumber)
             ->count();
 
         if ($nbuser)
             return ["success" => false, "detail" => t("Ce numéro de téléphone existe déjà")];
 
-        $userhydrate = User::find(Request::get("user_id"));
+        $userhydrate = \User::find(\Request::get("user_id"));
 
         $resendCheck = self::checkResendAllowed($userhydrate);
         if ($resendCheck !== true)
             return $resendCheck;
 
-        $activationcode = User::generatecode();
+        $activationcode = \User::generatecode();
         $userhydrate->setActivationcode($activationcode);
         $userhydrate->__update();
 
         $userhydrate->phonenumber = $phonenumber;
 
-        Notification::on($userhydrate, "change_telephone", -1)
+        \Notification::on($userhydrate, "change_telephone", -1)
             ->send($userhydrate, ["username" => $userhydrate->username, "code" => $activationcode]);
 
         return ["success" => true, "detail" => t("code d'activation vous a été envoyé. Utilisez le pour confirmer le changement de votre numéro.")];
     }
 
 
-    #[POST(path: '/changetelephone')]
-    #[Auth(authorized: 1)]
+    #[\POST(path: '/changetelephone')]
+    #[\Auth(authorized: 1)]
     public function changetelephone()
     {
-        $user = User::find(Auth::$user_id);
+        $user = \User::find(\Auth::$user_id);
 
-        $password = (Request::post("password"));
+        $password = (\Request::post("password"));
         if (!$user->verifyPassword($password))
             return ["success" => false, "detail" => t("Mot de passe incorrect")];
 
-        $user->phonecode = Request::post("phonecode");
-        $response = $user->setPhonenumber(Request::post("phonenumber"));
+        $user->phonecode = \Request::post("phonecode");
+        $response = $user->setPhonenumber(\Request::post("phonenumber"));
         if ($response) {
             return ["success" => false, 'detail' => $response];
         }
@@ -871,7 +873,7 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
          if ($user->getPassword() !== sha1(Request::post("password")))
          return ["success" => false, "detail" => t("Mot de passe incorrect")];*/
 
-        $user->phonenumber = (Request::post("phonenumber"));
+        $user->phonenumber = (\Request::post("phonenumber"));
 
         $user->__update();
 
@@ -881,7 +883,7 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     public function deleteAction($id)
     {
 
-        $user = User::find($id);
+        $user = \User::find($id);
         //        $user->__delete();
         return array(
             'success' => true,
@@ -893,7 +895,7 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     {
 
         $password = \DClass\lib\Util::randomcode(6);
-        $user = User::find($id);
+        $user = \User::find($id);
         $user->setPassword(($password));
         $user->username = \DClass\lib\Util::generateLogin($user->firstname);
 
@@ -920,11 +922,11 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     /**
      * @return array
      */
-    #[Auth(authorized: 1)]
-    #[DELETE(path: '/delete-account')]
+    #[\Auth(authorized: 1)]
+    #[\DELETE(path: '/delete-account')]
     public function deleteAccount()
     {
-        $user = User::find(Auth::$user_id);
+        $user = \User::find(\Auth::$user_id);
         $user->deletion_requested_at = date('Y-m-d');
 
         $user->__update();
@@ -937,11 +939,11 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     /**
      * @return array
      */
-    #[Auth(authorized: 1)]
-    #[DELETE(path: '/cancel-delete-account')]
+    #[\Auth(authorized: 1)]
+    #[\DELETE(path: '/cancel-delete-account')]
     public function cancelDeleteAccount()
     {
-        $user = User::find(Auth::$user_id);
+        $user = \User::find(\Auth::$user_id);
         $user->deletion_requested_at = null;
 
         $user->__update();
@@ -953,17 +955,17 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
 
     
 
-    #[Auth(authorized: 1)]
-    #[GET(path: '/notifications')]
+    #[\Auth(authorized: 1)]
+    #[\GET(path: '/notifications')]
     public function notifications()
     {
-        $qb = Notification::initQb()
-            ->where('this.user_id', Auth::$user_id)
+        $qb = \Notification::initQb()
+            ->where('this.user_id', \Auth::$user_id)
             ->with('notificationtype', ['entity', '_key'])
             ->orderBy('this.id', 'DESC');
 
         return $qb->lazyloading(function (\dclass\devups\Datatable\Lazyloading $ll) {
-            $ll->append('nbunread', Notification::where("user_id", Auth::$user_id)
+            $ll->append('nbunread', \Notification::where("user_id", \Auth::$user_id)
                 ->where("status", "<", 1)
                 ->count());
         });
@@ -972,13 +974,13 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     /**
      * @return array
      */
-    #[Auth(authorized: 1)]
-    #[PUT(path: '/notified')]
+    #[\Auth(authorized: 1)]
+    #[\PUT(path: '/notified')]
     public function notified()
     {
 
         //        $ids = Request::post("ids");
-        return Notification::where("user_id", Auth::$user_id)
+        return \Notification::where("user_id", \Auth::$user_id)
             ->where('this.status', "=", -1)
             //        where("this.id")
             //            ->in($ids)
@@ -988,16 +990,16 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
             ]);
     }
 
-    #[Auth(authorized: 1)]
-    #[GET(path: '/alert')]
+    #[\Auth(authorized: 1)]
+    #[\GET(path: '/alert')]
     public function alert()
     {
 
-        $notifications = Notification::where("user_id", Auth::$user_id)
+        $notifications = \Notification::where("user_id", \Auth::$user_id)
             ->where("status", -1)
             ->orderBy('this.created_at', 'desc')
             ->get();
-        $unreaded = Notification::where("user_id", Auth::$user_id)
+        $unreaded = \Notification::where("user_id", \Auth::$user_id)
             ->where("status", "=", 0)
             ->count();
 
@@ -1019,24 +1021,24 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     /**
      * @return array
      */
-    #[Auth(authorized: 1)]
-    #[POST(path: '/update-push-token')]
+    #[\Auth(authorized: 1)]
+    #[\POST(path: '/update-push-token')]
     public function updatePushToken()
     {
-        $user_id = Auth::$user_id;
-        $fcm_token = Request::post('expo_push_token');
+        $user_id = \Auth::$user_id;
+        $fcm_token = \Request::post('expo_push_token');
 
         if (!$fcm_token) {
             return ['success' => false, 'detail' => 'Aucun token fourni'];
         }
 
-        $pusher = Push_subscription::where([
+        $pusher = \Push_subscription::where([
             'auth_token' => $fcm_token,
             'user_id' => $user_id,
         ])->firstOrNull();
 
         if (!$pusher) {
-            $pusher = Push_subscription::createInstance([
+            $pusher = \Push_subscription::createInstance([
                 'status' => 1,
                 'auth_token' => $fcm_token,
                 'user_id' => $user_id,
@@ -1050,3 +1052,6 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
         return ['success' => true, 'detail' => 'Push token mis à jour'];
     }
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(UserFrontController::class, 'UserFrontController');

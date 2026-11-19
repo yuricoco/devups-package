@@ -460,3 +460,31 @@ class Tree_itemForm extends \devupscms\ModuleTree\Form\Tree_itemForm
 class Tree_item_imageForm extends \devupscms\ModuleTree\Form\Tree_item_imageForm
 {
 }
+
+class UserController extends \devupsfront\ModuleUser\Controller\UserController
+{
+}
+
+class UserFrontController extends \devupsfront\ModuleUser\Controller\UserFrontController
+{
+}
+
+class Oauth_clientController extends \devupsfront\ModuleUser\Controller\Oauth_clientController
+{
+}
+
+class UserTable extends \devupsfront\ModuleUser\Datatable\UserTable
+{
+}
+
+class Oauth_clientTable extends \devupsfront\ModuleUser\Datatable\Oauth_clientTable
+{
+}
+
+class UserForm extends \devupsfront\ModuleUser\Form\UserForm
+{
+}
+
+class Oauth_clientForm extends \devupsfront\ModuleUser\Form\Oauth_clientForm
+{
+}

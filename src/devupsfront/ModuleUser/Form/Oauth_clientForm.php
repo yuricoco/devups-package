@@ -1,9 +1,10 @@
 <?php
 
+namespace devupsfront\ModuleUser\Form;
 
 use devupsfront\ModuleUser\Entity\Oauth_client;
 
-class Oauth_clientForm extends FormManager
+class Oauth_clientForm extends \FormManager
 {
 
     public $oauth_client;
@@ -46,3 +47,6 @@ class Oauth_clientForm extends FormManager
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Oauth_clientForm::class, 'Oauth_clientForm');

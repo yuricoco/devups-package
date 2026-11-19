@@ -1,5 +1,6 @@
 <?php
 
+namespace devupsfront\ModuleUser\Datatable;
 
 use dclass\devups\Datatable\Datatable as Datatable;
 
@@ -44,7 +45,7 @@ class UserTable extends Datatable
         $this->addcustomaction(function ($item) {
             return \dclass\devups\model\Dbutton::link(
                 'Detail',
-                User::classview('user/detail?id=' . $item->id),
+                \User::classview('user/detail?id=' . $item->id),
                 'btn btn-info'
             )
                 ->render();
@@ -72,7 +73,7 @@ class UserTable extends Datatable
         $this->addcustomaction(function ($item) {
             return \dclass\devups\model\Dbutton::link(
                 'Detail',
-                User::classview('user/detail?id=' . $item->id),
+                \User::classview('user/detail?id=' . $item->id),
                 'btn btn-info'
             )
                 ->render();
@@ -101,7 +102,7 @@ class UserTable extends Datatable
 
     public function router()
     {
-        $tablemodel = Request::get("tablemodel", null);
+        $tablemodel = \Request::get("tablemodel", null);
         if ($tablemodel && method_exists($this, "build" . $tablemodel . "table") && $result = call_user_func(array($this, "build" . $tablemodel . "table"))) {
             return $result;
         } else
@@ -112,3 +113,6 @@ class UserTable extends Datatable
             }
     }
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(UserTable::class, 'UserTable');

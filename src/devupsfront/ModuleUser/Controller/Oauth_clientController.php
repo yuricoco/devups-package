@@ -1,6 +1,7 @@
-<?php 
+<?php
 
-            
+namespace devupsfront\ModuleUser\Controller;
+
 use dclass\devups\Controller\Controller;
 use devupsfront\ModuleUser\Entity\Oauth_client;
 
@@ -8,7 +9,7 @@ class Oauth_clientController extends Controller{
 
     public function listView(){
 
-        $this->datatable = Oauth_clientTable::init(new Oauth_client())->buildindextable();
+        $this->datatable = \Oauth_clientTable::init(new Oauth_client())->buildindextable();
 
         self::$jsfiles[] = Oauth_client::classpath('Resource/js/oauth_clientCtrl.js');
 
@@ -22,7 +23,7 @@ class Oauth_clientController extends Controller{
     public function datatable() {
     
         return ['success' => true,
-            'datatable' => Oauth_clientTable::init(new Oauth_client())->router()->getTableRest(),
+            'datatable' => \Oauth_clientTable::init(new Oauth_client())->router()->getTableRest(),
         ];
         
     }
@@ -37,7 +38,7 @@ class Oauth_clientController extends Controller{
         }
 
         return ['success' => true,
-            'form' => Oauth_clientForm::init($oauth_client, $action)
+            'form' => \Oauth_clientForm::init($oauth_client, $action)
                 ->buildForm()
                 ->addDformjs()
                 ->renderForm(),
@@ -59,7 +60,7 @@ class Oauth_clientController extends Controller{
         $id = $oauth_client->__insert();
         return 	array(	'success' => true,
                         'oauth_client' => $oauth_client,
-                        'tablerow' => Oauth_clientTable::init()->router()->getSingleRowRest($oauth_client),
+                        'tablerow' => \Oauth_clientTable::init()->router()->getSingleRowRest($oauth_client),
                         'detail' => '');
 
     }
@@ -79,7 +80,7 @@ class Oauth_clientController extends Controller{
         $oauth_client->__update();
         return 	array(	'success' => true,
                         'oauth_client' => $oauth_client,
-                        'tablerow' => Oauth_clientTable::init()->router()->getSingleRowRest($oauth_client),
+                        'tablerow' => \Oauth_clientTable::init()->router()->getSingleRowRest($oauth_client),
                         'detail' => '');
                         
     }
@@ -94,7 +95,7 @@ class Oauth_clientController extends Controller{
         $oauth_client = Oauth_client::find($id);
 
         $this->renderDetailView(
-            Oauth_clientTable::init()
+            \Oauth_clientTable::init()
                 ->builddetailtable()
                 ->renderentitydata($oauth_client)
         );
@@ -118,8 +119,11 @@ class Oauth_clientController extends Controller{
         Oauth_client::where("this.id")->in($ids)->delete();
 
         return array('success' => true,
-                'detail' => ''); 
+                'detail' => '');
 
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Oauth_clientController::class, 'Oauth_clientController');
