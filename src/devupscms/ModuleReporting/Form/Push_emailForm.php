@@ -1,9 +1,10 @@
 <?php
 
+namespace devupscms\ModuleReporting\Form;
 
-use Genesis as g;
+use \Genesis as g;
 
-class Push_emailForm extends FormManager
+class Push_emailForm extends \FormManager
 {
 
     public $push_email;
@@ -22,7 +23,7 @@ class Push_emailForm extends FormManager
             "type" => FORMTYPE_SELECT,
             "value" => $this->push_email->notificationtype->id,
             "label" => t('notificationtype'),
-            "options" => FormManager::Options_Helper('_key', Notificationtype::where("this.entity", "user")
+            "options" => \FormManager::Options_Helper('_key', \Notificationtype::where("this.entity", "user")
                 ->where("this.emailmodel", "!=", "")->get()),
         ];
         $this->fields['status'] = [
@@ -96,3 +97,6 @@ class Push_emailForm extends FormManager
 
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Push_emailForm::class, 'Push_emailForm');

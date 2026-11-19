@@ -1,5 +1,6 @@
 <?php
 
+namespace devupscms\ModuleReporting\Datatable;
 
 use dclass\devups\Datatable\Datatable as Datatable;
 
@@ -15,7 +16,7 @@ class ReportingmodelTable extends Datatable
     public static function init(\Reportingmodel $emailmodel = null)
     {
 
-        $dt = new ReportingmodelTable(new Reportingmodel());
+        $dt = new ReportingmodelTable(new \Reportingmodel());
         $dt->entity = $emailmodel;
 
         return $dt;
@@ -39,7 +40,7 @@ class ReportingmodelTable extends Datatable
 
         $this->addcustomaction(function ($item) {
 
-            return '<a class="btn btn-warning btn-block"  href="' . Reportingmodel::classpath("reportingmodel/edit-email?id=") . $item->id . '">Edit email</a>';
+            return '<a class="btn btn-warning btn-block"  href="' . \Reportingmodel::classpath("reportingmodel/edit-email?id=") . $item->id . '">Edit email</a>';
 
         });
         $this->addcustomaction(function ($item) {
@@ -60,3 +61,6 @@ class ReportingmodelTable extends Datatable
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(ReportingmodelTable::class, 'ReportingmodelTable');

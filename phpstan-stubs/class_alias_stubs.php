@@ -384,3 +384,39 @@ class WorkersForm extends \devupscms\ModulePushNotification\Form\WorkersForm
 class Push_subscriptionForm extends \devupscms\ModulePushNotification\Form\Push_subscriptionForm
 {
 }
+
+class EmaillogController extends \devupscms\ModuleReporting\Controller\EmaillogController
+{
+}
+
+class Push_emailController extends \devupscms\ModuleReporting\Controller\Push_emailController
+{
+}
+
+class ReportingmodelController extends \devupscms\ModuleReporting\Controller\ReportingmodelController
+{
+}
+
+class EmaillogTable extends \devupscms\ModuleReporting\Datatable\EmaillogTable
+{
+}
+
+class Push_emailTable extends \devupscms\ModuleReporting\Datatable\Push_emailTable
+{
+}
+
+class ReportingmodelTable extends \devupscms\ModuleReporting\Datatable\ReportingmodelTable
+{
+}
+
+class EmaillogForm extends \devupscms\ModuleReporting\Form\EmaillogForm
+{
+}
+
+class Push_emailForm extends \devupscms\ModuleReporting\Form\Push_emailForm
+{
+}
+
+class ReportingmodelForm extends \devupscms\ModuleReporting\Form\ReportingmodelForm
+{
+}

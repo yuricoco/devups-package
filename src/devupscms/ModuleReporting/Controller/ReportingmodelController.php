@@ -1,5 +1,6 @@
 <?php
 
+namespace devupscms\ModuleReporting\Controller;
 
 use dclass\devups\Controller\Controller;
 
@@ -8,15 +9,15 @@ class ReportingmodelController extends Controller
 
     public function __construct()
     {
-        $this->entity = new Reportingmodel();
+        $this->entity = new \Reportingmodel();
     }
 
     public function listView($next = 1, $per_page = 10)
     {
 
-        $this->datatable = ReportingmodelTable::init(new Reportingmodel())->buildindextable();
+        $this->datatable = \ReportingmodelTable::init(new \Reportingmodel())->buildindextable();
 
-        self::$jsfiles[] = Reportingmodel::classpath('Resource/js/reportingmodelCtrl.js');
+        self::$jsfiles[] = \Reportingmodel::classpath('Resource/js/reportingmodelCtrl.js');
 
         $this->entitytarget = 'Reportingmodel';
         $this->title = "Manage Reportingmodel";
@@ -29,7 +30,7 @@ class ReportingmodelController extends Controller
     {
 
         return ['success' => true,
-            'datatable' => ReportingmodelTable::init(new Reportingmodel())->buildindextable()->getTableRest(),
+            'datatable' => \ReportingmodelTable::init(new \Reportingmodel())->buildindextable()->getTableRest(),
         ];
 
     }
@@ -39,10 +40,10 @@ class ReportingmodelController extends Controller
 
         //self::$jsfiles[] = Reportingmodel::classpath('Resource/js/reportingmodelCtrl.js');
 
-        $action = Reportingmodel::classpath("services.php?path=reportingmodel.update-email&id=" . $id);
-        $reportingmodel = Reportingmodel::find($id);
-        $langs = Dvups_lang::all();
-        Genesis::renderView("admin.reportingmodel.form", [
+        $action = \Reportingmodel::classpath("services.php?path=reportingmodel.update-email&id=" . $id);
+        $reportingmodel = \Reportingmodel::find($id);
+        $langs = \Dvups_lang::all();
+        \Genesis::renderView("admin.reportingmodel.form", [
             "success" => true,
             "reportingmodel" => $reportingmodel,
             "action" => $action,
@@ -52,16 +53,16 @@ class ReportingmodelController extends Controller
 
     public function formView($id = null)
     {
-        $reportingmodel = new Reportingmodel();
-        $action = Reportingmodel::classpath("services.php?path=reportingmodel.create");
+        $reportingmodel = new \Reportingmodel();
+        $action = \Reportingmodel::classpath("services.php?path=reportingmodel.create");
         if ($id) {
-            self::$jsfiles[] = Reportingmodel::classpath('Resource/js/reportingmodelCtrl.js');
+            self::$jsfiles[] = \Reportingmodel::classpath('Resource/js/reportingmodelCtrl.js');
 
-            $action = Reportingmodel::classpath("services.php?path=reportingmodel.update&id=" . $id);
-            $reportingmodel = Reportingmodel::find($id);
+            $action = \Reportingmodel::classpath("services.php?path=reportingmodel.update&id=" . $id);
+            $reportingmodel = \Reportingmodel::find($id);
 
             return ['success' => true,
-                'form' => ReportingmodelForm::init($reportingmodel, $action)
+                'form' => \ReportingmodelForm::init($reportingmodel, $action)
                     ->buildForm()
                     ->addDformjs()
                     ->renderForm(),
@@ -69,7 +70,7 @@ class ReportingmodelController extends Controller
         }
 
         return ['success' => true,
-            'form' => ReportingmodelForm::init($reportingmodel, $action)
+            'form' => \ReportingmodelForm::init($reportingmodel, $action)
                 ->buildForm()
                 ->addDformjs()
                 ->renderForm(),
@@ -80,7 +81,7 @@ class ReportingmodelController extends Controller
     {
         extract($_POST);
 
-        $reportingmodel = $this->form_fillingentity(new Reportingmodel(), $reportingmodel_form);
+        $reportingmodel = $this->form_fillingentity(new \Reportingmodel(), $reportingmodel_form);
         if ($this->error) {
             return //Genesis::renderView("reportingmodel.form",
                 array('success' => false,
@@ -93,11 +94,11 @@ class ReportingmodelController extends Controller
         // ETAPE M.4 : sens inverse de collectAction() ci-dessous - creer un
         // Reportingmodel depuis le back-office genere son fichier gabarit
         // Blade (web/views/mails/), s'il n'existe pas deja.
-        self::ensureTemplateFile(Reportingmodel::find($id));
+        self::ensureTemplateFile(\Reportingmodel::find($id));
 
         return array('success' => true,
             'reportingmodel' => $reportingmodel,
-            'tablerow' => ReportingmodelTable::init()->buildindextable()->getSingleRowRest($reportingmodel),
+            'tablerow' => \ReportingmodelTable::init()->buildindextable()->getSingleRowRest($reportingmodel),
             'detail' => '');
 
     }
@@ -121,7 +122,7 @@ class ReportingmodelController extends Controller
      * N'ecrit JAMAIS par-dessus un fichier existant - seulement pour un
      * modele qui n'a pas encore de gabarit sur le disque.
      */
-    private static function ensureTemplateFile(Reportingmodel $reportingmodel): void
+    private static function ensureTemplateFile(\Reportingmodel $reportingmodel): void
     {
         if (!$reportingmodel->getId() || !$reportingmodel->getName())
             return;
@@ -155,16 +156,16 @@ class ReportingmodelController extends Controller
             // `name` ambigue (jointure avec reportingmodel_lang/dvups_lang,
             // qui a elle aussi une colonne `name`) - qualifiee explicitement
             // ici plutot que dans ModelTrait (partagee par tout l'ORM).
-            $existing = Reportingmodel::where('reportingmodel.name', $name)->firstOrNull();
+            $existing = \Reportingmodel::where('reportingmodel.name', $name)->firstOrNull();
             if ($existing && $existing->getId())
                 continue;
 
-            $id = Reportingmodel::create([
+            $id = \Reportingmodel::create([
                 'name' => $name,
                 'type' => 'email',
                 'description' => t('Modele collecte automatiquement depuis :file', ['file' => basename($file)]),
             ]);
-            $created[] = Reportingmodel::find($id);
+            $created[] = \Reportingmodel::find($id);
         }
 
         return [
@@ -179,7 +180,7 @@ class ReportingmodelController extends Controller
      */
     public function previewAction($id)
     {
-        $reportingmodel = Reportingmodel::find($id);
+        $reportingmodel = \Reportingmodel::find($id);
         if (!$reportingmodel->getId())
             return ['success' => false, 'detail' => t('Modele introuvable')];
 
@@ -195,7 +196,7 @@ class ReportingmodelController extends Controller
             'mail_title' => PROJECT_NAME,
         ];
 
-        $html = Genesis::getView($reportingmodel->getName(), $payload);
+        $html = \Genesis::getView($reportingmodel->getName(), $payload);
         if ($html === null)
             return ['success' => false, 'detail' => t('Apercu impossible : gabarit introuvable')];
 
@@ -212,11 +213,11 @@ class ReportingmodelController extends Controller
      */
     public function sendtestviadmailAction($id, $email)
     {
-        $reportingmodel = Reportingmodel::find($id);
+        $reportingmodel = \Reportingmodel::find($id);
         if (!$reportingmodel->getId())
             return ['success' => false, 'detail' => t('Modele introuvable')];
 
-        return DMail::init($reportingmodel->getName())
+        return \DMail::init($reportingmodel->getName())
             ->setObject($reportingmodel->getDescription() ?: $reportingmodel->getName())
             ->addReceiver($email, 'Test')
             ->sendMail([
@@ -232,7 +233,7 @@ class ReportingmodelController extends Controller
     {
         extract($_POST);
 
-        $reportingmodel = $this->form_fillingentity(new Reportingmodel($id), $reportingmodel_form);
+        $reportingmodel = $this->form_fillingentity(new \Reportingmodel($id), $reportingmodel_form);
 
         if ($this->error) {
             return //Genesis::renderView("reportingmodel.form",
@@ -243,7 +244,7 @@ class ReportingmodelController extends Controller
         $reportingmodel->__update();
         return array('success' => true,
             'reportingmodel' => $reportingmodel,
-            'tablerow' => ReportingmodelTable::init()->buildindextable()->getSingleRowRest($reportingmodel),
+            'tablerow' => \ReportingmodelTable::init()->buildindextable()->getSingleRowRest($reportingmodel),
             'detail' => '');
 
     }
@@ -252,17 +253,17 @@ class ReportingmodelController extends Controller
     {
         extract($_POST);
 
-        $reportingmodel = $this->form_fillingentity(new Reportingmodel($id), $reportingmodel_form);
+        $reportingmodel = $this->form_fillingentity(new \Reportingmodel($id), $reportingmodel_form);
 
         if ($this->error) {
-            return Genesis::renderView("reportingmodel.form", array('success' => false,
+            return \Genesis::renderView("reportingmodel.form", array('success' => false,
                 'reportingmodel' => $reportingmodel,
                 'action_form' => 'update&id=' . $id,
                 'error' => $this->error));
         }
 
         $reportingmodel->__update();
-        redirect(Reportingmodel::classpath("reportingmodel/index"));
+        redirect(\Reportingmodel::classpath("reportingmodel/index"));
 
     }
 
@@ -273,10 +274,10 @@ class ReportingmodelController extends Controller
         $this->entitytarget = 'Reportingmodel';
         $this->title = "Detail Reportingmodel";
 
-        $reportingmodel = Reportingmodel::find($id);
+        $reportingmodel = \Reportingmodel::find($id);
 
         $this->renderDetailView(
-            ReportingmodelTable::init()
+            \ReportingmodelTable::init()
                 ->builddetailtable()
                 ->renderentitydata($reportingmodel)
         );
@@ -286,7 +287,7 @@ class ReportingmodelController extends Controller
     public function deleteAction($id)
     {
 
-        Reportingmodel::delete($id);
+        \Reportingmodel::delete($id);
         return array('success' => true,
             'detail' => '');
     }
@@ -295,7 +296,7 @@ class ReportingmodelController extends Controller
     public function deletegroupAction($ids)
     {
 
-        Reportingmodel::delete()->where("id")->in($ids);
+        \Reportingmodel::delete()->where("id")->in($ids);
 
         return array('success' => true,
             'detail' => '');
@@ -308,7 +309,7 @@ class ReportingmodelController extends Controller
     }
     public function testmailAction($id, $email)
     {
-        return Reportingmodel::find($id, 1)
+        return \Reportingmodel::find($id, 1)
             ->addReceiver($email, "devups developer")
             ->sendMail([
                 "activationcode" => "ddddd",
@@ -327,7 +328,7 @@ class ReportingmodelController extends Controller
         // fichiers se terminant par "_<local>.html").
         $name = basename((string)$name);
         $local = local();
-        $filename = Reportingmodel::classroot("Resource/partial/{$name}_$local.html");
+        $filename = \Reportingmodel::classroot("Resource/partial/{$name}_$local.html");
         if (!file_exists($filename))
             return [
                 "success" => false,
@@ -344,9 +345,9 @@ class ReportingmodelController extends Controller
     public function saveContent($id)
     {
         $local = local();
-        $rm = Reportingmodel::find($id, Dvups_lang::getByIsoCode($local)->id);
+        $rm = \Reportingmodel::find($id, \Dvups_lang::getByIsoCode($local)->id);
 
-        $filename = Reportingmodel::classroot("Resource/partial");
+        $filename = \Reportingmodel::classroot("Resource/partial");
         // ETAPE H.4 : basename() par precaution, meme principe que
         // loadContent() ci-dessus ($rm->name vient de la base, pas
         // directement de la requete, mais reste un nom de modele saisi par
@@ -362,7 +363,7 @@ class ReportingmodelController extends Controller
     public function downloadContent($id)
     {
         $local = local();
-        $rm = Reportingmodel::find($id, Dvups_lang::getByIsoCode($local)->id);
+        $rm = \Reportingmodel::find($id, \Dvups_lang::getByIsoCode($local)->id);
 
         $fileName = "{$rm->name}_$local.html";
 
@@ -376,3 +377,6 @@ class ReportingmodelController extends Controller
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(ReportingmodelController::class, 'ReportingmodelController');

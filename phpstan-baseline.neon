@@ -1261,7 +1261,7 @@ parameters:
 			path: src/devupscms/ModulePushNotification/Resource/views/admin/layout.blade.php
 
 		-
-			message: "#^Access to an undefined property EmaillogController\\:\\:\\$datatable\\.$#"
+			message: "#^Access to an undefined property devupscms\\\\ModuleReporting\\\\Controller\\\\EmaillogController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devupscms/ModuleReporting/Controller/EmaillogController.php
 
@@ -1271,7 +1271,7 @@ parameters:
 			path: src/devupscms/ModuleReporting/Controller/EmaillogController.php
 
 		-
-			message: "#^Access to an undefined property ReportingmodelController\\:\\:\\$datatable\\.$#"
+			message: "#^Access to an undefined property devupscms\\\\ModuleReporting\\\\Controller\\\\ReportingmodelController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devupscms/ModuleReporting/Controller/ReportingmodelController.php
 
@@ -1301,7 +1301,7 @@ parameters:
 			path: src/devupscms/ModuleReporting/Entity/Reportingmodel.php
 
 		-
-			message: "#^Call to an undefined static method EmaillogForm\\:\\:getFormData\\(\\)\\.$#"
+			message: "#^Call to an undefined static method devupscms\\\\ModuleReporting\\\\Form\\\\EmaillogForm\\:\\:getFormData\\(\\)\\.$#"
 			count: 1
 			path: src/devupscms/ModuleReporting/Form/EmaillogForm.php
 
@@ -1316,7 +1316,7 @@ parameters:
 			path: src/devupscms/ModuleReporting/Form/Push_emailForm.php
 
 		-
-			message: "#^Call to an undefined static method ReportingmodelForm\\:\\:getFormData\\(\\)\\.$#"
+			message: "#^Call to an undefined static method devupscms\\\\ModuleReporting\\\\Form\\\\ReportingmodelForm\\:\\:getFormData\\(\\)\\.$#"
 			count: 1
 			path: src/devupscms/ModuleReporting/Form/ReportingmodelForm.php
 

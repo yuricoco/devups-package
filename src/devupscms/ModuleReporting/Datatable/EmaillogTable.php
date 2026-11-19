@@ -1,5 +1,6 @@
 <?php
 
+namespace devupscms\ModuleReporting\Datatable;
 
 use dclass\devups\Datatable\Datatable as Datatable;
 
@@ -52,7 +53,7 @@ class EmaillogTable extends Datatable
 
     public function router()
     {
-        $tablemodel = Request::get("tablemodel", null);
+        $tablemodel = \Request::get("tablemodel", null);
         if ($tablemodel && method_exists($this, "build" . $tablemodel . "table") && $result = call_user_func(array($this, "build" . $tablemodel . "table"))) {
             return $result;
         } else
@@ -65,3 +66,6 @@ class EmaillogTable extends Datatable
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(EmaillogTable::class, 'EmaillogTable');

@@ -809,12 +809,21 @@ resolution par `use` independante du namespace du fichier, `VAPID`
 reste donc non-prefixe dans le code (meme regle que pour les entites
 importees par `use`).
 
+**ModuleReporting (devupscms) - FAIT (9 fichiers)** : `EmaillogController`,
+`Push_emailController`, `ReportingmodelController`, `EmaillogTable`,
+`Push_emailTable`, `ReportingmodelTable`, `EmaillogForm`,
+`Push_emailForm`, `ReportingmodelForm` namespaces. Module le plus dense
+en logique de ce point (b) (envoi d'emails/SMS, cron, gabarits Blade) -
+aucune trouvaille de bug latent, uniquement une migration mecanique
+(nombreux commentaires de code mort avec des references de classe non
+prefixees - laisses tels quels, hors du scope de la migration).
+
 **Volume de ce point (b)** : 83 fichiers (33 Controller + 25 Datatable +
 25 Form) repartis sur `devups` (ModuleAdmin 13 FAIT, ModuleConfig 3 FAIT,
 ModuleLang 3 FAIT, ModuleLog 3 FAIT), `devupscms` (ModuleCms 11 FAIT,
 ModuleData 6 FAIT, ModuleLocation 4 FAIT, ModuleNotification 7 FAIT,
-ModulePushNotification 7 FAIT, ModuleReporting 9, ModuleTree 10),
-`devupsfront` (ModuleUser 7). **57 fichiers sur 83 termines.**
+ModulePushNotification 7 FAIT, ModuleReporting 9 FAIT, ModuleTree 10),
+`devupsfront` (ModuleUser 7). **66 fichiers sur 83 termines.**
 **devups entierement termine (22 fichiers).**
 
 ### LOT 5.1 - FAIT (helper `Model::shortClassName()` + conversion des sites "non surs")

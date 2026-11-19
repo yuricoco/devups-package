@@ -1,9 +1,10 @@
 <?php
 
+namespace devupscms\ModuleReporting\Form;
 
-use Genesis as g;
+use \Genesis as g;
 
-class ReportingmodelForm extends FormManager
+class ReportingmodelForm extends \FormManager
 {
 
     public $emailmodel;
@@ -33,7 +34,7 @@ class ReportingmodelForm extends FormManager
         $this->fields['type'] = [
             "label" => t('Type of reporting '),
             "type" => FORMTYPE_RADIO,
-            "options" => FormManager::key_as_value(array_values($files)),
+            "options" => \FormManager::key_as_value(array_values($files)),
             "value" => $this->emailmodel->getType().".blade.php",
         ];
 
@@ -75,8 +76,11 @@ class ReportingmodelForm extends FormManager
 
     public static function renderWidget($id = null, $action = "create")
     {
-        Genesis::renderView("emailmodel.formWidget", self::getFormData($id, $action));
+        \Genesis::renderView("emailmodel.formWidget", self::getFormData($id, $action));
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(ReportingmodelForm::class, 'ReportingmodelForm');
     

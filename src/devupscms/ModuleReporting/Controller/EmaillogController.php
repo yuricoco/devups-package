@@ -1,5 +1,7 @@
 <?php
 
+namespace devupscms\ModuleReporting\Controller;
+
 use dclass\devups\Controller\Controller;
 
 /**
@@ -17,9 +19,9 @@ class EmaillogController extends Controller
             die;
         }
 
-        $this->datatable = EmaillogTable::init(new Emaillog())->buildindextable();
+        $this->datatable = \EmaillogTable::init(new \Emaillog())->buildindextable();
 
-        self::$jsfiles[] = Emaillog::classpath('Resource/js/emaillogCtrl.js');
+        self::$jsfiles[] = \Emaillog::classpath('Resource/js/emaillogCtrl.js');
 
         $this->entitytarget = 'Emaillog';
         $this->title = "Emails envoyes";
@@ -34,7 +36,7 @@ class EmaillogController extends Controller
             return ['success' => false, 'detail' => t('Action non autorisee')];
 
         return ['success' => true,
-            'datatable' => EmaillogTable::init(new Emaillog())->router()->getTableRest(),
+            'datatable' => \EmaillogTable::init(new \Emaillog())->router()->getTableRest(),
         ];
 
     }
@@ -49,10 +51,10 @@ class EmaillogController extends Controller
         $this->entitytarget = 'Emaillog';
         $this->title = "Detail de l'email";
 
-        $emaillog = Emaillog::find($id);
+        $emaillog = \Emaillog::find($id);
 
         $this->renderDetailView(
-            EmaillogTable::init()
+            \EmaillogTable::init()
                 ->builddetailtable()
                 ->renderentitydata($emaillog),
             false,
@@ -61,3 +63,6 @@ class EmaillogController extends Controller
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(EmaillogController::class, 'EmaillogController');

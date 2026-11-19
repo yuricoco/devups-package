@@ -1,13 +1,15 @@
 <?php
 
-use Genesis as g;
+namespace devupscms\ModuleReporting\Form;
+
+use \Genesis as g;
 
 /**
  * Non exposee par EmaillogController (ecran lecture seule) : conservee
  * pour la convention du generateur (une Form par entite), au cas ou un
  * widget de detail personnalise en aurait besoin plus tard.
  */
-class EmaillogForm extends FormManager{
+class EmaillogForm extends \FormManager{
 
     public $emaillog;
 
@@ -56,7 +58,10 @@ class EmaillogForm extends FormManager{
 
     public static function renderWidget($id = null, $action = "create")
     {
-        Genesis::renderView("emaillog.formWidget", self::getFormData($id, $action));
+        \Genesis::renderView("emaillog.formWidget", self::getFormData($id, $action));
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(EmaillogForm::class, 'EmaillogForm');
