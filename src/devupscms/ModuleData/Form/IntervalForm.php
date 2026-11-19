@@ -1,9 +1,10 @@
-<?php 
+<?php
 
-        
-use Genesis as g;
+namespace devupscms\ModuleData\Form;
 
-class IntervalForm extends FormManager{
+use \Genesis as g;
+
+class IntervalForm extends \FormManager{
 
     public $interval;
 
@@ -49,8 +50,11 @@ class IntervalForm extends FormManager{
 
     public static function renderWidget($id = null, $action = "create")
     {
-        Genesis::renderView("interval.formWidget", self::getFormData($id, $action));
+        \Genesis::renderView("interval.formWidget", self::getFormData($id, $action));
     }
-    
+
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(IntervalForm::class, 'IntervalForm');
     

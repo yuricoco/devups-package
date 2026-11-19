@@ -759,12 +759,21 @@ comportement/l'erreur phpstan reste identique, aucune regression
 introduite, le bug reste documente dans le meme message baseline
 inchange). A traiter separement si quelqu'un relance ce chantier.
 
+**ModuleData (devupscms) - FAIT (6 fichiers)** : `IntervalController`,
+`StatusController`, `IntervalTable`, `StatusTable`, `IntervalForm`,
+`StatusForm` namespaces (`devupscms\ModuleData\{Controller,Datatable,
+Form}`). `IntervalController.php` conservait un `use
+devupscms\ModuleData\Entity\Interval_group;` preexistant - garde tel
+quel (resolution par `use`, aucun changement necessaire). Aucune
+trouvaille notable (pas de bug latent comme ModuleCms/ModuleAdmin) -
+migration mecanique standard.
+
 **Volume de ce point (b)** : 83 fichiers (33 Controller + 25 Datatable +
 25 Form) repartis sur `devups` (ModuleAdmin 13 FAIT, ModuleConfig 3 FAIT,
 ModuleLang 3 FAIT, ModuleLog 3 FAIT), `devupscms` (ModuleCms 11 FAIT,
-ModuleData 6, ModuleLocation 4, ModuleNotification 7,
+ModuleData 6 FAIT, ModuleLocation 4, ModuleNotification 7,
 ModulePushNotification 7, ModuleReporting 9, ModuleTree 10),
-`devupsfront` (ModuleUser 7). **33 fichiers sur 83 termines.**
+`devupsfront` (ModuleUser 7). **39 fichiers sur 83 termines.**
 **devups entierement termine (22 fichiers).**
 
 ### LOT 5.1 - FAIT (helper `Model::shortClassName()` + conversion des sites "non surs")

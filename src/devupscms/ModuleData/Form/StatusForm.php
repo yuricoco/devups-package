@@ -1,9 +1,10 @@
 <?php
 
+namespace devupscms\ModuleData\Form;
 
-use Genesis as g;
+use \Genesis as g;
 
-class StatusForm extends FormManager
+class StatusForm extends \FormManager
 {
 
     public $status;
@@ -23,7 +24,7 @@ class StatusForm extends FormManager
             "label" => t('Entity'),
             "type" => FORMTYPE_SELECT,
             "value" => $this->status->entity,
-            "options" => FormManager::key_as_value(status_entities),
+            "options" => \FormManager::key_as_value(status_entities),
         ];
 
         $this->fields['color'] = [
@@ -54,13 +55,16 @@ class StatusForm extends FormManager
 
         $this->addcss(__admin . 'plugins/colorpicker/css/evol-colorpicker.min');
         $this->addjs(__admin . 'plugins/colorpicker/js/evol-colorpicker.min');
-        $this->addjs(Status::classpath('Resource/js/statusForm'));
+        $this->addjs(\Status::classpath('Resource/js/statusForm'));
 
         return $this;
     }
 
     public static function renderWidget($id = null, $action = "create")
     {
-        Genesis::renderView("status.formWidget", self::getFormData($id, $action));
+        \Genesis::renderView("status.formWidget", self::getFormData($id, $action));
     }
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(StatusForm::class, 'StatusForm');

@@ -1,6 +1,7 @@
-<?php 
+<?php
 
-            
+namespace devupscms\ModuleData\Controller;
+
 use dclass\devups\Controller\Controller;
 use devupscms\ModuleData\Entity\Interval_group;
 
@@ -8,9 +9,9 @@ class IntervalController extends Controller{
 
     public function listView(){
 
-        $this->datatable = IntervalTable::init(new Interval())->buildindextable();
+        $this->datatable = \IntervalTable::init(new \Interval())->buildindextable();
 
-        self::$jsfiles[] = Interval::classpath('Resource/js/intervalCtrl.js');
+        self::$jsfiles[] = \Interval::classpath('Resource/js/intervalCtrl.js');
 
         $this->entitytarget = 'Interval';
         $this->title = "Manage Interval";
@@ -22,22 +23,22 @@ class IntervalController extends Controller{
     public function datatable() {
     
         return ['success' => true,
-            'datatable' => IntervalTable::init(new Interval())->router()->getTableRest(),
+            'datatable' => \IntervalTable::init(new \Interval())->router()->getTableRest(),
         ];
         
     }
 
     public function formView($id = null)
     {
-        $interval = new Interval();
+        $interval = new \Interval();
         $action = __env.("admin/api/interval/create");
         if ($id) {
             $action = __env.("admin/api/interval/update?id=" . $id);
-            $interval = Interval::find($id);
+            $interval = \Interval::find($id);
         }
 
         return ['success' => true,
-            'form' => IntervalForm::init($interval, $action)
+            'form' => \IntervalForm::init($interval, $action)
                 ->buildForm()
                 ->addDformjs()
                 ->renderForm(),
@@ -47,7 +48,7 @@ class IntervalController extends Controller{
     public function createAction($interval_form = null ){
         extract($_POST);
 
-        $interval = $this->form_fillingentity(new Interval(), $interval_form);
+        $interval = $this->form_fillingentity(new \Interval(), $interval_form);
         if ( $this->error ) {
             return 	array(	'success' => false,
                             'interval' => $interval,
@@ -59,7 +60,7 @@ class IntervalController extends Controller{
         $id = $interval->__insert();
         return 	array(	'success' => true,
                         'interval' => $interval,
-                        'tablerow' => IntervalTable::init()->router()->getSingleRowRest($interval),
+                        'tablerow' => \IntervalTable::init()->router()->getSingleRowRest($interval),
                         'detail' => '');
 
     }
@@ -67,7 +68,7 @@ class IntervalController extends Controller{
     public function updateAction($id, $interval_form = null){
         extract($_POST);
             
-        $interval = $this->form_fillingentity(new Interval($id), $interval_form);
+        $interval = $this->form_fillingentity(new \Interval($id), $interval_form);
      
         if ( $this->error ) {
             return 	array(	'success' => false,
@@ -79,7 +80,7 @@ class IntervalController extends Controller{
         $interval->__update();
         return 	array(	'success' => true,
                         'interval' => $interval,
-                        'tablerow' => IntervalTable::init()->router()->getSingleRowRest($interval),
+                        'tablerow' => \IntervalTable::init()->router()->getSingleRowRest($interval),
                         'detail' => '');
                         
     }
@@ -91,10 +92,10 @@ class IntervalController extends Controller{
         $this->entitytarget = 'Interval';
         $this->title = "Detail Interval";
 
-        $interval = Interval::find($id);
+        $interval = \Interval::find($id);
 
         $this->renderDetailView(
-            IntervalTable::init()
+            \IntervalTable::init()
                 ->builddetailtable()
                 ->renderentitydata($interval)
         );
@@ -103,7 +104,7 @@ class IntervalController extends Controller{
     
     public function deleteAction($id){
     
-        $interval = Interval::find($id);
+        $interval = \Interval::find($id);
         $interval->__delete();
         
         return 	array(	'success' => true, 
@@ -115,7 +116,7 @@ class IntervalController extends Controller{
     public function deletegroupAction($ids)
     {
 
-        Interval::where("this.id")->in($ids)->delete();
+        \Interval::where("this.id")->in($ids)->delete();
 
         return array('success' => true,
                 'detail' => ''); 
@@ -125,7 +126,7 @@ class IntervalController extends Controller{
     public function config()
     {
 
-        Genesis::renderView('admin.interval.config');
+        \Genesis::renderView('admin.interval.config');
 
     }
 
@@ -133,7 +134,7 @@ class IntervalController extends Controller{
     public function toggleGroup()
     {
 
-        $raw = Request::raw();
+        $raw = \Request::raw();
         if ($raw['checked'] == 1)
             Interval_group::create($raw['interval_group']);
         else
@@ -146,3 +147,6 @@ class IntervalController extends Controller{
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(IntervalController::class, 'IntervalController');

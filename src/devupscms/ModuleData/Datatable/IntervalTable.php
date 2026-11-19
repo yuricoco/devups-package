@@ -1,5 +1,6 @@
-<?php 
+<?php
 
+namespace devupscms\ModuleData\Datatable;
 
 use dclass\devups\Datatable\Datatable as Datatable;
 
@@ -22,7 +23,7 @@ class IntervalTable extends Datatable{
     public function buildindextable(){
 
         $this->base_url = __env."admin/";
-        $action = Interval::classview('interval/config');
+        $action = \Interval::classview('interval/config');
         $this->topactions[] = '<a href="'.$action.'" class="btn btn-info">Config</a>';
 
         $this->datatablemodel = [
@@ -46,7 +47,7 @@ class IntervalTable extends Datatable{
         // $this->isRadio = true;
         //$this->dynamicpagination = true;
         //$this->searchaction = false;
-        $idgroup = Request::get('groupid');
+        $idgroup = \Request::get('groupid');
         if ($idgroup)
             $this->qbcustom
                 ->addColumns(" (SELECT COUNT(*) FROM interval_group WHERE interval_id = this.id AND barem_id = $idgroup) AS in_group ");
@@ -59,7 +60,7 @@ class IntervalTable extends Datatable{
             '_max' => ['header' => t('_max'),],
             'label' => ['header' => t('Label'),],
             '_value' => ['header' => t('_value'),],
-            'id' => ['header' => t('#'),'value'=>function(Interval $item){
+            'id' => ['header' => t('#'),'value'=>function(\Interval $item){
                 if ($item->in_group)
                     return '<input checked type="checkbox" onclick="model.toggleFundGroup(this, '.$item->id.')" />';
                 return '<input type="checkbox" onclick="model.toggleFundGroup(this, '.$item->id.')" />';
@@ -83,7 +84,7 @@ class IntervalTable extends Datatable{
 
     public function router()
     {
-        $tablemodel = Request::get("tablemodel", null);
+        $tablemodel = \Request::get("tablemodel", null);
         if ($tablemodel && method_exists($this, "build" . $tablemodel . "table") && $result = call_user_func(array($this, "build" . $tablemodel . "table"))) {
             return $result;
         } else
@@ -94,5 +95,8 @@ class IntervalTable extends Datatable{
             }
 
     }
-    
+
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(IntervalTable::class, 'IntervalTable');

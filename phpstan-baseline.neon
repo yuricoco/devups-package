@@ -1046,7 +1046,7 @@ parameters:
 			path: src/devupscms/ModuleCms/Resource/views/cmscontent/index.blade.php
 
 		-
-			message: "#^Access to an undefined property IntervalController\\:\\:\\$datatable\\.$#"
+			message: "#^Access to an undefined property devupscms\\\\ModuleData\\\\Controller\\\\IntervalController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devupscms/ModuleData/Controller/IntervalController.php
 
@@ -1056,7 +1056,7 @@ parameters:
 			path: src/devupscms/ModuleData/Controller/IntervalController.php
 
 		-
-			message: "#^Access to an undefined property StatusController\\:\\:\\$datatable\\.$#"
+			message: "#^Access to an undefined property devupscms\\\\ModuleData\\\\Controller\\\\StatusController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devupscms/ModuleData/Controller/StatusController.php
 
@@ -1076,7 +1076,7 @@ parameters:
 			path: src/devupscms/ModuleData/Entity/Interval_group.php
 
 		-
-			message: "#^Call to an undefined static method IntervalForm\\:\\:getFormData\\(\\)\\.$#"
+			message: "#^Call to an undefined static method devupscms\\\\ModuleData\\\\Form\\\\IntervalForm\\:\\:getFormData\\(\\)\\.$#"
 			count: 1
 			path: src/devupscms/ModuleData/Form/IntervalForm.php
 
@@ -1086,7 +1086,7 @@ parameters:
 			path: src/devupscms/ModuleData/Form/IntervalForm.php
 
 		-
-			message: "#^Call to an undefined static method StatusForm\\:\\:getFormData\\(\\)\\.$#"
+			message: "#^Call to an undefined static method devupscms\\\\ModuleData\\\\Form\\\\StatusForm\\:\\:getFormData\\(\\)\\.$#"
 			count: 1
 			path: src/devupscms/ModuleData/Form/StatusForm.php
 

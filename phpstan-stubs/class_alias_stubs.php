@@ -288,3 +288,27 @@ class CmscontentForm extends \devupscms\ModuleCms\Form\CmscontentForm
 class CmsresourceForm extends \devupscms\ModuleCms\Form\CmsresourceForm
 {
 }
+
+class IntervalController extends \devupscms\ModuleData\Controller\IntervalController
+{
+}
+
+class StatusController extends \devupscms\ModuleData\Controller\StatusController
+{
+}
+
+class IntervalTable extends \devupscms\ModuleData\Datatable\IntervalTable
+{
+}
+
+class StatusTable extends \devupscms\ModuleData\Datatable\StatusTable
+{
+}
+
+class IntervalForm extends \devupscms\ModuleData\Form\IntervalForm
+{
+}
+
+class StatusForm extends \devupscms\ModuleData\Form\StatusForm
+{
+}

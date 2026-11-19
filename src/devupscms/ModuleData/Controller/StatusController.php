@@ -1,5 +1,6 @@
 <?php
 
+namespace devupscms\ModuleData\Controller;
 
 use dclass\devups\Controller\Controller;
 
@@ -9,12 +10,12 @@ class StatusController extends Controller
     public function listView($next = 1, $per_page = 10)
     {
 
-        $this->datatable = StatusTable::init(new Status())->buildindextable();
+        $this->datatable = \StatusTable::init(new \Status())->buildindextable();
 
         self::$cssfiles[] = __admin . "plugins/jquery-ui-1.12.1/jquery-ui.min.css";
-        self::$cssfiles[] = Status::classpath('Resource/css/status.css');
+        self::$cssfiles[] = \Status::classpath('Resource/css/status.css');
         self::$jsfiles[] = __admin . "plugins/jquery-ui-1.12.1/jquery-ui.min.js";
-        self::$jsfiles[] = Status::classpath('Resource/js/statusCtrl.js');
+        self::$jsfiles[] = \Status::classpath('Resource/js/statusCtrl.js');
 
         $this->entitytarget = 'Status';
         $this->title = "Manage Status";
@@ -27,22 +28,22 @@ class StatusController extends Controller
 
         return [
             'success' => true,
-            'datatable' => StatusTable::init(new Status())->buildindextable()->getTableRest(),
+            'datatable' => \StatusTable::init(new \Status())->buildindextable()->getTableRest(),
         ];
     }
 
     public function formView($id = null)
     {
-        $status = new Status();
+        $status = new \Status();
         $action = __env . ("admin/api/status/create");
         if ($id) {
             $action = __env . ("admin/api/status/update?id=" . $id);
-            $status = Status::find($id);
+            $status = \Status::find($id);
         }
 
         return [
             'success' => true,
-            'form' => StatusForm::init($status, $action)
+            'form' => \StatusForm::init($status, $action)
                 ->buildForm()
                 ->addDformjs()
                 ->renderForm(),
@@ -53,7 +54,7 @@ class StatusController extends Controller
     {
         extract($_POST);
 
-        $status = $this->form_fillingentity(new Status(), $status_form);
+        $status = $this->form_fillingentity(new \Status(), $status_form);
         if ($this->error) {
             return     array(
                 'success' => false,
@@ -65,11 +66,11 @@ class StatusController extends Controller
 
         $status->dvid_lang = "fr";
         $id = $status->__insert();
-        $status = Status::find($id, 1);
+        $status = \Status::find($id, 1);
         return     array(
             'success' => true,
             'status' => $status,
-            'tablerow' => StatusTable::init($status)->buildindextable()->getSingleRowRest($status),
+            'tablerow' => \StatusTable::init($status)->buildindextable()->getSingleRowRest($status),
             'detail' => ''
         );
     }
@@ -78,7 +79,7 @@ class StatusController extends Controller
     {
         extract($_POST);
 
-        $status = $this->form_fillingentity(new Status($id), $status_form);
+        $status = $this->form_fillingentity(new \Status($id), $status_form);
 
         if ($this->error) {
             return     array(
@@ -94,7 +95,7 @@ class StatusController extends Controller
             'success' => true,
             'status' => $status,
 
-            'tablerow' => StatusTable::init()->buildindextable()->getSingleRowRest($status),
+            'tablerow' => \StatusTable::init()->buildindextable()->getSingleRowRest($status),
             'detail' => ''
         );
     }
@@ -106,10 +107,10 @@ class StatusController extends Controller
         $this->entitytarget = 'Status';
         $this->title = "Detail Status";
 
-        $status = Status::find($id);
+        $status = \Status::find($id);
 
         $this->renderDetailView(
-            StatusTable::init()
+            \StatusTable::init()
                 ->builddetailtable()
                 ->renderentitydata($status)
         );
@@ -118,7 +119,7 @@ class StatusController extends Controller
     public function deleteAction($id)
     {
 
-        Status::delete($id);
+        \Status::delete($id);
         return     array(
             'success' => true,
             'detail' => ''
@@ -129,7 +130,7 @@ class StatusController extends Controller
     public function deletegroupAction($ids)
     {
 
-        Status::delete()->where("id")->in($ids)->exec();
+        \Status::delete()->where("id")->in($ids)->exec();
 
         return array(
             'success' => true,
@@ -140,22 +141,25 @@ class StatusController extends Controller
     public function sortlistAction()
     {
         foreach ($_POST["positions"] as $i => $id) {
-            Status::where("this.id", $id)->update(["position" => $i + 1]);
+            \Status::where("this.id", $id)->update(["position" => $i + 1]);
         }
-        return Response::$data;
+        return \Response::$data;
     }
 
     public function cloneAction($id)
     {
 
-        $status = Status::find($id);
+        $status = \Status::find($id);
         $status->setId(null);
         $status->__insert();
         return     array(
             'success' => true,
             'status' => $status,
-            'tablerow' => StatusTable::init()->buildindextable()->getSingleRowRest($status),
+            'tablerow' => \StatusTable::init()->buildindextable()->getSingleRowRest($status),
             'detail' => ''
         );
     }
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(StatusController::class, 'StatusController');

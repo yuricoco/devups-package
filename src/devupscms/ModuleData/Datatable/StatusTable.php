@@ -1,5 +1,6 @@
 <?php
 
+namespace devupscms\ModuleData\Datatable;
 
 use dclass\devups\Datatable\Datatable as Datatable;
 
@@ -56,3 +57,6 @@ class StatusTable extends Datatable
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(StatusTable::class, 'StatusTable');
