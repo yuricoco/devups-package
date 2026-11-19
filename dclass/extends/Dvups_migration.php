@@ -1,5 +1,7 @@
 <?php
 
+namespace dclass\devups\Core;
+
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -8,7 +10,7 @@ use Doctrine\ORM\Mapping as ORM;
  */
 #[ORM\Entity]
 #[ORM\Table(name: "dvups_migration")]
-class Dvups_migration extends Model implements JsonSerializable
+class Dvups_migration extends \Model implements \JsonSerializable
 {
     /**
      * @var int
@@ -88,3 +90,6 @@ class Dvups_migration extends Model implements JsonSerializable
         ];
     }
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Dvups_migration::class, 'Dvups_migration');

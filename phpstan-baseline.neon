@@ -341,13 +341,13 @@ parameters:
 			path: dclass/devups/model/Model.php
 
 		-
-			message: "#^Call to an undefined method Dv_langCore\\:\\:getId\\(\\)\\.$#"
+			message: "#^Call to an undefined method dclass\\\\devups\\\\Core\\\\Dv_langCore\\:\\:getId\\(\\)\\.$#"
 			count: 2
 			path: dclass/extends/Dv_langCore.php
 
 		-
 			message: "#^Constant USER not found\\.$#"
-			count: 1
+			count: 2
 			path: dclass/extends/UserCore.php
 
 		-

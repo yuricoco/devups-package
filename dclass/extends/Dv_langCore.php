@@ -1,5 +1,6 @@
 <?php
 
+namespace dclass\devups\Core;
 
 use Doctrine\ORM\Mapping as ORM;
 
@@ -10,7 +11,7 @@ use Doctrine\ORM\Mapping as ORM;
 class Dv_langCore extends \stdClass
 {
 
-    use ModelTrait;
+    use \ModelTrait;
 
     /**
      * @var \Dvups_lang
@@ -22,7 +23,10 @@ class Dv_langCore extends \stdClass
 
     public static function langvalues($entityname, $id, $key){
         $sql = "SELECT $key FROM {$entityname}_lang WHERE {$entityname}_id = $id ";
-        return (new DBAL())->executeDbal($sql, [], DBAL::$NOTHING);
+        return (new \DBAL())->executeDbal($sql, [], \DBAL::$NOTHING);
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Dv_langCore::class, 'Dv_langCore');

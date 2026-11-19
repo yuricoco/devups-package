@@ -1,5 +1,6 @@
 <?php
 
+namespace dclass\devups\Core;
 
 use Doctrine\ORM\Mapping as ORM;
 
@@ -7,7 +8,7 @@ use Doctrine\ORM\Mapping as ORM;
  * Colonnes heritees par les entites qui etendent cette classe.
  */
 #[ORM\MappedSuperclass]
-class Dvups_config_item extends Model implements JsonSerializable
+class Dvups_config_item extends \Model implements \JsonSerializable
 {
     // NB (v8.0, LOT 1.2) : redeclaration EXPLICITE (pas un simple "use" du
     // trait, insuffisant - voir TODO.md ETAPE 1.2) de created_at/updated_at/
@@ -121,7 +122,7 @@ class Dvups_config_item extends Model implements JsonSerializable
      */
     public function setLabel($label)
     {
-        $lang_isos = Dvups_lang::getLangIso();
+        $lang_isos = \Dvups_lang::getLangIso();
         foreach ($lang_isos as $iso)
             $this->label[$iso] = $label;
     }
@@ -146,3 +147,6 @@ class Dvups_config_item extends Model implements JsonSerializable
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Dvups_config_item::class, 'Dvups_config_item');

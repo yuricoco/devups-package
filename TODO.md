@@ -882,6 +882,60 @@ pure migration de namespace, pas une revue fonctionnelle) : classe
 (ModuleTree) - chacun confirme par une entree `phpstan-baseline.neon`
 deja presente avant toute edition de ce chantier.
 
+**Point (c) du LOT 5.0 - TERMINE (namespacer les classes de base
+partagees `dclass/extends/*`).** Deliberement separe du point (b)
+(decision prise a la fin de celui-ci : ces classes appartiennent au
+framework lui-meme, pas a un module applicatif - risque et perimetre
+differents). Les 5 fichiers de `dclass/extends/` namespaces sous
+`dclass\devups\Core` (alias de compatibilite `class_alias()` comme
+pour toutes les entites/controleurs deja migres) : `Dvups_config_item`,
+`Dvups_migration`, `ImageCore`, `UserCore`, `Dv_langCore`.
+
+Analyse prealable (grep de chaque nom de classe dans tout le depot,
+avant toute edition) : toutes les entites qui etendent ces 5 classes
+(`User`, `Tree_lang`, `Tree_item_lang`, `Tree_item_image`,
+`Reportingmodel_lang`, `Notificationtype_lang`, `Country_lang`,
+`Status_lang`, `Cmsresource`, `Cmscontent_lang`, `Dvups_entity`,
+`Dvups_entity_lang`) reference deja leur classe de base avec un
+`\` en tete (`extends \UserCore`, `extends \Dv_langCore`, etc.) -
+consequence directe du point (a) (namespacage des entites) qui avait
+deja du prefixer ces references cross-namespace a l'epoque. Resultat :
+**aucun fichier d'entite n'a eu besoin d'etre modifie** - l'alias
+`class_alias()` au nom court global suffit a satisfaire ces references
+existantes, exactement comme prevu par la strategie.
+
+Seuls les 5 fichiers de `dclass/extends/` eux-memes ont ete modifies :
+ajout du `namespace dclass\devups\Core;`, puis prefixage des
+references bare vers des classes du framework qui restent, elles,
+dans le namespace global (`Model`, `JsonSerializable`, `Dfile`,
+`DBAL`, `ModelTrait`, `User`, `Country`) - meme recette que pour le
+point (b). `self::Dfile(...)` dans `ImageCore.php` n'est PAS une
+reference de classe (c'est un appel a la methode statique
+`Model::Dfile()`, heritee) - laisse tel quel.
+
+`dclass/extends/extends_dependances.php` (simple suite de `require`
+par chemin de fichier) et le generateur legacy
+`dclass/generator/BackendGenerator.php` (qui emet du code PHP sans
+aucune declaration de namespace, donc toujours valide tel quel) n'ont
+necessite aucune modification.
+
+**Effet de bord phpstan (pas une regression fonctionnelle) :** apres
+namespacage de `UserCore.php`, l'erreur deja connue "Constant USER not
+found" (constante jamais definie, bug latent pre-existant - deux
+usages bare `$_SESSION[USER]` dans `userapp()`, deja presents avant ce
+chantier) est desormais rapportee **2 fois au lieu d'1** par la meme
+analyse - phpstan deduplique apparemment ce message par (regle, nom de
+symbole, portee) quand la classe est dans le namespace global, mais
+pas une fois namespacee (verifie par isolation : meme fichier, avec et
+sans la ligne `namespace`, analyse hors de l'arborescence du projet).
+Aucun changement de comportement a l'execution (la constante restait
+indefinie dans les deux cas) : `phpstan-baseline.neon` mis a jour
+(`count: 1` -> `count: 2`) plutot que le bug corrige (hors scope - pure
+migration de namespace).
+
+`composer test` (423 tests, 0 echec, 2 incomplete - inchange) et
+`composer phpstan` (0 erreur) verts apres ce point (c).
+
 ### LOT 5.1 - FAIT (helper `Model::shortClassName()` + conversion des sites "non surs")
 
 Revue ligne-par-ligne exhaustive des 19 fichiers listes en LOT 5.0 (plus

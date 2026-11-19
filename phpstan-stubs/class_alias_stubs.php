@@ -488,3 +488,28 @@ class UserForm extends \devupsfront\ModuleUser\Form\UserForm
 class Oauth_clientForm extends \devupsfront\ModuleUser\Form\Oauth_clientForm
 {
 }
+
+/*
+ * ETAPE 5.2 (v8.0) - point (c) : stubs pour les classes de base partagees
+ * (dclass/extends) etendues par des entites de plusieurs modules.
+ */
+
+class Dvups_config_item extends \dclass\devups\Core\Dvups_config_item
+{
+}
+
+class Dvups_migration extends \dclass\devups\Core\Dvups_migration
+{
+}
+
+class ImageCore extends \dclass\devups\Core\ImageCore
+{
+}
+
+class UserCore extends \dclass\devups\Core\UserCore
+{
+}
+
+class Dv_langCore extends \dclass\devups\Core\Dv_langCore
+{
+}

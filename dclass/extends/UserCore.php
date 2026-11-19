@@ -1,5 +1,6 @@
 <?php
 
+namespace dclass\devups\Core;
 
 use Doctrine\ORM\Mapping as ORM;
 
@@ -7,7 +8,7 @@ use Doctrine\ORM\Mapping as ORM;
  * Colonnes heritees par les entites qui etendent cette classe.
  */
 #[ORM\MappedSuperclass]
-class UserCore extends \Model implements JsonSerializable
+class UserCore extends \Model implements \JsonSerializable
 {
     // NB (v8.0, LOT 1.2) : voir Dvups_config_item.php - meme correctif
     // (redeclaration explicite requise, pas un simple "use" du trait).
@@ -193,7 +194,7 @@ class UserCore extends \Model implements JsonSerializable
             return t("Fomat de l'adresse email invalide");
         }
 
-        $exist = User::where("email", $email)->firstOrNull();
+        $exist = \User::where("email", $email)->firstOrNull();
         if ($exist) {
             if ($exist->getId() != $this->id)
                 return t("Cette adresse mail existe déjà",);
@@ -209,7 +210,7 @@ class UserCore extends \Model implements JsonSerializable
 
         $phonenumber = \DClass\lib\Util::sanitizePhonenumber($phonenumber, $this->country->phonecode);
 
-        $exist = User::where("phonenumber", $phonenumber)->firstOrNull();
+        $exist = \User::where("phonenumber", $phonenumber)->firstOrNull();
         if ($exist) {
             if ($exist->getId() != $this->id)
                 return t("Ce numéro de téléphone existe déjà");
@@ -274,7 +275,7 @@ class UserCore extends \Model implements JsonSerializable
 
     public function setCountry_iso($iso_code)
     { 
-        $this->country = Country::where("iso", $iso_code)->first(); 
+        $this->country = \Country::where("iso", $iso_code)->first();
     }
 
     /**
@@ -304,10 +305,10 @@ class UserCore extends \Model implements JsonSerializable
 
         global $user;
         if(__prod)
-            $user = User::select("*")->where_str(" '$token' = CONCAT(api_key, '.', session_token) ")
+            $user = \User::select("*")->where_str(" '$token' = CONCAT(api_key, '.', session_token) ")
                 ->firstOrNull();
         else
-            $user = User::find($token);
+            $user = \User::find($token);
 
         if ($user) {
             return $route($user);
@@ -325,7 +326,7 @@ class UserCore extends \Model implements JsonSerializable
      */
     public static function getUserByToken($token){
 
-        return User::select("*")->where_str(" '$token' = CONCAT(api_key, '.', session_token) ")
+        return \User::select("*")->where_str(" '$token' = CONCAT(api_key, '.', session_token) ")
             ->firstOrNull();
 
     }
@@ -354,3 +355,6 @@ class UserCore extends \Model implements JsonSerializable
 
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(UserCore::class, 'UserCore');
