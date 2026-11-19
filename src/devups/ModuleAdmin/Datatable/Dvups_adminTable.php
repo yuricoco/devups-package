@@ -1,5 +1,6 @@
 <?php
 
+namespace devups\ModuleAdmin\Datatable;
 
 use dclass\devups\Datatable\Datatable;
 
@@ -30,7 +31,7 @@ class Dvups_adminTable extends Datatable
 
         $this->addcustomaction("callbackbtn");
 
-        $this->qbcustom = Dvups_admin::select()
+        $this->qbcustom = \Dvups_admin::select()
             ->where("this.login", "!=", "dv_admin");
         //->andwhere("password", "!=", sha1("admin"));
         $this->order_by = "dvups_admin.id desc";
@@ -39,3 +40,6 @@ class Dvups_adminTable extends Datatable
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Dvups_adminTable::class, 'Dvups_adminTable');

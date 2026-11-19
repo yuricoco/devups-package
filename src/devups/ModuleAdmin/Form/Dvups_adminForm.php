@@ -1,12 +1,14 @@
 <?php
 
-class Dvups_adminForm extends FormManager
+namespace devups\ModuleAdmin\Form;
+
+class Dvups_adminForm extends \FormManager
 {
 
     public static function formBuilder(\Dvups_admin $dvups_admin, $action = null, $button = false)
     {
         //$entitycore = $dvups_admin->scan_entity_core();
-        $entitycore = new Core($dvups_admin);
+        $entitycore = new \Core($dvups_admin);
 
         $entitycore->formaction = $action;
         $entitycore->formbutton = $button;
@@ -26,14 +28,14 @@ class Dvups_adminForm extends FormManager
 
         // administrator, admin_central, agent_central, admin_center,  agent_center
 
-        $dvups_roles = Dvups_role::where("this.name", "!=", "admin")->get();
+        $dvups_roles = \Dvups_role::where("this.name", "!=", "admin")->get();
 
         $entitycore->field['dvups_role.id'] = [
             "type" => FORMTYPE_RADIO,
             "value" => $dvups_admin->dvups_role->getId(),
             //"values" => FormManager::Options_Helper('name', $dvups_admin->getDvups_role()),
             "label" => 'Dvups_role',
-            "options" => FormManager::Options_Helper('alias', $dvups_roles),
+            "options" => \FormManager::Options_Helper('alias', $dvups_roles),
         ];
 
 
@@ -45,13 +47,13 @@ class Dvups_adminForm extends FormManager
 
     public static function __renderForm(\Dvups_admin $dvups_admin, $action = null, $button = false)
     {
-        return FormFactory::__renderForm(Dvups_adminForm::formBuilder($dvups_admin, $action, $button));
+        return \FormFactory::__renderForm(Dvups_adminForm::formBuilder($dvups_admin, $action, $button));
     }
 
     public static function formBuilderImbricate(\Dvups_admin $dvups_admin, $action = null, $button = false)
     {
         //$entitycore = $dvups_admin->scan_entity_core();
-        $entitycore = new Core($dvups_admin);
+        $entitycore = new \Core($dvups_admin);
 
         $entitycore->formaction = $action;
         $entitycore->formbutton = $button;
@@ -72,7 +74,7 @@ class Dvups_adminForm extends FormManager
 
     public static function __renderFormImbricate(\Dvups_admin $dvups_admin, $action = null, $button = false)
     {
-        $entitycore = new Core($dvups_admin);
+        $entitycore = new \Core($dvups_admin);
 
         $entitycore->formaction = $action;
         $entitycore->formbutton = $button;
@@ -88,8 +90,11 @@ class Dvups_adminForm extends FormManager
         //if($dvups_admin->getId())
         $entitycore->addDformjs($action);
 
-        return FormFactory::__renderForm($entitycore);
+        return \FormFactory::__renderForm($entitycore);
 
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Dvups_adminForm::class, 'Dvups_adminForm');

@@ -1,5 +1,6 @@
-<?php 
+<?php
 
+namespace devups\ModuleAdmin\Datatable;
 
 use dclass\devups\Datatable\Datatable as Datatable;
 
@@ -45,7 +46,7 @@ class Dvups_actionTable extends Datatable{
 
     public function router()
     {
-        $tablemodel = Request::get("tablemodel", null);
+        $tablemodel = \Request::get("tablemodel", null);
         if ($tablemodel && method_exists($this, "build" . $tablemodel . "table") && $result = call_user_func(array($this, "build" . $tablemodel . "table"))) {
             return $result;
         } else
@@ -58,3 +59,6 @@ class Dvups_actionTable extends Datatable{
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Dvups_actionTable::class, 'Dvups_actionTable');

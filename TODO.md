@@ -714,11 +714,40 @@ static method ...Form::getFormData()" par module, consequence de
 `ControllerCore`/`FormManager` non entierement types - voir baseline
 pour la liste complete des entrees a mettre a jour au fur et a mesure).
 
+**ModuleConfig + ModuleLog (devups) - FAIT** : `ConfigurationController/
+Table/Form` et `Dvups_logController/Table/Form` namespaces. Rien de
+notable, meme recette que le pilote.
+
+**ModuleAdmin (devups) - FAIT (13 fichiers)** : tous les Controller/
+Datatable/Form de `Dvups_action`, `Dvups_admin` (+ `Dvups_adminFrontController`),
+`Dvups_privilege`, `Dvups_role` namespaces. Deux trouvailles notables :
+- `Dvups_adminFrontController.php` etait DEJA namespace avant ce
+  chantier (5e survivante de la migration partielle anterieure, apres
+  Interval_group/Workers/l'import dans Notification.php/Oauth_client) -
+  seul `new RateLimiter(...)` (2x) n'etait pas prefixe. **Ce n'etait PAS
+  juste une incoherence de style : phpstan confirme qu'avant notre fix
+  c'etait un bug latent reel** - `RateLimiter` aurait ete recherche sous
+  `devups\ModuleAdmin\Controller\RateLimiter` (n'existe pas) a l'execution,
+  une erreur fatale sur `connexionAction()`/toute tentative de login admin
+  via ce front controller. L'entree baseline correspondante ("Instantiated
+  class ...RateLimiter not found") existait deja (symptome deja detecte
+  par phpstan avant ce chantier mais jamais corrige) et a ete retiree
+  (plus aucune erreur a ignorer, le bug est reellement corrige).
+- `Dvups_roleForm::renderWidget()` est appelee par `src/devups/
+  ModuleAdmin/services.php` (fichier de config, namespace global) sans
+  argument alors que la signature en requiert - bug preexistant deja
+  connu et baseline (`arguments.count`), inchange par cette migration,
+  juste mis a jour vers la FQCN.
+- Entites reference deja-meme-module traitees comme cross-namespace
+  (ex. `Dvups_role`/`Dvups_privilege` entre eux) - confirme la nuance
+  Controller/Datatable/Form decrite plus haut.
+
 **Volume de ce point (b)** : 83 fichiers (33 Controller + 25 Datatable +
-25 Form) repartis sur `devups` (ModuleAdmin 13, ModuleConfig 3,
-ModuleLang 3 FAIT, ModuleLog 3), `devupscms` (ModuleCms 11, ModuleData 6,
+25 Form) repartis sur `devups` (ModuleAdmin 13 FAIT, ModuleConfig 3 FAIT,
+ModuleLang 3 FAIT, ModuleLog 3 FAIT), `devupscms` (ModuleCms 11, ModuleData 6,
 ModuleLocation 4, ModuleNotification 7, ModulePushNotification 7,
 ModuleReporting 9, ModuleTree 10), `devupsfront` (ModuleUser 7).
+**devups entierement termine (22 fichiers).**
 
 ### LOT 5.1 - FAIT (helper `Model::shortClassName()` + conversion des sites "non surs")
 

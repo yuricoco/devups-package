@@ -1,5 +1,6 @@
 <?php
 
+namespace devups\ModuleAdmin\Controller;
 
 use dclass\devups\Controller\Controller;
 
@@ -13,12 +14,12 @@ class Dvups_roleController extends Controller
             die;
         }
 
-        $role = Dvups_role::find(2);
+        $role = \Dvups_role::find(2);
         $role->updateConfigs();
 
-        $this->datatable = Dvups_roleTable::init(new Dvups_role())->buildindextable();
+        $this->datatable = \Dvups_roleTable::init(new \Dvups_role())->buildindextable();
 
-        self::$jsfiles[] = Dvups_role::classpath('Resource/js/dvups_roleCtrl.js');
+        self::$jsfiles[] = \Dvups_role::classpath('Resource/js/dvups_roleCtrl.js');
 
         $this->entitytarget = 'Dvups_role';
         $this->title = "Manage Dvups_role";
@@ -33,7 +34,7 @@ class Dvups_roleController extends Controller
             return ['success' => false, 'detail' => t('Action non autorisee')];
 
         return ['success' => true,
-            'datatable' => Dvups_roleTable::init(new Dvups_role())->router()->getTableRest(),
+            'datatable' => \Dvups_roleTable::init(new \Dvups_role())->router()->getTableRest(),
         ];
 
     }
@@ -43,15 +44,15 @@ class Dvups_roleController extends Controller
         if ($this->forbidIfCannotFor('read', 'Dvups_role'))
             return ['success' => false, 'detail' => t('Action non autorisee')];
 
-        $dvups_role = new Dvups_role();
+        $dvups_role = new \Dvups_role();
         $action = __env . ("admin/api/dvups_role/create");
         if ($id) {
             $action = __env . ("admin/api/dvups_role/update?id=" . $id);
-            $dvups_role = Dvups_role::find($id);
+            $dvups_role = \Dvups_role::find($id);
         }
 
         return ['success' => true,
-            'form' => Dvups_roleForm::renderWidget($dvups_role, $action),
+            'form' => \Dvups_roleForm::renderWidget($dvups_role, $action),
             /*'form' => Dvups_roleForm::init($dvups_role, $action)
                 ->buildForm()
                 ->addDformjs()
@@ -66,7 +67,7 @@ class Dvups_roleController extends Controller
 
         extract($_POST);
 
-        $dvups_role = $this->form_fillingentity(new Dvups_role(), $dvups_role_form);
+        $dvups_role = $this->form_fillingentity(new \Dvups_role(), $dvups_role_form);
         if ($this->error) {
             return array('success' => false,
                 'dvups_role' => $dvups_role,
@@ -80,7 +81,7 @@ class Dvups_roleController extends Controller
             self::syncPrivileges($id);
         return array('success' => true,
             'dvups_role' => $dvups_role,
-            'tablerow' => Dvups_roleTable::init(new Dvups_role())->router()->getSingleRowRest($dvups_role),
+            'tablerow' => \Dvups_roleTable::init(new \Dvups_role())->router()->getSingleRowRest($dvups_role),
             'detail' => '');
 
     }
@@ -92,7 +93,7 @@ class Dvups_roleController extends Controller
 
         extract($_POST);
 
-        $dvups_role = $this->form_fillingentity(new Dvups_role($id), $dvups_role_form);
+        $dvups_role = $this->form_fillingentity(new \Dvups_role($id), $dvups_role_form);
 
         if ($this->error) {
             return array('success' => false,
@@ -112,7 +113,7 @@ class Dvups_roleController extends Controller
             self::syncPrivileges($id);
         return array('success' => true,
             'dvups_role' => $dvups_role,
-            'tablerow' => Dvups_roleTable::init(new Dvups_role())->router()->getSingleRowRest($dvups_role),
+            'tablerow' => \Dvups_roleTable::init(new \Dvups_role())->router()->getSingleRowRest($dvups_role),
             'detail' => '');
 
     }
@@ -130,16 +131,16 @@ class Dvups_roleController extends Controller
         $wanted = array_map('intval', $_POST['privileges'] ?? []);
 
         $current = [];
-        foreach (Dvups_privilege::where('dvups_role_id', $roleId)->get() as $dvups_privilege)
+        foreach (\Dvups_privilege::where('dvups_role_id', $roleId)->get() as $dvups_privilege)
             $current[$dvups_privilege->dvups_action->getId()] = $dvups_privilege;
 
         foreach (array_diff($wanted, array_keys($current)) as $actionId)
-            Dvups_privilege::create(['dvups_role_id' => $roleId, 'dvups_action_id' => $actionId]);
+            \Dvups_privilege::create(['dvups_role_id' => $roleId, 'dvups_action_id' => $actionId]);
 
         foreach (array_diff(array_keys($current), $wanted) as $actionId)
             $current[$actionId]->__delete();
 
-        Dvups_role::clearRightsCache($roleId);
+        \Dvups_role::clearRightsCache($roleId);
     }
 
 
@@ -153,10 +154,10 @@ class Dvups_roleController extends Controller
         $this->entitytarget = 'Dvups_role';
         $this->title = "Detail Dvups_role";
 
-        $dvups_role = Dvups_role::find($id);
+        $dvups_role = \Dvups_role::find($id);
 
         $this->renderDetailView(
-            Dvups_roleTable::init()
+            \Dvups_roleTable::init()
                 ->builddetailtable()
                 ->renderentitydata($dvups_role)
         );
@@ -168,9 +169,9 @@ class Dvups_roleController extends Controller
         if ($this->forbidIfCannotFor('delete', 'Dvups_role'))
             return ['success' => false, 'detail' => t('Action non autorisee')];
 
-        $dvups_role = Dvups_role::find($id);
+        $dvups_role = \Dvups_role::find($id);
         $dvups_role->__delete();
-        Dvups_role::clearRightsCache($id);
+        \Dvups_role::clearRightsCache($id);
 
         return array('success' => true,
             'detail' => t('Item deleted successfully'));
@@ -183,9 +184,9 @@ class Dvups_roleController extends Controller
         if ($this->forbidIfCannotFor('delete', 'Dvups_role'))
             return ['success' => false, 'detail' => t('Action non autorisee')];
 
-        Dvups_role::where("this.id")->in($ids)->delete();
+        \Dvups_role::where("this.id")->in($ids)->delete();
         foreach ($ids as $id)
-            Dvups_role::clearRightsCache((int)$id);
+            \Dvups_role::clearRightsCache((int)$id);
 
         return array('success' => true,
             'detail' => '');
@@ -197,7 +198,7 @@ class Dvups_roleController extends Controller
         if ($this->forbidIfCannotFor('update', 'Dvups_role'))
             return ['success' => false, 'detail' => t('Action non autorisee')];
 
-        $result = Core::updateDvupsTable();
+        $result = \Core::updateDvupsTable();
         /*if ($result) {
             $admin = getadmin();
             self::getNavigationAction($admin);
@@ -214,3 +215,6 @@ class Dvups_roleController extends Controller
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Dvups_roleController::class, 'Dvups_roleController');

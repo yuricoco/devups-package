@@ -86,8 +86,8 @@ class Dvups_adminFrontController extends \Dvups_adminController
         $password = Request::post('password');
 
         // ETAPE L.1 : limite par compte ET par IP.
-        $ipLimiter = new RateLimiter('login_admin_ip:' . (\DClass\lib\Util::get_IP_address() ?? 'unknown'), RATE_LIMIT_LOGIN_WINDOW_SECONDS, RATE_LIMIT_LOGIN_MAX_ATTEMPTS_IP);
-        $loginLimiter = new RateLimiter('login_admin:' . strtolower((string)$login), RATE_LIMIT_LOGIN_WINDOW_SECONDS, RATE_LIMIT_LOGIN_MAX_ATTEMPTS);
+        $ipLimiter = new \RateLimiter('login_admin_ip:' . (\DClass\lib\Util::get_IP_address() ?? 'unknown'), RATE_LIMIT_LOGIN_WINDOW_SECONDS, RATE_LIMIT_LOGIN_MAX_ATTEMPTS_IP);
+        $loginLimiter = new \RateLimiter('login_admin:' . strtolower((string)$login), RATE_LIMIT_LOGIN_WINDOW_SECONDS, RATE_LIMIT_LOGIN_MAX_ATTEMPTS);
 
         if ($ipLimiter->tooManyAttempts() || $loginLimiter->tooManyAttempts()) {
             http_response_code(429);
@@ -215,3 +215,6 @@ class Dvups_adminFrontController extends \Dvups_adminController
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Dvups_adminFrontController::class, 'Dvups_adminFrontController');

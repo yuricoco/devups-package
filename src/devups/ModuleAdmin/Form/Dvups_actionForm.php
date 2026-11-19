@@ -1,9 +1,10 @@
-<?php 
+<?php
 
-        
-use Genesis as g;
+namespace devups\ModuleAdmin\Form;
 
-class Dvups_actionForm extends FormManager{
+use \Genesis as g;
+
+class Dvups_actionForm extends \FormManager{
 
     public $dvups_action;
 
@@ -42,8 +43,11 @@ class Dvups_actionForm extends FormManager{
 
     public static function renderWidget($id = null, $action = "create")
     {
-        Genesis::renderView("dvups_action.formWidget", self::getFormData($id, $action));
+        \Genesis::renderView("dvups_action.formWidget", self::getFormData($id, $action));
     }
-    
+
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Dvups_actionForm::class, 'Dvups_actionForm');
     

@@ -1,9 +1,10 @@
 <?php
 
+namespace devups\ModuleAdmin\Form;
 
 use Genesis as g;
 
-class Dvups_roleForm extends FormManager
+class Dvups_roleForm extends \FormManager
 {
 
     public $dvups_role;
@@ -40,19 +41,19 @@ class Dvups_roleForm extends FormManager
     {
         $data = compact("dvups_role", "action");
 
-        $data["configs"] = Core::buildOriginCore();
+        $data["configs"] = \Core::buildOriginCore();
         $data["components"] = $data["dvups_role"]->getAttribute("components");
         $data["modules"] = $data["dvups_role"]->getAttribute("modules");
         $data["entities"] = $data["dvups_role"]->getAttribute("entities");
 
         $data["actionsByEntity"] = [];
-        foreach (Dvups_action::all() as $dvups_action)
+        foreach (\Dvups_action::all() as $dvups_action)
             $data["actionsByEntity"][$dvups_action->entity][] = $dvups_action;
         ksort($data["actionsByEntity"]);
 
         $data["grantedActionIds"] = [];
         if ($dvups_role->getId())
-            foreach (Dvups_privilege::where('dvups_role_id', $dvups_role->getId())->get() as $dvups_privilege)
+            foreach (\Dvups_privilege::where('dvups_role_id', $dvups_role->getId())->get() as $dvups_privilege)
                 $data["grantedActionIds"][] = $dvups_privilege->dvups_action->getId();
 
         return g::getView("admin.dvups_role.formWidgetGroup", $data);
@@ -64,4 +65,7 @@ class Dvups_roleForm extends FormManager
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Dvups_roleForm::class, 'Dvups_roleForm');
     

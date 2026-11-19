@@ -192,3 +192,55 @@ class Dvups_logTable extends \devups\ModuleLog\Datatable\Dvups_logTable
 class Dvups_logForm extends \devups\ModuleLog\Form\Dvups_logForm
 {
 }
+
+class Dvups_actionController extends \devups\ModuleAdmin\Controller\Dvups_actionController
+{
+}
+
+class Dvups_adminController extends \devups\ModuleAdmin\Controller\Dvups_adminController
+{
+}
+
+class Dvups_adminFrontController extends \devups\ModuleAdmin\Controller\Dvups_adminFrontController
+{
+}
+
+class Dvups_privilegeController extends \devups\ModuleAdmin\Controller\Dvups_privilegeController
+{
+}
+
+class Dvups_roleController extends \devups\ModuleAdmin\Controller\Dvups_roleController
+{
+}
+
+class Dvups_actionTable extends \devups\ModuleAdmin\Datatable\Dvups_actionTable
+{
+}
+
+class Dvups_adminTable extends \devups\ModuleAdmin\Datatable\Dvups_adminTable
+{
+}
+
+class Dvups_privilegeTable extends \devups\ModuleAdmin\Datatable\Dvups_privilegeTable
+{
+}
+
+class Dvups_roleTable extends \devups\ModuleAdmin\Datatable\Dvups_roleTable
+{
+}
+
+class Dvups_actionForm extends \devups\ModuleAdmin\Form\Dvups_actionForm
+{
+}
+
+class Dvups_adminForm extends \devups\ModuleAdmin\Form\Dvups_adminForm
+{
+}
+
+class Dvups_privilegeForm extends \devups\ModuleAdmin\Form\Dvups_privilegeForm
+{
+}
+
+class Dvups_roleForm extends \devups\ModuleAdmin\Form\Dvups_roleForm
+{
+}

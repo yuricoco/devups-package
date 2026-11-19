@@ -1,5 +1,6 @@
-<?php 
+<?php
 
+namespace devups\ModuleAdmin\Controller;
 
 use dclass\devups\Controller\Controller;
 
@@ -7,9 +8,9 @@ class Dvups_privilegeController extends Controller{
 
     public function listView(){
 
-        $this->datatable = Dvups_privilegeTable::init(new Dvups_privilege())->buildindextable();
+        $this->datatable = \Dvups_privilegeTable::init(new \Dvups_privilege())->buildindextable();
 
-        self::$jsfiles[] = Dvups_privilege::classpath('Resource/js/dvups_privilegeCtrl.js');
+        self::$jsfiles[] = \Dvups_privilege::classpath('Resource/js/dvups_privilegeCtrl.js');
 
         $this->entitytarget = 'Dvups_privilege';
         $this->title = "Manage Dvups_privilege";
@@ -21,22 +22,22 @@ class Dvups_privilegeController extends Controller{
     public function datatable() {
     
         return ['success' => true,
-            'datatable' => Dvups_privilegeTable::init(new Dvups_privilege())->router()->getTableRest(),
+            'datatable' => \Dvups_privilegeTable::init(new \Dvups_privilege())->router()->getTableRest(),
         ];
         
     }
 
     public function formView($id = null)
     {
-        $dvups_privilege = new Dvups_privilege();
+        $dvups_privilege = new \Dvups_privilege();
         $action = __env.("admin/api/dvups_privilege/create");
         if ($id) {
             $action = __env.("admin/api/dvups_privilege/update?id=" . $id);
-            $dvups_privilege = Dvups_privilege::find($id);
+            $dvups_privilege = \Dvups_privilege::find($id);
         }
 
         return ['success' => true,
-            'form' => Dvups_privilegeForm::init($dvups_privilege, $action)
+            'form' => \Dvups_privilegeForm::init($dvups_privilege, $action)
                 ->buildForm()
                 ->addDformjs()
                 ->renderForm(),
@@ -46,7 +47,7 @@ class Dvups_privilegeController extends Controller{
     public function createAction($dvups_privilege_form = null ){
         extract($_POST);
 
-        $dvups_privilege = $this->form_fillingentity(new Dvups_privilege(), $dvups_privilege_form);
+        $dvups_privilege = $this->form_fillingentity(new \Dvups_privilege(), $dvups_privilege_form);
         if ( $this->error ) {
             return 	array(	'success' => false,
                             'dvups_privilege' => $dvups_privilege,
@@ -56,10 +57,10 @@ class Dvups_privilegeController extends Controller{
         
 
         $id = $dvups_privilege->__insert();
-        Dvups_role::clearRightsCache($dvups_privilege->dvups_role->getId());
+        \Dvups_role::clearRightsCache($dvups_privilege->dvups_role->getId());
         return 	array(	'success' => true,
                         'dvups_privilege' => $dvups_privilege,
-                        'tablerow' => Dvups_privilegeTable::init()->router()->getSingleRowRest($dvups_privilege),
+                        'tablerow' => \Dvups_privilegeTable::init()->router()->getSingleRowRest($dvups_privilege),
                         'detail' => '');
 
     }
@@ -67,7 +68,7 @@ class Dvups_privilegeController extends Controller{
     public function updateAction($id, $dvups_privilege_form = null){
         extract($_POST);
             
-        $dvups_privilege = $this->form_fillingentity(new Dvups_privilege($id), $dvups_privilege_form);
+        $dvups_privilege = $this->form_fillingentity(new \Dvups_privilege($id), $dvups_privilege_form);
      
         if ( $this->error ) {
             return 	array(	'success' => false,
@@ -77,10 +78,10 @@ class Dvups_privilegeController extends Controller{
         }
         
         $dvups_privilege->__update();
-        Dvups_role::clearRightsCache($dvups_privilege->dvups_role->getId());
+        \Dvups_role::clearRightsCache($dvups_privilege->dvups_role->getId());
         return 	array(	'success' => true,
                         'dvups_privilege' => $dvups_privilege,
-                        'tablerow' => Dvups_privilegeTable::init()->router()->getSingleRowRest($dvups_privilege),
+                        'tablerow' => \Dvups_privilegeTable::init()->router()->getSingleRowRest($dvups_privilege),
                         'detail' => '');
 
     }
@@ -92,10 +93,10 @@ class Dvups_privilegeController extends Controller{
         $this->entitytarget = 'Dvups_privilege';
         $this->title = "Detail Dvups_privilege";
 
-        $dvups_privilege = Dvups_privilege::find($id);
+        $dvups_privilege = \Dvups_privilege::find($id);
 
         $this->renderDetailView(
-            Dvups_privilegeTable::init()
+            \Dvups_privilegeTable::init()
                 ->builddetailtable()
                 ->renderentitydata($dvups_privilege)
         );
@@ -104,10 +105,10 @@ class Dvups_privilegeController extends Controller{
     
     public function deleteAction($id){
     
-        $dvups_privilege = Dvups_privilege::find($id);
+        $dvups_privilege = \Dvups_privilege::find($id);
         $roleId = $dvups_privilege->dvups_role->getId();
         $dvups_privilege->__delete();
-        Dvups_role::clearRightsCache($roleId);
+        \Dvups_role::clearRightsCache($roleId);
 
         return 	array(	'success' => true,
                         'detail' => t('Item deleted successfully'));
@@ -118,9 +119,9 @@ class Dvups_privilegeController extends Controller{
     public function deletegroupAction($ids)
     {
 
-        Dvups_privilege::where("this.id")->in($ids)->delete();
+        \Dvups_privilege::where("this.id")->in($ids)->delete();
         // plusieurs roles potentiellement concernes : invalide tout, recompile a la demande.
-        Dvups_role::clearRightsCache();
+        \Dvups_role::clearRightsCache();
 
         return array('success' => true,
                 'detail' => '');
@@ -128,3 +129,6 @@ class Dvups_privilegeController extends Controller{
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Dvups_privilegeController::class, 'Dvups_privilegeController');

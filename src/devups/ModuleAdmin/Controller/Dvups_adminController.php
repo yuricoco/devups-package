@@ -1,5 +1,6 @@
 <?php
 
+namespace devups\ModuleAdmin\Controller;
 
 use dclass\devups\Controller\Controller;
 
@@ -19,7 +20,7 @@ class Dvups_adminController extends Controller
     public function resetcredential($id)
     {
 
-        $dvups_admin = Dvups_admin::find($id);
+        $dvups_admin = \Dvups_admin::find($id);
         $password = $dvups_admin->generatePassword();
         $dvups_admin->setPassword($password);
 //        $dvups_admin->setLogin();
@@ -38,8 +39,8 @@ class Dvups_adminController extends Controller
         // relancer une session apres une deconnexion explicite.
         if (isset($_SESSION[ADMIN])) {
             $current = unserialize($_SESSION[ADMIN]);
-            if ($current instanceof Dvups_admin && $current->getId())
-                Dvups_admin::find($current->getId())->clearRememberToken();
+            if ($current instanceof \Dvups_admin && $current->getId())
+                \Dvups_admin::find($current->getId())->clearRememberToken();
         }
 
         $_SESSION[ADMIN] = array();
@@ -74,7 +75,7 @@ class Dvups_adminController extends Controller
         // ETAPE K.3 : le cookie ne contient plus le hash du mot de passe -
         // un token aleatoire dont seul le hash (sha256) est compare a celui
         // stocke en base, avec expiration et rotation a chaque usage.
-        $admin = Dvups_admin::where("this.login", $_COOKIE[ADMIN."_login"])->first();
+        $admin = \Dvups_admin::where("this.login", $_COOKIE[ADMIN."_login"])->first();
 
         if ($admin->getId() && $admin->verifyRememberToken($_COOKIE[ADMIN."_remember"])) {
 
@@ -104,13 +105,13 @@ class Dvups_adminController extends Controller
         // resultat de l'authentification - un attaquant qui essaie des
         // identifiants au hasard doit etre bloque, pas seulement un compte
         // existant dont le mot de passe est errone.
-        $ipLimiter = new RateLimiter('login_admin_ip:' . (\DClass\lib\Util::get_IP_address() ?? 'unknown'), RATE_LIMIT_LOGIN_WINDOW_SECONDS, RATE_LIMIT_LOGIN_MAX_ATTEMPTS_IP);
-        $loginLimiter = new RateLimiter('login_admin:' . strtolower((string)$login), RATE_LIMIT_LOGIN_WINDOW_SECONDS, RATE_LIMIT_LOGIN_MAX_ATTEMPTS);
+        $ipLimiter = new \RateLimiter('login_admin_ip:' . (\DClass\lib\Util::get_IP_address() ?? 'unknown'), RATE_LIMIT_LOGIN_WINDOW_SECONDS, RATE_LIMIT_LOGIN_MAX_ATTEMPTS_IP);
+        $loginLimiter = new \RateLimiter('login_admin:' . strtolower((string)$login), RATE_LIMIT_LOGIN_WINDOW_SECONDS, RATE_LIMIT_LOGIN_MAX_ATTEMPTS);
 
         if ($ipLimiter->tooManyAttempts() || $loginLimiter->tooManyAttempts())
             redirect( __env . "admin/login.php?err=" . 'Trop de tentatives, veuillez réessayer plus tard.');
 
-        $admin = Dvups_admin::select()->where('login', $login)->first();
+        $admin = \Dvups_admin::select()->where('login', $login)->first();
 
         if (!$admin->getId() || !$admin->verifyPassword($password)) {
             $ipLimiter->hit();
@@ -128,7 +129,7 @@ class Dvups_adminController extends Controller
         $admin->__update(["lastlogin_at" => date("Y-m-d H:i:s")]);
 
         if ($admin->getFirstconnexion()) {
-            redirect(Dvups_admin::classview("dvups-admin/complete-registration?id=" . $admin->getId()));
+            redirect(\Dvups_admin::classview("dvups-admin/complete-registration?id=" . $admin->getId()));
             return;
         }
 
@@ -164,7 +165,7 @@ class Dvups_adminController extends Controller
         extract($_POST);
         $this->err = array();
 
-        $dvups_admin = $this->form_generat(new Dvups_admin(), $dvups_admin_form);
+        $dvups_admin = $this->form_generat(new \Dvups_admin(), $dvups_admin_form);
 
         if ($this->error) {
             return array('success' => false,
@@ -184,7 +185,7 @@ class Dvups_adminController extends Controller
 
         return array('success' => true, // pour le restservice
             'dvups_admin' => $dvups_admin,
-            'tablerow' => Dvups_adminTable::init()->buildindextable()->getSingleRowRest($dvups_admin),
+            'tablerow' => \Dvups_adminTable::init()->buildindextable()->getSingleRowRest($dvups_admin),
             'redirect' => '/admin/devups/ModuleAdmin/dvups-admin/added?login=' . $dvups_admin->getLogin() . "&password=" . $password, // pour le web service
             'detail' => ''); //Detail de l'action ou message d'erreur ou de succes
 
@@ -203,14 +204,14 @@ class Dvups_adminController extends Controller
         // retirer la cle au lieu de la forcer laisserait la relation sans
         // valeur et __update() l'ecrirait a null (role perdu, pas "inchange").
         if (!$this->isMasterAdmin()) {
-            $currentRoleId = Dvups_admin::find($id)->dvups_role->getId();
+            $currentRoleId = \Dvups_admin::find($id)->dvups_role->getId();
             $_POST['dvups_admin_form']['dvups_role.id'] = $currentRoleId;
         }
 
         extract($_POST);
         $this->err = array();
 
-        $dvups_admin = $this->form_generat(new Dvups_admin($id), $dvups_admin_form);
+        $dvups_admin = $this->form_generat(new \Dvups_admin($id), $dvups_admin_form);
 
         if ($this->error) {
             return array('success' => false,
@@ -223,7 +224,7 @@ class Dvups_adminController extends Controller
 
         return array('success' => true, // pour le restservice
             'dvups_admin' => $dvups_admin,
-            'tablerow' => Dvups_adminTable::init()->buildindextable()->getSingleRowRest($dvups_admin),
+            'tablerow' => \Dvups_adminTable::init()->buildindextable()->getSingleRowRest($dvups_admin),
             'detail' => ''); //Detail de l'action ou message d'erreur ou de succes
 
     }
@@ -233,16 +234,16 @@ class Dvups_adminController extends Controller
         if ($this->forbidIfCannotFor('read', 'Dvups_admin'))
             return ['success' => false, 'detail' => t('Action non autorisee')];
 
-        $dvups_admin = new Dvups_admin();
+        $dvups_admin = new \Dvups_admin();
         $action = __env . ("admin/api/dvups_admin/create");
         if ($id) {
             $action = __env . ("admin/api/dvups_admin/update?id=" . $id);
-            $dvups_admin = Dvups_admin::find($id);
+            $dvups_admin = \Dvups_admin::find($id);
             //$dvups_admin->collectDvups_role();
         }
 
         return ['success' => true,
-            'form' => Dvups_adminForm::__renderForm($dvups_admin, $action, true),
+            'form' => \Dvups_adminForm::__renderForm($dvups_admin, $action, true),
         ];
     }
 
@@ -252,7 +253,7 @@ class Dvups_adminController extends Controller
             return ['success' => false, 'detail' => t('Action non autorisee')];
 
         return ['success' => true,
-            'datatable' => Dvups_adminTable::init(new Dvups_admin())->buildindextable()->getTableRest(),
+            'datatable' => \Dvups_adminTable::init(new \Dvups_admin())->buildindextable()->getTableRest(),
         ];
     }
 
@@ -265,7 +266,7 @@ class Dvups_adminController extends Controller
 
         //self::$jsfiles[] = Client::classpath('Resource/js/dvups_roleCtrl.js');
 
-        $this->datatable = Dvups_adminTable::init(new Dvups_admin())->buildindextable();
+        $this->datatable = \Dvups_adminTable::init(new \Dvups_admin())->buildindextable();
 
         $this->entitytarget = 'dvups_admin';
         $this->title = "Manage Admin";
@@ -279,7 +280,7 @@ class Dvups_adminController extends Controller
         if ($this->forbidIfCannotFor('delete', 'Dvups_admin'))
             return ['success' => false, 'detail' => t('Action non autorisee')];
 
-        $admin = Dvups_admin::find($id);
+        $admin = \Dvups_admin::find($id);
         $admin->__delete();
         return ["success" => true];
     }
@@ -288,16 +289,16 @@ class Dvups_adminController extends Controller
     {
         // if ()
         self::$sidebar = false;
-        $admin = Dvups_admin::find($id);
+        $admin = \Dvups_admin::find($id);
         $action = "/admin/devups/ModuleAdmin/dvups-admin/complete?id=" . $id;
         //return compact("admin", "action");
-        Genesis::renderView('admin.dvups_admin.complete_registration', compact("admin", "action"));
+        \Genesis::renderView('admin.dvups_admin.complete_registration', compact("admin", "action"));
 
     }
 
     public function complete($id)
     {
-        $admin = Dvups_admin::find($id);
+        $admin = \Dvups_admin::find($id);
         $error = "";
         extract($_POST);
         if ($newpwd == $confimnewpwd) {
@@ -319,48 +320,51 @@ class Dvups_adminController extends Controller
 
         self::$sidebar = false;
         $action = "/admin/devups/ModuleAdmin/dvups-admin/complete?id=" . $id;
-        Genesis::renderView('admin.dvups_admin.complete_registration', compact("admin", "action", "error"));
+        \Genesis::renderView('admin.dvups_admin.complete_registration', compact("admin", "action", "error"));
     }
 
     public function profile()
     {
         $admin = getadmin();
-        Genesis::renderView('admin.dvups_admin.profile', ["admin" => $admin]);
+        \Genesis::renderView('admin.dvups_admin.profile', ["admin" => $admin]);
 
     }
 
     public function added()
     {
         $admin = getadmin();
-        Genesis::renderView('admin.dvups_admin.added');
+        \Genesis::renderView('admin.dvups_admin.added');
 
     }
     public function credential()
     {
-        Genesis::renderView('admin.dvups_admin.credential', ["admin" => Dvups_admin::find(getadmin()->getId())], "profile");
+        \Genesis::renderView('admin.dvups_admin.credential', ["admin" => \Dvups_admin::find(getadmin()->getId())], "profile");
     }
     public function changepwd()
     {
-        Genesis::renderView('admin.dvups_admin.changepwd', ["detail" => ""], 'list');
+        \Genesis::renderView('admin.dvups_admin.changepwd', ["detail" => ""], 'list');
 
     }
 
     public function changepassword()
     {
 //        $adminDao = new AdminDAO();
-        $dvups_admin = Dvups_admin::find(getadmin()->getId());
+        $dvups_admin = \Dvups_admin::find(getadmin()->getId());
         extract($_POST);
         if ($dvups_admin->verifyPassword($oldpwd)) {
             $dvups_admin->clearRememberToken();
             $dvups_admin->__update("password", dv_hash_password($newpwd));
             $data = array('success' => true, // pour le restservice
-                'redirect' => Dvups_admin::classpath() . 'dvups-admin/profile?detail=password updated successfully', // pour le web service
+                'redirect' => \Dvups_admin::classpath() . 'dvups-admin/profile?detail=password updated successfully', // pour le web service
                 'detail' => '');
         } else {
             $data = array('success' => false, // pour le restservice
                 'detail' => 'mot de passe incorrect');
         }
-        Genesis::renderView('admin.dvups_admin.changepwd', $data);
+        \Genesis::renderView('admin.dvups_admin.changepwd', $data);
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Dvups_adminController::class, 'Dvups_adminController');

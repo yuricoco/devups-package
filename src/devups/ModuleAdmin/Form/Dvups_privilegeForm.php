@@ -1,9 +1,10 @@
-<?php 
+<?php
 
-        
-use Genesis as g;
+namespace devups\ModuleAdmin\Form;
 
-class Dvups_privilegeForm extends FormManager{
+use \Genesis as g;
+
+class Dvups_privilegeForm extends \FormManager{
 
     public $dvups_privilege;
 
@@ -21,14 +22,14 @@ class Dvups_privilegeForm extends FormManager{
             "type" => FORMTYPE_SELECT, 
             "value" => $this->dvups_privilege->dvups_role->id,
             "label" => t('dvups_role'),
-            "options" => FormManager::Options_Helper('name', Dvups_role::allrows()),
+            "options" => \FormManager::Options_Helper('name', \Dvups_role::allrows()),
         ];
 
         $this->fields['dvups_action.id'] = [
             "type" => FORMTYPE_SELECT, 
             "value" => $this->dvups_privilege->dvups_action->id,
             "label" => t('dvups_action'),
-            "options" => FormManager::Options_Helper('entity', Dvups_action::allrows()),
+            "options" => \FormManager::Options_Helper('entity', \Dvups_action::allrows()),
         ];
 
            
@@ -38,8 +39,11 @@ class Dvups_privilegeForm extends FormManager{
 
     public static function renderWidget($id = null, $action = "create")
     {
-        Genesis::renderView("dvups_privilege.formWidget", self::getFormData($id, $action));
+        \Genesis::renderView("dvups_privilege.formWidget", self::getFormData($id, $action));
     }
-    
+
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Dvups_privilegeForm::class, 'Dvups_privilegeForm');
     
