@@ -816,7 +816,7 @@ parameters:
 			path: src/devups/ModuleConfig/Resource/views/admin/layout.blade.php
 
 		-
-			message: "#^Access to an undefined property Dvups_langController\\:\\:\\$datatable\\.$#"
+			message: "#^Access to an undefined property devups\\\\ModuleLang\\\\Controller\\\\Dvups_langController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devups/ModuleLang/Controller/Dvups_langController.php
 
@@ -836,7 +836,7 @@ parameters:
 			path: src/devups/ModuleLang/Entity/Dvups_lang.php
 
 		-
-			message: "#^Call to an undefined static method Dvups_langForm\\:\\:getFormData\\(\\)\\.$#"
+			message: "#^Call to an undefined static method devups\\\\ModuleLang\\\\Form\\\\Dvups_langForm\\:\\:getFormData\\(\\)\\.$#"
 			count: 1
 			path: src/devups/ModuleLang/Form/Dvups_langForm.php
 

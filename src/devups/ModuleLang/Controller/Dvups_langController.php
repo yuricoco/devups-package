@@ -1,6 +1,7 @@
-<?php 
+<?php
 
-            
+namespace devups\ModuleLang\Controller;
+
 use dclass\devups\Controller\Controller;
 use dclass\devups\Controller\CrudTrait;
 
@@ -30,7 +31,7 @@ class Dvups_langController extends Controller{
     public function datatable($next, $per_page) {
     
         return ['success' => true,
-            'datatable' => Dvups_langTable::init(new Dvups_lang())->router()->getTableRest(),
+            'datatable' => \Dvups_langTable::init(new \Dvups_lang())->router()->getTableRest(),
         ];
         
     }
@@ -63,19 +64,19 @@ class Dvups_langController extends Controller{
     public function createAction($dvups_lang_form = null ){
         extract($_POST);
 
-        $dvups_lang = $this->form_fillingentity(new Dvups_lang(), $dvups_lang_form);
+        $dvups_lang = $this->form_fillingentity(new \Dvups_lang(), $dvups_lang_form);
         if ( $this->error ) {
             return 	array(	'success' => false,
                             'dvups_lang' => $dvups_lang,
-                            'action' => 'create', 
+                            'action' => 'create',
                             'error' => $this->error);
-        } 
-        
+        }
+
 
         $id = $dvups_lang->__insert();
         return 	array(	'success' => true,
                         'dvups_lang' => $dvups_lang,
-                        'tablerow' => Dvups_langTable::init()->router()->getSingleRowRest($dvups_lang),
+                        'tablerow' => \Dvups_langTable::init()->router()->getSingleRowRest($dvups_lang),
                         'detail' => '');
 
     }
@@ -83,19 +84,19 @@ class Dvups_langController extends Controller{
     public function updateAction($id, $dvups_lang_form = null){
         extract($_POST);
             
-        $dvups_lang = $this->form_fillingentity(new Dvups_lang($id), $dvups_lang_form);
-     
+        $dvups_lang = $this->form_fillingentity(new \Dvups_lang($id), $dvups_lang_form);
+
         if ( $this->error ) {
             return 	array(	'success' => false,
                             'dvups_lang' => $dvups_lang,
                             'action_form' => 'update&id='.$id,
                             'error' => $this->error);
         }
-        
+
         $dvups_lang->__update();
         return 	array(	'success' => true,
                         'dvups_lang' => $dvups_lang,
-                        'tablerow' => Dvups_langTable::init()->router()->getSingleRowRest($dvups_lang),
+                        'tablerow' => \Dvups_langTable::init()->router()->getSingleRowRest($dvups_lang),
                         'detail' => '');
                         
     }
@@ -107,33 +108,36 @@ class Dvups_langController extends Controller{
         $this->entitytarget = 'Dvups_lang';
         $this->title = "Detail Dvups_lang";
 
-        $dvups_lang = Dvups_lang::find($id);
+        $dvups_lang = \Dvups_lang::find($id);
 
         $this->renderDetailView(
-            Dvups_langTable::init()
+            \Dvups_langTable::init()
                 ->builddetailtable()
                 ->renderentitydata($dvups_lang)
         );
 
     }
-    
+
     public function deleteAction($id){
-    
-        Dvups_lang::find($id)->__delete();
-        
-        return 	array(	'success' => true, 
-                        'detail' => ''); 
+
+        \Dvups_lang::find($id)->__delete();
+
+        return 	array(	'success' => true,
+                        'detail' => '');
     }
-    
+
 
     public function deletegroupAction($ids)
     {
 
-        Dvups_lang::where("id")->in($ids)->delete();
+        \Dvups_lang::where("id")->in($ids)->delete();
 
         return array('success' => true,
-                'detail' => ''); 
+                'detail' => '');
 
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Dvups_langController::class, 'Dvups_langController');

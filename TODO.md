@@ -665,16 +665,60 @@ et son stub `phpstan-stubs/class_alias_stubs.php` correspondant.
 `composer test` (423 tests, 0 echec) et `composer phpstan` (0 erreur)
 verifies verts apres chaque module tout au long du lot.
 
-**Reste a faire pour clore LOT 5.2 (point (b) du LOT 5.0, pas encore
-commence)** : namespacer les sous-dossiers `Controller/`/`Datatable/`/
-`Form/` de chaque module `src/<component>/<Module>/`, meme recette ;
-et les classes de base `dclass/extends/{Dvups_config_item,
-Dvups_migration,ImageCore,UserCore}.php` (convention coeur du
-framework, racine `Devups\`, PAS `src/`) ; decider quoi faire (si
-necessaire) de l'exception volontaire de `Dv_langCore.php` qui reste
-en namespace global (deja observe : utilise `ModelTrait` sans etendre
-`Model` - cas particulier a traiter avec soin, voir le piege deja
-rencontre en LOT 5.1).
+**Point (b) du LOT 5.0 - EN COURS (namespacer Controller/Datatable/
+Form de chaque module src/<component>/<Module>/)**
+
+**Decouverte d'architecture importante avant de commencer** : une
+revue de `dclass/` montre que `dclass/devups/Controller/*.php`
+(`Controller`, `ControllerCore`, `CrudTrait`, `FrontController`,
+`ModuleController`) et `dclass/devups/Datatable/*.php` (`Datatable`,
+`Dbutton`, `Lazyloading`, `ListeView`, `TableData`, `TableRow`) sont
+DEJA namespaces sous `dclass\devups\Controller\`/`dclass\devups\
+Datatable\` (travail anterieur a ce chantier, hors LOT 5.2). En
+revanche `dclass/devups/Form/{Form,FormFactory,FormManager}.php`, et
+surtout la quasi-totalite des classes "coeur" referencees partout avec
+un `\` (`Model`, `Dfile`, `Genesis`, `Request`, `Response`, `Route`,
+`Router`, `RateLimiter`, `Log`, `Core`, etc. - 63 fichiers sur 84 sous
+`dclass/`) restent en namespace global. Namespacer ces classes coeur
+serait un LOT a part, bien plus large et risque que le point (b)
+(elles sont le "\" cible de TOUTES les references cross-module vues
+dans tout LOT 5.2) - **decision (la plus prudente) : NE PAS les
+toucher ici**, le point (b) se limite aux fichiers Controller/
+Datatable/Form PROPRES A CHAQUE MODULE (ex. `Dvups_langController.php`,
+pas `dclass/devups/Controller/Controller.php`). A documenter comme un
+LOT separe si besoin plus tard.
+
+**Nuance de recette decouverte sur le pilote (ModuleLang)** : contrairement
+aux entites (ou deux entites du MEME module partagent le MEME namespace
+`...\Entity`), Controller/Datatable/Form/Entity d'un meme module ont
+chacun leur PROPRE namespace (`...\Controller`, `...\Datatable`,
+`...\Form`, `...\Entity`). Il n'y a donc PAS d'exemption "meme module" :
+un Controller qui reference son Entity/Datatable/Form soeur (meme
+module) doit TOUJOURS prefixer par `\` (contrairement a Entite->Entite
+du meme module, qui restait sans prefixe). Seules les auto-references
+(le Controller vers lui-meme) restent sans prefixe.
+
+**Pilote ModuleLang (devups) - FAIT** : `Dvups_langController`,
+`Dvups_langTable`, `Dvups_langForm` namespaces sous `devups\
+ModuleLang\{Controller,Datatable,Form}`. `Dvups_langController.php` :
+toutes les refs vers `Dvups_lang`/`Dvups_langTable` (code commente
+laisse tel quel, harmless) prefixees. `Dvups_langTable.php` : `Request::`
+prefixe (classe coeur). `Dvups_langForm.php` : `extends FormManager`
+et `Genesis::renderView(...)` prefixes (classes coeur) ; `use Genesis
+as g;` laisse (un `use` est deja absolu, prefixe ou non). 2 entrees
+`phpstan-baseline.neon` mises a jour vers la FQCN (`Dvups_langController
+::$datatable`, `Dvups_langForm::getFormData()`) - **pattern recurrent
+attendu pour quasi CHAQUE Controller/Form migre** (baseline a deja une
+entree "undefined property ...Controller::$datatable" et "undefined
+static method ...Form::getFormData()" par module, consequence de
+`ControllerCore`/`FormManager` non entierement types - voir baseline
+pour la liste complete des entrees a mettre a jour au fur et a mesure).
+
+**Volume de ce point (b)** : 83 fichiers (33 Controller + 25 Datatable +
+25 Form) repartis sur `devups` (ModuleAdmin 13, ModuleConfig 3,
+ModuleLang 3 FAIT, ModuleLog 3), `devupscms` (ModuleCms 11, ModuleData 6,
+ModuleLocation 4, ModuleNotification 7, ModulePushNotification 7,
+ModuleReporting 9, ModuleTree 10), `devupsfront` (ModuleUser 7).
 
 ### LOT 5.1 - FAIT (helper `Model::shortClassName()` + conversion des sites "non surs")
 

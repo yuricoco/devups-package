@@ -151,3 +151,20 @@ class Oauth_client extends \devupsfront\ModuleUser\Entity\Oauth_client
 class User extends \devupsfront\ModuleUser\Entity\User
 {
 }
+
+/*
+ * ETAPE 5.2 (v8.0) - point (b) : stubs pour les classes Controller/Datatable/
+ * Form de chaque module (meme mecanisme que les stubs d'Entity ci-dessus).
+ */
+
+class Dvups_langController extends \devups\ModuleLang\Controller\Dvups_langController
+{
+}
+
+class Dvups_langTable extends \devups\ModuleLang\Datatable\Dvups_langTable
+{
+}
+
+class Dvups_langForm extends \devups\ModuleLang\Form\Dvups_langForm
+{
+}

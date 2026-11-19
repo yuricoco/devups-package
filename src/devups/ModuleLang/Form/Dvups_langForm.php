@@ -1,9 +1,10 @@
 <?php
 
+namespace devups\ModuleLang\Form;
 
-use Genesis as g;
+use \Genesis as g;
 
-class Dvups_langForm extends FormManager
+class Dvups_langForm extends \FormManager
 {
 
     public $dvups_lang;
@@ -76,8 +77,11 @@ class Dvups_langForm extends FormManager
 
     public static function renderWidget($id = null, $action = "create")
     {
-        Genesis::renderView("dvups_lang.formWidget", self::getFormData($id, $action));
+        \Genesis::renderView("dvups_lang.formWidget", self::getFormData($id, $action));
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Dvups_langForm::class, 'Dvups_langForm');
     
