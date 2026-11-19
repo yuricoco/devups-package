@@ -1,9 +1,10 @@
 <?php
 
+namespace devupscms\ModuleCms\Form;
 
-use Genesis as g;
+use \Genesis as g;
 
-class CmsresourceForm extends FormManager
+class CmsresourceForm extends \FormManager
 {
 
     public $cmsresource;
@@ -22,7 +23,7 @@ class CmsresourceForm extends FormManager
             "label" => t('entity.cmscontent'),
             "type" => FORMTYPE_SELECT,
             "value" => $this->cmsresource->cmscontent->getId(),
-            "options" => FormManager::Options_Helper("title", Cmscontent::allrows()),
+            "options" => \FormManager::Options_Helper("title", \Cmscontent::allrows()),
         ];
 
         $this->fields['image'] = [
@@ -39,7 +40,10 @@ class CmsresourceForm extends FormManager
 
     public static function renderWidget($id = null, $action = "create")
     {
-        Genesis::renderView("admin.cmsresource.formWidget", self::getFormData($id, $action));
+        \Genesis::renderView("admin.cmsresource.formWidget", self::getFormData($id, $action));
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(CmsresourceForm::class, 'CmsresourceForm');

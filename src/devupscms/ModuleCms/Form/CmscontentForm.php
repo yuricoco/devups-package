@@ -1,9 +1,10 @@
 <?php
 
+namespace devupscms\ModuleCms\Form;
 
-use Genesis as g;
+use \Genesis as g;
 
-class CmscontentForm extends FormManager
+class CmscontentForm extends \FormManager
 {
 
     public $cmscontent;
@@ -54,8 +55,11 @@ class CmscontentForm extends FormManager
 
     public static function renderWidget($id = null, $action = "create")
     {
-        Genesis::renderView("cmscontent.formWidget", self::getFormData($id, $action));
+        \Genesis::renderView("cmscontent.formWidget", self::getFormData($id, $action));
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(CmscontentForm::class, 'CmscontentForm');
     

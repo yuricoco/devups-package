@@ -1,15 +1,16 @@
-<?php 
+<?php
 
-            
+namespace devupscms\ModuleCms\Controller;
+
 use dclass\devups\Controller\Controller;
 
 class CmscontentController extends Controller{
 
     public function listView(){
 
-        $this->datatable = CmscontentTable::init(new Cmscontent())->buildindextable();
+        $this->datatable = \CmscontentTable::init(new \Cmscontent())->buildindextable();
 
-        self::$jsfiles[] = Cmscontent::classpath('Resource/js/cmscontentCtrl.js');
+        self::$jsfiles[] = \Cmscontent::classpath('Resource/js/cmscontentCtrl.js');
 
         $this->entitytarget = 'Cmscontent';
         $this->title = "Manage Cmscontent";
@@ -21,22 +22,22 @@ class CmscontentController extends Controller{
     public function datatable() {
     
         return ['success' => true,
-            'datatable' => CmscontentTable::init(new Cmscontent())->router()->getTableRest(),
+            'datatable' => \CmscontentTable::init(new \Cmscontent())->router()->getTableRest(),
         ];
         
     }
 
     public function formView($id = null)
     {
-        $cmscontent = new Cmscontent();
+        $cmscontent = new \Cmscontent();
         $action = __env . ("admin/api/cmscontent/create");
         if ($id) {
             $action = __env . ("admin/api/cmscontent/update?id=" . $id);
-            $cmscontent = Cmscontent::find($id);
+            $cmscontent = \Cmscontent::find($id);
         }
 
         return ['success' => true,
-            'form' => CmscontentForm::init($cmscontent, $action)
+            'form' => \CmscontentForm::init($cmscontent, $action)
                 ->buildForm()
                 ->addDformjs()
                 ->renderForm(),
@@ -44,20 +45,20 @@ class CmscontentController extends Controller{
     }
     public function edit($id = null)
     {
-        $cmscontent = new Cmscontent();
+        $cmscontent = new \Cmscontent();
         $action = __env.("admin/api/cmscontent/create");
         if ($id) {
             $action = __env.("admin/api/cmscontent/update?id=" . $id);
-            $cmscontent = Cmscontent::find($id);
+            $cmscontent = \Cmscontent::find($id);
         }
-        $langs = Dvups_lang::all();
-        Genesis::renderView("cmscontent.form", compact("langs","cmscontent", "action"));
+        $langs = \Dvups_lang::all();
+        \Genesis::renderView("cmscontent.form", compact("langs","cmscontent", "action"));
     }
 
     public function createAction($cmscontent_form = null ){
         extract($_POST);
 
-        $cmscontent = $this->form_fillingentity(new Cmscontent(), $cmscontent_form);
+        $cmscontent = $this->form_fillingentity(new \Cmscontent(), $cmscontent_form);
         if ( $this->error ) {
             return 	array(	'success' => false,
                             'cmscontent' => $cmscontent,
@@ -69,30 +70,30 @@ class CmscontentController extends Controller{
         $id = $cmscontent->__insert();
         return 	array(	'success' => true,
                         'cmscontent' => $cmscontent,
-                        'tablerow' => CmscontentTable::init(new Cmscontent())->router()->getSingleRowRest(Cmscontent::find($id, 1)),
+                        'tablerow' => \CmscontentTable::init(new \Cmscontent())->router()->getSingleRowRest(\Cmscontent::find($id, 1)),
                         'detail' => '');
 
     }
 
     public function newContent(){
 
-        $ti = Tree_item::find(Request::get("tree_item"));
+        $ti = \Tree_item::find(\Request::get("tree_item"));
 
-        $cmscontent = new Cmscontent();
+        $cmscontent = new \Cmscontent();
         $cmscontent->tree_item = $ti;
         $cmscontent->title = $ti->name;
         $cmscontent->reference = $ti->slug;
 
         $id = $cmscontent->__insert();
 
-        redirect(Cmscontent::classpath("cmscontent/edit?id=".$id));
+        redirect(\Cmscontent::classpath("cmscontent/edit?id=".$id));
 
     }
 
     public function updateAction($id, $cmscontent_form = null){
         extract($_POST);
             
-        $cmscontent = $this->form_fillingentity(new Cmscontent($id), $cmscontent_form);
+        $cmscontent = $this->form_fillingentity(new \Cmscontent($id), $cmscontent_form);
      
         if ( $this->error ) {
             return 	array(	'success' => false,
@@ -104,7 +105,7 @@ class CmscontentController extends Controller{
         $cmscontent->__update();
         return 	array(	'success' => true,
                         'cmscontent' => $cmscontent,
-                        'tablerow' => CmscontentTable::init(new Cmscontent())->router()->getSingleRowRest(Cmscontent::find($id, 1)),
+                        'tablerow' => \CmscontentTable::init(new \Cmscontent())->router()->getSingleRowRest(\Cmscontent::find($id, 1)),
                         'detail' => '');
                         
     }
@@ -116,10 +117,10 @@ class CmscontentController extends Controller{
         $this->entitytarget = 'Cmscontent';
         $this->title = "Detail Cmscontent";
 
-        $cmscontent = Cmscontent::find($id);
+        $cmscontent = \Cmscontent::find($id);
 
         $this->renderDetailView(
-            CmscontentTable::init()
+            \CmscontentTable::init()
                 ->builddetailtable()
                 ->renderentitydata($cmscontent)
         );
@@ -128,7 +129,7 @@ class CmscontentController extends Controller{
     
     public function deleteAction($id){
     
-        Cmscontent::delete($id);
+        \Cmscontent::delete($id);
         
         return 	array(	'success' => true, 
                         'detail' => ''); 
@@ -138,11 +139,14 @@ class CmscontentController extends Controller{
     public function deletegroupAction($ids)
     {
 
-        Cmscontent::where("id")->in($ids)->delete();
+        \Cmscontent::where("id")->in($ids)->delete();
 
         return array('success' => true,
-                'detail' => ''); 
+                'detail' => '');
 
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(CmscontentController::class, 'CmscontentController');

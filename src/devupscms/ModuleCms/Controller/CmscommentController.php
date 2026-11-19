@@ -1,5 +1,6 @@
 <?php
 
+namespace devupscms\ModuleCms\Controller;
 
 use dclass\devups\Controller\Controller;
 
@@ -9,7 +10,7 @@ class CmscommentController extends Controller
     public function listView()
     {
 
-        $this->datatable = CmscommentTable::init(new Cmscomment())->buildindextable();
+        $this->datatable = \CmscommentTable::init(new \Cmscomment())->buildindextable();
 
         $this->entitytarget = 'Cmscomment';
         $this->title = "Manage Cmscomment";
@@ -22,22 +23,22 @@ class CmscommentController extends Controller
     {
 
         return ['success' => true,
-            'datatable' => CmscommentTable::init(new Cmscomment())->router()->getTableRest(),
+            'datatable' => \CmscommentTable::init(new \Cmscomment())->router()->getTableRest(),
         ];
 
     }
 
     public function formView($id = null)
     {
-        $cmscomment = new Cmscomment();
+        $cmscomment = new \Cmscomment();
         $action = __env . ("admin/api/cmscomment/create");
         if ($id) {
             $action = __env . ("admin/api/cmscomment/update?id=" . $id);
-            $cmscomment = Cmscomment::find($id);
+            $cmscomment = \Cmscomment::find($id);
         }
 
         return ['success' => true,
-            'form' => CmscommentForm::init($cmscomment, $action)
+            'form' => \CmscommentForm::init($cmscomment, $action)
                 ->buildForm()
                 ->addDformjs()
                 ->renderForm(),
@@ -48,7 +49,7 @@ class CmscommentController extends Controller
     {
         extract($_POST);
 
-        $cmscomment = $this->form_fillingentity(new Cmscomment(), $cmscomment_form);
+        $cmscomment = $this->form_fillingentity(new \Cmscomment(), $cmscomment_form);
         if ($this->error) {
             return array('success' => false,
                 'cmscomment' => $cmscomment,
@@ -59,7 +60,7 @@ class CmscommentController extends Controller
         $id = $cmscomment->__insert();
         return array('success' => true,
             'cmscomment' => $cmscomment,
-            'tablerow' => CmscommentTable::init(new Cmscomment())->router()->getSingleRowRest(Cmscomment::find($id, 1)),
+            'tablerow' => \CmscommentTable::init(new \Cmscomment())->router()->getSingleRowRest(\Cmscomment::find($id, 1)),
             'detail' => '');
 
     }
@@ -68,7 +69,7 @@ class CmscommentController extends Controller
     {
         extract($_POST);
 
-        $cmscomment = $this->form_fillingentity(new Cmscomment($id), $cmscomment_form);
+        $cmscomment = $this->form_fillingentity(new \Cmscomment($id), $cmscomment_form);
 
         if ($this->error) {
             return array('success' => false,
@@ -80,7 +81,7 @@ class CmscommentController extends Controller
         $cmscomment->__update();
         return array('success' => true,
             'cmscomment' => $cmscomment,
-            'tablerow' => CmscommentTable::init(new Cmscomment())->router()->getSingleRowRest(Cmscomment::find($id, 1)),
+            'tablerow' => \CmscommentTable::init(new \Cmscomment())->router()->getSingleRowRest(\Cmscomment::find($id, 1)),
             'detail' => '');
 
     }
@@ -92,10 +93,10 @@ class CmscommentController extends Controller
         $this->entitytarget = 'Cmscomment';
         $this->title = "Detail Cmscomment";
 
-        $cmscomment = Cmscomment::find($id);
+        $cmscomment = \Cmscomment::find($id);
 
         $this->renderDetailView(
-            CmscommentTable::init()
+            \CmscommentTable::init()
                 ->builddetailtable()
                 ->renderentitydata($cmscomment)
         );
@@ -105,7 +106,7 @@ class CmscommentController extends Controller
     public function deleteAction($id)
     {
 
-        Cmscomment::delete($id);
+        \Cmscomment::delete($id);
 
         return array('success' => true,
             'detail' => '');
@@ -115,7 +116,7 @@ class CmscommentController extends Controller
     public function deletegroupAction($ids)
     {
 
-        Cmscomment::where("id")->in($ids)->delete();
+        \Cmscomment::where("id")->in($ids)->delete();
 
         return array('success' => true,
             'detail' => '');
@@ -123,3 +124,6 @@ class CmscommentController extends Controller
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(CmscommentController::class, 'CmscommentController');

@@ -1,9 +1,10 @@
 <?php
 
+namespace devupscms\ModuleCms\Form;
 
 use Genesis as g;
 
-class CmscommentForm extends FormManager
+class CmscommentForm extends \FormManager
 {
 
     public $cmscomment;
@@ -51,3 +52,6 @@ class CmscommentForm extends FormManager
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(CmscommentForm::class, 'CmscommentForm');

@@ -881,17 +881,17 @@ parameters:
 			path: src/devups/ModuleLog/Resource/views/admin/layout.blade.php
 
 		-
-			message: "#^Access to an undefined property CmscommentController\\:\\:\\$datatable\\.$#"
+			message: "#^Access to an undefined property devupscms\\\\ModuleCms\\\\Controller\\\\CmscommentController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devupscms/ModuleCms/Controller/CmscommentController.php
 
 		-
-			message: "#^Access to an undefined property CmscontentController\\:\\:\\$datatable\\.$#"
+			message: "#^Access to an undefined property devupscms\\\\ModuleCms\\\\Controller\\\\CmscontentController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devupscms/ModuleCms/Controller/CmscontentController.php
 
 		-
-			message: "#^Access to an undefined property CmsresourceController\\:\\:\\$datatable\\.$#"
+			message: "#^Access to an undefined property devupscms\\\\ModuleCms\\\\Controller\\\\CmsresourceController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devupscms/ModuleCms/Controller/CmsresourceController.php
 
@@ -926,7 +926,7 @@ parameters:
 			path: src/devupscms/ModuleCms/Form/CmscommentForm.php
 
 		-
-			message: "#^Call to an undefined static method CmscontentForm\\:\\:getFormData\\(\\)\\.$#"
+			message: "#^Call to an undefined static method devupscms\\\\ModuleCms\\\\Form\\\\CmscontentForm\\:\\:getFormData\\(\\)\\.$#"
 			count: 1
 			path: src/devupscms/ModuleCms/Form/CmscontentForm.php
 
@@ -936,7 +936,7 @@ parameters:
 			path: src/devupscms/ModuleCms/Form/CmscontentForm.php
 
 		-
-			message: "#^Call to an undefined static method CmsresourceForm\\:\\:getFormData\\(\\)\\.$#"
+			message: "#^Call to an undefined static method devupscms\\\\ModuleCms\\\\Form\\\\CmsresourceForm\\:\\:getFormData\\(\\)\\.$#"
 			count: 1
 			path: src/devupscms/ModuleCms/Form/CmsresourceForm.php
 

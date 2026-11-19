@@ -1,5 +1,6 @@
 <?php
 
+namespace devupscms\ModuleCms\Controller;
 
 use dclass\devups\Controller\Controller;
 
@@ -9,9 +10,9 @@ class CmsresourceController extends Controller
     public function listView($next = 1, $per_page = 10)
     {
 
-        $this->datatable = CmsresourceTable::init(new Cmsresource())->buildindextable();
+        $this->datatable = \CmsresourceTable::init(new \Cmsresource())->buildindextable();
 
-        self::$jsfiles[] = Cmsresource::classpath('Resource/js/cmsresourceCtrl.js');
+        self::$jsfiles[] = \Cmsresource::classpath('Resource/js/cmsresourceCtrl.js');
 
         $this->entitytarget = 'Cmsresource';
         $this->title = "Manage Cmsresource";
@@ -24,22 +25,22 @@ class CmsresourceController extends Controller
     {
 
         return ['success' => true,
-            'datatable' => CmsresourceTable::init(new Cmsresource())->router()->getTableRest(),
+            'datatable' => \CmsresourceTable::init(new \Cmsresource())->router()->getTableRest(),
         ];
 
     }
 
     public function formView($id = null)
     {
-        $cmsresource = new Cmsresource();
+        $cmsresource = new \Cmsresource();
         $action = __env . ("admin/api/cmsresource/create");
         if ($id) {
             $action = __env . ("admin/api/cmsresource/update?id=" . $id);
-            $cmsresource = Cmsresource::find($id);
+            $cmsresource = \Cmsresource::find($id);
         }
 
         return ['success' => true,
-            'form' => CmsresourceForm::init($cmsresource, $action)
+            'form' => \CmsresourceForm::init($cmsresource, $action)
                 ->buildForm()
                 ->addDformjs()
                 ->renderForm(),
@@ -50,7 +51,7 @@ class CmsresourceController extends Controller
     {
         extract($_POST);
 
-        $cmsresource = $this->form_fillingentity(new Cmsresource(), $cmsresource_form);
+        $cmsresource = $this->form_fillingentity(new \Cmsresource(), $cmsresource_form);
         if ($this->error) {
             return array('success' => false,
                 'action' => 'create',
@@ -61,7 +62,7 @@ class CmsresourceController extends Controller
         $id = $cmsresource->__insert();
         return array('success' => true,
             'cmsresource' => $cmsresource,
-            'tablerow' => CmsresourceTable::init()->buildindextable()->getSingleRowRest($cmsresource),
+            'tablerow' => \CmsresourceTable::init()->buildindextable()->getSingleRowRest($cmsresource),
             'detail' => '');
 
     }
@@ -70,7 +71,7 @@ class CmsresourceController extends Controller
     {
         extract($_POST);
 
-        $cmsresource = $this->form_fillingentity(new Cmsresource($id), $cmsresource_form);
+        $cmsresource = $this->form_fillingentity(new \Cmsresource($id), $cmsresource_form);
 
         if ($this->error) {
             return array('success' => false,
@@ -82,7 +83,7 @@ class CmsresourceController extends Controller
         $cmsresource->__update();
         return array('success' => true,
             'cmsresource' => $cmsresource,
-            'tablerow' => CmsresourceTable::init()->buildindextable()->getSingleRowRest($cmsresource),
+            'tablerow' => \CmsresourceTable::init()->buildindextable()->getSingleRowRest($cmsresource),
             'detail' => '');
 
     }
@@ -94,10 +95,10 @@ class CmsresourceController extends Controller
         $this->entitytarget = 'Cmsresource';
         $this->title = "Detail Cmsresource";
 
-        $cmsresource = Cmsresource::find($id);
+        $cmsresource = \Cmsresource::find($id);
 
         $this->renderDetailView(
-            CmsresourceTable::init()
+            \CmsresourceTable::init()
                 ->builddetailtable()
                 ->renderentitydata($cmsresource)
         );
@@ -107,7 +108,7 @@ class CmsresourceController extends Controller
     public function deleteAction($id)
     {
 
-        $cr = Cmsresource::find($id);
+        $cr = \Cmsresource::find($id);
         $cr->__delete();
 
         return array('success' => true,
@@ -118,7 +119,7 @@ class CmsresourceController extends Controller
     public function deletegroupAction($ids)
     {
 
-        Cmsresource::where("id")->in($ids)->delete();
+        \Cmsresource::where("id")->in($ids)->delete();
 
         return array('success' => true,
             'detail' => '');
@@ -126,3 +127,6 @@ class CmsresourceController extends Controller
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(CmsresourceController::class, 'CmsresourceController');

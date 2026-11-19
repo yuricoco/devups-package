@@ -244,3 +244,47 @@ class Dvups_privilegeForm extends \devups\ModuleAdmin\Form\Dvups_privilegeForm
 class Dvups_roleForm extends \devups\ModuleAdmin\Form\Dvups_roleForm
 {
 }
+
+class CmscommentController extends \devupscms\ModuleCms\Controller\CmscommentController
+{
+}
+
+class CmscontentController extends \devupscms\ModuleCms\Controller\CmscontentController
+{
+}
+
+class CmscontentFrontController extends \devupscms\ModuleCms\Controller\CmscontentFrontController
+{
+}
+
+class CmsresourceController extends \devupscms\ModuleCms\Controller\CmsresourceController
+{
+}
+
+class CmsresourceFrontController extends \devupscms\ModuleCms\Controller\CmsresourceFrontController
+{
+}
+
+class CmscommentTable extends \devupscms\ModuleCms\Datatable\CmscommentTable
+{
+}
+
+class CmscontentTable extends \devupscms\ModuleCms\Datatable\CmscontentTable
+{
+}
+
+class CmsresourceTable extends \devupscms\ModuleCms\Datatable\CmsresourceTable
+{
+}
+
+class CmscommentForm extends \devupscms\ModuleCms\Form\CmscommentForm
+{
+}
+
+class CmscontentForm extends \devupscms\ModuleCms\Form\CmscontentForm
+{
+}
+
+class CmsresourceForm extends \devupscms\ModuleCms\Form\CmsresourceForm
+{
+}

@@ -1,5 +1,6 @@
 <?php
 
+namespace devupscms\ModuleCms\Controller;
 
 class CmscontentFrontController extends CmscontentController
 {
@@ -7,7 +8,7 @@ class CmscontentFrontController extends CmscontentController
     public static function documentView()
     {
         $collection = [];
-        $list = Tree_item::getmainmenu("documentation");
+        $list = \Tree_item::getmainmenu("documentation");
         foreach ($list as $el) {
             $collection[] = [
                 "item" => $el,
@@ -15,16 +16,16 @@ class CmscontentFrontController extends CmscontentController
             ];
         }
         $cms = null;
-        if ($ref = Request::get("ref"))
-            $cms = Cmscontent::where("slug", $ref)->__getOne();
-        Genesis::render('documentation', compact("collection", "cms"));
+        if ($ref = \Request::get("ref"))
+            $cms = \Cmscontent::where("slug", $ref)->__getOne();
+        \Genesis::render('documentation', compact("collection", "cms"));
     }
 
 
     public function detailAction($id)
     {
 
-        $cmscontent = Cmscontent::find($id);
+        $cmscontent = \Cmscontent::find($id);
 
         return array('success' => true,
             'cmscontent' => $cmscontent,
@@ -35,7 +36,7 @@ class CmscontentFrontController extends CmscontentController
     public function faqView()
     {
         $collection = [];
-        $list = Tree_item::getmainmenu("faq");
+        $list = \Tree_item::getmainmenu("faq");
         foreach ($list as $el){
             /*$children = $el->getChildren();
             $colchildren = [];
@@ -57,3 +58,6 @@ class CmscontentFrontController extends CmscontentController
 
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(CmscontentFrontController::class, 'CmscontentFrontController');

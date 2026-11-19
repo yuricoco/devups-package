@@ -742,11 +742,29 @@ Datatable/Form de `Dvups_action`, `Dvups_admin` (+ `Dvups_adminFrontController`)
   (ex. `Dvups_role`/`Dvups_privilege` entre eux) - confirme la nuance
   Controller/Datatable/Form decrite plus haut.
 
+**ModuleCms (devupscms) - FAIT (11 fichiers)** : tous les Controller/
+Datatable/Form de `Cmscomment`, `Cmscontent` (+ `CmscontentFrontController`),
+`Cmsresource` (+ `CmsresourceFrontController`) namespaces. Trouvaille :
+`CmsresourceFrontController::ll()` fait `new Lazyloading()` sans prefixe -
+`Lazyloading` (dclass/devups/Datatable/Lazyloading.php) est DEJA namespace
+sous `dclass\devups\Datatable\` (travail anterieur, comme Controller/
+Datatable "coeur" - voir plus haut), donc meme AVANT ce chantier cet
+appel etait deja casse (classe introuvable en global) - confirme par
+une entree `phpstan-baseline.neon` deja presente ("Instantiated class
+Lazyloading not found") AVANT notre edition. **Decision (la plus
+prudente) : ne pas corriger ce bug pre-existant ici** (hors scope du
+point (b), qui est une migration de namespace, pas une revue
+fonctionnelle) - prefixe par `\` par coherence avec la recette (le
+comportement/l'erreur phpstan reste identique, aucune regression
+introduite, le bug reste documente dans le meme message baseline
+inchange). A traiter separement si quelqu'un relance ce chantier.
+
 **Volume de ce point (b)** : 83 fichiers (33 Controller + 25 Datatable +
 25 Form) repartis sur `devups` (ModuleAdmin 13 FAIT, ModuleConfig 3 FAIT,
-ModuleLang 3 FAIT, ModuleLog 3 FAIT), `devupscms` (ModuleCms 11, ModuleData 6,
-ModuleLocation 4, ModuleNotification 7, ModulePushNotification 7,
-ModuleReporting 9, ModuleTree 10), `devupsfront` (ModuleUser 7).
+ModuleLang 3 FAIT, ModuleLog 3 FAIT), `devupscms` (ModuleCms 11 FAIT,
+ModuleData 6, ModuleLocation 4, ModuleNotification 7,
+ModulePushNotification 7, ModuleReporting 9, ModuleTree 10),
+`devupsfront` (ModuleUser 7). **33 fichiers sur 83 termines.**
 **devups entierement termine (22 fichiers).**
 
 ### LOT 5.1 - FAIT (helper `Model::shortClassName()` + conversion des sites "non surs")
