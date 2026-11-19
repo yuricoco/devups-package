@@ -67,3 +67,9 @@ class Workers extends Model implements JsonSerializable
 
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2". Cette
+// entite etait deja namespacee avant ce chantier (meme migration partielle
+// anterieure qu'Interval_group/Notification.php - tous ses appelants
+// l'importent deja par sa FQCN) - alias ajoute par coherence.
+class_alias(Workers::class, 'Workers');

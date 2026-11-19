@@ -611,10 +611,18 @@ migration partielle anterieure touchait plusieurs modules, pas
 seulement ModuleData. Rien de casse par cette dependance croisee
 prematuree - l'import `use` pointait deja vers la FQCN correcte.
 
-**Volume restant** : 14 entites sur 35 sous `src/**/Entity/*.php`
+**ModulePushNotification (devupscms) - FAIT** : `Push_subscription`
+namespacee sous `devupscms\ModulePushNotification\Entity`. `Workers`
+etait deja namespacee avant ce chantier (3e survivante de la migration
+partielle anterieure, apres `Interval_group` et le `use` FQCN dans
+`Notification.php` - tous ses appelants l'importent deja par sa FQCN,
+alias ajoute par coherence sans necessite stricte).
+
+**Volume restant** : 13 entites sur 35 sous `src/**/Entity/*.php`
 (composants `devups` + ModuleCms/ModuleData/ModuleLocation/
-ModuleNotification de `devupscms` faits), repartiees sur 3 modules du
-composant `devupscms` + 1 module de `devupsfront` (`devups` :
+ModuleNotification/ModulePushNotification de `devupscms` faits),
+repartiees sur 2 modules du composant `devupscms` + 1 module de
+`devupsfront` (`devups` :
 ModuleAdmin/ModuleConfig/ModuleLog ; `devupscms` :
 ModuleCms/ModuleData/ModuleLocation/ModuleNotification/
 ModulePushNotification/ModuleReporting/ModuleTree ; `devupsfront` :

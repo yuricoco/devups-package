@@ -99,3 +99,11 @@ class Notificationtype extends \devupscms\ModuleNotification\Entity\Notification
 class Notificationtype_lang extends \devupscms\ModuleNotification\Entity\Notificationtype_lang
 {
 }
+
+class Workers extends \devupscms\ModulePushNotification\Entity\Workers
+{
+}
+
+class Push_subscription extends \devupscms\ModulePushNotification\Entity\Push_subscription
+{
+}

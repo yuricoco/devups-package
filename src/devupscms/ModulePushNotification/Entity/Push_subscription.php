@@ -1,4 +1,7 @@
 <?php
+
+namespace devupscms\ModulePushNotification\Entity;
+
 // user \dclass\devups\model\Model;
 use Minishlink\WebPush\SubscriptionInterface;
 use Minishlink\WebPush\WebPush;
@@ -7,7 +10,7 @@ use Google\Auth\Credentials\ServiceAccountCredentials;
 use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity]
 #[ORM\Table(name: "push_subscription")]
-class Push_subscription extends Model implements JsonSerializable, SubscriptionInterface
+class Push_subscription extends \Model implements \JsonSerializable, SubscriptionInterface
 
 {
 
@@ -217,7 +220,7 @@ class Push_subscription extends Model implements JsonSerializable, SubscriptionI
                 return false;
             }
         }
-        catch (Exception $exception) {
+        catch (\Exception $exception) {
             \Log::error($exception);
             return false;
         }
@@ -307,7 +310,7 @@ class Push_subscription extends Model implements JsonSerializable, SubscriptionI
                 return false;
             }
         }
-        catch (Exception $exception) {
+        catch (\Exception $exception) {
             \Log::error($exception);
             return false;
         }
@@ -339,3 +342,6 @@ class Push_subscription extends Model implements JsonSerializable, SubscriptionI
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Push_subscription::class, 'Push_subscription');
