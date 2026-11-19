@@ -420,3 +420,43 @@ class Push_emailForm extends \devupscms\ModuleReporting\Form\Push_emailForm
 class ReportingmodelForm extends \devupscms\ModuleReporting\Form\ReportingmodelForm
 {
 }
+
+class TreeController extends \devupscms\ModuleTree\Controller\TreeController
+{
+}
+
+class Tree_itemController extends \devupscms\ModuleTree\Controller\Tree_itemController
+{
+}
+
+class Tree_itemFrontController extends \devupscms\ModuleTree\Controller\Tree_itemFrontController
+{
+}
+
+class Tree_item_imageController extends \devupscms\ModuleTree\Controller\Tree_item_imageController
+{
+}
+
+class TreeTable extends \devupscms\ModuleTree\Datatable\TreeTable
+{
+}
+
+class Tree_itemTable extends \devupscms\ModuleTree\Datatable\Tree_itemTable
+{
+}
+
+class Tree_item_imageTable extends \devupscms\ModuleTree\Datatable\Tree_item_imageTable
+{
+}
+
+class TreeForm extends \devupscms\ModuleTree\Form\TreeForm
+{
+}
+
+class Tree_itemForm extends \devupscms\ModuleTree\Form\Tree_itemForm
+{
+}
+
+class Tree_item_imageForm extends \devupscms\ModuleTree\Form\Tree_item_imageForm
+{
+}

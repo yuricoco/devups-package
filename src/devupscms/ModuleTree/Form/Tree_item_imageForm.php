@@ -1,9 +1,10 @@
 <?php
 
+namespace devupscms\ModuleTree\Form;
 
-use Genesis as g;
+use \Genesis as g;
 
-class Tree_item_imageForm extends FormManager
+class Tree_item_imageForm extends \FormManager
 {
 
     public $tree_item_image;
@@ -29,7 +30,7 @@ class Tree_item_imageForm extends FormManager
             "type" => FORMTYPE_SELECT,
             "value" => $this->tree_item_image->getTree_item()->getId(),
             "label" => t('entity.tree_item'),
-            "options" => FormManager::Options_Helper('name', Tree_item::allrows()),
+            "options" => \FormManager::Options_Helper('name', \Tree_item::allrows()),
         ];
 
         $this->fields['image'] = [
@@ -46,7 +47,10 @@ class Tree_item_imageForm extends FormManager
 
     public static function renderWidget($id = null, $action = "create")
     {
-        Genesis::renderView("tree_item_image.formWidget", self::getFormData($id, $action));
+        \Genesis::renderView("tree_item_image.formWidget", self::getFormData($id, $action));
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Tree_item_imageForm::class, 'Tree_item_imageForm');

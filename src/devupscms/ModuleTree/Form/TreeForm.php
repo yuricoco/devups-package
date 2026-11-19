@@ -1,9 +1,10 @@
 <?php
 
+namespace devupscms\ModuleTree\Form;
 
-use Genesis as g;
+use \Genesis as g;
 
-class TreeForm extends FormManager
+class TreeForm extends \FormManager
 {
 
     public $tree;
@@ -54,7 +55,7 @@ class TreeForm extends FormManager
     {
         $tree = new \Tree();
         extract($dataform);
-        $entitycore = new Core($tree);
+        $entitycore = new \Core($tree);
 
         $entitycore->formaction = $action;
         $entitycore->formbutton = $button;
@@ -90,20 +91,20 @@ class TreeForm extends FormManager
 
 
         $entitycore->addDformjs($button);
-        $entitycore->addjs(Tree::classpath('Resource/js/treeForm'));
+        $entitycore->addjs(\Tree::classpath('Resource/js/treeForm'));
 
         return $entitycore;
     }
 
     public static function __renderForm($dataform, $button = false)
     {
-        return FormFactory::__renderForm(TreeForm::formBuilder($dataform, $button));
+        return \FormFactory::__renderForm(TreeForm::formBuilder($dataform, $button));
     }
 
     public static function getFormData($id = null, $action = "create")
     {
         if (!$id):
-            $tree = new Tree();
+            $tree = new \Tree();
 
             return [
                 'success' => true,
@@ -112,7 +113,7 @@ class TreeForm extends FormManager
             ];
         endif;
 
-        $tree = Tree::find($id);
+        $tree = \Tree::find($id);
         return [
             'success' => true,
             'tree' => $tree,
@@ -130,8 +131,11 @@ class TreeForm extends FormManager
 
     public static function renderWidget($id = null, $action = "create")
     {
-        Genesis::renderView("tree.formWidget", self::getFormData($id, $action));
+        \Genesis::renderView("tree.formWidget", self::getFormData($id, $action));
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(TreeForm::class, 'TreeForm');
     

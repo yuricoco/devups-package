@@ -1,5 +1,6 @@
 <?php
 
+namespace devupscms\ModuleTree\Controller;
 
 use dclass\devups\Controller\Controller;
 use dclass\devups\Datatable\Lazyloading;
@@ -8,20 +9,20 @@ class Tree_itemController extends Controller{
 
     public function listView($next = 1, $per_page = 10){
 
-        $this->datatable = Tree_itemTable::init(new Tree_item())->buildindextable();
+        $this->datatable = \Tree_itemTable::init(new \Tree_item())->buildindextable();
 
-        self::$jsfiles[] = Tree_item::classpath('Resource/js/tree_itemCtrl.js');
+        self::$jsfiles[] = \Tree_item::classpath('Resource/js/tree_itemCtrl.js');
 
         $break = '';
-        if ($parentid = Request::get("parent_id:eq")) {
+        if ($parentid = \Request::get("parent_id:eq")) {
             $this->datatable->addFilterParam("parent_id", $parentid);
-            $cat = Tree_item::find($parentid, 1);
+            $cat = \Tree_item::find($parentid, 1);
             $breakcumth = [$cat];
             $cat->getParent($cat->parent_id, $breakcumth, 1);
 
-            $break = "<a href='" . Tree_item::classpath("tree-item/list") . "' class=''>Liste</a>";
+            $break = "<a href='" . \Tree_item::classpath("tree-item/list") . "' class=''>Liste</a>";
             foreach ($breakcumth as $i => $bc) {
-                $break .= " > <a href='" . Tree_item::classpath("tree-item/list?dfilters=on&parent_id:eq=" . $bc->id) . "' class='btn btn-info'>{$bc->name}</a>";
+                $break .= " > <a href='" . \Tree_item::classpath("tree-item/list?dfilters=on&parent_id:eq=" . $bc->id) . "' class='btn btn-info'>{$bc->name}</a>";
             }
         }
         $this->entitytarget = 'Tree_item';
@@ -34,29 +35,29 @@ class Tree_itemController extends Controller{
     public function datatable($next, $per_page) {
 
         return ['success' => true,
-            'datatable' => Tree_itemTable::init(new Tree_item())->router()->getTableRest(),
+            'datatable' => \Tree_itemTable::init(new \Tree_item())->router()->getTableRest(),
         ];
 
     }
 
     public function formView($id = null)
     {
-        $tree_item = new Tree_item();
-        $action = __env . ("admin/api/tree_item/create?tablemodel=".Request::get("tablemodel", ''));
+        $tree_item = new \Tree_item();
+        $action = __env . ("admin/api/tree_item/create?tablemodel=".\Request::get("tablemodel", ''));
         if ($id) {
-            $action = __env . ("admin/api/tree_item/update?id=" . $id."&tablemodel=".Request::get("tablemodel", ''));
-            $tree_item = Tree_item::find($id);
+            $action = __env . ("admin/api/tree_item/update?id=" . $id."&tablemodel=".\Request::get("tablemodel", ''));
+            $tree_item = \Tree_item::find($id);
         }else{
 
-            $tree = Request::get("parent_id");
-            $ti = Tree_item::find($tree);
+            $tree = \Request::get("parent_id");
+            $ti = \Tree_item::find($tree);
         }
 
         return ['success' => true,
-            'form' => Tree_itemForm::init($tree_item, $action)
+            'form' => \Tree_itemForm::init($tree_item, $action)
                 ->buildForm()
                 ->addJs(__admin.'plugins/tinymce/tinymce.bundle')
-                ->addJs(Tree_item::classpath('Resource/js/tree_itemForm'))
+                ->addJs(\Tree_item::classpath('Resource/js/tree_itemForm'))
                 ->addDformjs()
                 ->renderForm(),
         ];
@@ -65,7 +66,7 @@ class Tree_itemController extends Controller{
     public function createAction($tree_item_form = null ){
         extract($_POST);
 
-        $tree_item = $this->form_fillingentity(new Tree_item(), $tree_item_form);
+        $tree_item = $this->form_fillingentity(new \Tree_item(), $tree_item_form);
         if ( $this->error ) {
             return 	array(	'success' => false,
                             'tree_item' => $tree_item,
@@ -77,7 +78,7 @@ class Tree_itemController extends Controller{
         $id = $tree_item->__insert();
         return 	array(	'success' => true,
                         'tree_item' => $tree_item,
-                        'tablerow' => Tree_itemTable::init()->router()->getSingleRowRest($tree_item),
+                        'tablerow' => \Tree_itemTable::init()->router()->getSingleRowRest($tree_item),
                         'detail' => '');
 
     }
@@ -85,7 +86,7 @@ class Tree_itemController extends Controller{
     public function updateAction($id, $tree_item_form = null){
         extract($_POST);
 
-        $tree_item = $this->form_fillingentity(new Tree_item($id), $tree_item_form);
+        $tree_item = $this->form_fillingentity(new \Tree_item($id), $tree_item_form);
 
         if ( $this->error ) {
             return 	array(	'success' => false,
@@ -97,7 +98,7 @@ class Tree_itemController extends Controller{
         $tree_item->__update();
         return 	array(	'success' => true,
                         'tree_item' => $tree_item,
-                        'tablerow' => Tree_itemTable::init()->router()->getSingleRowRest($tree_item),
+                        'tablerow' => \Tree_itemTable::init()->router()->getSingleRowRest($tree_item),
                         'detail' => '');
 
     }
@@ -109,10 +110,10 @@ class Tree_itemController extends Controller{
         $this->entitytarget = 'Tree_item';
         $this->title = "Detail Tree_item";
 
-        $tree_item = Tree_item::find($id);
+        $tree_item = \Tree_item::find($id);
 
         $this->renderDetailView(
-            Tree_itemTable::init()
+            \Tree_itemTable::init()
                 ->builddetailtable()
                 ->renderentitydata($tree_item)
         );
@@ -122,7 +123,7 @@ class Tree_itemController extends Controller{
     public function deleteAction($id){
 
         return 	array(	'success' => true,
-                        'detail' => Tree_item::delete($id));
+                        'detail' => \Tree_item::delete($id));
 
     }
 
@@ -130,7 +131,7 @@ class Tree_itemController extends Controller{
     public function deletegroupAction($ids)
     {
 
-        Tree_item::where("id")->in($ids)->delete();
+        \Tree_item::where("id")->in($ids)->delete();
 
         return array('success' => true,
                 'detail' => '');
@@ -140,7 +141,7 @@ class Tree_itemController extends Controller{
 
     public function changestatus( $id, $status)
     {
-        $category = Tree_item::where('this.id', $id)->update([
+        $category = \Tree_item::where('this.id', $id)->update([
             'this.status' => $status
         ]);
 
@@ -150,12 +151,12 @@ class Tree_itemController extends Controller{
     public function getchildren($id)
     {
 
-        $qb = Tree_item::where("parent_id", $id);
+        $qb = \Tree_item::where("parent_id", $id);
 //        if ($count)
         $ll = new Lazyloading();
-        $ll->lazyloading(new Tree_item(),  $qb, "this.name asc");
+        $ll->lazyloading(new \Tree_item(),  $qb, "this.name asc");
         return $ll;
-        $category = Tree_item::find($id);
+        $category = \Tree_item::find($id);
 //        $categories = Category::where("parent_id", $id)->take(self::per_page)
 //            ->orderBy('name', 'asc')->get();
 //        foreach ($categories as $cat) {
@@ -164,7 +165,7 @@ class Tree_itemController extends Controller{
 
         $categorytree = [];
         if ($category->getParents_id())
-            $categorytree = Tree_item::where("this.id")->in($category->getParents_id())->__getAll();
+            $categorytree = \Tree_item::where("this.id")->in($category->getParents_id())->__getAll();
 
         return compact("category", "categorytree", "ll");
 
@@ -178,7 +179,7 @@ class Tree_itemController extends Controller{
 //        $content = file_get_contents(self::$path);
 //        $info = json_decode($content, true);
         $categories = [];
-        $info = Category::getmaincategory();
+        $info = \Category::getmaincategory();
 //        foreach ($info as $cat) {
 //            $cat->children = DB::table("categories")->select()->where("parent_id", $cat->id)->count();
 //        }
@@ -194,17 +195,17 @@ class Tree_itemController extends Controller{
         $tree_itemorder = $rawdata["tree_items"];
 
         foreach ($tree_itemorder as $order){
-            Tree_item::where("this.id", $order[0])->update(['position'=>$order[1]]);
+            \Tree_item::where("this.id", $order[0])->update(['position'=>$order[1]]);
         }
 
-        return Response::$data;
+        return \Response::$data;
 
     }
 
     public function addcontentAction()
     {
-        $menu = Tree_item::find(Request::get("id"));
-        $content = new Cmscontent();
+        $menu = \Tree_item::find(\Request::get("id"));
+        $content = new \Cmscontent();
         $content->setSlug($menu->getSlug());
         $content->title = $menu->name;
         $content->setContent("comming soon");
@@ -212,9 +213,12 @@ class Tree_itemController extends Controller{
         $content->tree_item = $menu;
         $id = $content->__insert();
 
-        Response::set("redirect", Cmscontent::classpath("cmscontent/edit?id=".$id));
-        return Response::$data;
+        \Response::set("redirect", \Cmscontent::classpath("cmscontent/edit?id=".$id));
+        return \Response::$data;
 
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Tree_itemController::class, 'Tree_itemController');

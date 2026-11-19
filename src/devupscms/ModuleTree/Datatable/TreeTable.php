@@ -1,5 +1,6 @@
-<?php 
+<?php
 
+namespace devupscms\ModuleTree\Datatable;
 
 use dclass\devups\Datatable\Datatable as Datatable;
 
@@ -17,7 +18,7 @@ class TreeTable extends Datatable{
         // "new TreeTable()" SANS entite laisse Datatable::__construct()
         // sans $this->class ($this->qbcustom non plus), donc le bouton
         // "Creer" genere "onclick=...('')" -> GET /admin/api/null/form.
-        $dt = new TreeTable($tree ?: new Tree());
+        $dt = new TreeTable($tree ?: new \Tree());
         $dt->entity = $tree;
 
         return $dt;
@@ -45,3 +46,6 @@ class TreeTable extends Datatable{
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(TreeTable::class, 'TreeTable');

@@ -1,5 +1,6 @@
 <?php
 
+namespace devupscms\ModuleTree\Datatable;
 
 use dclass\devups\Datatable\Datatable as Datatable;
 
@@ -86,7 +87,7 @@ class Tree_itemTable extends Datatable
         // (voie A). Confirme en testant : c'etait le chemin par defaut du
         // back-office (liste des items sans filtre parent_id), cassait a
         // chaque ouverture.
-        if (!Request::get("parent_id:eq") && !is_null($this->qbcustom))
+        if (!\Request::get("parent_id:eq") && !is_null($this->qbcustom))
             $this->qbcustom->where("this.main", 1);
 
         $this->datatablemodel = [
@@ -117,7 +118,7 @@ class Tree_itemTable extends Datatable
 
     public function router()
     {
-        $tablemodel = Request::get("tablemodel", null);
+        $tablemodel = \Request::get("tablemodel", null);
         if ($tablemodel && method_exists($this, "build" . $tablemodel . "table") && $result = call_user_func(array($this, "build" . $tablemodel . "table"))) {
             return $result;
         } else
@@ -130,3 +131,6 @@ class Tree_itemTable extends Datatable
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Tree_itemTable::class, 'Tree_itemTable');

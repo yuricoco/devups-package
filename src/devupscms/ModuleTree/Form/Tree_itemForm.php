@@ -1,9 +1,10 @@
 <?php
 
+namespace devupscms\ModuleTree\Form;
 
-use Genesis as g;
+use \Genesis as g;
 
-class Tree_itemForm extends FormManager
+class Tree_itemForm extends \FormManager
 {
 
     public $tree_item;
@@ -18,8 +19,8 @@ class Tree_itemForm extends FormManager
     public function buildForm()
     {
 
-        if ($parentid = Request::get("parent_id")) {
-            $prod = Tree_item::find($parentid, 1);
+        if ($parentid = \Request::get("parent_id")) {
+            $prod = \Tree_item::find($parentid, 1);
             $this->fields['parent_id'] = [
                 "label" => t('Parent id'),
                 "type" => FORMTYPE_TEXT,
@@ -58,9 +59,9 @@ class Tree_itemForm extends FormManager
             $this->fields['tree.id'] = [
                 "type" => FORMTYPE_SELECT,
                 "hidden" => true,
-                "value" => Request::get("tree_id:eq"),
+                "value" => \Request::get("tree_id:eq"),
                 "label" => t('tree'),
-                "options" => [Request::get("tree_id")=>Request::get("tree_id:eq")],
+                "options" => [\Request::get("tree_id")=>\Request::get("tree_id:eq")],
             ];
         }
         $this->fields['name'] = [
@@ -110,7 +111,10 @@ class Tree_itemForm extends FormManager
 
     public static function renderWidget($id = null, $action = "create")
     {
-        Genesis::renderView("tree_item.formWidget", self::getFormData($id, $action));
+        \Genesis::renderView("tree_item.formWidget", self::getFormData($id, $action));
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Tree_itemForm::class, 'Tree_itemForm');

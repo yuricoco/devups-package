@@ -1,5 +1,6 @@
 <?php
 
+namespace devupscms\ModuleTree\Controller;
 
 use dclass\devups\Controller\Controller;
 
@@ -9,9 +10,9 @@ class TreeController extends Controller
     public function listView($next = 1, $per_page = 10)
     {
 
-        $this->datatable = TreeTable::init(new Tree())->buildindextable();
+        $this->datatable = \TreeTable::init(new \Tree())->buildindextable();
 
-        self::$jsfiles[] = Tree::classpath('Resource/js/treeCtrl.js');
+        self::$jsfiles[] = \Tree::classpath('Resource/js/treeCtrl.js');
 
         $this->entitytarget = 'Tree';
         $this->title = "Manage Tree";
@@ -23,8 +24,8 @@ class TreeController extends Controller
     public function managerView()
     {
 
-        Genesis::renderView("overview", [
-            "basecontenturl" => Cmscontent::classpath("cmscontent/")
+        \Genesis::renderView("overview", [
+            "basecontenturl" => \Cmscontent::classpath("cmscontent/")
         ]);
     }
 
@@ -32,22 +33,22 @@ class TreeController extends Controller
     {
 
         return ['success' => true,
-            'datatable' => TreeTable::init(new Tree())->buildindextable()->getTableRest(),
+            'datatable' => \TreeTable::init(new \Tree())->buildindextable()->getTableRest(),
         ];
 
     }
 
     public function formView($id = null)
     {
-        $tree = new Tree();
+        $tree = new \Tree();
         $action = __env . ("admin/api/tree/create");
         if ($id) {
             $action = __env . ("admin/api/tree/update?id=" . $id);
-            $tree = Tree::find($id);
+            $tree = \Tree::find($id);
         }
 
         return ['success' => true,
-            'form' => TreeForm::init($tree, $action)
+            'form' => \TreeForm::init($tree, $action)
                 ->buildForm()
                 ->addDformjs()
                 ->renderForm(),
@@ -58,7 +59,7 @@ class TreeController extends Controller
     {
         extract($_POST);
 
-        $tree = $this->form_fillingentity(new Tree(), $tree_form);
+        $tree = $this->form_fillingentity(new \Tree(), $tree_form);
         if ($this->error) {
             return array('success' => false,
                 'tree' => $tree,
@@ -70,7 +71,7 @@ class TreeController extends Controller
         $id = $tree->__insert();
         return array('success' => true,
             'tree' => $tree,
-            'tablerow' => TreeTable::init()->buildindextable()->getSingleRowRest($tree),
+            'tablerow' => \TreeTable::init()->buildindextable()->getSingleRowRest($tree),
             'detail' => '');
 
     }
@@ -79,7 +80,7 @@ class TreeController extends Controller
     {
         extract($_POST);
 
-        $tree = $this->form_fillingentity(new Tree($id), $tree_form);
+        $tree = $this->form_fillingentity(new \Tree($id), $tree_form);
 
         if ($this->error) {
             return array('success' => false,
@@ -91,7 +92,7 @@ class TreeController extends Controller
         $tree->__update();
         return array('success' => true,
             'tree' => $tree,
-            'tablerow' => TreeTable::init()->buildindextable()->getSingleRowRest($tree),
+            'tablerow' => \TreeTable::init()->buildindextable()->getSingleRowRest($tree),
             'detail' => '');
 
     }
@@ -103,10 +104,10 @@ class TreeController extends Controller
         $this->entitytarget = 'Tree';
         $this->title = "Detail Tree";
 
-        $tree = Tree::find($id);
+        $tree = \Tree::find($id);
 
         $this->renderDetailView(
-            TreeTable::init()
+            \TreeTable::init()
                 ->builddetailtable()
                 ->renderentitydata($tree)
         );
@@ -116,7 +117,7 @@ class TreeController extends Controller
     public function deleteAction($id)
     {
 
-        Tree::find($id)->__delete();
+        \Tree::find($id)->__delete();
         return array('success' => true,
             'detail' => '');
     }
@@ -125,7 +126,7 @@ class TreeController extends Controller
     public function deletegroupAction($ids)
     {
 
-        Tree::where("id")->in($ids)->delete();
+        \Tree::where("id")->in($ids)->delete();
 
         return array('success' => true,
             'detail' => '');
@@ -140,7 +141,7 @@ class TreeController extends Controller
         Tree_item_lang::truncate();
         Tree_item::truncate();*/
 
-        Tree_item::append('training_item',
+        \Tree_item::append('training_item',
             [
                 'name' => ['fr' => 'Atelier live virtuel', 'en' => 'Atelier live virtuel'],
                 'slug' => 'live'
@@ -182,7 +183,7 @@ class TreeController extends Controller
                 'slug' => 'async'
             ]
         );
-        Tree_item::append('activity_resource',
+        \Tree_item::append('activity_resource',
             [
                 'name' => ['fr' => 'Ressource', 'en' => 'Ressource'],
                 'slug' => 'ressource'
@@ -225,7 +226,7 @@ class TreeController extends Controller
                 'chain' => '.jpg,.png,.jpeg',
             ]
         );
-        Tree_item::append('quizz_category',
+        \Tree_item::append('quizz_category',
             [
                 'name' => ['fr' => "Question à Réponse Multiple", 'en' => "Question à Réponse Multiple"],
                 'slug' => 'mrq'
@@ -247,7 +248,7 @@ class TreeController extends Controller
                 'slug' => 'mcq'
             ]
         );
-        Tree_item::append('note_type',
+        \Tree_item::append('note_type',
             [
                 'name' => ['fr' => 'Pourcentage', 'en' => 'Pourcentage'],
                 'slug' => 'percent'
@@ -265,7 +266,7 @@ class TreeController extends Controller
                 'slug' => '5'
             ]
         );
-        Tree_item::append('formats',
+        \Tree_item::append('formats',
             [
                 'name' => ['fr' => 'En ligne', 'en' => 'On Line'],
                 'slug' => 'online'
@@ -279,7 +280,7 @@ class TreeController extends Controller
                 'slug' => 'hybrid'
             ]
         );
-        Tree_item::append('tools',
+        \Tree_item::append('tools',
             [
                 'name' => ['fr' => 'Zoom', 'en' => 'Zoom'],
                 'slug' => 'zoom'
@@ -297,7 +298,7 @@ class TreeController extends Controller
                 'slug' => 'ls'
             ]
         );
-        Tree_item::append('roles',
+        \Tree_item::append('roles',
             [
                 'name' => ['fr' => 'Modérateur(trice)', 'en' => 'Moderator'],
                 'slug' => 'moderator'
@@ -315,7 +316,7 @@ class TreeController extends Controller
                 'slug' => 'facilitator'
             ]
         );
-        Tree_item::append('civilities',
+        \Tree_item::append('civilities',
             [
                 'name' => ['fr' => 'M', 'en' => 'Sir'],
                 'slug' => 'M'
@@ -349,7 +350,7 @@ class TreeController extends Controller
                 'slug' => 'Chief'
             ]
         );
-        Tree_item::append('ticket_types',
+        \Tree_item::append('ticket_types',
             [
                 'name' => ['fr' => 'Stand', 'en' => 'Stand'],
                 'slug' => 'Stand'
@@ -367,7 +368,7 @@ class TreeController extends Controller
                 'slug' => 'Project'
             ]
         );
-        Tree_item::append('skills',
+        \Tree_item::append('skills',
             [
                 'name' => ['fr' => 'Languages & Humanities', 'en' => 'Languages & Humanities'],
                 'slug' => 'lh'
@@ -397,9 +398,12 @@ class TreeController extends Controller
      */
     public function cache($id)
     {
-        $tree = Tree::find($id);
-        Tree::rebuildCacheFiles($tree->name);
+        $tree = \Tree::find($id);
+        \Tree::rebuildCacheFiles($tree->name);
         return $tree;
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(TreeController::class, 'TreeController');

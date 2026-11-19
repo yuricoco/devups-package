@@ -1,5 +1,6 @@
 <?php
 
+namespace devupscms\ModuleTree\Controller;
 
 use dclass\devups\Datatable\Lazyloading;
 
@@ -10,7 +11,7 @@ class Tree_itemFrontController extends Tree_itemController
     {
 
         $ll = new Lazyloading();
-        $ll->lazyloading(new Tree_item());
+        $ll->lazyloading(new \Tree_item());
 
         return $ll;
 
@@ -19,7 +20,7 @@ class Tree_itemFrontController extends Tree_itemController
     public function createAction($tree_item_form = null)
     {
         $rawdata = \Request::raw();
-        $tree_item = $this->hydrateWithJson(new Tree_item(), $rawdata["tree_item"]);
+        $tree_item = $this->hydrateWithJson(new \Tree_item(), $rawdata["tree_item"]);
 
         $id = $tree_item->__insert();
         return array('success' => true,
@@ -32,7 +33,7 @@ class Tree_itemFrontController extends Tree_itemController
     {
         $rawdata = \Request::raw();
 
-        $tree_item = $this->hydrateWithJson(new Tree_item($id), $rawdata["tree_item"]);
+        $tree_item = $this->hydrateWithJson(new \Tree_item($id), $rawdata["tree_item"]);
 
         $tree_item->__update();
         return array('success' => true,
@@ -45,7 +46,7 @@ class Tree_itemFrontController extends Tree_itemController
     public function detailAction($id)
     {
 
-        $tree_item = Tree_item::find($id);
+        $tree_item = \Tree_item::find($id);
 
         return array('success' => true,
             'tree_item' => $tree_item,
@@ -54,3 +55,6 @@ class Tree_itemFrontController extends Tree_itemController
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Tree_itemFrontController::class, 'Tree_itemFrontController');

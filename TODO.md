@@ -818,13 +818,32 @@ aucune trouvaille de bug latent, uniquement une migration mecanique
 (nombreux commentaires de code mort avec des references de classe non
 prefixees - laisses tels quels, hors du scope de la migration).
 
+**ModuleTree (devupscms) - FAIT (10 fichiers)** : `TreeController`,
+`Tree_itemController` (+ `Tree_itemFrontController`),
+`Tree_item_imageController`, `TreeTable`, `Tree_itemTable`,
+`Tree_item_imageTable`, `TreeForm`, `Tree_itemForm`,
+`Tree_item_imageForm` namespaces. `Tree_itemController.php`/
+`Tree_itemFrontController.php` conservaient un `use
+dclass\devups\Datatable\Lazyloading;` preexistant - garde tel quel
+(resolution par `use`, `Lazyloading` reste non-prefixe). Trouvaille
+(meme pattern que `Lazyloading`/`CmsresourceFrontController`) :
+`Tree_itemController::getdata()` fait `Category::getmaincategory()`
+alors qu'aucune classe `Category` n'existe dans tout le depot - bug
+latent pre-existant (confirme par l'entree baseline deja presente
+"unknown class Category" AVANT notre edition) - **non corrige ici**,
+meme decision que pour les deux autres cas similaires (hors scope du
+point (b)).
+
+**Point (b) : `devupscms` entierement termine (54 fichiers).**
+
 **Volume de ce point (b)** : 83 fichiers (33 Controller + 25 Datatable +
 25 Form) repartis sur `devups` (ModuleAdmin 13 FAIT, ModuleConfig 3 FAIT,
 ModuleLang 3 FAIT, ModuleLog 3 FAIT), `devupscms` (ModuleCms 11 FAIT,
 ModuleData 6 FAIT, ModuleLocation 4 FAIT, ModuleNotification 7 FAIT,
-ModulePushNotification 7 FAIT, ModuleReporting 9 FAIT, ModuleTree 10),
-`devupsfront` (ModuleUser 7). **66 fichiers sur 83 termines.**
-**devups entierement termine (22 fichiers).**
+ModulePushNotification 7 FAIT, ModuleReporting 9 FAIT, ModuleTree 10
+FAIT), `devupsfront` (ModuleUser 7). **76 fichiers sur 83 termines.**
+**devups + devupscms entierement termines (76 fichiers). Reste :
+devupsfront/ModuleUser (7 fichiers).**
 
 ### LOT 5.1 - FAIT (helper `Model::shortClassName()` + conversion des sites "non surs")
 

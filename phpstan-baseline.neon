@@ -1361,12 +1361,12 @@ parameters:
 			path: src/devupscms/ModuleReporting/Resource/views/admin/reportingmodel/formWidget.blade.php
 
 		-
-			message: "#^Access to an undefined property TreeController\\:\\:\\$datatable\\.$#"
+			message: "#^Access to an undefined property devupscms\\\\ModuleTree\\\\Controller\\\\TreeController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devupscms/ModuleTree/Controller/TreeController.php
 
 		-
-			message: "#^Access to an undefined property Tree_itemController\\:\\:\\$datatable\\.$#"
+			message: "#^Access to an undefined property devupscms\\\\ModuleTree\\\\Controller\\\\Tree_itemController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devupscms/ModuleTree/Controller/Tree_itemController.php
 
@@ -1376,7 +1376,7 @@ parameters:
 			path: src/devupscms/ModuleTree/Controller/Tree_itemController.php
 
 		-
-			message: "#^Access to an undefined property Tree_item_imageController\\:\\:\\$datatable\\.$#"
+			message: "#^Access to an undefined property devupscms\\\\ModuleTree\\\\Controller\\\\Tree_item_imageController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devupscms/ModuleTree/Controller/Tree_item_imageController.php
 
@@ -1426,7 +1426,7 @@ parameters:
 			path: src/devupscms/ModuleTree/Form/TreeForm.php
 
 		-
-			message: "#^Call to an undefined static method Tree_itemForm\\:\\:getFormData\\(\\)\\.$#"
+			message: "#^Call to an undefined static method devupscms\\\\ModuleTree\\\\Form\\\\Tree_itemForm\\:\\:getFormData\\(\\)\\.$#"
 			count: 1
 			path: src/devupscms/ModuleTree/Form/Tree_itemForm.php
 
@@ -1436,7 +1436,7 @@ parameters:
 			path: src/devupscms/ModuleTree/Form/Tree_itemForm.php
 
 		-
-			message: "#^Call to an undefined static method Tree_item_imageForm\\:\\:getFormData\\(\\)\\.$#"
+			message: "#^Call to an undefined static method devupscms\\\\ModuleTree\\\\Form\\\\Tree_item_imageForm\\:\\:getFormData\\(\\)\\.$#"
 			count: 1
 			path: src/devupscms/ModuleTree/Form/Tree_item_imageForm.php
 
