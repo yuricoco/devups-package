@@ -1401,7 +1401,7 @@ parameters:
 			path: src/devupscms/ModuleTree/Datatable/Tree_item_imageTable.php
 
 		-
-			message: "#^Method Tree_item\\:\\:getParent\\(\\) should return \\$this\\(Tree_item\\) but return statement is missing\\.$#"
+			message: "#^Method devupscms\\\\ModuleTree\\\\Entity\\\\Tree_item\\:\\:getParent\\(\\) should return \\$this\\(devupscms\\\\ModuleTree\\\\Entity\\\\Tree_item\\) but return statement is missing\\.$#"
 			count: 1
 			path: src/devupscms/ModuleTree/Entity/Tree_item.php
 
@@ -1411,12 +1411,12 @@ parameters:
 			path: src/devupscms/ModuleTree/Entity/Tree_item.php
 
 		-
-			message: "#^Constructor of class Tree_item_lang has an unused parameter \\$id\\.$#"
+			message: "#^Constructor of class devupscms\\\\ModuleTree\\\\Entity\\\\Tree_item_lang has an unused parameter \\$id\\.$#"
 			count: 1
 			path: src/devupscms/ModuleTree/Entity/Tree_item_lang.php
 
 		-
-			message: "#^Constructor of class Tree_lang has an unused parameter \\$id\\.$#"
+			message: "#^Constructor of class devupscms\\\\ModuleTree\\\\Entity\\\\Tree_lang has an unused parameter \\$id\\.$#"
 			count: 1
 			path: src/devupscms/ModuleTree/Entity/Tree_lang.php
 

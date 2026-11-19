@@ -622,22 +622,35 @@ alias ajoute par coherence sans necessite stricte).
 `Reportingmodel`, `Reportingmodel_lang` namespaces sous
 `devupscms\ModuleReporting\Entity`. Rien de notable.
 
-**Volume restant** : 9 entites sur 35 sous `src/**/Entity/*.php`
-(composants `devups` + ModuleCms/ModuleData/ModuleLocation/
-ModuleNotification/ModulePushNotification/ModuleReporting de
-`devupscms` faits), repartiees sur 1 module du composant `devupscms`
-(`ModuleTree`) + 1 module de `devupsfront` (`ModuleUser`) (`devups` :
-ModuleAdmin/ModuleConfig/ModuleLog ; `devupscms` :
-ModuleCms/ModuleData/ModuleLocation/ModuleNotification/
-ModulePushNotification/ModuleReporting/ModuleTree ; `devupsfront` :
-ModuleUser), plus `dclass/extends/{Dvups_config_item,Dvups_migration,
-ImageCore,UserCore}.php` (classes de base d'entites, namespace
-`Devups\` - coeur du framework, PAS `src/`) et `Dv_langCore.php`
-(deja observe : reste en namespace global, utilise par `use
-ModelTrait` sans etendre `Model` - cas particulier a traiter avec soin,
-voir le piege deja rencontre en LOT 5.1). Les sous-dossiers `Controller/
-`/`Datatable/`/`Form/` de chaque module (point (b) du LOT 5.0) restent
-a traiter ensuite, meme recette.
+**ModuleTree (devupscms) - FAIT** : `Tree`, `Tree_item`,
+`Tree_item_image`, `Tree_item_lang`, `Tree_lang` namespaces sous
+`devupscms\ModuleTree\Entity`. `Tree_item.php` le plus charge de ce
+module (recette de scan complet du fichier appliquee, pas seulement la
+ligne de declaration de classe) : references croisees corrigees vers
+`\Dfile::` (3 occurrences) et `\Cmscontent::where($this)` (module
+ModuleCms) ; `Tree::`/`Tree_item::`/`new Tree()`/`new Tree_item()`
+laisses sans prefixe (meme module, meme namespace) ; les constantes
+`Tree_item_image::class` passees a `$this->__hasmany(...)`/
+`$this->__hasone(...)` laissees telles quelles (meme module -
+`::class` resout correctement une fois le fichier cible lui-meme
+namespace, aucune dependance a `class_alias()` necessaire ici).
+`Tree_item_image.php` : `extends ImageCore implements JsonSerializable`
+-> prefixes, 3x `Dfile::deleteFile(...)` prefixees ; `self::Dfile($file)`
+laisse (liaison statique tardive, jamais besoin de namespace). 3
+entrees `phpstan-baseline.neon` mises a jour vers la FQCN
+(`Tree_item::getParent()`, constructeurs `Tree_item_lang`/`Tree_lang`
+avec parametre `$id` inutilise).
+
+**Volume restant** : 2 entites sur 35 sous `src/**/Entity/*.php`,
+toutes dans 1 module de `devupsfront` (`ModuleUser` :
+`Oauth_client`, `User`) - dernier module de l'arborescence `src/`
+avant le passage aux sous-dossiers `Controller/`/`Datatable/`/`Form/`
+(point (b) du LOT 5.0) et aux classes de base
+`dclass/extends/{Dvups_config_item,Dvups_migration,ImageCore,
+UserCore}.php` (namespace `Devups\` - coeur du framework, PAS `src/`)
+et `Dv_langCore.php` (deja observe : reste en namespace global, utilise
+par `use ModelTrait` sans etendre `Model` - cas particulier a traiter
+avec soin, voir le piege deja rencontre en LOT 5.1).
 
 ### LOT 5.1 - FAIT (helper `Model::shortClassName()` + conversion des sites "non surs")
 

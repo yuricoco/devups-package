@@ -1,5 +1,7 @@
 <?php
 
+namespace devupscms\ModuleTree\Entity;
+
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
@@ -28,7 +30,10 @@ class Tree_item_lang extends \Dv_langCore
 
     public function __construct($id = null){
         $this->tree_item = new Tree_item();
-        $this->lang = new Dvups_lang();
+        $this->lang = new \Dvups_lang();
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Tree_item_lang::class, 'Tree_item_lang');

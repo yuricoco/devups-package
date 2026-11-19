@@ -1,4 +1,7 @@
 <?php
+
+namespace devupscms\ModuleTree\Entity;
+
 use Doctrine\ORM\Mapping as ORM;
 
 // user \dclass\devups\model\Model;
@@ -11,7 +14,7 @@ use Doctrine\ORM\Mapping as ORM;
  */
 #[ORM\Entity]
 #[ORM\Table(name: "tree_item_image")]
-class Tree_item_image extends ImageCore implements JsonSerializable
+class Tree_item_image extends \ImageCore implements \JsonSerializable
 {
 
     // NB (v8.0, LOT 1.2) : $id est deja declare par la classe parente
@@ -110,11 +113,14 @@ class Tree_item_image extends ImageCore implements JsonSerializable
 
     public function __delete($exec = true)
     {
-        Dfile::deleteFile("150_" . $this->image, $this->uploaddir);
-        Dfile::deleteFile("50_" . $this->image, $this->uploaddir);
-        Dfile::deleteFile("100_" . $this->image, $this->uploaddir);
+        \Dfile::deleteFile("150_" . $this->image, $this->uploaddir);
+        \Dfile::deleteFile("50_" . $this->image, $this->uploaddir);
+        \Dfile::deleteFile("100_" . $this->image, $this->uploaddir);
 
         return parent::__delete($exec);
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Tree_item_image::class, 'Tree_item_image');

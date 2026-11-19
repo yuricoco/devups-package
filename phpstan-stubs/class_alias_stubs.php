@@ -123,3 +123,23 @@ class Reportingmodel extends \devupscms\ModuleReporting\Entity\Reportingmodel
 class Reportingmodel_lang extends \devupscms\ModuleReporting\Entity\Reportingmodel_lang
 {
 }
+
+class Tree extends \devupscms\ModuleTree\Entity\Tree
+{
+}
+
+class Tree_item extends \devupscms\ModuleTree\Entity\Tree_item
+{
+}
+
+class Tree_item_image extends \devupscms\ModuleTree\Entity\Tree_item_image
+{
+}
+
+class Tree_item_lang extends \devupscms\ModuleTree\Entity\Tree_item_lang
+{
+}
+
+class Tree_lang extends \devupscms\ModuleTree\Entity\Tree_lang
+{
+}

@@ -1,11 +1,14 @@
 <?php
+
+namespace devupscms\ModuleTree\Entity;
+
 use Doctrine\ORM\Mapping as ORM;
 
 // user \dclass\devups\model\Model;
 
 #[ORM\Entity]
 #[ORM\Table(name: "tree", uniqueConstraints: [new ORM\UniqueConstraint(name: "uq_tree_name", columns: ["name"])])]
-class Tree extends Model implements JsonSerializable
+class Tree extends \Model implements \JsonSerializable
 {
 
     /**
@@ -454,3 +457,6 @@ class Tree extends Model implements JsonSerializable
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Tree::class, 'Tree');

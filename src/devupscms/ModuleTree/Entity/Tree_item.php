@@ -1,11 +1,14 @@
 <?php
+
+namespace devupscms\ModuleTree\Entity;
+
 use Doctrine\ORM\Mapping as ORM;
 
 // user \dclass\devups\model\Model;
 
 #[ORM\Entity]
 #[ORM\Table(name: "tree_item", uniqueConstraints: [new ORM\UniqueConstraint(name: "uq_tree_item_tree_id_slug", columns: ["tree_id", "slug"])])]
-class Tree_item extends Model implements JsonSerializable
+class Tree_item extends \Model implements \JsonSerializable
 {
 
     /**
@@ -239,8 +242,8 @@ class Tree_item extends Model implements JsonSerializable
             }
 
             if ($this->image) {
-                Dfile::deleteFile("50_" . $this->image, $this->uploaddir);
-                Dfile::deleteFile($this->image, $this->uploaddir);
+                \Dfile::deleteFile("50_" . $this->image, $this->uploaddir);
+                \Dfile::deleteFile($this->image, $this->uploaddir);
             }
             $this->image = $url['file']['hashname'];
         }
@@ -248,7 +251,7 @@ class Tree_item extends Model implements JsonSerializable
 
     public function srcImage($prefix = "")
     {
-        return $this->image ? Dfile::show($prefix . $this->image, $this->uploaddir) : null;
+        return $this->image ? \Dfile::show($prefix . $this->image, $this->uploaddir) : null;
     }
 
     public function showImage($prefix = "")
@@ -259,8 +262,8 @@ class Tree_item extends Model implements JsonSerializable
             else
                 $prefix = "";
         }
-        $url = Dfile::show($prefix . $this->image, $this->uploaddir);
-        return Dfile::fileadapter($url, $this->image);
+        $url = \Dfile::show($prefix . $this->image, $this->uploaddir);
+        return \Dfile::fileadapter($url, $this->image);
     }
 
     /**
@@ -441,7 +444,7 @@ class Tree_item extends Model implements JsonSerializable
      */
     public static function mainmenu($tree = "menu", $id_lang = null)
     {
-        return self::select("*", Dvups_lang::defaultLang()->id)
+        return self::select("*", \Dvups_lang::defaultLang()->id)
             //->leftjoin(Tree::class)
             //->leftjoinrecto(Tree_lang::class, Tree::class)
             ->where("tree.name", $tree)
@@ -479,7 +482,7 @@ class Tree_item extends Model implements JsonSerializable
 
     public function getCmscontent()
     {
-        return Cmscontent::where($this)
+        return \Cmscontent::where($this)
             ->first();
     }
 
@@ -516,3 +519,6 @@ class Tree_item extends Model implements JsonSerializable
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Tree_item::class, 'Tree_item');
