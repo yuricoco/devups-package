@@ -1,11 +1,14 @@
 <?php
+
+namespace devupscms\ModuleReporting\Entity;
+
 use Doctrine\ORM\Mapping as ORM;
 
 // user \dclass\devups\model\Model;
 
 #[ORM\Entity]
 #[ORM\Table(name: "reportingmodel_lang")]
-class Reportingmodel_lang extends Dv_langCore
+class Reportingmodel_lang extends \Dv_langCore
 {
 
     /**
@@ -37,3 +40,6 @@ class Reportingmodel_lang extends Dv_langCore
     public $reportingmodel;
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Reportingmodel_lang::class, 'Reportingmodel_lang');

@@ -1,11 +1,14 @@
 <?php
+
+namespace devupscms\ModuleReporting\Entity;
+
 // user \dclass\devups\model\Model;
 use PHPMailer\PHPMailer\PHPMailer;
 
 use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity]
 #[ORM\Table(name: "reportingmodel")]
-class Reportingmodel extends Model implements JsonSerializable, DatatableOverwrite
+class Reportingmodel extends \Model implements \JsonSerializable, \DatatableOverwrite
 {
 
     /**
@@ -88,7 +91,7 @@ class Reportingmodel extends Model implements JsonSerializable, DatatableOverwri
         //Reportingmodel::classroot("Resource/views");
 
         if (!$id_lang)
-            $id_lang = Dvups_lang::getByIsoCode(local())->id;
+            $id_lang = \Dvups_lang::getByIsoCode(local())->id;
 
         self::$emailreceiver = [];
         self::$attachments = [];
@@ -116,7 +119,7 @@ class Reportingmodel extends Model implements JsonSerializable, DatatableOverwri
     public static function initPDF($view, $data)
     {
 
-        self::$view = Genesis::getView($view, $data);
+        self::$view = \Genesis::getView($view, $data);
 
         return new Reportingmodel();
     }
@@ -472,7 +475,7 @@ class Reportingmodel extends Model implements JsonSerializable, DatatableOverwri
         $viewdir[] = Reportingmodel::classroot("Resource/views");
 
 //        $message_html = str_replace("{yield}", $message_html, Genesis::getView("models.".$this->type));
-        $message_html = Genesis::getView($view, $datacustom);
+        $message_html = \Genesis::getView($view, $datacustom);
 
         if (!__prod || !$this->id) {
             \DClass\lib\Util::log($message_html, date("Y_m_d-H_i_s")."_".$this->name.".html", ROOT."cache/", "w");
@@ -530,7 +533,7 @@ class Reportingmodel extends Model implements JsonSerializable, DatatableOverwri
                 "result" => $result,
                 "detail" => 'Message has been sent'
             ];
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             //echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
             Emaillog::logFailure($this->object, self::$emailreceiver, "Message could not be sent. Error detail: {$mail->ErrorInfo}");
 
@@ -545,3 +548,6 @@ class Reportingmodel extends Model implements JsonSerializable, DatatableOverwri
     }
 
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Reportingmodel::class, 'Reportingmodel');

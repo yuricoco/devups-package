@@ -107,3 +107,19 @@ class Workers extends \devupscms\ModulePushNotification\Entity\Workers
 class Push_subscription extends \devupscms\ModulePushNotification\Entity\Push_subscription
 {
 }
+
+class Emaillog extends \devupscms\ModuleReporting\Entity\Emaillog
+{
+}
+
+class Push_email extends \devupscms\ModuleReporting\Entity\Push_email
+{
+}
+
+class Reportingmodel extends \devupscms\ModuleReporting\Entity\Reportingmodel
+{
+}
+
+class Reportingmodel_lang extends \devupscms\ModuleReporting\Entity\Reportingmodel_lang
+{
+}

@@ -1,11 +1,14 @@
 <?php
+
+namespace devupscms\ModuleReporting\Entity;
+
 use Doctrine\ORM\Mapping as ORM;
 
 // user \dclass\devups\model\Model;
 
 #[ORM\Entity]
 #[ORM\Table(name: "push_email")]
-class Push_email extends Model implements JsonSerializable, DatatableOverwrite
+class Push_email extends \Model implements \JsonSerializable, \DatatableOverwrite
 {
 
     /**
@@ -83,7 +86,7 @@ class Push_email extends Model implements JsonSerializable, DatatableOverwrite
         }
 
         $this->reportingmodel = new Reportingmodel();
-        $this->notificationtype = new Notificationtype();
+        $this->notificationtype = new \Notificationtype();
 
     }
 
@@ -172,3 +175,6 @@ class Push_email extends Model implements JsonSerializable, DatatableOverwrite
         // TODO: Implement deleteAction() method.
     }
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Push_email::class, 'Push_email');

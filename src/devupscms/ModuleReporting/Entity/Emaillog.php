@@ -1,4 +1,7 @@
 <?php
+
+namespace devupscms\ModuleReporting\Entity;
+
 use Doctrine\ORM\Mapping as ORM;
 
 // user \dclass\devups\model\Model;
@@ -10,7 +13,7 @@ use Doctrine\ORM\Mapping as ORM;
  */
 #[ORM\Entity]
 #[ORM\Table(name: "emaillog")]
-class Emaillog extends Model implements JsonSerializable
+class Emaillog extends \Model implements \JsonSerializable
 {
     const STATUT_ENVOYE = 'envoye';
     const STATUT_ECHEC = 'echec';
@@ -173,3 +176,6 @@ class Emaillog extends Model implements JsonSerializable
         ];
     }
 }
+
+// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md "LOT 5.2".
+class_alias(Emaillog::class, 'Emaillog');

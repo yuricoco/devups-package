@@ -618,11 +618,15 @@ partielle anterieure, apres `Interval_group` et le `use` FQCN dans
 `Notification.php` - tous ses appelants l'importent deja par sa FQCN,
 alias ajoute par coherence sans necessite stricte).
 
-**Volume restant** : 13 entites sur 35 sous `src/**/Entity/*.php`
+**ModuleReporting (devupscms) - FAIT** : `Emaillog`, `Push_email`,
+`Reportingmodel`, `Reportingmodel_lang` namespaces sous
+`devupscms\ModuleReporting\Entity`. Rien de notable.
+
+**Volume restant** : 9 entites sur 35 sous `src/**/Entity/*.php`
 (composants `devups` + ModuleCms/ModuleData/ModuleLocation/
-ModuleNotification/ModulePushNotification de `devupscms` faits),
-repartiees sur 2 modules du composant `devupscms` + 1 module de
-`devupsfront` (`devups` :
+ModuleNotification/ModulePushNotification/ModuleReporting de
+`devupscms` faits), repartiees sur 1 module du composant `devupscms`
+(`ModuleTree`) + 1 module de `devupsfront` (`ModuleUser`) (`devups` :
 ModuleAdmin/ModuleConfig/ModuleLog ; `devupscms` :
 ModuleCms/ModuleData/ModuleLocation/ModuleNotification/
 ModulePushNotification/ModuleReporting/ModuleTree ; `devupsfront` :
