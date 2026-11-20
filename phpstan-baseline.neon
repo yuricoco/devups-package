@@ -11,11 +11,6 @@ parameters:
 			path: config/Database.php
 
 		-
-			message: "#^Negated boolean expression is always true\\.$#"
-			count: 1
-			path: config/constante.php
-
-		-
 			message: "#^If condition is always false\\.$#"
 			count: 1
 			path: config/dependanceInjection.php
