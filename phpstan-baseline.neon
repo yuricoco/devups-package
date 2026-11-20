@@ -66,11 +66,6 @@ parameters:
 			path: dclass/devups/Controller/Controller.php
 
 		-
-			message: "#^Negated boolean expression is always true\\.$#"
-			count: 2
-			path: dclass/devups/Controller/Controller.php
-
-		-
 			message: "#^PHPDoc tag @param has invalid value \\(Mixed \\( String or Array \\) \\$jsondata optionnel\\)\\: Unexpected token \"\\(\", expected variable at offset 394$#"
 			count: 1
 			path: dclass/devups/Controller/Controller.php
@@ -102,11 +97,6 @@ parameters:
 
 		-
 			message: "#^PHPDoc tag @param references unknown parameter\\: \\$resultCtrl$#"
-			count: 1
-			path: dclass/devups/Controller/Controller.php
-
-		-
-			message: "#^Unreachable statement \\- code above always terminates\\.$#"
 			count: 1
 			path: dclass/devups/Controller/Controller.php
 
@@ -332,6 +322,11 @@ parameters:
 
 		-
 			message: "#^Offset float does not exist on 'KMGT'\\.$#"
+			count: 1
+			path: dclass/devups/Dfile.php
+
+		-
+			message: "#^Parameter \\#1 \\$string of function strlen expects string, int\\<0, max\\>\\|false given\\.$#"
 			count: 1
 			path: dclass/devups/Dfile.php
 
@@ -791,6 +786,36 @@ parameters:
 			path: dclass/devups/Tchutte/DBAL.php
 
 		-
+			message: "#^Parameter \\#1 \\$flowBD of method DBAL\\:\\:djoin\\(\\) expects type, int given\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Parameter \\#1 \\$sql of method DBAL\\:\\:__findOne\\(\\) expects type, string given\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Parameter \\#2 \\$array of function implode expects array\\|null, type given\\.$#"
+			count: 4
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Parameter \\#2 \\$values of method DBAL\\:\\:__findOne\\(\\) expects type, array\\<int, mixed\\> given\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Parameter \\#3 \\$collection of method DBAL\\:\\:djoin\\(\\) expects bool, type given\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Parameter \\#4 \\$recursif of method DBAL\\:\\:djoin\\(\\) expects bool, type given\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
 			message: "#^Parameter \\$collection of method DBAL\\:\\:__findOne\\(\\) has invalid type type\\.$#"
 			count: 1
 			path: dclass/devups/Tchutte/DBAL.php
@@ -1121,6 +1146,31 @@ parameters:
 			path: dclass/devups/Tchutte/QueryBuilder.php
 
 		-
+			message: "#^Parameter \\#1 \\$array of function array_keys expects array, type given\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^Parameter \\#1 \\$entity of method dclass\\\\devups\\\\Datatable\\\\Lazyloading\\:\\:lazyloading\\(\\) expects stdClass\\|null, type given\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^Parameter \\#2 \\$array of function implode expects array\\|null, type given\\.$#"
+			count: 2
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^Parameter \\#2 \\$haystack of function array_search expects array, type given\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^Parameter \\#2 \\$haystack of function in_array expects array, type given\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
 			message: "#^Parameter \\$arrayvalues of method QueryBuilder\\:\\:update\\(\\) has invalid type type\\.$#"
 			count: 1
 			path: dclass/devups/Tchutte/QueryBuilder.php
@@ -1391,6 +1441,21 @@ parameters:
 			path: dclass/devups/model/Model.php
 
 		-
+			message: "#^Parameter \\#1 \\$update of method QueryBuilder\\:\\:__dclone\\(\\) expects bool, array given\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^Parameter \\#1 \\$update of method QueryBuilder\\:\\:__dclone\\(\\) expects bool, null given\\.$#"
+			count: 2
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^Parameter \\#2 \\$entityname of static method devupscms\\\\ModuleData\\\\Entity\\\\Status\\:\\:getStatus\\(\\) expects null, string given\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
 			message: "#^Parameter \\$id of method Model\\:\\:delete\\(\\) has invalid type type\\.$#"
 			count: 1
 			path: dclass/devups/model/Model.php
@@ -1546,6 +1611,11 @@ parameters:
 			path: dclass/extends/Dv_langCore.php
 
 		-
+			message: "#^Parameter \\#1 \\$update of method QueryBuilder\\:\\:__dclone\\(\\) expects bool, null given\\.$#"
+			count: 2
+			path: dclass/extends/Dv_langCore.php
+
+		-
 			message: "#^Parameter \\$id of method dclass\\\\devups\\\\Core\\\\Dv_langCore\\:\\:delete\\(\\) has invalid type type\\.$#"
 			count: 1
 			path: dclass/extends/Dv_langCore.php
@@ -1663,6 +1733,16 @@ parameters:
 		-
 			message: "#^PHPDoc tag @param references unknown parameter\\: \\$namespace$#"
 			count: 3
+			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^Parameter \\#2 \\$string of function explode expects string, type given\\.$#"
+			count: 14
+			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^Parameter \\#3 \\$subject of function str_replace expects array\\|string, type given\\.$#"
+			count: 6
 			path: dclass/generator/__Generator.php
 
 		-
@@ -1821,6 +1901,16 @@ parameters:
 			path: dclass/generator/android/__Generatorjava.php
 
 		-
+			message: "#^Parameter \\#2 \\$string of function explode expects string, type given\\.$#"
+			count: 6
+			path: dclass/generator/android/__Generatorjava.php
+
+		-
+			message: "#^Parameter \\#3 \\$subject of function str_replace expects array\\|string, type given\\.$#"
+			count: 2
+			path: dclass/generator/android/__Generatorjava.php
+
+		-
 			message: "#^Parameter \\$namespace of method __Generatorjava\\:\\:__moduleendless\\(\\) has invalid type type\\.$#"
 			count: 1
 			path: dclass/generator/android/__Generatorjava.php
@@ -1906,6 +1996,111 @@ parameters:
 			path: dclass/generator/builder.php
 
 		-
+			message: "#^Parameter \\#1 \\$namespace of static method __Generator\\:\\:__entitydependencies\\(\\) expects type, string given\\.$#"
+			count: 1
+			path: dclass/generator/builder.php
+
+		-
+			message: "#^Parameter \\#1 \\$namespace of static method __Generator\\:\\:controller\\(\\) expects type, string given\\.$#"
+			count: 1
+			path: dclass/generator/builder.php
+
+		-
+			message: "#^Parameter \\#1 \\$namespace of static method __Generator\\:\\:core\\(\\) expects type, string given\\.$#"
+			count: 2
+			path: dclass/generator/builder.php
+
+		-
+			message: "#^Parameter \\#1 \\$namespace of static method __Generator\\:\\:crud\\(\\) expects type, string given\\.$#"
+			count: 1
+			path: dclass/generator/builder.php
+
+		-
+			message: "#^Parameter \\#1 \\$namespace of static method __Generator\\:\\:detailwidget\\(\\) expects type, string given\\.$#"
+			count: 1
+			path: dclass/generator/builder.php
+
+		-
+			message: "#^Parameter \\#1 \\$namespace of static method __Generator\\:\\:entity\\(\\) expects type, string given\\.$#"
+			count: 1
+			path: dclass/generator/builder.php
+
+		-
+			message: "#^Parameter \\#1 \\$namespace of static method __Generator\\:\\:entityLang\\(\\) expects type, string given\\.$#"
+			count: 1
+			path: dclass/generator/builder.php
+
+		-
+			message: "#^Parameter \\#1 \\$namespace of static method __Generator\\:\\:form\\(\\) expects type, string given\\.$#"
+			count: 1
+			path: dclass/generator/builder.php
+
+		-
+			message: "#^Parameter \\#1 \\$namespace of static method __Generator\\:\\:formwidget\\(\\) expects type, string given\\.$#"
+			count: 1
+			path: dclass/generator/builder.php
+
+		-
+			message: "#^Parameter \\#1 \\$namespace of static method __Generator\\:\\:frontcontroller\\(\\) expects type, string given\\.$#"
+			count: 1
+			path: dclass/generator/builder.php
+
+		-
+			message: "#^Parameter \\#1 \\$namespace of static method __Generator\\:\\:genesis\\(\\) expects type, string given\\.$#"
+			count: 1
+			path: dclass/generator/builder.php
+
+		-
+			message: "#^Parameter \\#1 \\$namespace of static method __Generator\\:\\:postmandoc\\(\\) expects type, string given\\.$#"
+			count: 1
+			path: dclass/generator/builder.php
+
+		-
+			message: "#^Parameter \\#1 \\$namespace of static method __Generator\\:\\:table\\(\\) expects type, string given\\.$#"
+			count: 1
+			path: dclass/generator/builder.php
+
+		-
+			message: "#^Parameter \\#1 \\$namespace of static method __Generator\\:\\:views\\(\\) expects type, string given\\.$#"
+			count: 1
+			path: dclass/generator/builder.php
+
+		-
+			message: "#^Parameter \\#1 \\$namespace of static method __Generatorjava\\:\\:crud\\(\\) expects type, string given\\.$#"
+			count: 1
+			path: dclass/generator/builder.php
+
+		-
+			message: "#^Parameter \\#2 \\$namespace of static method __Generator\\:\\:__dependencies\\(\\) expects type, string given\\.$#"
+			count: 1
+			path: dclass/generator/builder.php
+
+		-
+			message: "#^Parameter \\#2 \\$namespace of static method __Generator\\:\\:__index\\(\\) expects type, string given\\.$#"
+			count: 1
+			path: dclass/generator/builder.php
+
+		-
+			message: "#^Parameter \\#2 \\$namespace of static method __Generator\\:\\:__moduleendless\\(\\) expects type, string given\\.$#"
+			count: 1
+			path: dclass/generator/builder.php
+
+		-
+			message: "#^Parameter \\#2 \\$namespace of static method __Generator\\:\\:__ressources\\(\\) expects type, string given\\.$#"
+			count: 1
+			path: dclass/generator/builder.php
+
+		-
+			message: "#^Parameter \\#2 \\$namespace of static method __Generator\\:\\:__services\\(\\) expects type, string given\\.$#"
+			count: 1
+			path: dclass/generator/builder.php
+
+		-
+			message: "#^Parameter \\#2 \\$namespace of static method __Generator\\:\\:module\\(\\) expects type, string given\\.$#"
+			count: 1
+			path: dclass/generator/builder.php
+
+		-
 			message: "#^Static method Core\\:\\:getComponentCore\\(\\) invoked with 0 parameters, 1 required\\.$#"
 			count: 1
 			path: dclass/generator/builder.php
@@ -1978,6 +2173,11 @@ parameters:
 		-
 			message: "#^PHPDoc tag @param references unknown parameter\\: \\$login$#"
 			count: 1
+			path: dclass/lib/Util.php
+
+		-
+			message: "#^Parameter \\#1 \\$seed of function mt_srand expects int, float given\\.$#"
+			count: 2
 			path: dclass/lib/Util.php
 
 		-
@@ -2091,7 +2291,7 @@ parameters:
 			path: route/AdminService.php
 
 		-
-			message: "#^Cannot access property \\$name on int\\.$#"
+			message: "#^Cannot access property \\$name on string\\.$#"
 			count: 1
 			path: route/AdminService.php
 
@@ -2268,6 +2468,11 @@ parameters:
 		-
 			message: "#^PHPDoc tag @param references unknown parameter\\: \\$login$#"
 			count: 1
+			path: src/devups/ModuleAdmin/Entity/Dvups_admin.php
+
+		-
+			message: "#^Parameter \\#1 \\$seed of function mt_srand expects int, float given\\.$#"
+			count: 2
 			path: src/devups/ModuleAdmin/Entity/Dvups_admin.php
 
 		-
@@ -2901,6 +3106,11 @@ parameters:
 			path: src/devupscms/ModuleData/Controller/StatusController.php
 
 		-
+			message: "#^Parameter \\#1 \\$arrayvalues of method QueryBuilder\\:\\:update\\(\\) expects type\\|null, array\\<string, \\(float\\|int\\)\\> given\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Controller/StatusController.php
+
+		-
 			message: "#^Function t not found\\.$#"
 			count: 14
 			path: src/devupscms/ModuleData/Datatable/IntervalTable.php
@@ -3031,6 +3241,11 @@ parameters:
 			path: src/devupscms/ModuleData/Entity/Interval_group.php
 
 		-
+			message: "#^Parameter \\#1 \\$update of method QueryBuilder\\:\\:__dclone\\(\\) expects bool, null given\\.$#"
+			count: 2
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
 			message: "#^Parameter \\$id of method devupscms\\\\ModuleData\\\\Entity\\\\Interval_group\\:\\:delete\\(\\) has invalid type type\\.$#"
 			count: 1
 			path: src/devupscms/ModuleData/Entity/Interval_group.php
@@ -3111,6 +3326,11 @@ parameters:
 			path: src/devupscms/ModuleLocation/Datatable/CountryTable.php
 
 		-
+			message: "#^Parameter \\#2 \\$replace of function str_replace expects array\\|string, null given\\.$#"
+			count: 1
+			path: src/devupscms/ModuleLocation/Entity/Country.php
+
+		-
 			message: "#^Call to an undefined static method devupscms\\\\ModuleLocation\\\\Form\\\\CountryForm\\:\\:getFormData\\(\\)\\.$#"
 			count: 1
 			path: src/devupscms/ModuleLocation/Form/CountryForm.php
@@ -3132,6 +3352,16 @@ parameters:
 
 		-
 			message: "#^Access to an undefined property devupscms\\\\ModuleNotification\\\\Controller\\\\NotificationController\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: src/devupscms/ModuleNotification/Controller/NotificationController.php
+
+		-
+			message: "#^Parameter \\#1 \\$arrayvalues of method QueryBuilder\\:\\:update\\(\\) expects type\\|null, array\\<string, int\\> given\\.$#"
+			count: 3
+			path: src/devupscms/ModuleNotification/Controller/NotificationController.php
+
+		-
+			message: "#^Parameter \\#1 \\$arrayvalues of method QueryBuilder\\:\\:update\\(\\) expects type\\|null, array\\<string, int\\|string\\> given\\.$#"
 			count: 1
 			path: src/devupscms/ModuleNotification/Controller/NotificationController.php
 
@@ -3286,6 +3516,11 @@ parameters:
 			path: src/devupscms/ModulePushNotification/Controller/WorkersController.php
 
 		-
+			message: "#^Parameter \\#1 \\$id of static method Model\\:\\:find\\(\\) expects array\\|int, string given\\.$#"
+			count: 2
+			path: src/devupscms/ModulePushNotification/Controller/WorkersController.php
+
+		-
 			message: "#^Ternary operator condition is always false\\.$#"
 			count: 1
 			path: src/devupscms/ModulePushNotification/Controller/WorkersController.php
@@ -3302,6 +3537,11 @@ parameters:
 
 		-
 			message: "#^Negated boolean expression is always true\\.$#"
+			count: 2
+			path: src/devupscms/ModulePushNotification/Entity/Push_subscription.php
+
+		-
+			message: "#^Parameter \\#1 \\$arrayvalues of method QueryBuilder\\:\\:update\\(\\) expects type\\|null, array\\<string, int\\> given\\.$#"
 			count: 2
 			path: src/devupscms/ModulePushNotification/Entity/Push_subscription.php
 
@@ -3621,6 +3861,11 @@ parameters:
 			path: src/devupscms/ModuleTree/Controller/Tree_itemController.php
 
 		-
+			message: "#^Parameter \\#1 \\$arrayvalues of method QueryBuilder\\:\\:update\\(\\) expects type\\|null, array\\<string, mixed\\> given\\.$#"
+			count: 2
+			path: src/devupscms/ModuleTree/Controller/Tree_itemController.php
+
+		-
 			message: "#^Unreachable statement \\- code above always terminates\\.$#"
 			count: 1
 			path: src/devupscms/ModuleTree/Controller/Tree_itemController.php
@@ -3647,6 +3892,11 @@ parameters:
 
 		-
 			message: "#^Negated boolean expression is always true\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Entity/Tree.php
+
+		-
+			message: "#^Parameter \\#2 \\$string of function explode expects string, devupscms\\\\ModuleTree\\\\Entity\\\\text given\\.$#"
 			count: 1
 			path: src/devupscms/ModuleTree/Entity/Tree.php
 
@@ -3717,6 +3967,11 @@ parameters:
 
 		-
 			message: "#^PHPDoc tag @param references unknown parameter\\: \\$tree$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Entity/Tree_item.php
+
+		-
+			message: "#^Parameter \\#2 \\$string of function explode expects string, devupscms\\\\ModuleTree\\\\Entity\\\\text given\\.$#"
 			count: 1
 			path: src/devupscms/ModuleTree/Entity/Tree_item.php
 

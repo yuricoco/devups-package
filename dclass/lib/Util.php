@@ -173,7 +173,7 @@ class Util
 
     public static function clearcookie($key)
     {
-        setcookie($key, null, [
+        setcookie($key, '', [
             'expires' => -1,
             'path' => '/',
             'secure' => self::isHttps(),

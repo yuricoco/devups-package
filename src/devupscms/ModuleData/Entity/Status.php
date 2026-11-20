@@ -40,7 +40,7 @@ class Status extends \Model implements \JsonSerializable
     protected $description;
 
     /**
-     * @var integer
+     * @var string
      */
     #[ORM\Column(name: "entity", type: "string", length: 55)]
     public $entity;

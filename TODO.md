@@ -1846,6 +1846,79 @@ typehints") filtrees manuellement de la mesure des 170, pas de vraies
 erreurs). `composer test` (454/454 inchange) et `composer phpstan` (0
 erreur) verts.
 
+### LOT 7 (niveau 5) - FAIT
+
+**Mesure** : `--level=5` -> 99 nouvelles erreurs (verification des
+types d'arguments passes aux fonctions/methodes).
+
+**Incident en cours de route** : CI rouge sur PHP 8.3 au push du
+niveau 4 (avant ce niveau 5) - le baseline regenere localement
+contenait une entree pour `config/constante.php`, le fichier LOCAL
+ignore par git (deja documente dans `phpstan.neon.dist` comme "jamais
+vu par la CI ni par un clone neuf" - sert uniquement de bootstrap pour
+les constantes d'environnement). Corrige en ajoutant ce fichier a
+`excludePaths` (commit dedie, CI reverifiee verte avant de continuer)
+plutot que de simplement retirer l'entree du baseline, qui aurait
+reproduit le meme probleme a la prochaine regeneration.
+
+**Corrige** (memes familles qu'aux niveaux 2/3/5 - docblocks
+uniquement) :
+
+- `Util::clearcookie()` : `setcookie($key, null, [...])` - `null`
+  n'est pas un type accepte nativement par le 2e parametre de
+  `setcookie()` (deprecation PHP 8.1+ silencieuse, jamais vue car ce
+  chemin n'est exerce par aucun test). Corrige en `setcookie($key, '',
+  [...])` - effet IDENTIQUE pour effacer un cookie, sans la
+  deprecation.
+- `Controller::form_fillingentity()` : `@param null $data` - encore le
+  motif "null = optionnel" deja corrige au niveau 3
+  (`hydrateWithJson()`), ici sur un parametre qui recoit en realite de
+  vraies donnees de formulaire (verifie : `FrontController.php`
+  l'appelle avec de vraies donnees, jamais litteralement `null`).
+  Corrige en `@param mixed $data`.
+- `Status::$entity` : **decouverte notable** - `@var integer` alors
+  que le mapping Doctrine juste en dessous (`#[ORM\Column(name:
+  "entity", type: "string", length: 55)]`) declare explicitement
+  `string` - docblock et mapping reel en contradiction directe (pas
+  une retombee de notre migration, une incoherence prealable). Corrige
+  en `@var string` (aligne sur le mapping, source de verite). **A
+  garder en tete pour une passe future** : ce type de desaccord
+  docblock/mapping ORM pourrait exister sur d'autres entites non
+  remontees a ce niveau (phpstan ne verifie ce croisement precis que
+  lorsque la valeur est effectivement passee a une fonction stricte en
+  aval, comme ici `markDirty(?string $entity)` - pas systematiquement).
+
+**Balise** (pre-existant, verifie) :
+
+- Cascade du pseudo-type `type` (niveau 2) sur les arguments de
+  fonctions natives (`explode()`/`str_replace()` dans les generateurs,
+  `implode()` dans `DBAL.php`/`QueryBuilder.php`, `QueryBuilder::
+  update()`/`djoin()`) - meme cause racine documentee.
+- `mt_srand((double)microtime() * ...)` (`Util.php`, `Dvups_admin.php`,
+  x4) - seed PRNG legacy, cast `float` passe a un parametre natif
+  `int` - PHP effectue la conversion implicite silencieusement (pas de
+  deprecation, pas d'erreur), et `mt_srand()` sans argument est deja
+  auto-seede de maniere sure depuis PHP 7.1 - ce code manuel est
+  vestigial mais inoffensif.
+- `Model::find()` typage large (`array|int`) recevant parfois un
+  `string` (`WorkersController.php`) - coherent avec le typage
+  informel deja observe partout dans Tchutte (colonnes id acceptees
+  en pratique sous plusieurs formes scalaires cote SQL) ; pas de
+  certitude sur le type reel attendu sans relire tout le contrat de
+  `find()`, hors perimetre.
+- `ModelTrait::dclone($id = null, $update = null)` transmet `$update`
+  (potentiellement `null`) a `QueryBuilder::__dclone($update = false)`
+  - meme motif "`@param null` = defaut informel" ; `null` et `false`
+  sont equivalents dans tout usage booleen de `$update`
+  (comportement identique), non corrige par prudence (methode de
+  clonage d'entite a forte centralite, gain purement cosmetique).
+
+`phpstan.neon.dist` : `level: 4` -> `level: 5`. `phpstan-baseline.neon`
+regenere (1580 entrees, 1487 + 93 nouvelles de ce niveau, 1487 = 1492
+- 5 lignes de l'entree `config/constante.php` retiree au commit
+precedent). `composer test` (454/454 inchange) et `composer phpstan`
+(0 erreur) verts.
+
 ## Securite langue - ETAPE H
 
 ### H.1/H.2/H.3 - dv_valid_lang(), tests e2e et realpath : FAITS

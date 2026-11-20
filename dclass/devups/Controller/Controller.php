@@ -265,7 +265,7 @@ class Controller
 
     /**
      * @param $object
-     * @param null $data
+     * @param mixed $data
      * @param null $entityform
      * @param bool $deeper
      * @return mixed
