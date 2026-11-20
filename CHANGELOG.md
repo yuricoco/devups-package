@@ -2,6 +2,64 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 
+## [8.0.0] - 2026-11-21 - modernisation (Chantier v8.0)
+
+**PHP 8.3 minimum (8.2 en fin de vie).** Intégration continue sur PHP
+8.3, 8.4 et 8.5. Voir [`UPGRADE-8.0.md`](UPGRADE-8.0.md) pour le détail
+complet de chaque point ci-dessous (avant/après/comment migrer, commande
+de migration automatique quand il en existe une) - ce résumé ne liste
+que les ruptures, lot par lot.
+
+### Ruptures
+
+- **Socle** : `doctrine/orm` ^2.1 → ^3.7 (`doctrine/dbal` ^4 en
+  transitif). Mapping des entités par annotations docblock (`@Entity`,
+  `@Column`...) → attributs PHP 8 (`#[ORM\Entity]`, `#[ORM\Column]`...),
+  les 41 entités du framework converties - commande
+  `php devups upgrade:entities [--dry-run] [chemin]` pour migrer les
+  entités d'un projet existant. `doctrine/cache`/`doctrine/annotations`
+  retirés ; `bin/doctrine` reconstruit sur `ConsoleRunner::run()` +
+  `SingleManagerProvider` (API `HelperSet` supprimée par Doctrine 3).
+  **Aucun changement de schéma.**
+- **Vues** : `philo/laravel-blade` (abandonné, CVE-2021-43808) retiré -
+  le même moteur Blade est reconstruit directement sur `illuminate/view`
+  ^11 (`\Devups\View`). `BladeD`/`Genesis::render()` etc. inchangés côté
+  appelant.
+- **Routes** : la bibliothèque vendorée `dclass/lib/addendum/` et le
+  paquet `maslosoft/addendum` (lecture d'annotations par docblock) sont
+  retirés - le routage par annotations (`@GET`, `@POST`, `@Auth`,
+  `@MethodView`...) passe désormais par des attributs PHP 8 natifs
+  (`#[GET]`, `#[POST]`...), `hasAnnotation()`/`getAnnotation()` préservés
+  à l'identique via `ReflectionAnnotatedClass`/`ReflectionAnnotatedMethod`.
+
+### Nouveau (sans impact sur un projet existant)
+
+- **Namespaces** : entités/contrôleurs/datatables/formulaires et
+  classes de base partagées portent désormais un vrai namespace PHP ;
+  les noms courts historiques (`Dvups_lang`, `UserController`...)
+  restent utilisables à l'identique via `class_alias()`.
+- **`Devups\Container`** : conteneur PSR-11 (`ContainerInterface`),
+  disponible pour du code qui voudrait s'y brancher - rien dans le
+  framework ne l'utilise encore en interne.
+- **`Devups\Logger`** : adaptateur PSR-3 (`LoggerInterface`) au-dessus
+  de la facade `\Log` existante, inchangée.
+- **`Devups\Http\{MiddlewareStack,CallableRequestHandler,ResponseEmitter}`** :
+  pipeline de middleware PSR-15 minimal, indépendant du routage par
+  attributs existant - rien n'y est branché par défaut.
+
+### Qualité
+
+- `composer phpstan` : niveau 1 → 5, `phpstan/phpstan` ^1.10 → ^2.3.
+  Corrections uniquement de docblocks (`@param`/`@return`/`@var`
+  erronés) et deux améliorations mineures et strictement
+  compatibles : `Util::clearcookie()` n'émet plus l'avertissement de
+  dépréciation PHP 8.1+, `curl_setopt(..., CURLOPT_POST, true)`
+  (notifications push) remplace `1`.
+
+Vérifié par : la suite de tests complète (454 tests, 0 échec) et
+`composer phpstan` sans erreur, à chaque commit de ce chantier, sur la
+matrice CI PHP 8.3/8.4/8.5.
+
 ## [7.1.0] - 2026-11-09 - finitions et dettes du cœur (ÉTAPES A à F)
 
 **PHP 8.2 minimum (8.1 en fin de vie).** La 7.0.0 annonçait 8.1 mais ne

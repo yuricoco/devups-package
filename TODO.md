@@ -2069,6 +2069,51 @@ differente (`grep` sur les commentaires/incidents "PHP 8.3" de ce fichier)
 avant de pousser, puisqu'une regeneration ecrase ces tolerances sans le
 signaler.
 
+## LOT 8 (Livraison) - UPGRADE-8.0.md, doc, demo
+
+**Decision sur le perimetre de "demo"** (terme non precise dans le plan
+initial, voir "Chantier v8.0" en tete de ce fichier) : option retenue,
+la plus sure - s'appuyer sur la suite de tests E2E existante
+(`tests/E2E/AdminScreensTest.php`) comme demonstration vivante que le
+framework migre fonctionne de bout en bout (chaque ecran liste et
+formulaire de chaque entite declaree, exerce reellement a travers tout
+l'empilement reconstruit - vues `\Devups\View`, routage par attributs,
+entites par attributs Doctrine - sur la matrice CI PHP 8.3/8.4/8.5)
+plutot que de fabriquer une application de demonstration separee non
+demandee explicitement. Ecarte : construire un nouveau projet demo
+dedie - cout disproportionne par rapport a un besoin non precise,
+alors qu'une demonstration equivalente existe deja et tourne a chaque
+commit.
+
+**`UPGRADE-8.0.md`** : deja tenu a jour lot par lot pendant tout le
+chantier (voir les sections LOT 1 a LOT 7 de ce fichier - chaque lot a
+ecrit sa propre section avant-apres-comment-migrer au moment ou il a
+ete fait, pas reconstruit a la fin). Rien a ajouter pour LOT 4
+(Generateur) et LOT 8 lui-meme : aucune rupture dans l'un ni l'autre.
+
+**`CHANGELOG.md`** : nouvelle entree `[8.0.0]`, resume des ruptures
+lot par lot avec renvoi vers `UPGRADE-8.0.md` pour le detail complet -
+meme format que l'entree `[7.1.0]` existante.
+
+**`README.md`** : "Version actuelle" (7.1.0 -> 8.0.0), prerequis PHP
+(8.2 -> 8.3), matrice CI documentee (8.2/8.3/8.4 -> 8.3/8.4/8.5) -
+trois mentions devenues fausses pendant le chantier, corrigees ici.
+
+**`tuto_doc/` (tutoriel officiel, 4 tomes PDF)** : decouvert pendant ce
+lot comme documentation devenue FACTUELLEMENT fausse sur plusieurs
+points cles (pas seulement datee) - Tome I decrit encore
+`philo/laravel-blade` comme moteur de vues et PHP 8.2/CI 8.2-8.4, Tome
+III a un chapitre 1 entier ("Les annotations de route") qui documente
+en detail un mecanisme (docblocks + `maslosoft/addendum` +
+`dclass/lib/addendum/`) entierement retire au LOT 3, Tome I/II montrent
+des exemples d'entites en annotations Doctrine docblock au lieu
+d'attributs PHP 8. Traite comme faisant partie du perimetre "doc" de ce
+lot (documentation utilisateur officielle, pas seulement TODO.md/
+UPGRADE-8.0.md qui sont la memoire interne du chantier) - corrige
+section par section en miroir de ce qui est deja ecrit dans
+`UPGRADE-8.0.md` (meme contenu, pas de nouvelle decision). Regeneration
+des PDF (`python tuto_doc/source/build.py`) tentee ensuite.
+
 ## Securite langue - ETAPE H
 
 ### H.1/H.2/H.3 - dv_valid_lang(), tests e2e et realpath : FAITS
