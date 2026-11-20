@@ -304,3 +304,70 @@ meme base de test dediee produisent de faux echecs par collision
 (cache des langues actives, cle de configuration dupliquee, hash de
 mot de passe) - sans rapport avec ce lot, resolu en executant la suite
 en serie.
+
+## LOT 5 - PSR-4, conteneur, Log
+
+**Aucune rupture dans ce lot** - a la difference des LOTs 1-3
+ci-dessus, chaque point de LOT 5 a ete delibere pour etre **sans
+impact** sur le code d'un projet existant (voir TODO.md, sections "LOT
+5.0" a "LOT 5.5", pour le detail des decisions et de ce qui a ete
+audite avant chaque etape). Rien ci-dessous n'exige de modification
+dans un projet qui ne choisit pas explicitement d'adopter les nouvelles
+possibilites decrites.
+
+### Namespacage des entites/controleurs/datatables/formulaires + des classes de base partagees
+
+**Avant** : toutes les entites (`src/*/Entity/*.php`), leurs
+controleurs/datatables/formulaires (`src/*/Controller|Datatable|
+Form/*.php`), et les classes de base partagees (`dclass/extends/
+{Dvups_config_item,Dvups_migration,ImageCore,UserCore,Dv_langCore}.php`)
+vivaient dans l'espace de noms global - `new Dvups_lang()`,
+`UserController::class`, `extends ImageCore`, etc.
+
+**Apres** : chacune de ces classes porte desormais un vrai namespace
+PHP (`<composant>\<Module>\<Entity|Controller|Datatable|Form>` pour
+`src/`, `dclass\devups\Core` pour les classes de base partagees). Le
+nom COURT (`Dvups_lang`, `UserController`, `ImageCore`...) reste
+utilisable a l'identique partout - `class_alias(FQCN, 'NomCourt')` est
+ajoute juste apres chaque classe namespacee, qui fait pointer l'ancien
+nom global vers la nouvelle classe. Aucune difference de comportement
+observable a l'execution : `new Dvups_lang()`, `Dvups_lang::xxx()`,
+`$x instanceof Dvups_lang`, les annotations Doctrine
+(`targetEntity: "\Dvups_lang"`) continuent tous de fonctionner tel
+quel (verifie par audit exhaustif : aucun site du depot ne fait de
+comparaison `get_class($x) === 'NomCourt'`, seul cas que
+`class_alias()` ne survivrait pas - voir TODO.md "LOT 5.2").
+
+**Comment migrer** : rien a faire pour continuer a utiliser les noms
+courts. Un projet qui souhaite adopter les nouveaux FQCN (ex. pour un
+`use` explicite plutot qu'une reference globale `\Dvups_lang`) peut le
+faire au cas par cas - les deux formes coexistent indefiniment, aucune
+depreciation n'est prevue.
+
+### Conteneur PSR-11 (`Devups\Container`)
+
+**Nouveau** (pas une migration) : `Devups\Container` (`dclass/devups/
+Container.php`) implemente `Psr\Container\ContainerInterface`
+(`get()`/`has()`), avec `set()`/`bind()`/`singleton()` pour y
+enregistrer des services. Disponible pour du code qui voudrait s'y
+brancher ; rien dans le framework ne l'utilise encore en interne (voir
+TODO.md "LOT 5.4" pour la justification de cette portee volontairement
+limitee).
+
+### Adaptateur PSR-3 (`Devups\Logger`)
+
+**Nouveau** (pas une migration) : `Devups\Logger` (`dclass/devups/
+Logger.php`) implemente `Psr\Log\LoggerInterface` au-dessus de la
+facade statique existante `\Log` (`Log::error()`/`warning()`/
+`info()`, inchangee et toujours l'implementation reelle). Utile pour
+brancher une bibliotheque tierce qui attend specifiquement un
+`Psr\Log\LoggerInterface` ; les 8 niveaux PSR-3
+(emergency/alert/critical/error/warning/notice/info/debug) sont
+ramenes aux 3 niveaux de `\Log` (voir TODO.md "LOT 5.5" pour le detail
+du mapping et de la convention suivie pour les exceptions passees en
+contexte).
+
+Verifie par : la suite de tests complete (445 tests, 0 echec - 8
+deprecations et 2 incomplets preexistants et sans rapport) ; `composer
+phpstan` sans erreur. CI GitHub verte sur `release/v8.0` (matrice PHP
+8.3/8.4/8.5) a chaque commit de ce lot.

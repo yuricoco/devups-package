@@ -1076,6 +1076,32 @@ nouveau fichier. `composer test` (445 tests = 431 + 14 nouveaux, 0
 echec, 8 deprecations preexistantes inchangees, 2 incomplete
 inchanges) et `composer phpstan` (0 erreur) verts.
 
+### LOT 5.6 - FAIT (tests + UPGRADE-8.0.md)
+
+**Couverture** : chaque point (a/b/c/5.4/5.5) a deja sa propre suite
+de tests dediee (class_alias valide par pilote + regression complete
+a chaque commit pour a/b/c ; 8 tests `ContainerTest.php` pour 5.4 ; 14
+tests `LoggerTest.php` pour 5.5) - aucun test supplementaire n'etait
+necessaire a ce stade, juste la verification que l'ensemble tient
+toujours ensemble : `composer test` (445 tests, 0 echec) et `composer
+phpstan` (0 erreur) confirmes une derniere fois pour tout le LOT 5.
+
+**`UPGRADE-8.0.md`** : section "LOT 5 - PSR-4, conteneur, Log"
+ajoutee. Plus courte que prevu dans le plan initial du LOT 5.0 ("sera
+la plus longue du document, plusieurs sous-sections") - **consequence
+directe du choix delibere, a chaque etape, de la strategie la plus
+prudente** (`class_alias()` pour le namespacage, adaptateurs/ajouts
+purs pour le conteneur et le logger) : aucun point de LOT 5 n'introduit
+de rupture reelle, donc rien a documenter en "comment migrer" au sens
+propre - seulement ce qui est NOUVEAU et desormais disponible
+(FQCN des classes namespacees, `Devups\Container`, `Devups\Logger`),
+sans obligation d'y toucher.
+
+**LOT 5 (points a, b, c, 5.4, 5.5, 5.6) : TERMINE.** LOT 5.3 reste
+**reporte** (decision prise avec l'utilisateur, voir note dediee
+ci-dessus) - a reprendre plus tard, hors de ce chantier ou dans un
+sous-lot dedie.
+
 ### LOT 5.1 - FAIT (helper `Model::shortClassName()` + conversion des sites "non surs")
 
 Revue ligne-par-ligne exhaustive des 19 fichiers listes en LOT 5.0 (plus
