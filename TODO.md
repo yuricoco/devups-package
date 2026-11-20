@@ -2048,6 +2048,27 @@ applicatif") :
 `composer test` (454/454 inchange) et `composer phpstan` (0 erreur,
 PHPStan 2.3.7) verts.
 
+**Incident CI (meme famille que `mt_srand` au niveau 5)** : la
+regeneration **complete** du baseline a ete faite sur le poste local
+(PHP 8.2), ce qui a silencieusement ecrase la tolerance inter-version
+deja appliquee a `mt_srand` (regex revenue a `expects int, float
+given` au lieu de `int(\|null)?, float given`) - CI rouge sur PHP 8.3
+au push. Un second cas de la meme nature est apparu : `is_array()`
+sur le tableau renvoye par `token_get_all()` dans
+`dclass/generator/builder.php` (scanner de langue) rapporte
+`array{313, 't'|'tt', int}` localement (PHP 8.2) contre `array{262,
+'t'|'tt', int}` sur CI (PHP 8.3) - la valeur entiere du type de token
+PHP (`T_STRING` et apparentes) differe reellement entre versions de
+PHP, pas seulement le texte du message. Corrige par la meme
+technique : regex tolerante aux deux valeurs
+(`array\{(313|262), ...\}`) plutot qu'une refixation ponctuelle a
+nouveau fragile. Lecon retenue : apres toute regeneration **complete**
+du baseline sur ce poste (PHP 8.2 uniquement disponible ici), rechercher
+systematiquement les baselines deja rendues tolerantes a une version PHP
+differente (`grep` sur les commentaires/incidents "PHP 8.3" de ce fichier)
+avant de pousser, puisqu'une regeneration ecrase ces tolerances sans le
+signaler.
+
 ## Securite langue - ETAPE H
 
 ### H.1/H.2/H.3 - dv_valid_lang(), tests e2e et realpath : FAITS
