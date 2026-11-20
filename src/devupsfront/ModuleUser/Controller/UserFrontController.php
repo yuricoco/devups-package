@@ -170,7 +170,7 @@ class UserFrontController extends \dclass\devups\Controller\FrontController
     }
 
     /**
-     * @return void
+     * @return array
      */
     #[\POST(path: '/googleAuth')]
     public function googleAuth()

@@ -16,7 +16,7 @@ class Tree_lang extends \Dv_langCore
     protected $label;
 
     /**
-     * @var \Tree
+     * @var Tree
      */
     #[ORM\Id]
     #[ORM\ManyToOne(targetEntity: "\Tree")]

@@ -1695,6 +1695,85 @@ comportement runtime.
 **Niveau 3 non commence** : par decision explicite de l'utilisateur,
 ce lot s'arrete ici. Reprendre uniquement sur nouvelle autorisation.
 
+### LOT 7 (niveau 3) - FAIT
+
+Decision utilisateur (session suivante) : poursuivre l'escalade de
+niveau sans repasser par un checkpoint a chaque niveau cette fois -
+"continue LOT 7 (niveau 3) et tu enchaines jusqu'a la fin [du
+chantier]". Meme methode qu'au niveau 2 (mesurer, trier, corriger ce
+qui est reellement sur, baliser le reste avec raison ecrite).
+
+**Mesure** : `--level=3` -> 161 nouvelles erreurs (en plus des 1182
+deja baselinees aux niveaux 0-2).
+
+**Corrige** (docblocks uniquement, meme famille que le niveau 2 -
+retombee de notre PROPRE migration de namespace LOT 5.2 : un `@var`
+avec anti-slash pointait vers l'ANCIEN alias global d'une classe
+desormais namespacee, au lieu de la classe reelle - les deux
+resolvent vers la meme classe a l'execution via `class_alias()`, mais
+phpstan les voit comme deux types distincts) :
+
+- `Cmscomment::$cmscontent`, `Cmsresource::$cmscontent` (`@var
+  \Cmscontent` -> `@var Cmscontent`, meme namespace que la cible).
+- `Notification::$notificationtype` (`@var \Notificationtype` ->
+  `@var Notificationtype`).
+- `Push_email::$reportingmodel` (`@var \Reportingmodel` -> `@var
+  Reportingmodel`).
+- `Tree_item::$tree`, `Tree_lang::$tree` (`@var \Tree` -> `@var
+  Tree`).
+- `Tree_item_image::$tree_item`, `Tree_item_lang::$tree_item` (`@var
+  \Tree_item` -> `@var Tree_item`).
+- `Cmscontent::$tree_item` (`@var \Tree_item` -> `@var
+  \devupscms\ModuleTree\Entity\Tree_item` - namespace different de
+  celui de `Cmscontent`, meme cas que le `@param`/`@return` deja
+  corrige au niveau 2 sur la meme paire de classes).
+- `UserFrontController::googleAuth()` : `@return void` alors que la
+  methode retourne systematiquement un tableau ('success'/'error') -
+  meme defaut que `hydrateWithJson()` au niveau 2. Corrige en `@return
+  array`.
+- `Dvups_adminController::$err` : `@var bool` alors que la propriete
+  n'est jamais affectee qu'a `array()` (verifie : 3 sites
+  d'affectation, tous `array()`). Corrige en `@var array`.
+
+**Balise** (pre-existant, verifie, hors perimetre d'une correction de
+code dans ce lot) :
+
+- Meme categorie "pseudo-type informel" (`type`/`text`/`date`) qu'au
+  niveau 2, qui ressurgit sous des formes differentes a ce niveau
+  (iteration `foreach`/acces par offset sur `Model`/`EntityCollection`/
+  `DBAL` dont le type declare est le pseudo-type `type` ; covariance
+  `datetime`/`text` vs le type natif `string` du parent `Model`).
+- **Constructeurs qui `return` une valeur** (`Core::__construct()`,
+  `Dfile::__construct()` x2, `EntityCore::__construct()`) - motif de
+  sortie anticipee tres repandu en PHP legacy ; sans consequence reelle
+  (la valeur de retour d'un constructeur est toujours ignoree par
+  PHP, `new X()` retourne toujours l'instance). Non corrige par
+  prudence : ce sont des classes coeur a forte centralite (`Core`,
+  `Dfile`, `EntityCore`), pas une simple docblock isolee - le risque
+  de modifier leur code (meme un simple `return $this;` ->
+  `return;`) pour un gain purement cosmetique n'est pas justifie dans
+  ce lot.
+- `Model::__belongto()` : `@return $this` alors que l'implementation
+  retourne un `object` plus generique - type reel voulu (instance
+  identique systematiquement, ou parfois une autre entite en
+  relation ?) non tranchable sans relire toute la logique
+  relationnelle ; balise plutot que corrige au hasard.
+- Diverses proprietes d'entites avec un `@var` (string/bool) qui
+  n'accepte pas la valeur par defaut reelle (int) ou `null` -
+  `UserCore`, `Dvups_admin`, `Dvups_entity`, `Status`, `Notification`,
+  `Workers` - coherent avec le typage informel deja observe partout
+  dans ce code (colonnes booleennes/enum documentees en `string`,
+  defauts numeriques) ; aucune de ces proprietes n'a de type natif PHP
+  (juste du docblock) donc aucun risque d'erreur fatale a l'execution
+  - mais le type reel voulu (faut-il corriger le docblock vers `int`,
+  ou le defaut vers une chaine ?) n'est pas evident sans connaitre le
+  mapping colonne reel de chaque cas - balise.
+
+`phpstan.neon.dist` : `level: 2` -> `level: 3`. `phpstan-baseline.neon`
+regenere (1324 entrees, 1182 + 142 nouvelles de ce niveau).
+`composer test` (454/454 inchange) et `composer phpstan` (0 erreur)
+verts.
+
 ## Securite langue - ETAPE H
 
 ### H.1/H.2/H.3 - dv_valid_lang(), tests e2e et realpath : FAITS

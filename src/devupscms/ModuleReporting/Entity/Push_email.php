@@ -59,7 +59,7 @@ class Push_email extends \Model implements \JsonSerializable, \DatatableOverwrit
     #[ORM\Column(name: "description", type: "text", nullable: true)]
     protected $description;
     /**
-     * @var \Reportingmodel
+     * @var Reportingmodel
      */
     #[ORM\ManyToOne(targetEntity: "\Reportingmodel")]
     #[ORM\JoinColumn(onDelete: "cascade")]

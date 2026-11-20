@@ -74,7 +74,7 @@ class Notification extends \Model implements \JsonSerializable
     protected $redirect;
 
     /**
-     * @var \Notificationtype
+     * @var Notificationtype
      */
     #[ORM\ManyToOne(targetEntity: "\Notificationtype")]
     #[ORM\JoinColumn(onDelete: "set null")]

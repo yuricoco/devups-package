@@ -21,7 +21,7 @@ class Tree_item_lang extends \Dv_langCore
     protected $content;
 
     /**
-     * @var \Tree_item
+     * @var Tree_item
      */
     #[ORM\Id]
     #[ORM\ManyToOne(targetEntity: "\Tree_item")]

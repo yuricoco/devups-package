@@ -8,7 +8,7 @@ class Dvups_adminController extends Controller
 {
 
     /**
-     * @var bool
+     * @var array
      */
     private $err;
 

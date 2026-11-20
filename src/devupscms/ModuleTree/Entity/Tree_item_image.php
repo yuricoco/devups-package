@@ -29,7 +29,7 @@ class Tree_item_image extends \ImageCore implements \JsonSerializable
     protected $width_size;
 
     /**
-     * @var \Tree_item
+     * @var Tree_item
      */
     #[ORM\ManyToOne(targetEntity: "\Tree_item")]
     #[ORM\JoinColumn(onDelete: "cascade")]

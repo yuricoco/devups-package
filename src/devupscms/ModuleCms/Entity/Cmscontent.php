@@ -46,7 +46,7 @@ class Cmscontent extends \Model implements \JsonSerializable, \DatatableOverwrit
     protected $position = 0;
 
     /**
-     * @var \Tree_item
+     * @var \devupscms\ModuleTree\Entity\Tree_item
      */
     #[ORM\ManyToOne(targetEntity: "\Tree_item")]
     public $tree_item;

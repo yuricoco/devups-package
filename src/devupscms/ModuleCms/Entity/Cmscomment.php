@@ -48,7 +48,7 @@ class Cmscomment extends \Model implements \JsonSerializable
     protected $seen = false;
 
     /**
-     * @var \Cmscontent
+     * @var Cmscontent
      */
     #[ORM\ManyToOne(targetEntity: "\Cmscontent")]
     #[ORM\JoinColumn(onDelete: "cascade")]

@@ -84,7 +84,7 @@ class Tree_item extends \Model implements \JsonSerializable
     protected $uploaddir;
 
     /**
-     * @var \Tree
+     * @var Tree
      */
     #[ORM\ManyToOne(targetEntity: "\Tree")]
     public $tree;

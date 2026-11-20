@@ -6,6 +6,11 @@ parameters:
 			path: config/Database.php
 
 		-
+			message: "#^Argument of an invalid type dclass\\\\devups\\\\Controller\\\\Controller supplied for foreach, only iterables are supported\\.$#"
+			count: 1
+			path: dclass/devups/Controller/Controller.php
+
+		-
 			message: "#^Cannot call method getId\\(\\) on stdClass\\.$#"
 			count: 2
 			path: dclass/devups/Controller/Controller.php
@@ -26,7 +31,17 @@ parameters:
 			path: dclass/devups/Controller/Controller.php
 
 		-
+			message: "#^Method dclass\\\\devups\\\\Controller\\\\Controller\\:\\:i\\(\\) should return \\$this\\(dclass\\\\devups\\\\Controller\\\\Controller\\) but returns static\\(dclass\\\\devups\\\\Controller\\\\Controller\\)\\.$#"
+			count: 1
+			path: dclass/devups/Controller/Controller.php
+
+		-
 			message: "#^Method dclass\\\\devups\\\\Controller\\\\Controller\\:\\:lastpersistance\\(\\) has invalid return type dclass\\\\devups\\\\Controller\\\\type\\.$#"
+			count: 1
+			path: dclass/devups/Controller/Controller.php
+
+		-
+			message: "#^Method dclass\\\\devups\\\\Controller\\\\Controller\\:\\:lastpersistance\\(\\) should return dclass\\\\devups\\\\Controller\\\\type but returns array\\<string, array\\<int, mixed\\>\\|string\\|true\\>\\.$#"
 			count: 1
 			path: dclass/devups/Controller/Controller.php
 
@@ -79,6 +94,11 @@ parameters:
 			message: "#^Function t not found\\.$#"
 			count: 2
 			path: dclass/devups/Controller/FrontController.php
+
+		-
+			message: "#^Method Core\\:\\:__construct\\(\\) with return type void returns \\$this\\(Core\\) but should not return anything\\.$#"
+			count: 1
+			path: dclass/devups/Core.php
 
 		-
 			message: "#^Variable \\$module_configurations might not be defined\\.$#"
@@ -226,6 +246,26 @@ parameters:
 			path: dclass/devups/Dfile.php
 
 		-
+			message: "#^Method Dfile\\:\\:__construct\\(\\) with return type void returns \\$this\\(Dfile\\) but should not return anything\\.$#"
+			count: 2
+			path: dclass/devups/Dfile.php
+
+		-
+			message: "#^Method Dfile\\:\\:deleteFile\\(\\) should return bool but returns array\\<string, string\\|false\\>\\.$#"
+			count: 1
+			path: dclass/devups/Dfile.php
+
+		-
+			message: "#^Method Dfile\\:\\:deleteFile\\(\\) should return bool but returns array\\<string, true\\>\\.$#"
+			count: 1
+			path: dclass/devups/Dfile.php
+
+		-
+			message: "#^Offset float does not exist on 'KMGT'\\.$#"
+			count: 1
+			path: dclass/devups/Dfile.php
+
+		-
 			message: "#^Variable \\$collection might not be defined\\.$#"
 			count: 5
 			path: dclass/devups/Dfile.php
@@ -356,6 +396,11 @@ parameters:
 			path: dclass/devups/Log.php
 
 		-
+			message: "#^Cannot access an offset on false\\.$#"
+			count: 1
+			path: dclass/devups/ScanDir.php
+
+		-
 			message: "#^Result of function var_dump \\(void\\) is used\\.$#"
 			count: 1
 			path: dclass/devups/ScanDir.php
@@ -363,6 +408,16 @@ parameters:
 		-
 			message: "#^Access to an undefined property object\\:\\:\\$dvtranslated_columns\\.$#"
 			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Access to offset 0 on an unknown class type\\.$#"
+			count: 3
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Access to offset non\\-falsy\\-string on an unknown class type\\.$#"
+			count: 2
 			path: dclass/devups/Tchutte/DBAL.php
 
 		-
@@ -388,6 +443,16 @@ parameters:
 		-
 			message: "#^Access to property \\$dvtranslated_columns on an unknown class type\\.$#"
 			count: 10
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Argument of an invalid type DBAL supplied for foreach, only iterables are supported\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Argument of an invalid type int supplied for foreach, only iterables are supported\\.$#"
+			count: 3
 			path: dclass/devups/Tchutte/DBAL.php
 
 		-
@@ -431,7 +496,22 @@ parameters:
 			path: dclass/devups/Tchutte/DBAL.php
 
 		-
+			message: "#^Iterating over an object of an unknown class type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
 			message: "#^Method DBAL\\:\\:__findAll\\(\\) has invalid return type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Method DBAL\\:\\:__findAll\\(\\) should return type but returns array\\<int\\<0, max\\>, mixed\\>\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Method DBAL\\:\\:__findAll\\(\\) should return type but returns true\\.$#"
 			count: 1
 			path: dclass/devups/Tchutte/DBAL.php
 
@@ -441,7 +521,27 @@ parameters:
 			path: dclass/devups/Tchutte/DBAL.php
 
 		-
+			message: "#^Method DBAL\\:\\:__findAllRow\\(\\) should return type but returns int\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Method DBAL\\:\\:__findAllRow\\(\\) should return type but returns true\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
 			message: "#^Method DBAL\\:\\:__findOne\\(\\) has invalid return type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Method DBAL\\:\\:__findOneRow\\(\\) should return object but returns null\\.$#"
+			count: 2
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Method DBAL\\:\\:deleteserialiseDbal\\(\\) should return int but returns string\\.$#"
 			count: 1
 			path: dclass/devups/Tchutte/DBAL.php
 
@@ -451,7 +551,32 @@ parameters:
 			path: dclass/devups/Tchutte/DBAL.php
 
 		-
+			message: "#^Method DBAL\\:\\:djoin\\(\\) should return type but returns null\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
 			message: "#^Method DBAL\\:\\:manyToManyDelete\\(\\) has invalid return type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Method DBAL\\:\\:manyToManyDelete\\(\\) should return type but returns int\\|string\\|true\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Method DBAL\\:\\:manyToManyDelete\\(\\) should return type but returns true\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Method DBAL\\:\\:updateDbal\\(\\) should return stdClass but returns int\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Method DBAL\\:\\:updateserialiseDbal\\(\\) should return int but returns string\\.$#"
 			count: 1
 			path: dclass/devups/Tchutte/DBAL.php
 
@@ -536,6 +661,11 @@ parameters:
 			path: dclass/devups/Tchutte/DBAL.php
 
 		-
+			message: "#^Property DBAL\\:\\:\\$entity_link_list \\(type\\) does not accept array\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
 			message: "#^Property DBAL\\:\\:\\$entity_link_list has unknown class type as its type\\.$#"
 			count: 1
 			path: dclass/devups/Tchutte/DBAL.php
@@ -546,7 +676,17 @@ parameters:
 			path: dclass/devups/Tchutte/DBAL.php
 
 		-
+			message: "#^Property DBAL\\:\\:\\$listeEntity \\(type\\) does not accept array\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
 			message: "#^Property DBAL\\:\\:\\$listeEntity has unknown class type as its type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Property DBAL\\:\\:\\$nbVar \\(type\\) does not accept int\\<0, max\\>\\.$#"
 			count: 1
 			path: dclass/devups/Tchutte/DBAL.php
 
@@ -561,7 +701,17 @@ parameters:
 			path: dclass/devups/Tchutte/DBAL.php
 
 		-
+			message: "#^Property DBAL\\:\\:\\$objectValue \\(type\\) does not accept array\\<int, mixed\\>\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
 			message: "#^Property DBAL\\:\\:\\$objectValue has unknown class type as its type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Property DBAL\\:\\:\\$objectVar \\(type\\) does not accept array\\<int, \\(int\\|string\\)\\>\\.$#"
 			count: 1
 			path: dclass/devups/Tchutte/DBAL.php
 
@@ -571,7 +721,17 @@ parameters:
 			path: dclass/devups/Tchutte/DBAL.php
 
 		-
+			message: "#^Property DBAL\\:\\:\\$select \\(type\\) does not accept false\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
 			message: "#^Property DBAL\\:\\:\\$select has unknown class type as its type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Property DBAL\\:\\:\\$softdelete \\(type\\) does not accept default value of type false\\.$#"
 			count: 1
 			path: dclass/devups/Tchutte/DBAL.php
 
@@ -603,6 +763,16 @@ parameters:
 		-
 			message: "#^Access to an undefined property QueryBuilder\\:\\:\\$join\\.$#"
 			count: 3
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^Access to offset \\*NEVER\\* on an unknown class type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^Access to offset 0 on an unknown class type\\.$#"
+			count: 1
 			path: dclass/devups/Tchutte/QueryBuilder.php
 
 		-
@@ -716,6 +886,11 @@ parameters:
 			path: dclass/devups/Tchutte/QueryBuilder.php
 
 		-
+			message: "#^Access to offset mixed on an unknown class type\\.$#"
+			count: 6
+			path: dclass/devups/model/EntityCollection.php
+
+		-
 			message: "#^Default value of the parameter \\#3 \\$cmp \\(string\\) of method EntityCollection\\:\\:diff\\(\\) is incompatible with type type\\.$#"
 			count: 1
 			path: dclass/devups/model/EntityCollection.php
@@ -723,6 +898,16 @@ parameters:
 		-
 			message: "#^Default value of the parameter \\#3 \\$cmp \\(string\\) of method EntityCollection\\:\\:intersection\\(\\) is incompatible with type type\\.$#"
 			count: 1
+			path: dclass/devups/model/EntityCollection.php
+
+		-
+			message: "#^Iterating over an object of an unknown class type\\.$#"
+			count: 6
+			path: dclass/devups/model/EntityCollection.php
+
+		-
+			message: "#^Method EntityCollection\\:\\:diff\\(\\) should return array but returns type\\.$#"
+			count: 4
 			path: dclass/devups/model/EntityCollection.php
 
 		-
@@ -766,7 +951,22 @@ parameters:
 			path: dclass/devups/model/EntityCollection.php
 
 		-
+			message: "#^Method EntityCore\\:\\:__construct\\(\\) with return type void returns class\\-string\\|false but should not return anything\\.$#"
+			count: 1
+			path: dclass/devups/model/EntityCore.php
+
+		-
 			message: "#^Access to an undefined property Dfile\\:\\:\\$error\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^Argument of an invalid type Model supplied for foreach, only iterables are supported\\.$#"
+			count: 8
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^Argument of an invalid type int supplied for foreach, only iterables are supported\\.$#"
 			count: 1
 			path: dclass/devups/model/Model.php
 
@@ -781,7 +981,32 @@ parameters:
 			path: dclass/devups/model/Model.php
 
 		-
+			message: "#^Cannot access offset 0 on int\\.$#"
+			count: 2
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^Cannot access offset mixed on int\\.$#"
+			count: 2
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^Cannot access offset non\\-falsy\\-string on int\\.$#"
+			count: 2
+			path: dclass/devups/model/Model.php
+
+		-
 			message: "#^Default value of the parameter \\#2 \\$order \\(string\\) of method Model\\:\\:all\\(\\) is incompatible with type type\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^Method Model\\:\\:__belongto\\(\\) should return \\$this\\(Model\\) but returns object\\.$#"
+			count: 3
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^Method Model\\:\\:__update\\(\\) should return bool\\|QueryBuilder but returns stdClass\\.$#"
 			count: 1
 			path: dclass/devups/model/Model.php
 
@@ -792,6 +1017,31 @@ parameters:
 
 		-
 			message: "#^Method Model\\:\\:classdir\\(\\) has invalid return type classroot\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^Method Model\\:\\:classdir\\(\\) should return classroot but returns string\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^Method Model\\:\\:firstOrCreate\\(\\) should return \\$this\\(Model\\) but returns array\\|object\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^Method Model\\:\\:firstOrNew\\(\\) should return \\$this\\(Model\\) but returns array\\|object\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^Method Model\\:\\:getDvupsEntity\\(\\) should return Dvups_entity but returns string\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^Method Model\\:\\:update\\(\\) should return QueryBuilder but returns bool\\.$#"
 			count: 1
 			path: dclass/devups/model/Model.php
 
@@ -856,6 +1106,21 @@ parameters:
 			path: dclass/devups/model/Model.php
 
 		-
+			message: "#^Method dclass\\\\devups\\\\model\\\\ModelSerializer\\:\\:__update\\(\\) should return bool\\|QueryBuilder but returns stdClass\\.$#"
+			count: 1
+			path: dclass/devups/model/ModelSerializer.php
+
+		-
+			message: "#^Argument of an invalid type dclass\\\\devups\\\\Core\\\\Dv_langCore supplied for foreach, only iterables are supported\\.$#"
+			count: 6
+			path: dclass/extends/Dv_langCore.php
+
+		-
+			message: "#^Argument of an invalid type int supplied for foreach, only iterables are supported\\.$#"
+			count: 1
+			path: dclass/extends/Dv_langCore.php
+
+		-
 			message: "#^Call to an undefined method QueryBuilder\\:\\:createFrom\\(\\)\\.$#"
 			count: 1
 			path: dclass/extends/Dv_langCore.php
@@ -866,12 +1131,37 @@ parameters:
 			path: dclass/extends/Dv_langCore.php
 
 		-
+			message: "#^Cannot access offset 0 on int\\.$#"
+			count: 2
+			path: dclass/extends/Dv_langCore.php
+
+		-
 			message: "#^Default value of the parameter \\#2 \\$order \\(string\\) of method dclass\\\\devups\\\\Core\\\\Dv_langCore\\:\\:all\\(\\) is incompatible with type type\\.$#"
 			count: 1
 			path: dclass/extends/Dv_langCore.php
 
 		-
+			message: "#^Method dclass\\\\devups\\\\Core\\\\Dv_langCore\\:\\:__update\\(\\) should return bool\\|QueryBuilder but returns stdClass\\.$#"
+			count: 1
+			path: dclass/extends/Dv_langCore.php
+
+		-
 			message: "#^Method dclass\\\\devups\\\\Core\\\\Dv_langCore\\:\\:all\\(\\) has invalid return type type\\.$#"
+			count: 1
+			path: dclass/extends/Dv_langCore.php
+
+		-
+			message: "#^Method dclass\\\\devups\\\\Core\\\\Dv_langCore\\:\\:firstOrCreate\\(\\) should return \\$this\\(dclass\\\\devups\\\\Core\\\\Dv_langCore\\) but returns array\\|object\\.$#"
+			count: 1
+			path: dclass/extends/Dv_langCore.php
+
+		-
+			message: "#^Method dclass\\\\devups\\\\Core\\\\Dv_langCore\\:\\:firstOrNew\\(\\) should return \\$this\\(dclass\\\\devups\\\\Core\\\\Dv_langCore\\) but returns array\\|object\\.$#"
+			count: 1
+			path: dclass/extends/Dv_langCore.php
+
+		-
+			message: "#^Method dclass\\\\devups\\\\Core\\\\Dv_langCore\\:\\:update\\(\\) should return QueryBuilder but returns int\\.$#"
 			count: 1
 			path: dclass/extends/Dv_langCore.php
 
@@ -931,6 +1221,11 @@ parameters:
 			path: dclass/extends/Dvups_migration.php
 
 		-
+			message: "#^Method dclass\\\\devups\\\\Core\\\\ImageCore\\:\\:__update\\(\\) should return bool\\|QueryBuilder but returns int\\.$#"
+			count: 1
+			path: dclass/extends/ImageCore.php
+
+		-
 			message: "#^Property dclass\\\\devups\\\\Core\\\\ImageCore\\:\\:\\$description has unknown class dclass\\\\devups\\\\Core\\\\text as its type\\.$#"
 			count: 1
 			path: dclass/extends/ImageCore.php
@@ -952,6 +1247,16 @@ parameters:
 
 		-
 			message: "#^Property dclass\\\\devups\\\\Core\\\\UserCore\\:\\:\\$last_login has unknown class dclass\\\\devups\\\\Core\\\\date as its type\\.$#"
+			count: 1
+			path: dclass/extends/UserCore.php
+
+		-
+			message: "#^Property dclass\\\\devups\\\\Core\\\\UserCore\\:\\:\\$reset_token_expired_at \\(string\\) does not accept null\\.$#"
+			count: 1
+			path: dclass/extends/UserCore.php
+
+		-
+			message: "#^Property dclass\\\\devups\\\\Core\\\\UserCore\\:\\:\\$reset_token_hash \\(string\\) does not accept null\\.$#"
 			count: 1
 			path: dclass/extends/UserCore.php
 
@@ -1216,6 +1521,11 @@ parameters:
 			path: dclass/lib/DPdf.php
 
 		-
+			message: "#^Method DPdf\\:\\:init\\(\\) should return Reportingmodel but returns DPdf\\.$#"
+			count: 1
+			path: dclass/lib/DPdf.php
+
+		-
 			message: "#^Instantiated class Shuchkin\\\\SimpleXLSXEx not found\\.$#"
 			count: 1
 			path: dclass/lib/SimpleXLSX.php
@@ -1241,6 +1551,11 @@ parameters:
 			path: dclass/lib/Util.php
 
 		-
+			message: "#^Method DClass\\\\lib\\\\Util\\:\\:parseTranslateHtml\\(\\) should return array\\|string but returns null\\.$#"
+			count: 1
+			path: dclass/lib/Util.php
+
+		-
 			message: "#^PHPDoc tag @param has invalid value \\(mixed\\)\\: Unexpected token \"\\\\n     \", expected variable at offset 23$#"
 			count: 1
 			path: dclass/lib/Util.php
@@ -1249,6 +1564,11 @@ parameters:
 			message: "#^PHPDoc tag @param references unknown parameter\\: \\$login$#"
 			count: 1
 			path: dclass/lib/Util.php
+
+		-
+			message: "#^Argument of an invalid type Api supplied for foreach, only iterables are supported\\.$#"
+			count: 1
+			path: dclass/lib/annotation/Api.php
 
 		-
 			message: "#^Variable \\$matches might not be defined\\.$#"
@@ -1268,6 +1588,11 @@ parameters:
 		-
 			message: "#^Access to an undefined property DDoc\\:\\:\\$path\\.$#"
 			count: 2
+			path: dclass/lib/annotation/DDoc.php
+
+		-
+			message: "#^Argument of an invalid type DDoc supplied for foreach, only iterables are supported\\.$#"
+			count: 1
 			path: dclass/lib/annotation/DDoc.php
 
 		-
@@ -1486,6 +1811,36 @@ parameters:
 			path: src/devups/ModuleAdmin/Entity/Dvups_admin.php
 
 		-
+			message: "#^Property devups\\\\ModuleAdmin\\\\Entity\\\\Dvups_admin\\:\\:\\$dvups_role \\(Dvups_role\\) does not accept devups\\\\ModuleAdmin\\\\Entity\\\\Dvups_role\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Entity/Dvups_admin.php
+
+		-
+			message: "#^Property devups\\\\ModuleAdmin\\\\Entity\\\\Dvups_admin\\:\\:\\$firstconnexion \\(string\\) does not accept default value of type int\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Entity/Dvups_admin.php
+
+		-
+			message: "#^Property devups\\\\ModuleAdmin\\\\Entity\\\\Dvups_admin\\:\\:\\$remember_token_expires_at \\(string\\) does not accept null\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Entity/Dvups_admin.php
+
+		-
+			message: "#^Property devups\\\\ModuleAdmin\\\\Entity\\\\Dvups_admin\\:\\:\\$remember_token_hash \\(string\\) does not accept null\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Entity/Dvups_admin.php
+
+		-
+			message: "#^Property devups\\\\ModuleAdmin\\\\Entity\\\\Dvups_privilege\\:\\:\\$dvups_action \\(Dvups_action\\) does not accept devups\\\\ModuleAdmin\\\\Entity\\\\Dvups_action\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Entity/Dvups_privilege.php
+
+		-
+			message: "#^Property devups\\\\ModuleAdmin\\\\Entity\\\\Dvups_privilege\\:\\:\\$dvups_role \\(Dvups_role\\) does not accept devups\\\\ModuleAdmin\\\\Entity\\\\Dvups_role\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Entity/Dvups_privilege.php
+
+		-
 			message: "#^Function t not found\\.$#"
 			count: 1
 			path: src/devups/ModuleAdmin/Entity/Dvups_role.php
@@ -1518,6 +1873,11 @@ parameters:
 		-
 			message: "#^Function t not found\\.$#"
 			count: 2
+			path: src/devups/ModuleAdmin/Form/Dvups_roleForm.php
+
+		-
+			message: "#^Iterating over an object of an unknown class type\\.$#"
+			count: 1
 			path: src/devups/ModuleAdmin/Form/Dvups_roleForm.php
 
 		-
@@ -1666,6 +2026,16 @@ parameters:
 			path: src/devups/ModuleConfig/Entity/Configuration.php
 
 		-
+			message: "#^Property devups\\\\ModuleConfig\\\\Entity\\\\Dvups_entity\\:\\:\\$enablenotification \\(string\\) does not accept default value of type int\\.$#"
+			count: 1
+			path: src/devups/ModuleConfig/Entity/Dvups_entity.php
+
+		-
+			message: "#^Property devups\\\\ModuleConfig\\\\Entity\\\\Dvups_entity\\:\\:\\$multi_lang \\(string\\) does not accept default value of type int\\.$#"
+			count: 1
+			path: src/devups/ModuleConfig/Entity/Dvups_entity.php
+
+		-
 			message: "#^Call to an undefined static method devups\\\\ModuleConfig\\\\Form\\\\ConfigurationForm\\:\\:getFormData\\(\\)\\.$#"
 			count: 1
 			path: src/devups/ModuleConfig/Form/ConfigurationForm.php
@@ -1704,6 +2074,11 @@ parameters:
 			message: "#^Function t not found\\.$#"
 			count: 15
 			path: src/devups/ModuleLang/Datatable/Dvups_langTable.php
+
+		-
+			message: "#^Iterating over an object of an unknown class type\\.$#"
+			count: 1
+			path: src/devups/ModuleLang/Entity/Dvups_lang.php
 
 		-
 			message: "#^Method devups\\\\ModuleLang\\\\Entity\\\\Dvups_lang\\:\\:cacheData\\(\\) should return devups\\\\ModuleLang\\\\Entity\\\\Dvups_lang but return statement is missing\\.$#"
@@ -1866,7 +2241,17 @@ parameters:
 			path: src/devupscms/ModuleCms/Entity/Cmscontent.php
 
 		-
+			message: "#^Property devupscms\\\\ModuleCms\\\\Entity\\\\Cmscontent\\:\\:\\$active \\(devupscms\\\\ModuleCms\\\\Entity\\\\text\\) does not accept default value of type int\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Entity/Cmscontent.php
+
+		-
 			message: "#^Property devupscms\\\\ModuleCms\\\\Entity\\\\Cmscontent\\:\\:\\$active has unknown class devupscms\\\\ModuleCms\\\\Entity\\\\text as its type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Entity/Cmscontent.php
+
+		-
+			message: "#^Property devupscms\\\\ModuleCms\\\\Entity\\\\Cmscontent\\:\\:\\$position \\(devupscms\\\\ModuleCms\\\\Entity\\\\text\\) does not accept default value of type int\\.$#"
 			count: 1
 			path: src/devupscms/ModuleCms/Entity/Cmscontent.php
 
@@ -1877,6 +2262,11 @@ parameters:
 
 		-
 			message: "#^Property devupscms\\\\ModuleCms\\\\Entity\\\\Cmscontent_lang\\:\\:\\$content has unknown class devupscms\\\\ModuleCms\\\\Entity\\\\text as its type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Entity/Cmscontent_lang.php
+
+		-
+			message: "#^Property devupscms\\\\ModuleCms\\\\Entity\\\\Cmscontent_lang\\:\\:\\$sommary \\(devupscms\\\\ModuleCms\\\\Entity\\\\text\\) does not accept default value of type string\\.$#"
 			count: 1
 			path: src/devupscms/ModuleCms/Entity/Cmscontent_lang.php
 
@@ -2056,6 +2446,16 @@ parameters:
 			path: src/devupscms/ModuleData/Datatable/StatusTable.php
 
 		-
+			message: "#^Argument of an invalid type devupscms\\\\ModuleData\\\\Entity\\\\Interval_group supplied for foreach, only iterables are supported\\.$#"
+			count: 6
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
+			message: "#^Argument of an invalid type int supplied for foreach, only iterables are supported\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
 			message: "#^Call to an undefined method QueryBuilder\\:\\:createFrom\\(\\)\\.$#"
 			count: 1
 			path: src/devupscms/ModuleData/Entity/Interval_group.php
@@ -2066,12 +2466,37 @@ parameters:
 			path: src/devupscms/ModuleData/Entity/Interval_group.php
 
 		-
+			message: "#^Cannot access offset 0 on int\\.$#"
+			count: 2
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
 			message: "#^Default value of the parameter \\#2 \\$order \\(string\\) of method devupscms\\\\ModuleData\\\\Entity\\\\Interval_group\\:\\:all\\(\\) is incompatible with type type\\.$#"
 			count: 1
 			path: src/devupscms/ModuleData/Entity/Interval_group.php
 
 		-
+			message: "#^Method devupscms\\\\ModuleData\\\\Entity\\\\Interval_group\\:\\:__update\\(\\) should return bool\\|QueryBuilder but returns stdClass\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
 			message: "#^Method devupscms\\\\ModuleData\\\\Entity\\\\Interval_group\\:\\:all\\(\\) has invalid return type type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
+			message: "#^Method devupscms\\\\ModuleData\\\\Entity\\\\Interval_group\\:\\:firstOrCreate\\(\\) should return \\$this\\(devupscms\\\\ModuleData\\\\Entity\\\\Interval_group\\) but returns array\\|object\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
+			message: "#^Method devupscms\\\\ModuleData\\\\Entity\\\\Interval_group\\:\\:firstOrNew\\(\\) should return \\$this\\(devupscms\\\\ModuleData\\\\Entity\\\\Interval_group\\) but returns array\\|object\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
+			message: "#^Method devupscms\\\\ModuleData\\\\Entity\\\\Interval_group\\:\\:update\\(\\) should return QueryBuilder but returns int\\.$#"
 			count: 1
 			path: src/devupscms/ModuleData/Entity/Interval_group.php
 
@@ -2127,6 +2552,11 @@ parameters:
 
 		-
 			message: "#^Method devupscms\\\\ModuleData\\\\Entity\\\\Status\\:\\:getStatus\\(\\) has invalid return type devupscms\\\\ModuleData\\\\Entity\\\\type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Entity/Status.php
+
+		-
+			message: "#^Property devupscms\\\\ModuleData\\\\Entity\\\\Status\\:\\:\\$position \\(string\\) does not accept default value of type int\\.$#"
 			count: 1
 			path: src/devupscms/ModuleData/Entity/Status.php
 
@@ -2236,6 +2666,16 @@ parameters:
 			path: src/devupscms/ModuleNotification/Entity/Notification.php
 
 		-
+			message: "#^Property devupscms\\\\ModuleNotification\\\\Entity\\\\Notification\\:\\:\\$status \\(string\\) does not accept default value of type int\\.$#"
+			count: 1
+			path: src/devupscms/ModuleNotification/Entity/Notification.php
+
+		-
+			message: "#^Property devupscms\\\\ModuleNotification\\\\Entity\\\\Notification\\:\\:\\$status \\(string\\) does not accept int\\.$#"
+			count: 2
+			path: src/devupscms/ModuleNotification/Entity/Notification.php
+
+		-
 			message: "#^Property devupscms\\\\ModuleNotification\\\\Entity\\\\Notification\\:\\:\\$viewedat has unknown class devupscms\\\\ModuleNotification\\\\Entity\\\\datetime as its type\\.$#"
 			count: 1
 			path: src/devupscms/ModuleNotification/Entity/Notification.php
@@ -2321,6 +2761,11 @@ parameters:
 			path: src/devupscms/ModulePushNotification/Datatable/WorkersTable.php
 
 		-
+			message: "#^Property devupscms\\\\ModulePushNotification\\\\Entity\\\\Workers\\:\\:\\$timer \\(string\\) does not accept default value of type int\\.$#"
+			count: 1
+			path: src/devupscms/ModulePushNotification/Entity/Workers.php
+
+		-
 			message: "#^Call to an undefined static method devupscms\\\\ModulePushNotification\\\\Form\\\\Push_subscriptionForm\\:\\:getFormData\\(\\)\\.$#"
 			count: 1
 			path: src/devupscms/ModulePushNotification/Form/Push_subscriptionForm.php
@@ -2376,6 +2821,11 @@ parameters:
 			path: src/devupscms/ModuleReporting/Controller/Push_emailController.php
 
 		-
+			message: "#^Iterating over an object of an unknown class type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Controller/Push_emailController.php
+
+		-
 			message: "#^Method devupscms\\\\ModuleReporting\\\\Entity\\\\Reportingmodel\\:\\:sendMail\\(\\) invoked with 1 parameter, 2 required\\.$#"
 			count: 2
 			path: src/devupscms/ModuleReporting/Controller/Push_emailController.php
@@ -2409,6 +2859,21 @@ parameters:
 			message: "#^Function t not found\\.$#"
 			count: 8
 			path: src/devupscms/ModuleReporting/Datatable/ReportingmodelTable.php
+
+		-
+			message: "#^PHPDoc type devupscms\\\\ModuleReporting\\\\Entity\\\\datetime of property devupscms\\\\ModuleReporting\\\\Entity\\\\Emaillog\\:\\:\\$created_at is not covariant with PHPDoc type string of overridden property Model\\:\\:\\$created_at\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Entity/Emaillog.php
+
+		-
+			message: "#^PHPDoc type devupscms\\\\ModuleReporting\\\\Entity\\\\datetime of property devupscms\\\\ModuleReporting\\\\Entity\\\\Emaillog\\:\\:\\$deleted_at is not covariant with PHPDoc type string of overridden property Model\\:\\:\\$deleted_at\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Entity/Emaillog.php
+
+		-
+			message: "#^PHPDoc type devupscms\\\\ModuleReporting\\\\Entity\\\\datetime of property devupscms\\\\ModuleReporting\\\\Entity\\\\Emaillog\\:\\:\\$updated_at is not covariant with PHPDoc type string of overridden property Model\\:\\:\\$updated_at\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Entity/Emaillog.php
 
 		-
 			message: "#^Property devupscms\\\\ModuleReporting\\\\Entity\\\\Emaillog\\:\\:\\$created_at has unknown class devupscms\\\\ModuleReporting\\\\Entity\\\\datetime as its type\\.$#"
@@ -2447,6 +2912,11 @@ parameters:
 
 		-
 			message: "#^Property devupscms\\\\ModuleReporting\\\\Entity\\\\Push_email\\:\\:\\$next_call has unknown class devupscms\\\\ModuleReporting\\\\Entity\\\\date as its type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Entity/Push_email.php
+
+		-
+			message: "#^Property devupscms\\\\ModuleReporting\\\\Entity\\\\Push_email\\:\\:\\$status \\(devupscms\\\\ModuleReporting\\\\Entity\\\\date\\) does not accept default value of type int\\.$#"
 			count: 1
 			path: src/devupscms/ModuleReporting/Entity/Push_email.php
 
@@ -2601,6 +3071,16 @@ parameters:
 			path: src/devupscms/ModuleTree/Datatable/Tree_item_imageTable.php
 
 		-
+			message: "#^Property devupscms\\\\ModuleTree\\\\Entity\\\\Tree\\:\\:\\$branches \\(devupscms\\\\ModuleTree\\\\Entity\\\\text\\) does not accept null\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Entity/Tree.php
+
+		-
+			message: "#^Property devupscms\\\\ModuleTree\\\\Entity\\\\Tree\\:\\:\\$branches \\(devupscms\\\\ModuleTree\\\\Entity\\\\text\\) does not accept string\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Entity/Tree.php
+
+		-
 			message: "#^Property devupscms\\\\ModuleTree\\\\Entity\\\\Tree\\:\\:\\$branches has unknown class devupscms\\\\ModuleTree\\\\Entity\\\\text as its type\\.$#"
 			count: 1
 			path: src/devupscms/ModuleTree/Entity/Tree.php
@@ -2632,6 +3112,11 @@ parameters:
 
 		-
 			message: "#^PHPDoc tag @param references unknown parameter\\: \\$tree$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Entity/Tree_item.php
+
+		-
+			message: "#^Property devupscms\\\\ModuleTree\\\\Entity\\\\Tree_item\\:\\:\\$chain \\(devupscms\\\\ModuleTree\\\\Entity\\\\text\\) does not accept string\\.$#"
 			count: 1
 			path: src/devupscms/ModuleTree/Entity/Tree_item.php
 

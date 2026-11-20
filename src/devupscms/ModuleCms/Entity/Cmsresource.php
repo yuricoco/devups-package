@@ -24,7 +24,7 @@ class Cmsresource extends \ImageCore implements \JsonSerializable
     // la colonne id reste celle definie par ImageCore.
 
     /**
-     * @var \Cmscontent
+     * @var Cmscontent
      */
     #[ORM\ManyToOne(targetEntity: "\Cmscontent")]
     #[ORM\JoinColumn(onDelete: "cascade")]
