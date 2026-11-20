@@ -31,7 +31,7 @@ parameters:
 			path: dclass/devups/Controller/Controller.php
 
 		-
-			message: "#^PHPDoc tag @param has invalid value \\(Mixed \\( String or Array \\) \\$jsondata optionnel\\)\\: Unexpected token \"\\(\", expected variable at offset 402$#"
+			message: "#^PHPDoc tag @param has invalid value \\(Mixed \\( String or Array \\) \\$jsondata optionnel\\)\\: Unexpected token \"\\(\", expected variable at offset 394$#"
 			count: 1
 			path: dclass/devups/Controller/Controller.php
 
@@ -466,7 +466,7 @@ parameters:
 			path: dclass/devups/Tchutte/DBAL.php
 
 		-
-			message: "#^PHPDoc tag @return has invalid value \\(\\)\\: Unexpected token \"\\\\r\\\\n     \", expected type at offset 169$#"
+			message: "#^PHPDoc tag @return has invalid value \\(\\)\\: Unexpected token \"\\\\n     \", expected type at offset 165$#"
 			count: 1
 			path: dclass/devups/Tchutte/DBAL.php
 
