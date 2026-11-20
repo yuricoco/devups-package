@@ -2,32 +2,38 @@
 
 ## 1.1 Le lecteur d'annotations
 
-Devups lit ses annotations de route avec `maslosoft/addendum`, via `ReflectionAnnotatedClass` et `$method->hasAnnotation('X')` / `getAnnotation('X')`. Ce sont des annotations en docblock, pas des attributs PHP 8 :
+<div class="new" markdown="1">
+**Converti au LOT 3 du chantier v8.0.** Jusqu'à la 7.1, Devups lisait ses annotations de route en docblock avec `maslosoft/addendum` et une bibliothèque vendorée (`dclass/lib/addendum/`), via `ReflectionAnnotatedClass` et `$method->hasAnnotation('X')` / `getAnnotation('X')`. Les deux sont retirées (plus maintenues, inutiles face aux attributs natifs disponibles depuis PHP 8.0). Les mêmes annotations existent désormais comme attributs PHP 8 natifs (`#[GET(...)]`, `#[Auth(...)]`...), et `hasAnnotation()`/`getAnnotation()` restent utilisables à l'identique : `ReflectionAnnotatedClass`/`ReflectionAnnotatedMethod` sont redéfinies dans une nouvelle classe, `dclass/lib/ReflectionAnnotated.php`, qui s'appuie sur `getAttributes()->newInstance()` plutôt que sur un parseur de docblock.
+</div>
+
+Devups lit ses annotations de route sous forme d'attributs PHP 8, via `ReflectionAnnotatedClass` et `$method->hasAnnotation('X')` / `getAnnotation('X')` :
 
 ```php
-/**
- * @Auth(authorized=1)
- * @GET(path='/:id/comments')
- */
+#[Auth(authorized: 1)]
+#[GET(path: '/:id/comments')]
 public function comments($id) { ... }
 ```
 
-Les classes d'annotation vivent dans `dclass/lib/annotation/`.
+Les classes d'annotation (désormais des classes d'attribut `#[\Attribute(...)]`) vivent dans `dclass/lib/annotation/`.
+
+<div class="warn" markdown="1">
+**Attribut global, classe namespacée.** Les classes d'attribut de `dclass/lib/annotation/` sont dans l'espace de noms global. Une classe qui déclare elle-même un `namespace` (ex. `route/Admin.php`, `namespace route;`) doit référencer l'attribut par son nom pleinement qualifié (`#[\MethodView(...)]`), sans quoi PHP cherche `route\MethodView` et non `\MethodView`. Les `FrontController` restent dans l'espace de noms global : `#[GET]`/`#[POST]`/... s'y résolvent sans préfixe.
+</div>
 
 ## 1.2 Les annotations disponibles
 
-| Annotation | Portée | Rôle |
+| Annotation (attribut PHP 8) | Portée | Rôle |
 |---|---|---|
-| `@Api(name='/xxx')` | classe | le préfixe d'URL d'un `FrontController` |
-| `@GET(path='...')` | méthode | route en GET |
-| `@POST(path='...')` | méthode | route en POST |
-| `@PUT(path='...')` | méthode | route en PUT ; `path` vaut `'/:id'` par défaut |
-| `@DELETE(path='...')` | méthode | route en DELETE ; `path` vaut `'/:id'` par défaut |
-| `@Api` (sur une méthode) | méthode | route tous verbes |
-| `@Auth(authorized=1)` | méthode | exige un jeton JWT valide |
-| `@MethodView(...)` | méthode | l'ancienne forme, utilisée dans `route/Admin.php` |
-| `@DDoc(...)` | méthode | documentation |
-| `@OA\...` | classe / méthode | annotations OpenAPI (`zircote/swagger-php`), documentation seulement |
+| `#[Api(name: '/xxx')]` | classe | le préfixe d'URL d'un `FrontController` |
+| `#[GET(path: '...')]` | méthode | route en GET |
+| `#[POST(path: '...')]` | méthode | route en POST |
+| `#[PUT(path: '...')]` | méthode | route en PUT ; `path` vaut `'/:id'` par défaut |
+| `#[DELETE(path: '...')]` | méthode | route en DELETE ; `path` vaut `'/:id'` par défaut |
+| `#[Api]` (sur une méthode) | méthode | route tous verbes |
+| `#[Auth(authorized: 1)]` | méthode | exige un jeton JWT valide |
+| `#[MethodView(...)]` | méthode | l'ancienne forme, utilisée dans `route/Admin.php` |
+| `#[DDoc(...)]` | méthode | documentation |
+| `#[OA\...]` | classe / méthode | annotations OpenAPI (`zircote/swagger-php`), documentation seulement |
 
 `GET`, `POST`, `PUT` et `DELETE` héritent de `Api`. Chacun apparie l'URL réelle au motif `<name de la classe>` + `<path de la méthode>` et verse les paramètres extraits dans `Request::$uri_get_param`. Si l'appariement échoue : 404.
 
@@ -36,10 +42,10 @@ Les classes d'annotation vivent dans `dclass/lib/annotation/`.
 Un segment préfixé de `:` est un paramètre nommé :
 
 ```php
-/** @GET(path='/:id') */
+#[GET(path: '/:id')]
 public function detail($id) { ... }
 
-/** @GET(path='/export/:format/:id') */
+#[GET(path: '/export/:format/:id')]
 public function export($format = null, $id = null) { ... }
 ```
 
@@ -47,7 +53,7 @@ Le nom du paramètre d'URL doit correspondre au nom du paramètre PHP : c'est pa
 
 ## 1.4 La barre oblique initiale
 
-Le motif complet est construit par `rtrim($ctrlApi->name, '/') . '/' . ltrim($ann->path, '/')`. La barre oblique initiale du `path` reste la forme attendue : `@GET(path='/export/:format/:id')`, jamais `@GET(path='export/:format/:id')`.
+Le motif complet est construit par `rtrim($ctrlApi->name, '/') . '/' . ltrim($ann->path, '/')`. La barre oblique initiale du `path` reste la forme attendue : `#[GET(path: '/export/:format/:id')]`, jamais `#[GET(path: 'export/:format/:id')]`.
 
 # Chapitre 2 — Les trois styles d'API
 
@@ -126,75 +132,65 @@ while (remain) {
 
 ## 2.2 Style REST dédié — un `FrontController` par entité
 
-Généré par `php devups core:g:frontcontroller`. La classe porte `@Api(name='/xxx')`, les méthodes une annotation de verbe.
+Généré par `php devups core:g:frontcontroller`. La classe porte `#[Api(name: '/xxx')]`, les méthodes un attribut de verbe.
 
 ```php
-/**
- * @Api(name='/task')
- */
+#[Api(name: '/task')]
 class TaskFrontController extends FrontController
 {
-    /** @GET */
+    #[GET]
     public function index()
     {
         return Task::initQb()->with('project', ['name'])->lazyloading();
     }
 
-    /** @GET(path='/:id') */
+    #[GET(path: '/:id')]
     public function detail($id) { ... }
 
-    /**
-     * @Auth(authorized=1)
-     * @POST
-     */
+    #[Auth(authorized: 1)]
+    #[POST]
     public function create() { ... }
 
-    /**
-     * @Auth(authorized=1)
-     * @PUT(path='/:id')
-     */
+    #[Auth(authorized: 1)]
+    #[PUT(path: '/:id')]
     public function update($id) { ... }
 
-    /**
-     * @Auth(authorized=1)
-     * @DELETE(path='/:id')
-     */
+    #[Auth(authorized: 1)]
+    #[DELETE(path: '/:id')]
     public function delete($id) { ... }
 
-    /**
-     * @Auth(authorized=1)
-     * @POST(path='/:id/close')
-     */
+    #[Auth(authorized: 1)]
+    #[POST(path: '/:id/close')]
     public function close($id) { ... }
 }
 ```
 
-| Méthode PHP | Annotation | Route |
+| Méthode PHP | Attribut | Route |
 |---|---|---|
-| `index()` | `@GET` | `GET /api/task` |
-| `create()` | `@POST` | `POST /api/task` |
-| `detail($id)` | `@GET(path='/:id')` | `GET /api/task/42` |
-| `update($id)` | `@PUT(path='/:id')` | `PUT /api/task/42` |
-| `delete($id)` | `@DELETE(path='/:id')` | `DELETE /api/task/42` |
-| `close($id)` | `@POST(path='/:id/close')` | `POST /api/task/42/close` |
+| `index()` | `#[GET]` | `GET /api/task` |
+| `create()` | `#[POST]` | `POST /api/task` |
+| `detail($id)` | `#[GET(path: '/:id')]` | `GET /api/task/42` |
+| `update($id)` | `#[PUT(path: '/:id')]` | `PUT /api/task/42` |
+| `delete($id)` | `#[DELETE(path: '/:id')]` | `DELETE /api/task/42` |
+| `close($id)` | `#[POST(path: '/:id/close')]` | `POST /api/task/42/close` |
 
-Ce style est strict sur le verbe : une méthode annotée `@GET` appelée en `POST` répond 405.
+Ce style est strict sur le verbe : une méthode portant `#[GET]` appelée en `POST` répond 405.
 
 ### Le dispatch
 
 `Request::FrontController()` :
 
 1. convertit le segment d'action en nom de méthode (`close-task` → `closeTask`) ;
-2. vérifie que l'entité demandée correspond au `name` de l'annotation `@Api` de la classe (sinon 500) ;
-3. si la méthode n'existe pas, balaie les méthodes publiques qui portent une annotation du verbe courant avec un `path`, et apparie le motif complet à l'URI — c'est le mécanisme des sous-ressources ;
+2. vérifie que l'entité demandée correspond au `name` de l'attribut `#[Api]` de la classe (sinon 500) ;
+3. si la méthode n'existe pas, balaie les méthodes publiques qui portent un attribut du verbe courant avec un `path`, et apparie le motif complet à l'URI — c'est le mécanisme des sous-ressources ;
 4. sinon, résout par nombre de segments (`/task` → `index`/`create`/…, `/task/42` → `detail`/`update`/`delete`) ;
 5. contrôle `Auth::$restrictions` sur le nom de méthode réellement résolu (§8.4) ;
-6. contrôle `@Auth` ;
-7. **verrou d'annotation** : si la méthode n'a ni annotation du verbe courant, ni `@Api`, répond 405 ;
+6. contrôle `#[Auth]` ;
+7. **verrou d'attribut** : si la méthode n'a ni attribut du verbe courant, ni `#[Api]`, répond 405 ;
 8. appelle la méthode, paramètres liés par nom.
 
 <div class="warn" markdown="1">
-**Conséquence du verrou (étape 7).** Une méthode publique de `FrontController` sans annotation de verbe n'est atteignable par aucune route, quel que soit son nom. Vérifier l'annotation avant de conclure qu'une méthode est appelée.
+**Conséquence du verrou (étape 7).** Une méthode publique de `FrontController` sans attribut de verbe n'est atteignable par aucune route, quel que soit son nom. Vérifier l'attribut avant de conclure qu'une méthode est appelée.
 </div>
 
 ## 2.3 Style libre — `<action>Serve()`
@@ -209,7 +205,7 @@ public function helloServe() { ... }
 public function acceptInvitationServe() { ... }
 ```
 
-Les paramètres passent en chaîne de requête. Le routeur n'exige pas d'annotation ici : `@Auth` est à poser explicitement, ou le contrôle à écrire à la main :
+Les paramètres passent en chaîne de requête. Le routeur n'exige pas d'attribut ici : `#[Auth]` est à poser explicitement, ou le contrôle à écrire à la main :
 
 ```php
 if (!Auth::$user_id) {
@@ -226,7 +222,7 @@ if (!Auth::$user_id) {
 |---|---|
 | CRUD immédiat d'une entité, sans écrire de contrôleur | générique |
 | API consommée par une application mobile ou un front séparé, avec un contrat stable | REST dédié |
-| sous-ressource (`/task/:id/close`) | REST dédié, avec `@POST(path='/:id/close')` |
+| sous-ressource (`/task/:id/close`) | REST dédié, avec `#[POST(path: '/:id/close')]` |
 | action métier qui n'est pas un CRUD | libre (`xxxServe`) |
 
 Le style générique est pratique et dangereux : il expose les actions d'écriture de toute entité enregistrée. Le chapitre 8 décrit les garde-fous.
@@ -797,15 +793,15 @@ $token = Auth::decodeJWTOrFail($jwt);    // lève sur tout jeton absent, invalid
 **`JWT_EXPIRE=false` désactive toute expiration** : seule la signature est vérifiée, un jeton émis est valable indéfiniment. Fixer une durée (`+72 hours`) en production. Pour tout code neuf qui décode un jeton hors du flux par annotation, utiliser `decodeJWTOrFail()` plutôt que `decodeJWT()`, dont l'échec silencieux peut être oublié.
 </div>
 
-## 8.3 `@Auth`, et où il est vérifié
+## 8.3 `#[Auth]`, et où il est vérifié
 
 | Dispatcher | Traitement |
 |---|---|
-| `Router::mapFunction()` (pages, style libre) | si la méthode porte `@Auth`, exige `Auth::$user_id` |
-| `Request::FrontController()` (REST dédié) | si la méthode porte `@Auth`, vérifie le jeton |
+| `Router::mapFunction()` (pages, style libre) | si la méthode porte `#[Auth]`, exige `Auth::$user_id` |
+| `Request::FrontController()` (REST dédié) | si la méthode porte `#[Auth]`, vérifie le jeton |
 | `FrontController::authorization()` (générique) | consulte `Auth::$restrictions` |
 
-L'absence de `@Auth` sur une méthode `xxxServe()` signifie **aucun contrôle** : la route est anonyme.
+L'absence de `#[Auth]` sur une méthode `xxxServe()` signifie **aucun contrôle** : la route est anonyme.
 
 ## 8.4 `Auth::$restrictions` — protégé par défaut
 
@@ -915,7 +911,7 @@ Le refus répond 403 sans dire si la ligne existe, et **termine la requête** : 
 | Point | À vérifier |
 |---|---|
 | nouvelle entité exposée | dans `$public_access` ? dans `$publicMethods` à bon escient ? |
-| nouvelle action d'écriture d'API | `@Auth(authorized=1)` ? absente de `$publicMethods` ? |
+| nouvelle action d'écriture d'API | `#[Auth(authorized: 1)]` ? absente de `$publicMethods` ? |
 | écriture sur une ressource d'un utilisateur | l'entité est-elle dans `setOwnerColumns()` ? sinon, est-ce un choix documenté ? |
 | nouvelle action d'administration | `can()` vérifié — automatiquement pour le CRUD, à la main pour une action métier ? `rights:sync` lancé ? |
 | nouveau refus | la requête s'arrête-t-elle vraiment ? le message révèle-t-il l'existence de la ressource ? |
@@ -956,6 +952,6 @@ La documentation est construite par analyse statique des annotations Devups et d
 
 ## 9.2 Ce qui n'est pas lu
 
-Le générateur déduit chaque route de ses annotations Devups (`@Api`, `@GET`, `@POST`, `@PUT`, `@DELETE`, `@Auth`) et chaque schéma du datacore de l'entité. Les annotations `@OA\...` de `zircote/swagger-php`, que l'on trouve sur certains contrôleurs, ne sont **pas** lues par ce générateur : elles ne changent rien à `/documentation/` ni à `/admin/apidocs`. Une route qui n'apparaît pas dans la documentation est d'abord une route dont l'annotation de verbe manque — ce qui, pour un `FrontController`, la rend aussi inatteignable (§2.2).
+Le générateur déduit chaque route de ses attributs Devups (`#[Api]`, `#[GET]`, `#[POST]`, `#[PUT]`, `#[DELETE]`, `#[Auth]`) et chaque schéma du datacore de l'entité. Les annotations `#[OA\...]` de `zircote/swagger-php`, que l'on trouve sur certains contrôleurs, ne sont **pas** lues par ce générateur : elles ne changent rien à `/documentation/` ni à `/admin/apidocs`. Une route qui n'apparaît pas dans la documentation est d'abord une route dont l'annotation de verbe manque — ce qui, pour un `FrontController`, la rend aussi inatteignable (§2.2).
 
 <p class="end">Fin du Tome III. Le Tome IV traite des modules fournis par le socle : droits, journaux, langues, contenus, arbres, statuts, notifications, courriels, et des dettes connues du framework.</p>

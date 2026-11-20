@@ -4,10 +4,10 @@
 
 Dans Devups, la structure des données est décrite par des fichiers JSON appelés **datacores**. Ils ne sont pas lus à l'exécution pour construire les requêtes : ils servent au générateur, au scan qui établit la liste des composants, modules et entités, au catalogue des droits (`rights:sync`) et à la documentation générée (`api:doc`, `doc:guide`).
 
-La vérité d'exécution, elle, est dans les annotations des classes d'entité, lues par Doctrine. Le datacore est l'intention ; l'annotation est le contrat.
+La vérité d'exécution, elle, est dans les attributs PHP 8 des classes d'entité, lus par Doctrine (docblock jusqu'à la 7.1, attributs depuis le LOT 1 du chantier v8.0). Le datacore est l'intention ; l'attribut est le contrat.
 
 <div class="note" markdown="1">
-**Corollaire.** Quand les deux divergent — et ils divergent, voir §1.6 —, c'est l'annotation qui gagne, parce que c'est elle que Doctrine lit pour construire la table. Le datacore ne redevient la vérité qu'au moment où l'on régénère l'entité, et il écrase alors tout ce qui a été ajouté à la main.
+**Corollaire.** Quand les deux divergent — et ils divergent, voir §1.6 —, c'est l'attribut qui gagne, parce que c'est lui que Doctrine lit pour construire la table. Le datacore ne redevient la vérité qu'au moment où l'on régénère l'entité, et il écrase alors tout ce qui a été ajouté à la main.
 </div>
 
 ## 1.2 Le datacore d'un composant
@@ -81,12 +81,12 @@ C'est un objet indexé par des chaînes numériques, pas un tableau.
 | Clé | Valeurs | Note |
 |---|---|---|
 | `name` | minuscules, chiffres et `_` | devient le nom de colonne |
-| `datatype` | `string`, `text`, `integer`, `float`, `date`, `datetime`, `json`, `boolean` | devient `@Column(type=...)` |
+| `datatype` | `string`, `text`, `integer`, `float`, `date`, `datetime`, `json`, `boolean` | devient `#[ORM\Column(type: ...)]` |
 | `size` | entier en chaîne | pertinent pour `string` |
 | `nullable` | `"not"` (NOT NULL) ou `"default"` (nullable) | ignoré pour une relation (§1.6) |
 | `formtype` | voir le Tome III | pilote le champ généré |
 
-`id` est implicite et ne doit jamais figurer dans `attribut` : le générateur l'ajoute avec `@Id @GeneratedValue`.
+`id` est implicite et ne doit jamais figurer dans `attribut` : le générateur l'ajoute avec `#[ORM\Id] #[ORM\GeneratedValue]`.
 
 ### Le bloc `relation`
 
@@ -95,7 +95,7 @@ C'est un objet indexé par des chaînes numériques, pas un tableau.
 | `entity` | le nom en minuscules de l'entité cible |
 | `cardinality` | `manyToOne`, `oneToMany`, `manyToMany`, `oneToOne` |
 | `nullable` | ignoré par le générateur (§1.6) |
-| `ondelete` | `cascade`, `set null`, `restrict` — le seul attribut de `@JoinColumn` réellement interpolé |
+| `ondelete` | `cascade`, `set null`, `restrict` — le seul argument de `#[ORM\JoinColumn]` réellement interpolé |
 
 ### Le bloc `lang`
 
@@ -117,11 +117,11 @@ Toute entité mappée reçoit `created_at`, `updated_at` et `deleted_at`. Ils ne
 
 | Besoin | Datacore | Réalité |
 |---|---|---|
-| contrainte d'unicité | aucune notion | `@UniqueConstraint(name=..., columns={...})` à la main |
-| relation obligatoire | `"nullable":"not"` déclaré… | …jamais interpolé sur une relation ; la clé étrangère est NULLable dans tous les cas. `nullable=false` à ajouter à la main dans `@JoinColumn` |
-| identité composite | aucune notion | `@Id @ManyToOne` à la main, pas de colonne `id`, `getId()` surchargée |
+| contrainte d'unicité | aucune notion | `#[ORM\UniqueConstraint(name: ..., columns: [...])]` à la main |
+| relation obligatoire | `"nullable":"not"` déclaré… | …jamais interpolé sur une relation ; la clé étrangère est NULLable dans tous les cas. `nullable: false` à ajouter à la main dans `#[ORM\JoinColumn]` |
+| identité composite | aucune notion | `#[ORM\Id] #[ORM\ManyToOne(...)]` à la main, pas de colonne `id`, `getId()` surchargée |
 
-Dans les trois cas, l'entité ne doit plus être régénérée : `core:g:crud` écrase l'annotation (Tome I, §6.7).
+Dans les trois cas, l'entité ne doit plus être régénérée : `core:g:crud` écrase l'attribut (Tome I, §6.7).
 
 # Chapitre 2 — Les entités
 
@@ -145,7 +145,11 @@ Entre `Model` et l'entité, une classe de base réutilisable de `dclass/extends/
 | `Dvups_migration` | une migration jouée | (table `dvups_migration`) |
 | `Dvups_config_item` | déclarée traduite, sans table ni appelant | — (code mort) |
 
-Toutes portent l'annotation `@MappedSuperclass` : sans elle, Doctrine ignore les colonnes héritées et la table de l'entité enfant est créée incomplète.
+Toutes portent l'attribut `#[ORM\MappedSuperclass]` : sans lui, Doctrine ignore les colonnes héritées et la table de l'entité enfant est créée incomplète.
+
+<div class="warn" markdown="1">
+**Piège converti au LOT 1 du chantier v8.0.** Une entité fille qui redéclarait elle-même une propriété déjà fournie par sa `MappedSuperclass` (ex. `$id`, ou `created_at`/`updated_at`/`deleted_at` hérités via un trait partagé) était tolérée par l'ancien lecteur de docblock, mais lève désormais `MappingException: Duplicate definition of column` sous l'`AttributeDriver` de Doctrine ORM 3. Ne jamais redéclarer une colonne déjà portée par la `MappedSuperclass` ; un trait partagé par plusieurs `MappedSuperclass` doit redéclarer lui-même ses propres attributs sur chacune (un simple `use` du trait ne suffit pas).
+</div>
 
 <div class="warn" markdown="1">
 **`StatusTrait` est inutilisable.** Ce trait de `dclass/extends/` interroge une entité `Status_entity` qui n'existe plus dans le socle. Pour les statuts, utiliser l'API de `Status` (Tome IV, chapitre 6).
@@ -155,34 +159,37 @@ Toutes portent l'annotation `@MappedSuperclass` : sans elle, Doctrine ignore les
 
 ```php
 <?php
-/**
- * @Entity @Table(name="task")
- */
+use Doctrine\ORM\Mapping as ORM;
+
+#[ORM\Entity]
+#[ORM\Table(name: "task")]
 class Task extends Model implements JsonSerializable
 {
     /**
-     * @Id @GeneratedValue @Column(type="integer")
      * @var int
      */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     protected $id;
 
     /**
-     * @Column(name="name", type="string", length=255)
      * @var string
      */
+    #[ORM\Column(name: "name", type: "string", length: 255)]
     protected $name;
 
     /**
-     * @Column(name="description", type="text", nullable=true)
      * @var string
      */
+    #[ORM\Column(name: "description", type: "text", nullable: true)]
     protected $description;
 
     /**
-     * @ManyToOne(targetEntity="\Project")
-     * @JoinColumn(onDelete="cascade")
      * @var \Project
      */
+    #[ORM\ManyToOne(targetEntity: "\Project")]
+    #[ORM\JoinColumn(onDelete: "cascade")]
     public $project;
 
     public function __construct($id = null)
@@ -210,25 +217,25 @@ Quatre conventions, toutes mesurées dans le code du framework :
 
 **2. Le constructeur instancie les relations.** `$this->project = new Project();` — sans cela, `$task->project->getName()` échoue sur `null`.
 
-**3. L'annotation doit toucher la classe.** Le lecteur de Doctrine ne lit que le docblock immédiatement adjacent. Un docblock de prose intercalé fait échouer toute lecture de métadonnées.
+**3. L'attribut doit toucher la classe.** Depuis le passage aux attributs PHP 8 (chantier v8.0), `#[ORM\Entity]` doit précéder directement `class Xxx` - mais, contrairement à l'ancien lecteur de docblock, un docblock de prose intercalé entre l'attribut et la classe ne casse rien : un attribut est lu par réflexion (`getAttributes()`), indépendamment des commentaires.
 
 **4. `jsonSerialize()` ajoute, puis délègue.** `+ parent::jsonSerialize()` récupère la sérialisation du socle, qui remonte `$this->dvserialised` et les relations déclarées dans `$this->with`.
 
-## 2.3 L'annotation de référence
+## 2.3 L'attribut de référence
 
-| Annotation | Portée | Rôle |
+| Attribut PHP 8 | Portée | Rôle |
 |---|---|---|
-| `@Entity` | classe | déclare une entité Doctrine |
-| `@MappedSuperclass` | classe | déclare une classe de base dont les colonnes sont héritées |
-| `@Table(name="...")` | classe | le nom de table |
-| `@Table(..., uniqueConstraints={@UniqueConstraint(name=..., columns={...})})` | classe | contrainte unique nommée |
-| `@Id`, `@GeneratedValue` | propriété | identité, auto-incrément |
-| `@Column(name=, type=, length=, nullable=)` | propriété | une colonne |
-| `@ManyToOne(targetEntity="\X")` | propriété | relation propriétaire |
-| `@OneToMany(targetEntity="\X", mappedBy="y")` | propriété | relation inverse |
-| `@ManyToMany(targetEntity="\X")` | propriété | relation n-n |
-| `@JoinColumn(onDelete=, nullable=)` | propriété | la clé étrangère |
-| `@var` | propriété | le type PHP, lu par l'hydratation |
+| `#[ORM\Entity]` | classe | déclare une entité Doctrine |
+| `#[ORM\MappedSuperclass]` | classe | déclare une classe de base dont les colonnes sont héritées |
+| `#[ORM\Table(name: "...")]` | classe | le nom de table |
+| `#[ORM\Table(..., uniqueConstraints: [new ORM\UniqueConstraint(name: ..., columns: [...])])]` | classe | contrainte unique nommée |
+| `#[ORM\Id]`, `#[ORM\GeneratedValue]` | propriété | identité, auto-incrément |
+| `#[ORM\Column(name:, type:, length:, nullable:)]` | propriété | une colonne |
+| `#[ORM\ManyToOne(targetEntity: "\X")]` | propriété | relation propriétaire |
+| `#[ORM\OneToMany(targetEntity: "\X", mappedBy: "y")]` | propriété | relation inverse |
+| `#[ORM\ManyToMany(targetEntity: "\X")]` | propriété | relation n-n |
+| `#[ORM\JoinColumn(onDelete:, nullable:)]` | propriété | la clé étrangère |
+| `@var` | propriété | le type PHP, lu par l'hydratation (reste en docblock - pas un attribut Doctrine) |
 
 ## 2.4 Les propriétés `dv*`
 
@@ -273,7 +280,7 @@ DBAL            (dclass/devups/Tchutte/DBAL.php)           extends Database
 
 ## 3.2 Doctrine, et ce qu'il ne fait pas
 
-L'`EntityManager` de Doctrine, accessible par `DBAL::getEntityManager()`, sert à exactement deux choses : lire les métadonnées d'annotation (quelle table, quelles colonnes, quelles associations) et comparer ou créer le schéma (`schema:update`, `install`).
+L'`EntityManager` de Doctrine, accessible par `DBAL::getEntityManager()`, sert à exactement deux choses : lire les métadonnées d'attribut (quelle table, quelles colonnes, quelles associations) et comparer ou créer le schéma (`schema:update`, `install`).
 
 Aucune requête métier ne passe par Doctrine. Ne pas aller chercher une connexion dans `getEntityManager()` : c'est une connexion différente, volontairement.
 
@@ -436,7 +443,7 @@ Un second argument `$outerLink` (`'AND'` par défaut) rattache le groupe entier 
 
 ## 4.4 Les relations
 
-Chaque `@ManyToOne` de l'entité de base est automatiquement jointe en `LEFT JOIN`, avec pour alias le nom de la table cible :
+Chaque `#[ORM\ManyToOne]` de l'entité de base est automatiquement jointe en `LEFT JOIN`, avec pour alias le nom de la table cible :
 
 ```sql
 LEFT JOIN `project` ON `project`.id = task.project_id
@@ -737,7 +744,7 @@ Une migration qui contient `DROP`, `TRUNCATE` ou `DELETE` est marquée **destruc
 
 ## 6.5 Écrire une migration
 
-1. Modifier l'entité (annotation).
+1. Modifier l'entité (attribut).
 2. `php devups schema:update --dump-sql` : Doctrine propose le SQL qui aligne la base sur l'entité.
 3. Copier ce SQL dans un nouveau fichier daté de `database/migration/`, le relire, l'ajuster (reprise de données, ordre des `DROP` quand des clés étrangères lient les tables entre elles).
 4. `php devups migrate --dry-run`, puis `php devups migrate`.

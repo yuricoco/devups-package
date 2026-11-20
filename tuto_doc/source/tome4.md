@@ -245,7 +245,7 @@ Une entité qui consomme une donnée de référence peut s'y rattacher de quatre
 
 | Mode | Forme | Usage |
 |---|---|---|
-| **Relation** | `@ManyToOne(targetEntity="\Tree_item")`, `onDelete="set null"` | une valeur. Filtrable, intègre, jointe automatiquement |
+| **Relation** | `#[ORM\ManyToOne(targetEntity: "\Tree_item")]`, `onDelete: "set null"` | une valeur. Filtrable, intègre, jointe automatiquement |
 | **Table pivot** | `<entité>_<référence>`, deux clés étrangères | plusieurs valeurs. Filtrable, intègre |
 | **Instantané par slug** | la valeur figée dans la ligne à sa création, souvent en JSON | enregistrements historiques qui doivent garder la valeur d'origine même si elle est renommée ensuite ; impose l'immuabilité du slug |
 | **Chaîne dénormalisée** | `"3,7,12"` dans une colonne texte | **proscrit** : aucune intégrité, aucun filtrage SQL possible |
@@ -565,7 +565,7 @@ Un défaut connu et nommé coûte une heure ; le même défaut redécouvert coû
 | 4 | `?<relation>_id=X` ne filtre rien ; la réponse est paginée à 30 | Tome III §2.1 |
 | 5 | `gte` / `lte` n'existent pas et deviennent un `LIKE` | Tome III §4.7 |
 | 6 | une méthode de `FrontController` sans annotation de verbe est morte | Tome III §2.2 |
-| 7 | une méthode `xxxServe()` sans `@Auth` est anonyme | Tome III §8.3 |
+| 7 | une méthode `xxxServe()` sans `#[Auth]` est anonyme | Tome III §8.3 |
 | 8 | `whereIn()` / `whereBetween()` ne sont pas paramétrés | Tome II §4.2 |
 | 9 | un module sans `*Core.json` est invisible, sans erreur | Tome I §7.3 |
 | 10 | `Genesis::json_encode()` et `dv_dump()` terminent la requête | Tome III §6.2, Tome I §4.5 |

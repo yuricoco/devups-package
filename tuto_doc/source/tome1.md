@@ -64,7 +64,7 @@ Devups est un framework PHP dans lequel l'arborescence des dossiers est le modè
 
 **3. Trois styles d'API qui cohabitent.** Un style générique (`POST /api/create/task`) sert n'importe quelle entité enregistrée sans écrire de contrôleur. Un style REST dédié (`POST /api/task`) passe par un `FrontController` par entité, piloté par annotations. Un style libre (`GET /api/hello` → `helloServe()`) sert les actions qui ne sont pas un CRUD. Les trois vivent sur les mêmes entités et ne se comportent pas pareil : le Tome III les sépare.
 
-**4. Doctrine n'est là que pour les métadonnées.** `doctrine/orm` lit les annotations `@Column` / `@ManyToOne` et sait créer ou mettre à jour le schéma. Mais aucune requête métier ne passe par lui : toute lecture et toute écriture passent par la couche maison `DBAL` / `QueryBuilder`, dite « Tchutte » (du surnom de l'auteur du socle).
+**4. Doctrine n'est là que pour les métadonnées.** `doctrine/orm` lit les attributs PHP 8 `#[ORM\Column]` / `#[ORM\ManyToOne]` et sait créer ou mettre à jour le schéma. Mais aucune requête métier ne passe par lui : toute lecture et toute écriture passent par la couche maison `DBAL` / `QueryBuilder`, dite « Tchutte » (du surnom de l'auteur du socle).
 
 ## 1.3 Les deux niveaux : composant et module
 
@@ -83,7 +83,7 @@ Un projet ajoute ses propres composants à côté des trois du socle — par exe
 
 | Élément | Valeur |
 |---|---|
-| PHP | **8.2 ou plus** (`composer.json` : `"php": ">=8.2"`), testé en intégration continue sur 8.2, 8.3 et 8.4 |
+| PHP | **8.3 ou plus** (`composer.json` : `"php": ">=8.3"`), testé en intégration continue sur 8.3, 8.4 et 8.5 |
 | Extensions | `pdo_mysql`, `mbstring`, `xml`, `gd`, `zip`, `curl`, `intl` |
 | Base de données | MySQL ou MariaDB |
 | Composer | requis |
@@ -92,20 +92,23 @@ Dépendances principales (`composer.json`) :
 
 | Paquet | Rôle |
 |---|---|
-| `doctrine/orm ^2.1.3` | métadonnées d'annotation et création du schéma |
-| `philo/laravel-blade 3.*` | moteur de vues Blade |
+| `doctrine/orm ^3.7` | métadonnées d'attribut PHP 8 et création du schéma (`doctrine/dbal` suit en `^4`) |
+| `illuminate/view ^11.0` (+ `illuminate/events ^11.0`) | moteur de vues Blade, assemblé directement (sans `philo/laravel-blade`, retiré) |
 | `firebase/php-jwt ^6.9` | jetons d'authentification de l'API |
 | `phpmailer/phpmailer ^6.6` | envoi de courriels |
 | `mpdf/mpdf ^8.0` | génération de PDF |
 | `guzzlehttp/guzzle ^7.5` | appels HTTP sortants |
-| `maslosoft/addendum` | lecture des annotations de route |
+| `symfony/cache ^7.4` | cache des métadonnées Doctrine (remplace `doctrine/cache`, retiré) |
 | `ifsnop/mysqldump-php ^2.9` | sauvegardes de base |
 | `zircote/swagger-php ^4.11` | annotations OpenAPI |
 | `google/apiclient ^2.18` | authentification Google |
 | `minishlink/web-push ^10.0` | notifications Web Push (VAPID) |
 | `barcode-bakery/barcode-1d ^7.0` | codes-barres |
+| `psr/container ^2.0`, `psr/log ^3.0`, `psr/http-message ^2.0`, `psr/http-server-handler ^1.0`, `psr/http-server-middleware ^1.0` | interfaces PSR-11/PSR-3/PSR-7/PSR-15 (`Devups\Container`, `Devups\Logger`, `Devups\Http\MiddlewareStack` - Tome III) |
 
-En développement s'ajoutent `phpunit/phpunit ^10.5`, `phpstan/phpstan ^1.10` et `symfony/var-dumper`.
+Les routes se lisent désormais par des attributs PHP 8 natifs (`#[GET]`, `#[POST]`...) - `maslosoft/addendum` et la bibliothèque vendorée `dclass/lib/addendum/` qui servaient à simuler des annotations par lecture de docblock sont retirées (chapitre 5, §5.7).
+
+En développement s'ajoutent `phpunit/phpunit ^11.5`, `phpstan/phpstan ^2.3` et `symfony/var-dumper`/`symfony/var-exporter`.
 
 L'autochargement est un classmap sur `dclass/` et `src/`. Conséquence pratique : Composer résout une classe par son nom, pas par le composant qui la déclare. Après avoir ajouté, renommé ou déplacé une classe, lancer `composer dump-autoload`.
 
@@ -184,8 +187,8 @@ dclass/
 ├── extends/                     les classes de base d'entités réutilisables
 ├── generator/                   le générateur de code, la CLI, OpenAPI, guide
 ├── lib/
-│   ├── annotation/              GET, POST, PUT, DELETE, Api, Auth, MethodView, DDoc
-│   ├── addendum/                le lecteur d'annotations
+│   ├── annotation/              GET, POST, PUT, DELETE, Api, Auth, MethodView, DDoc (attributs PHP 8 natifs)
+│   ├── ReflectionAnnotated.php  ReflectionAnnotatedClass/Method (hasAnnotation()/getAnnotation() via getAttributes())
 │   └── Util.php, DMail.php, DPdf.php, HZip.php, SimpleXLSX.php
 └── dvups_functions.php          fonctions globales (can(), local(), d_url()…)
 ```
@@ -699,12 +702,12 @@ php devups core:g:crud monprojet\ModuleTask\task
 **Corrigé en 7.1 (D7).** `__Generator::dependencies()` vérifie désormais si le `require` de l'entité est déjà présent avant d'ajouter un bloc en mode "append" — régénérer la même entité deux fois de suite n'écrit plus rien de nouveau si son bloc existe déjà. Relire quand même le fichier de module après une régénération manuelle reste une bonne pratique pour toute autre modification faite à la main.
 </div>
 
-**2. Une entité éditée à la main pour une contrainte sort de la régénération.** Une `@UniqueConstraint`, une identité composite : tout cela est écrasé par `core:g:crud`. L'entité passe alors en édition manuelle permanente.
+**2. Une entité éditée à la main pour une contrainte sort de la régénération.** Un `#[ORM\UniqueConstraint]`, une identité composite : tout cela est écrasé par `core:g:crud`. L'entité passe alors en édition manuelle permanente.
 
-**3. Le `nullable` d'une relation était ignoré par le générateur.** `BackendGenerator.php` interpolait `nullable` pour une colonne simple, mais pour une relation ne produisait que `@JoinColumn(onDelete="...")` — la clé étrangère restait toujours NULLable, quoi que dise le datacore.
+**3. Le `nullable` d'une relation était ignoré par le générateur.** `BackendGenerator.php` interpolait `nullable` pour une colonne simple, mais pour une relation ne produisait que `#[ORM\JoinColumn(onDelete: "...")]` — la clé étrangère restait toujours NULLable, quoi que dise le datacore.
 
 <div class="new" markdown="1">
-**Corrigé en 7.1 (D6).** Une relation déclarée `"not"` nullable dans le datacore produit désormais `@JoinColumn(onDelete="...", nullable=false)`. Une relation `"default"` (le cas courant) reste inchangée.
+**Corrigé en 7.1 (D6).** Une relation déclarée `"not"` nullable dans le datacore produit désormais `#[ORM\JoinColumn(onDelete: "...", nullable: false)]` (attribut PHP 8 depuis le LOT 1 du chantier v8.0 - docblock `@JoinColumn(onDelete="...", nullable=false)` avant). Une relation `"default"` (le cas courant) reste inchangée.
 </div>
 
 <div class="new" markdown="1">
@@ -735,12 +738,12 @@ Le Tome II décrit le contenu de ces fichiers. Ce chapitre décrit comment ils s
 
 1. **`listmodule` dans un `<composant>Core.json` est ignoré.** Il est écrasé par le scan des sous-dossiers.
 2. **Un module sans son `*Core.json` est invisible, sans erreur.** Ni `dvups_:update`, ni `schema:update`, ni la documentation ne le voient.
-3. **Les `<Entité>Core.json` ne pilotent pas Doctrine.** Une fois le module trouvé, tout fichier annoté `@Entity` dans son dossier `Entity/` est pris en compte par Doctrine, qu'il ait un datacore ou non. Les datacores servent à la génération, à `rights:sync` et à la documentation.
+3. **Les `<Entité>Core.json` ne pilotent pas Doctrine.** Une fois le module trouvé, tout fichier portant l'attribut `#[ORM\Entity]` dans son dossier `Entity/` est pris en compte par Doctrine, qu'il ait un datacore ou non. Les datacores servent à la génération, à `rights:sync` et à la documentation.
 
 ## 7.4 Créer un module à la main
 
 1. `src/<composant>/<Module>/<module>Core.json` → le module existe.
-2. Les entités dans `Entity/`, annotées `@Entity`.
+2. Les entités dans `Entity/`, portant l'attribut `#[ORM\Entity]`.
 3. Une migration qui crée les tables (Tome II, chapitre 6), puis `php devups migrate`.
 4. `require '<composant>/<Module>/<composant>.module<nom>.php';` dans `src/requires.php` → les classes sont chargées.
 5. `php devups dvups_:update` → l'entité apparaît dans le back-office.
@@ -757,18 +760,18 @@ Le Tome II décrit le contenu de ces fichiers. Ce chapitre décrit comment ils s
 
 | Besoin | État | Solution |
 |---|---|---|
-| contrainte d'unicité | aucune notion dans le format | `@UniqueConstraint(name=..., columns={...})` à la main |
-| relation obligatoire | `"nullable":"not"` ignoré sur une relation (§6.7) | `nullable=false` à la main dans `@JoinColumn` |
-| identité composite | aucune notion | `@Id @ManyToOne` à la main, pas de colonne `id` |
+| contrainte d'unicité | aucune notion dans le format | `#[ORM\UniqueConstraint(name: ..., columns: [...])]` à la main |
+| relation obligatoire | `"nullable":"not"` ignoré sur une relation (§6.7) | `nullable: false` à la main dans `#[ORM\JoinColumn]` |
+| identité composite | aucune notion | `#[ORM\Id] #[ORM\ManyToOne(...)]` à la main, pas de colonne `id` |
 
 Dans les trois cas, l'entité passe en édition manuelle permanente.
 
 <div class="note" markdown="1">
-**Sur la contrainte d'unicité.** Nommer la contrainte à l'identique de l'index physique déjà en base. Doctrine le reconnaît alors comme sien et ne propose plus de `DROP INDEX` dans `--dump-sql`. À l'inverse, `@Column(..., unique=true)` sans nom fait générer par Doctrine son propre nom (`UNIQ_...`), différent de l'existant.
+**Sur la contrainte d'unicité.** Nommer la contrainte à l'identique de l'index physique déjà en base. Doctrine le reconnaît alors comme sien et ne propose plus de `DROP INDEX` dans `--dump-sql`. À l'inverse, `#[ORM\Column(unique: true)]` sans nom fait générer par Doctrine son propre nom (`UNIQ_...`), différent de l'existant.
 </div>
 
-<div class="warn" markdown="1">
-**Piège de docblock.** Le lecteur d'annotations de Doctrine ne lit que le docblock immédiatement adjacent à `class Xxx`. Intercaler un docblock de prose (`/** ... */`) entre l'annotation et la classe fait échouer toute lecture de métadonnées (« is not a valid entity or mapped super class »). Une explication va dans un commentaire ordinaire `/* ... */`, placé avant.
+<div class="new" markdown="1">
+**Disparu en 8.0 — le piège du docblock intercalé.** Jusqu'à la 7.1, Doctrine lisait le mapping dans des annotations de docblock, et son lecteur n'acceptait que le docblock immédiatement adjacent à `class Xxx` : un docblock de prose intercalé entre l'annotation et la classe faisait échouer toute lecture de métadonnées (« is not a valid entity or mapped super class »). Depuis le passage aux attributs PHP 8 (`#[ORM\Entity]`), ce piège n'existe plus : un attribut est une construction syntaxique indépendante du docblock (lu par réflexion, `getAttributes()`), peu importe qu'un commentaire s'intercale entre lui et la classe.
 </div>
 
 # Chapitre 8 — Premier module, de bout en bout
@@ -836,7 +839,7 @@ php devups core:g:frontcontroller monprojet\ModuleTask\task
 
 | Fichier | Rôle |
 |---|---|
-| `Entity/Task.php` | l'entité, avec ses annotations Doctrine |
+| `Entity/Task.php` | l'entité, avec ses attributs Doctrine |
 | `Form/TaskForm.php` | le formulaire déclaratif |
 | `Datatable/TaskTable.php` | la liste déclarative |
 | `Controller/TaskController.php` | le CRUD de back-office |
@@ -912,7 +915,7 @@ Noter la forme `"project.id": 3` dans la charge utile : le point référence une
 
 ## 9.1 Les trois suites
 
-Le framework est livré avec une suite PHPUnit 10, configurée par `phpunit.xml.dist` :
+Le framework est livré avec une suite PHPUnit 11, configurée par `phpunit.xml.dist` :
 
 | Suite | Commande | Contenu |
 |---|---|---|
@@ -921,7 +924,7 @@ Le framework est livré avec une suite PHPUnit 10, configurée par `phpunit.xml.
 | bout en bout | `composer test:e2e` | un serveur `php -S` démarré automatiquement : API, connexion, sécurité, chaque écran liste et formulaire du back-office |
 | toutes | `composer test` | les trois |
 
-L'intégration continue (`.github/workflows/tests.yml`) exécute `composer test` sur PHP 8.2, 8.3 et 8.4 avec un service MySQL, à chaque push et chaque pull request.
+L'intégration continue (`.github/workflows/tests.yml`) exécute `composer test` sur PHP 8.3, 8.4 et 8.5 avec un service MySQL, à chaque push et chaque pull request.
 
 ## 9.2 La base de test
 
