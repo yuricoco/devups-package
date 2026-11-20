@@ -1177,6 +1177,24 @@ nouveaux fichiers. `composer test` (454 tests = 445 + 9 nouveaux, 0
 echec, 8 deprecations et 2 incomplete preexistants inchanges) et
 `composer phpstan` (0 erreur) verts.
 
+**CI rouge sur 8.4/8.5 (8.3 vert) au premier push de ce lot**, corrige
+sans nouveau commit de code de production - uniquement le test fautif.
+Log recupere via le navigateur (connexion GitHub de l'utilisateur,
+l'API REST anonyme ne donne ni les logs ni le texte des annotations
+pour ce depot) : `testDefaultCallablesDoNotErrorInCliContext` (callables
+PAR DEFAUT de `ResponseEmitter`, donc le VRAI `http_response_code()`)
+levait `http_response_code(): Cannot set response code - headers
+already sent` - un AUTRE test de la suite (`HttpTestCase::request()`,
+simulation HTTP reelle) avait deja produit une sortie reelle plus tot
+dans le MEME processus PHPUnit, et `failOnWarning="true"`
+(`phpunit.xml.dist`) transforme ce warning en echec. Artefact d'ordre
+d'execution partage entre tests (reproductible sur 8.4/8.5, pas sur
+8.3 dans ce run precis - pas une difference de langage PHP) : le test
+garde desormais `if (headers_sent()) markTestSkipped(...)` avant
+d'appeler les callables par defaut - le comportement REEL des
+callables injectes (le cas qui compte vraiment) reste couvert par les
+3 autres tests du fichier, inchanges.
+
 ### LOT 5.7 - FAIT (confirmation finale push/CI)
 
 Chaque sous-etape de ce LOT 5 (a, b, c, 5.4, 5.5, 5.6) a deja ete
