@@ -1102,6 +1102,81 @@ sans obligation d'y toucher.
 ci-dessus) - a reprendre plus tard, hors de ce chantier ou dans un
 sous-lot dedie.
 
+## LOT 6 - HTTP (Request/Response, middlewares)
+
+**Audit prealable** (meme methode que pour le LOT 5 : pas de code avant
+d'avoir mesure le risque reel) : `dclass/devups/Http/Request.php` (792
+lignes) et `Router.php` (797 lignes) sont le coeur de dispatch de
+CHAQUE requete HTTP (routage, cache, garde d'authentification) -
+classes-facade statiques, espace de noms global. `Response.php` et
+`Route.php`, plus petites, sont aussi reellement utilisees (verifie par
+grep - pas du code mort). **Aucun concept de middleware n'existe
+aujourd'hui** dans le depot.
+
+**Decision prise avec l'utilisateur** (meme logique de prudence que le
+LOT 5.3/5.4/5.5) : **ajout pur** - rien dans `Router`/`Request`/
+`Response`/`Route` (espace de noms global, comportement de dispatch
+reel) n'est modifie ni appele par ce qui suit. Alternative "brancher
+reellement un point d'accroche dans `Router::runServe()`/
+`manageServe()`" explicitement ecartee (rayon d'impact trop grand pour
+un besoin encore hypothetique - aucun appelant reel n'attend de
+middleware aujourd'hui).
+
+**PSR-7** (`Psr\Http\Message\...`) : deja disponible de maniere
+transitive via `guzzlehttp/psr7` (2.13.4, lui-meme amene par
+`guzzlehttp/guzzle`) - pas de nouvelle dependance necessaire, et pas de
+reimplementation ecrite ici (`GuzzleHttp\Psr7\ServerRequest::
+fromGlobals()`/`GuzzleHttp\Psr7\Response` suffisent, voir
+`UPGRADE-8.0.md`).
+
+**PSR-15** (`psr/http-server-middleware` ^1.0, `psr/http-server-handler`
+^1.0, plus `psr/http-message` ^2.0 rendu explicite) : ajoutes comme
+dependances EXPLICITES (`composer require ... --no-update` puis
+`composer update ... --ignore-platform-req=php`, meme procedure que les
+LOTs 5.4/5.5 - ceux-ci, a la difference de `psr/container`/`psr/log`,
+n'etaient PAS deja resolus de maniere transitive : 2 nouveaux paquets
+dans `composer.lock`).
+
+Trois nouvelles classes, `dclass/devups/Http/` (namespace `Devups\Http`
+- physiquement dans le meme dossier que les classes HTTP globales
+existantes, noms de fichiers distincts, aucune collision) :
+
+- `MiddlewareStack.php` - `Devups\Http\MiddlewareStack implements
+  Psr\Http\Server\RequestHandlerInterface`. Pipeline "oignon" classique
+  (chaque middleware recoit la requete + un handler representant le
+  reste du pipeline, peut inspecter/modifier avant/apres `$next->
+  handle()`, ou court-circuiter en ne l'appelant pas). Instance
+  immuable (`clone` + index incremente a chaque etape plutot qu'un
+  compteur mutable partage) - une meme pile est reutilisable pour
+  plusieurs requetes sans etat residuel entre elles.
+- `CallableRequestHandler.php` - adapte un `callable(ServerRequestInterface):
+  ResponseInterface` en `RequestHandlerInterface`, pour fournir le bout
+  du pipeline sans ecrire une classe dediee a chaque usage.
+- `ResponseEmitter.php` - envoie un `ResponseInterface` comme reponse
+  HTTP reelle (code/en-tetes/corps). Les 3 effets de bord sont derriere
+  des callables injectables (defaut `http_response_code()`/`header()`/
+  `echo`) - testable sans emettre de vrais en-tetes pendant les tests.
+
+**Ajout pur confirme** : aucun appelant existant (`Router`, les
+controleurs, les FrontControllers) n'a ete modifie pour s'en servir.
+
+`tests/Unit/{MiddlewareStackTest,CallableRequestHandlerTest,
+ResponseEmitterTest}.php` (9 tests) : pipeline sans middleware (delegue
+direct au handler final), ordre d'execution oignon (verifie par un
+tableau de traces before/after), court-circuit (le handler final n'est
+jamais appele), reutilisation de la meme pile pour 2 requetes
+successives sans etat residuel, `CallableRequestHandler` transmet bien
+la requete et retourne la reponse du callable, `ResponseEmitter` envoie
+le bon code/chaque valeur d'en-tete avec le bon flag `$replace`/le bon
+corps via les callables injectes, et un test avec les callables PAR
+DEFAUT (pas d'injection) confirme qu'ils ne font pas echouer le test en
+contexte CLI.
+
+`composer dump-autoload --ignore-platform-req=php` requis apres les 3
+nouveaux fichiers. `composer test` (454 tests = 445 + 9 nouveaux, 0
+echec, 8 deprecations et 2 incomplete preexistants inchanges) et
+`composer phpstan` (0 erreur) verts.
+
 ### LOT 5.7 - FAIT (confirmation finale push/CI)
 
 Chaque sous-etape de ce LOT 5 (a, b, c, 5.4, 5.5, 5.6) a deja ete

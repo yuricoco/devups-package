@@ -371,3 +371,29 @@ Verifie par : la suite de tests complete (445 tests, 0 echec - 8
 deprecations et 2 incomplets preexistants et sans rapport) ; `composer
 phpstan` sans erreur. CI GitHub verte sur `release/v8.0` (matrice PHP
 8.3/8.4/8.5) a chaque commit de ce lot.
+
+## LOT 6 - HTTP (Request/Response, middlewares)
+
+**Aucune rupture dans ce lot**, meme logique que le LOT 5 : `Request`/
+`Response`/`Router`/`Route` (`dclass/devups/Http/`) restent inchanges,
+espace de noms global, comportement de dispatch identique.
+
+**Nouveau** (pas une migration) : un pipeline de middleware PSR-15
+minimal, `Devups\Http\MiddlewareStack` (`Psr\Http\Server\
+RequestHandlerInterface`), plus `Devups\Http\CallableRequestHandler`
+(adapte un callable en handler PSR-15) et `Devups\Http\ResponseEmitter`
+(envoie un `Psr\Http\Message\ResponseInterface` comme reponse HTTP
+reelle). Les objets de message PSR-7 eux-memes ne sont pas
+reimplementes par Devups - `GuzzleHttp\Psr7\ServerRequest::
+fromGlobals()`/`GuzzleHttp\Psr7\Response` (deja disponibles via
+`guzzlehttp/guzzle`) suffisent pour construire une requete/reponse
+PSR-7 a passer a `MiddlewareStack`.
+
+Rien n'est branche dans le dispatch existant : ces classes sont
+disponibles pour un projet qui voudrait composer un pipeline de
+middleware PSR-15 independamment du routage par attributs existant
+(`#[GET]`/`#[POST]`/...), sans obligation d'y toucher.
+
+Verifie par : la suite de tests complete (454 tests, 0 echec - 8
+deprecations et 2 incomplets preexistants et sans rapport) ; `composer
+phpstan` sans erreur.
