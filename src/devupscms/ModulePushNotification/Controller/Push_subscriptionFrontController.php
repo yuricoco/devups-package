@@ -24,8 +24,8 @@ class Push_subscriptionFrontController extends \dclass\devups\Controller\FrontCo
      * ici (voir PUSH-NOTES.md - mesure, pas suppose) : elle a son
      * propre Push_subscriptionController, une classe distincte.
      *
-     * @return Lazyloading|QueryBuilder
-     * @throws ReflectionException
+     * @return \Lazyloading|\QueryBuilder
+     * @throws \ReflectionException
      */
     #[\Auth(authorized: 1)]
     #[\GET]
@@ -85,7 +85,7 @@ class Push_subscriptionFrontController extends \dclass\devups\Controller\FrontCo
      *
      * Generate public and private key for pushnotification then save to the configuration table
      * @return array
-     * @throws ErrorException
+     * @throws \ErrorException
      */
     public function generateKey()
     {
@@ -105,7 +105,7 @@ class Push_subscriptionFrontController extends \dclass\devups\Controller\FrontCo
     /**
      * Generate public and private key for pushnotification then save to the configuration table
      * @return array
-     * @throws ErrorException
+     * @throws \ErrorException
      */
     public function key()
     {

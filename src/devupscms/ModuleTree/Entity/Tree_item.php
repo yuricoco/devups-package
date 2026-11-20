@@ -440,7 +440,7 @@ class Tree_item extends \Model implements \JsonSerializable
 
     /**
      * @param string $tree
-     * @return QueryBuilder
+     * @return \QueryBuilder
      */
     public static function mainmenu($tree = "menu", $id_lang = null)
     {
@@ -453,7 +453,7 @@ class Tree_item extends \Model implements \JsonSerializable
 
     /**
      * @param string $tree
-     * @return QueryBuilder
+     * @return \QueryBuilder
      */
     public static function mainmenus($trees = ["menu"], $id_lang = null)
     {

@@ -6,7 +6,62 @@ parameters:
 			path: config/Database.php
 
 		-
+			message: "#^Cannot call method getId\\(\\) on stdClass\\.$#"
+			count: 2
+			path: dclass/devups/Controller/Controller.php
+
+		-
+			message: "#^Cannot call method inCollectionOf\\(\\) on stdClass\\.$#"
+			count: 1
+			path: dclass/devups/Controller/Controller.php
+
+		-
 			message: "#^Method dclass\\\\devups\\\\Controller\\\\Controller\\:\\:form_fillingentity\\(\\) invoked with 3 parameters, 1\\-2 required\\.$#"
+			count: 1
+			path: dclass/devups/Controller/Controller.php
+
+		-
+			message: "#^Method dclass\\\\devups\\\\Controller\\\\Controller\\:\\:form_generat\\(\\) has invalid return type dclass\\\\devups\\\\Controller\\\\type\\.$#"
+			count: 1
+			path: dclass/devups/Controller/Controller.php
+
+		-
+			message: "#^Method dclass\\\\devups\\\\Controller\\\\Controller\\:\\:lastpersistance\\(\\) has invalid return type dclass\\\\devups\\\\Controller\\\\type\\.$#"
+			count: 1
+			path: dclass/devups/Controller/Controller.php
+
+		-
+			message: "#^PHPDoc tag @param has invalid value \\(Mixed \\( String or Array \\) \\$jsondata optionnel\\)\\: Unexpected token \"\\(\", expected variable at offset 402$#"
+			count: 1
+			path: dclass/devups/Controller/Controller.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$Dao$#"
+			count: 1
+			path: dclass/devups/Controller/Controller.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$deeper$#"
+			count: 1
+			path: dclass/devups/Controller/Controller.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$entityform$#"
+			count: 1
+			path: dclass/devups/Controller/Controller.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$next$#"
+			count: 1
+			path: dclass/devups/Controller/Controller.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$par_page$#"
+			count: 1
+			path: dclass/devups/Controller/Controller.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$resultCtrl$#"
 			count: 1
 			path: dclass/devups/Controller/Controller.php
 
@@ -77,6 +132,11 @@ parameters:
 
 		-
 			message: "#^Inner named functions are not supported by PHPStan\\. Consider refactoring to an anonymous function, class method, or a top\\-level\\-defined function\\. See issue \\#165 \\(https\\://github\\.com/phpstan/phpstan/issues/165\\) for more details\\.$#"
+			count: 1
+			path: dclass/devups/Datatable/Datatable.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$sure$#"
 			count: 1
 			path: dclass/devups/Datatable/Datatable.php
 
@@ -231,6 +291,11 @@ parameters:
 			path: dclass/devups/Form/Form.php
 
 		-
+			message: "#^Access to property \\$contentmodel on an unknown class Blockcontentmodel\\.$#"
+			count: 2
+			path: dclass/devups/Form/FormFactory.php
+
+		-
 			message: "#^Call to static method __renderForm\\(\\) on an unknown class BlockcontentmodelForm\\.$#"
 			count: 2
 			path: dclass/devups/Form/FormFactory.php
@@ -251,6 +316,16 @@ parameters:
 			path: dclass/devups/Form/FormManager.php
 
 		-
+			message: "#^Call to an undefined method ReflectionMethod\\:\\:getAnnotation\\(\\)\\.$#"
+			count: 1
+			path: dclass/devups/Http/Request.php
+
+		-
+			message: "#^Call to an undefined method ReflectionMethod\\:\\:hasAnnotation\\(\\)\\.$#"
+			count: 1
+			path: dclass/devups/Http/Request.php
+
+		-
 			message: "#^Variable \\$_GET in isset\\(\\) always exists and is not nullable\\.$#"
 			count: 1
 			path: dclass/devups/Http/Request.php
@@ -262,6 +337,11 @@ parameters:
 
 		-
 			message: "#^Access to an undefined property Response\\:\\:\\$message\\.$#"
+			count: 1
+			path: dclass/devups/Http/Response.php
+
+		-
+			message: "#^Access to an undefined property Response\\:\\:\\$success\\.$#"
 			count: 1
 			path: dclass/devups/Http/Response.php
 
@@ -281,7 +361,222 @@ parameters:
 			path: dclass/devups/ScanDir.php
 
 		-
-			message: "#^Instantiated class string not found\\.$#"
+			message: "#^Access to an undefined property object\\:\\:\\$dvtranslated_columns\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Access to property \\$dvfetched on an unknown class type\\.$#"
+			count: 2
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Access to property \\$dvid_lang on an unknown class type\\.$#"
+			count: 2
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Access to property \\$dvserialised on an unknown class type\\.$#"
+			count: 2
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Access to property \\$dvtranslate on an unknown class type\\.$#"
+			count: 3
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Access to property \\$dvtranslated_columns on an unknown class type\\.$#"
+			count: 10
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Call to method getId\\(\\) on an unknown class type\\.$#"
+			count: 2
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Call to method hydrateData\\(\\) on an unknown class type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Call to method setId\\(\\) on an unknown class type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Default value of the parameter \\#2 \\$values \\(array\\) of method DBAL\\:\\:__findAll\\(\\) is incompatible with type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Default value of the parameter \\#2 \\$values \\(array\\) of method DBAL\\:\\:__findAllRow\\(\\) is incompatible with type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Default value of the parameter \\#2 \\$values \\(array\\) of method DBAL\\:\\:__findOne\\(\\) is incompatible with type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Default value of the parameter \\#3 \\$collection \\(false\\) of method DBAL\\:\\:__findOne\\(\\) is incompatible with type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Default value of the parameter \\#4 \\$recursif \\(true\\) of method DBAL\\:\\:__findOne\\(\\) is incompatible with type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Method DBAL\\:\\:__findAll\\(\\) has invalid return type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Method DBAL\\:\\:__findAllRow\\(\\) has invalid return type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Method DBAL\\:\\:__findOne\\(\\) has invalid return type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Method DBAL\\:\\:djoin\\(\\) has invalid return type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Method DBAL\\:\\:manyToManyDelete\\(\\) has invalid return type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$change_collection$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$object$#"
+			count: 2
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^PHPDoc tag @return has invalid value \\(\\)\\: Unexpected token \"\\\\r\\\\n     \", expected type at offset 169$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Parameter \\$collection of method DBAL\\:\\:__findOne\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Parameter \\$flowBD of method DBAL\\:\\:djoin\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Parameter \\$id of method DBAL\\:\\:manyToManyDelete\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Parameter \\$object of method DBAL\\:\\:djoin\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Parameter \\$object of method DBAL\\:\\:instanciateVariable\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Parameter \\$recursif of method DBAL\\:\\:__findOne\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Parameter \\$sql of method DBAL\\:\\:__findAll\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Parameter \\$sql of method DBAL\\:\\:__findAllRow\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Parameter \\$sql of method DBAL\\:\\:__findOne\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Parameter \\$values of method DBAL\\:\\:__findAll\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Parameter \\$values of method DBAL\\:\\:__findAllRow\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Parameter \\$values of method DBAL\\:\\:__findOne\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Property DBAL\\:\\:\\$en has unknown class type as its type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Property DBAL\\:\\:\\$entity_link_list has unknown class type as its type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Property DBAL\\:\\:\\$id_lang has unknown class type as its type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Property DBAL\\:\\:\\$listeEntity has unknown class type as its type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Property DBAL\\:\\:\\$nbVar has unknown class type as its type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Property DBAL\\:\\:\\$object has unknown class type as its type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Property DBAL\\:\\:\\$objectValue has unknown class type as its type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Property DBAL\\:\\:\\$objectVar has unknown class type as its type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Property DBAL\\:\\:\\$select has unknown class type as its type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Property DBAL\\:\\:\\$softdelete has unknown class type as its type\\.$#"
 			count: 1
 			path: dclass/devups/Tchutte/DBAL.php
 
@@ -311,9 +606,154 @@ parameters:
 			path: dclass/devups/Tchutte/QueryBuilder.php
 
 		-
+			message: "#^Access to property \\$dvid_lang on an unknown class type\\.$#"
+			count: 2
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^Access to property \\$dvtranslate on an unknown class type\\.$#"
+			count: 3
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^Access to property \\$dvtranslated_columns on an unknown class type\\.$#"
+			count: 7
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^Binary operation \"\\-\" between string and 1 results in an error\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^Default value of the parameter \\#1 \\$page \\(int\\) of method QueryBuilder\\:\\:skip\\(\\) is incompatible with type string\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^Default value of the parameter \\#2 \\$per_page \\(int\\) of method QueryBuilder\\:\\:skip\\(\\) is incompatible with type string\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
 			message: "#^Method DBAL\\:\\:__count\\(\\) invoked with 4 parameters, 1\\-2 required\\.$#"
 			count: 1
 			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^Method QueryBuilder\\:\\:__firstOr\\(\\) has invalid return type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^Method QueryBuilder\\:\\:__firstOr\\(\\) should return type\\|null but return statement is missing\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^Method QueryBuilder\\:\\:__firstOrNull\\(\\) has invalid return type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^Method QueryBuilder\\:\\:createFromTable\\(\\) has invalid return type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^Method QueryBuilder\\:\\:index\\(\\) has invalid return type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$collect$#"
+			count: 1
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$columns$#"
+			count: 3
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$id_lang$#"
+			count: 2
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$index$#"
+			count: 2
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$order$#"
+			count: 3
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$recursif$#"
+			count: 2
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$update$#"
+			count: 1
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^Parameter \\$arrayvalues of method QueryBuilder\\:\\:update\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^Parameter \\$case of method QueryBuilder\\:\\:update\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^Parameter \\$seton of method QueryBuilder\\:\\:update\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^Default value of the parameter \\#3 \\$cmp \\(string\\) of method EntityCollection\\:\\:diff\\(\\) is incompatible with type type\\.$#"
+			count: 1
+			path: dclass/devups/model/EntityCollection.php
+
+		-
+			message: "#^Default value of the parameter \\#3 \\$cmp \\(string\\) of method EntityCollection\\:\\:intersection\\(\\) is incompatible with type type\\.$#"
+			count: 1
+			path: dclass/devups/model/EntityCollection.php
+
+		-
+			message: "#^Parameter \\$cmp of method EntityCollection\\:\\:diff\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/devups/model/EntityCollection.php
+
+		-
+			message: "#^Parameter \\$cmp of method EntityCollection\\:\\:intersection\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/devups/model/EntityCollection.php
+
+		-
+			message: "#^Parameter \\$listentity of method EntityCollection\\:\\:diff\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/devups/model/EntityCollection.php
+
+		-
+			message: "#^Parameter \\$listentity of method EntityCollection\\:\\:intersection\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/devups/model/EntityCollection.php
+
+		-
+			message: "#^Parameter \\$listentity2 of method EntityCollection\\:\\:diff\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/devups/model/EntityCollection.php
+
+		-
+			message: "#^Parameter \\$listentity2 of method EntityCollection\\:\\:intersection\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/devups/model/EntityCollection.php
 
 		-
 			message: "#^Variable \\$listentity in empty\\(\\) always exists and is not falsy\\.$#"
@@ -326,7 +766,32 @@ parameters:
 			path: dclass/devups/model/EntityCollection.php
 
 		-
+			message: "#^Access to an undefined property Dfile\\:\\:\\$error\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^Call to an undefined method QueryBuilder\\:\\:createFrom\\(\\)\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
 			message: "#^Call to static method where\\(\\) on an unknown class Dvups_role_dvups_entity\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^Default value of the parameter \\#2 \\$order \\(string\\) of method Model\\:\\:all\\(\\) is incompatible with type type\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^Method Model\\:\\:all\\(\\) has invalid return type type\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^Method Model\\:\\:classdir\\(\\) has invalid return type classroot\\.$#"
 			count: 1
 			path: dclass/devups/model/Model.php
 
@@ -336,14 +801,139 @@ parameters:
 			path: dclass/devups/model/Model.php
 
 		-
+			message: "#^Method QueryBuilder\\:\\:update\\(\\) invoked with 4 parameters, 0\\-3 required\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$att$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$columns$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$id$#"
+			count: 8
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$operator$#"
+			count: 3
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$param$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$recursif$#"
+			count: 5
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$value$#"
+			count: 3
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^Parameter \\$id of method Model\\:\\:delete\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^Parameter \\$order of method Model\\:\\:all\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
 			message: "#^Variable \\$getcurrentfile might not be defined\\.$#"
 			count: 1
 			path: dclass/devups/model/Model.php
 
 		-
+			message: "#^Call to an undefined method QueryBuilder\\:\\:createFrom\\(\\)\\.$#"
+			count: 1
+			path: dclass/extends/Dv_langCore.php
+
+		-
 			message: "#^Call to an undefined method dclass\\\\devups\\\\Core\\\\Dv_langCore\\:\\:getId\\(\\)\\.$#"
 			count: 2
 			path: dclass/extends/Dv_langCore.php
+
+		-
+			message: "#^Default value of the parameter \\#2 \\$order \\(string\\) of method dclass\\\\devups\\\\Core\\\\Dv_langCore\\:\\:all\\(\\) is incompatible with type type\\.$#"
+			count: 1
+			path: dclass/extends/Dv_langCore.php
+
+		-
+			message: "#^Method dclass\\\\devups\\\\Core\\\\Dv_langCore\\:\\:all\\(\\) has invalid return type type\\.$#"
+			count: 1
+			path: dclass/extends/Dv_langCore.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$att$#"
+			count: 1
+			path: dclass/extends/Dv_langCore.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$case$#"
+			count: 1
+			path: dclass/extends/Dv_langCore.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$columns$#"
+			count: 1
+			path: dclass/extends/Dv_langCore.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$id$#"
+			count: 8
+			path: dclass/extends/Dv_langCore.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$operator$#"
+			count: 3
+			path: dclass/extends/Dv_langCore.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$recursif$#"
+			count: 3
+			path: dclass/extends/Dv_langCore.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$seton$#"
+			count: 1
+			path: dclass/extends/Dv_langCore.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$value$#"
+			count: 3
+			path: dclass/extends/Dv_langCore.php
+
+		-
+			message: "#^Parameter \\$id of method dclass\\\\devups\\\\Core\\\\Dv_langCore\\:\\:delete\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/extends/Dv_langCore.php
+
+		-
+			message: "#^Parameter \\$order of method dclass\\\\devups\\\\Core\\\\Dv_langCore\\:\\:all\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/extends/Dv_langCore.php
+
+		-
+			message: "#^Property dclass\\\\devups\\\\Core\\\\Dvups_migration\\:\\:\\$executed_at has unknown class dclass\\\\devups\\\\Core\\\\datetime as its type\\.$#"
+			count: 1
+			path: dclass/extends/Dvups_migration.php
+
+		-
+			message: "#^Property dclass\\\\devups\\\\Core\\\\ImageCore\\:\\:\\$description has unknown class dclass\\\\devups\\\\Core\\\\text as its type\\.$#"
+			count: 1
+			path: dclass/extends/ImageCore.php
 
 		-
 			message: "#^Constant USER not found\\.$#"
@@ -354,6 +944,151 @@ parameters:
 			message: "#^Function t not found\\.$#"
 			count: 4
 			path: dclass/extends/UserCore.php
+
+		-
+			message: "#^Method dclass\\\\devups\\\\Core\\\\UserCore\\:\\:getUserByToken\\(\\) has invalid return type dclass\\\\devups\\\\Core\\\\User\\.$#"
+			count: 1
+			path: dclass/extends/UserCore.php
+
+		-
+			message: "#^Property dclass\\\\devups\\\\Core\\\\UserCore\\:\\:\\$last_login has unknown class dclass\\\\devups\\\\Core\\\\date as its type\\.$#"
+			count: 1
+			path: dclass/extends/UserCore.php
+
+		-
+			message: "#^Access to an undefined property object\\:\\:\\$attribut\\.$#"
+			count: 1
+			path: dclass/generator/BackendGenerator.php
+
+		-
+			message: "#^Access to an undefined property object\\:\\:\\$datatype\\.$#"
+			count: 4
+			path: dclass/generator/BackendGenerator.php
+
+		-
+			message: "#^Access to an undefined property object\\:\\:\\$name\\.$#"
+			count: 7
+			path: dclass/generator/BackendGenerator.php
+
+		-
+			message: "#^Access to an undefined property object\\:\\:\\$nullable\\.$#"
+			count: 1
+			path: dclass/generator/BackendGenerator.php
+
+		-
+			message: "#^Access to an undefined property object\\:\\:\\$size\\.$#"
+			count: 1
+			path: dclass/generator/BackendGenerator.php
+
+		-
+			message: "#^Access to an undefined property object\\:\\:\\$name\\.$#"
+			count: 3
+			path: dclass/generator/RequestGenerator.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$namespace$#"
+			count: 3
+			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generator\\:\\:__dependencies\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generator\\:\\:__entitydependencies\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generator\\:\\:__index\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generator\\:\\:__moduleendless\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generator\\:\\:__ressources\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generator\\:\\:__services\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generator\\:\\:controller\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generator\\:\\:core\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generator\\:\\:crud\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generator\\:\\:detailwidget\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generator\\:\\:entity\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generator\\:\\:entityLang\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generator\\:\\:form\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generator\\:\\:formwidget\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generator\\:\\:frontcontroller\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generator\\:\\:genesis\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generator\\:\\:module\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generator\\:\\:postmandoc\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generator\\:\\:table\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generator\\:\\:views\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/__Generator.php
 
 		-
 			message: "#^Undefined variable\\: \\$projet$#"
@@ -376,12 +1111,67 @@ parameters:
 			path: dclass/generator/__Generator.php
 
 		-
+			message: "#^Access to an undefined property object\\:\\:\\$name\\.$#"
+			count: 1
+			path: dclass/generator/android/__Generatorjava.php
+
+		-
+			message: "#^Call to method layoutGenerator\\(\\) on an unknown class FrontendGenerator\\.$#"
+			count: 1
+			path: dclass/generator/android/__Generatorjava.php
+
+		-
 			message: "#^Instantiated class FrontendGenerator not found\\.$#"
 			count: 2
 			path: dclass/generator/android/__Generatorjava.php
 
 		-
 			message: "#^Instantiated class RootGenerator not found\\.$#"
+			count: 1
+			path: dclass/generator/android/__Generatorjava.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$namespace$#"
+			count: 3
+			path: dclass/generator/android/__Generatorjava.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generatorjava\\:\\:__moduleendless\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/android/__Generatorjava.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generatorjava\\:\\:controller\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/android/__Generatorjava.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generatorjava\\:\\:crud\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/android/__Generatorjava.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generatorjava\\:\\:entity\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/android/__Generatorjava.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generatorjava\\:\\:form\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/android/__Generatorjava.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generatorjava\\:\\:genesis\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/android/__Generatorjava.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generatorjava\\:\\:module\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: dclass/generator/android/__Generatorjava.php
+
+		-
+			message: "#^Parameter \\$namespace of method __Generatorjava\\:\\:views\\(\\) has invalid type type\\.$#"
 			count: 1
 			path: dclass/generator/android/__Generatorjava.php
 
@@ -451,6 +1241,16 @@ parameters:
 			path: dclass/lib/Util.php
 
 		-
+			message: "#^PHPDoc tag @param has invalid value \\(mixed\\)\\: Unexpected token \"\\\\n     \", expected variable at offset 23$#"
+			count: 1
+			path: dclass/lib/Util.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$login$#"
+			count: 1
+			path: dclass/lib/Util.php
+
+		-
 			message: "#^Variable \\$matches might not be defined\\.$#"
 			count: 1
 			path: dclass/lib/annotation/Auth.php
@@ -476,6 +1276,11 @@ parameters:
 			path: dclass/lib/annotation/GET.php
 
 		-
+			message: "#^Call to method exportCsv\\(\\) on an unknown class Dvups_entityController\\.$#"
+			count: 1
+			path: route/Admin.php
+
+		-
 			message: "#^Call to static method renderView\\(\\) on an unknown class devups\\\\ModuleAdmin\\\\ModuleAdmin\\.$#"
 			count: 2
 			path: route/Admin.php
@@ -496,8 +1301,18 @@ parameters:
 			path: route/AdminService.php
 
 		-
+			message: "#^Call to method exportCsv\\(\\) on an unknown class Dvups_entityController\\.$#"
+			count: 1
+			path: route/AdminService.php
+
+		-
 			message: "#^Call to static method renderView\\(\\) on an unknown class devups\\\\ModuleAdmin\\\\ModuleAdmin\\.$#"
 			count: 2
+			path: route/AdminService.php
+
+		-
+			message: "#^Cannot access property \\$name on int\\.$#"
+			count: 1
 			path: route/AdminService.php
 
 		-
@@ -527,6 +1342,41 @@ parameters:
 
 		-
 			message: "#^Access to an undefined property devups\\\\ModuleAdmin\\\\Controller\\\\Dvups_adminController\\:\\:\\$datatable\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Controller/Dvups_adminController.php
+
+		-
+			message: "#^Call to method __insert\\(\\) on an unknown class dclass\\\\devups\\\\Controller\\\\type\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Controller/Dvups_adminController.php
+
+		-
+			message: "#^Call to method __update\\(\\) on an unknown class dclass\\\\devups\\\\Controller\\\\type\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Controller/Dvups_adminController.php
+
+		-
+			message: "#^Call to method generateLogin\\(\\) on an unknown class dclass\\\\devups\\\\Controller\\\\type\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Controller/Dvups_adminController.php
+
+		-
+			message: "#^Call to method generatePassword\\(\\) on an unknown class dclass\\\\devups\\\\Controller\\\\type\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Controller/Dvups_adminController.php
+
+		-
+			message: "#^Call to method getLogin\\(\\) on an unknown class dclass\\\\devups\\\\Controller\\\\type\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Controller/Dvups_adminController.php
+
+		-
+			message: "#^Call to method setLogin\\(\\) on an unknown class dclass\\\\devups\\\\Controller\\\\type\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Controller/Dvups_adminController.php
+
+		-
+			message: "#^Call to method setPassword\\(\\) on an unknown class dclass\\\\devups\\\\Controller\\\\type\\.$#"
 			count: 1
 			path: src/devups/ModuleAdmin/Controller/Dvups_adminController.php
 
@@ -622,6 +1472,16 @@ parameters:
 
 		-
 			message: "#^Method devups\\\\ModuleAdmin\\\\Entity\\\\Dvups_admin\\:\\:generateLogin\\(\\) invoked with 1 parameter, 0 required\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Entity/Dvups_admin.php
+
+		-
+			message: "#^PHPDoc tag @param has invalid value \\(mixed\\)\\: Unexpected token \"\\\\n     \", expected variable at offset 23$#"
+			count: 1
+			path: src/devups/ModuleAdmin/Entity/Dvups_admin.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$login$#"
 			count: 1
 			path: src/devups/ModuleAdmin/Entity/Dvups_admin.php
 
@@ -761,12 +1621,22 @@ parameters:
 			path: src/devups/ModuleAdmin/Resource/views/admin/layout.blade.php
 
 		-
+			message: "#^Call to an undefined method Dvups_adminController\\:\\:deletegroupAction\\(\\)\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/services.php
+
+		-
 			message: "#^Call to static method updatelabel\\(\\) on an unknown class Dvups_entityController\\.$#"
 			count: 1
 			path: src/devups/ModuleAdmin/services.php
 
 		-
 			message: "#^Call to static method updatelabel\\(\\) on an unknown class Dvups_moduleController\\.$#"
+			count: 1
+			path: src/devups/ModuleAdmin/services.php
+
+		-
+			message: "#^Method devups\\\\ModuleAdmin\\\\Controller\\\\Dvups_roleController\\:\\:datatable\\(\\) invoked with 2 parameters, 0 required\\.$#"
 			count: 1
 			path: src/devups/ModuleAdmin/services.php
 
@@ -811,6 +1681,16 @@ parameters:
 			path: src/devups/ModuleConfig/Resource/views/admin/layout.blade.php
 
 		-
+			message: "#^Method Router\\:\\:manageServe\\(\\) invoked with 0 parameters, 1 required\\.$#"
+			count: 1
+			path: src/devups/ModuleConfig/index.php
+
+		-
+			message: "#^Method Router\\:\\:manageServe\\(\\) invoked with 0 parameters, 1 required\\.$#"
+			count: 1
+			path: src/devups/ModuleConfig/services.php
+
+		-
 			message: "#^Access to an undefined property devups\\\\ModuleLang\\\\Controller\\\\Dvups_langController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devups/ModuleLang/Controller/Dvups_langController.php
@@ -827,6 +1707,11 @@ parameters:
 
 		-
 			message: "#^Method devups\\\\ModuleLang\\\\Entity\\\\Dvups_lang\\:\\:cacheData\\(\\) should return devups\\\\ModuleLang\\\\Entity\\\\Dvups_lang but return statement is missing\\.$#"
+			count: 1
+			path: src/devups/ModuleLang/Entity/Dvups_lang.php
+
+		-
+			message: "#^Property devups\\\\ModuleLang\\\\Entity\\\\Dvups_lang\\:\\:\\$active has unknown class devups\\\\ModuleLang\\\\Entity\\\\text as its type\\.$#"
 			count: 1
 			path: src/devups/ModuleLang/Entity/Dvups_lang.php
 
@@ -866,6 +1751,21 @@ parameters:
 			path: src/devups/ModuleLog/Datatable/Dvups_logTable.php
 
 		-
+			message: "#^Property devups\\\\ModuleLog\\\\Entity\\\\Dvups_log\\:\\:\\$context has unknown class devups\\\\ModuleLog\\\\Entity\\\\text as its type\\.$#"
+			count: 1
+			path: src/devups/ModuleLog/Entity/Dvups_log.php
+
+		-
+			message: "#^Property devups\\\\ModuleLog\\\\Entity\\\\Dvups_log\\:\\:\\$first_at has unknown class devups\\\\ModuleLog\\\\Entity\\\\datetime as its type\\.$#"
+			count: 1
+			path: src/devups/ModuleLog/Entity/Dvups_log.php
+
+		-
+			message: "#^Property devups\\\\ModuleLog\\\\Entity\\\\Dvups_log\\:\\:\\$last_at has unknown class devups\\\\ModuleLog\\\\Entity\\\\datetime as its type\\.$#"
+			count: 1
+			path: src/devups/ModuleLog/Entity/Dvups_log.php
+
+		-
 			message: "#^Call to an undefined static method devups\\\\ModuleLog\\\\Form\\\\Dvups_logForm\\:\\:getFormData\\(\\)\\.$#"
 			count: 1
 			path: src/devups/ModuleLog/Form/Dvups_logForm.php
@@ -881,6 +1781,16 @@ parameters:
 			path: src/devups/ModuleLog/Resource/views/admin/layout.blade.php
 
 		-
+			message: "#^Method Router\\:\\:manageServe\\(\\) invoked with 0 parameters, 1 required\\.$#"
+			count: 1
+			path: src/devups/ModuleLog/index.php
+
+		-
+			message: "#^Method Router\\:\\:manageServe\\(\\) invoked with 0 parameters, 1 required\\.$#"
+			count: 1
+			path: src/devups/ModuleLog/services.php
+
+		-
 			message: "#^Access to an undefined property devupscms\\\\ModuleCms\\\\Controller\\\\CmscommentController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devupscms/ModuleCms/Controller/CmscommentController.php
@@ -894,6 +1804,11 @@ parameters:
 			message: "#^Access to an undefined property devupscms\\\\ModuleCms\\\\Controller\\\\CmsresourceController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devupscms/ModuleCms/Controller/CmsresourceController.php
+
+		-
+			message: "#^Call to method lazyloading\\(\\) on an unknown class Lazyloading\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Controller/CmsresourceFrontController.php
 
 		-
 			message: "#^Instantiated class Lazyloading not found\\.$#"
@@ -916,9 +1831,59 @@ parameters:
 			path: src/devupscms/ModuleCms/Datatable/CmsresourceTable.php
 
 		-
+			message: "#^Property devupscms\\\\ModuleCms\\\\Entity\\\\Cmscomment\\:\\:\\$comment has unknown class devupscms\\\\ModuleCms\\\\Entity\\\\text as its type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Entity/Cmscomment.php
+
+		-
 			message: "#^Call to an undefined method devupscms\\\\ModuleCms\\\\Entity\\\\Cmscontent\\:\\:__inittranslate\\(\\)\\.$#"
 			count: 2
 			path: src/devupscms/ModuleCms/Entity/Cmscontent.php
+
+		-
+			message: "#^Method devupscms\\\\ModuleCms\\\\Entity\\\\Cmscontent\\:\\:getActive\\(\\) has invalid return type devupscms\\\\ModuleCms\\\\Entity\\\\text\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Entity/Cmscontent.php
+
+		-
+			message: "#^Method devupscms\\\\ModuleCms\\\\Entity\\\\Cmscontent\\:\\:getPosition\\(\\) has invalid return type devupscms\\\\ModuleCms\\\\Entity\\\\text\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Entity/Cmscontent.php
+
+		-
+			message: "#^Method devupscms\\\\ModuleCms\\\\Entity\\\\Cmscontent\\:\\:getSommary\\(\\) has invalid return type devupscms\\\\ModuleCms\\\\Entity\\\\text\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Entity/Cmscontent.php
+
+		-
+			message: "#^Parameter \\$active of method devupscms\\\\ModuleCms\\\\Entity\\\\Cmscontent\\:\\:setActive\\(\\) has invalid type devupscms\\\\ModuleCms\\\\Entity\\\\text\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Entity/Cmscontent.php
+
+		-
+			message: "#^Parameter \\$position of method devupscms\\\\ModuleCms\\\\Entity\\\\Cmscontent\\:\\:setPosition\\(\\) has invalid type devupscms\\\\ModuleCms\\\\Entity\\\\text\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Entity/Cmscontent.php
+
+		-
+			message: "#^Property devupscms\\\\ModuleCms\\\\Entity\\\\Cmscontent\\:\\:\\$active has unknown class devupscms\\\\ModuleCms\\\\Entity\\\\text as its type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Entity/Cmscontent.php
+
+		-
+			message: "#^Property devupscms\\\\ModuleCms\\\\Entity\\\\Cmscontent\\:\\:\\$position has unknown class devupscms\\\\ModuleCms\\\\Entity\\\\text as its type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Entity/Cmscontent.php
+
+		-
+			message: "#^Property devupscms\\\\ModuleCms\\\\Entity\\\\Cmscontent_lang\\:\\:\\$content has unknown class devupscms\\\\ModuleCms\\\\Entity\\\\text as its type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Entity/Cmscontent_lang.php
+
+		-
+			message: "#^Property devupscms\\\\ModuleCms\\\\Entity\\\\Cmscontent_lang\\:\\:\\$sommary has unknown class devupscms\\\\ModuleCms\\\\Entity\\\\text as its type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/Entity/Cmscontent_lang.php
 
 		-
 			message: "#^Function t not found\\.$#"
@@ -1046,6 +2011,26 @@ parameters:
 			path: src/devupscms/ModuleCms/Resource/views/cmscontent/index.blade.php
 
 		-
+			message: "#^Call to an undefined method CmscontentController\\:\\:deleteimageAction\\(\\)\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/services.php
+
+		-
+			message: "#^Call to an undefined method CmscontentController\\:\\:loadAction\\(\\)\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/services.php
+
+		-
+			message: "#^Call to an undefined method CmscontentController\\:\\:uploadAction\\(\\)\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/services.php
+
+		-
+			message: "#^Method devupscms\\\\ModuleCms\\\\Controller\\\\CmscontentController\\:\\:datatable\\(\\) invoked with 2 parameters, 0 required\\.$#"
+			count: 1
+			path: src/devupscms/ModuleCms/services.php
+
+		-
 			message: "#^Access to an undefined property devupscms\\\\ModuleData\\\\Controller\\\\IntervalController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devupscms/ModuleData/Controller/IntervalController.php
@@ -1071,9 +2056,79 @@ parameters:
 			path: src/devupscms/ModuleData/Datatable/StatusTable.php
 
 		-
+			message: "#^Call to an undefined method QueryBuilder\\:\\:createFrom\\(\\)\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
 			message: "#^Call to an undefined method devupscms\\\\ModuleData\\\\Entity\\\\Interval_group\\:\\:getId\\(\\)\\.$#"
 			count: 2
 			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
+			message: "#^Default value of the parameter \\#2 \\$order \\(string\\) of method devupscms\\\\ModuleData\\\\Entity\\\\Interval_group\\:\\:all\\(\\) is incompatible with type type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
+			message: "#^Method devupscms\\\\ModuleData\\\\Entity\\\\Interval_group\\:\\:all\\(\\) has invalid return type type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$att$#"
+			count: 1
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$case$#"
+			count: 1
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$columns$#"
+			count: 1
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$id$#"
+			count: 8
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$operator$#"
+			count: 3
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$recursif$#"
+			count: 3
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$seton$#"
+			count: 1
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$value$#"
+			count: 3
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
+			message: "#^Parameter \\$id of method devupscms\\\\ModuleData\\\\Entity\\\\Interval_group\\:\\:delete\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
+			message: "#^Parameter \\$order of method devupscms\\\\ModuleData\\\\Entity\\\\Interval_group\\:\\:all\\(\\) has invalid type type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
+			message: "#^Method devupscms\\\\ModuleData\\\\Entity\\\\Status\\:\\:getStatus\\(\\) has invalid return type devupscms\\\\ModuleData\\\\Entity\\\\type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Entity/Status.php
 
 		-
 			message: "#^Call to an undefined static method devupscms\\\\ModuleData\\\\Form\\\\IntervalForm\\:\\:getFormData\\(\\)\\.$#"
@@ -1104,6 +2159,11 @@ parameters:
 			message: "#^Access to an undefined property devupscms\\\\ModuleLocation\\\\Controller\\\\CountryController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devupscms/ModuleLocation/Controller/CountryController.php
+
+		-
+			message: "#^Call to method lazyloading\\(\\) on an unknown class Lazyloading\\.$#"
+			count: 1
+			path: src/devupscms/ModuleLocation/Controller/CountryFrontController.php
 
 		-
 			message: "#^Instantiated class Lazyloading not found\\.$#"
@@ -1158,6 +2218,26 @@ parameters:
 		-
 			message: "#^Function t not found\\.$#"
 			count: 2
+			path: src/devupscms/ModuleNotification/Entity/Notification.php
+
+		-
+			message: "#^Method devupscms\\\\ModuleReporting\\\\Entity\\\\Reportingmodel\\:\\:sendMail\\(\\) invoked with 1 parameter, 2 required\\.$#"
+			count: 1
+			path: src/devupscms/ModuleNotification/Entity/Notification.php
+
+		-
+			message: "#^PHPDoc tag @param for parameter \\$user with type User\\|null is not subtype of native type User\\.$#"
+			count: 1
+			path: src/devupscms/ModuleNotification/Entity/Notification.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$params$#"
+			count: 1
+			path: src/devupscms/ModuleNotification/Entity/Notification.php
+
+		-
+			message: "#^Property devupscms\\\\ModuleNotification\\\\Entity\\\\Notification\\:\\:\\$viewedat has unknown class devupscms\\\\ModuleNotification\\\\Entity\\\\datetime as its type\\.$#"
+			count: 1
 			path: src/devupscms/ModuleNotification/Entity/Notification.php
 
 		-
@@ -1216,6 +2296,11 @@ parameters:
 			path: src/devupscms/ModulePushNotification/Controller/Push_subscriptionController.php
 
 		-
+			message: "#^Method devupscms\\\\ModulePushNotification\\\\Controller\\\\Push_subscriptionFrontController\\:\\:index\\(\\) has invalid return type Lazyloading\\.$#"
+			count: 1
+			path: src/devupscms/ModulePushNotification/Controller/Push_subscriptionFrontController.php
+
+		-
 			message: "#^Access to an undefined property devupscms\\\\ModulePushNotification\\\\Controller\\\\WorkersController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devupscms/ModulePushNotification/Controller/WorkersController.php
@@ -1261,6 +2346,16 @@ parameters:
 			path: src/devupscms/ModulePushNotification/Resource/views/admin/layout.blade.php
 
 		-
+			message: "#^Call to an undefined method Push_subscriptionController\\:\\:detailView\\(\\)\\.$#"
+			count: 1
+			path: src/devupscms/ModulePushNotification/services.php
+
+		-
+			message: "#^Method devupscms\\\\ModulePushNotification\\\\Controller\\\\Push_subscriptionController\\:\\:datatable\\(\\) invoked with 2 parameters, 0 required\\.$#"
+			count: 1
+			path: src/devupscms/ModulePushNotification/services.php
+
+		-
 			message: "#^Access to an undefined property devupscms\\\\ModuleReporting\\\\Controller\\\\EmaillogController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devupscms/ModuleReporting/Controller/EmaillogController.php
@@ -1271,6 +2366,21 @@ parameters:
 			path: src/devupscms/ModuleReporting/Controller/EmaillogController.php
 
 		-
+			message: "#^Cannot call method getEmail\\(\\) on array\\|User\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Controller/Push_emailController.php
+
+		-
+			message: "#^Cannot call method getUsername\\(\\) on array\\|User\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Controller/Push_emailController.php
+
+		-
+			message: "#^Method devupscms\\\\ModuleReporting\\\\Entity\\\\Reportingmodel\\:\\:sendMail\\(\\) invoked with 1 parameter, 2 required\\.$#"
+			count: 2
+			path: src/devupscms/ModuleReporting/Controller/Push_emailController.php
+
+		-
 			message: "#^Access to an undefined property devupscms\\\\ModuleReporting\\\\Controller\\\\ReportingmodelController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devupscms/ModuleReporting/Controller/ReportingmodelController.php
@@ -1278,6 +2388,11 @@ parameters:
 		-
 			message: "#^Function t not found\\.$#"
 			count: 7
+			path: src/devupscms/ModuleReporting/Controller/ReportingmodelController.php
+
+		-
+			message: "#^Method devupscms\\\\ModuleReporting\\\\Entity\\\\Reportingmodel\\:\\:sendMail\\(\\) invoked with 1 parameter, 2 required\\.$#"
+			count: 1
 			path: src/devupscms/ModuleReporting/Controller/ReportingmodelController.php
 
 		-
@@ -1296,9 +2411,64 @@ parameters:
 			path: src/devupscms/ModuleReporting/Datatable/ReportingmodelTable.php
 
 		-
+			message: "#^Property devupscms\\\\ModuleReporting\\\\Entity\\\\Emaillog\\:\\:\\$created_at has unknown class devupscms\\\\ModuleReporting\\\\Entity\\\\datetime as its type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Entity/Emaillog.php
+
+		-
+			message: "#^Property devupscms\\\\ModuleReporting\\\\Entity\\\\Emaillog\\:\\:\\$deleted_at has unknown class devupscms\\\\ModuleReporting\\\\Entity\\\\datetime as its type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Entity/Emaillog.php
+
+		-
+			message: "#^Property devupscms\\\\ModuleReporting\\\\Entity\\\\Emaillog\\:\\:\\$erreur has unknown class devupscms\\\\ModuleReporting\\\\Entity\\\\text as its type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Entity/Emaillog.php
+
+		-
+			message: "#^Property devupscms\\\\ModuleReporting\\\\Entity\\\\Emaillog\\:\\:\\$updated_at has unknown class devupscms\\\\ModuleReporting\\\\Entity\\\\datetime as its type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Entity/Emaillog.php
+
+		-
+			message: "#^Property devupscms\\\\ModuleReporting\\\\Entity\\\\Push_email\\:\\:\\$date_end has unknown class devupscms\\\\ModuleReporting\\\\Entity\\\\date as its type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Entity/Push_email.php
+
+		-
+			message: "#^Property devupscms\\\\ModuleReporting\\\\Entity\\\\Push_email\\:\\:\\$date_start has unknown class devupscms\\\\ModuleReporting\\\\Entity\\\\date as its type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Entity/Push_email.php
+
+		-
+			message: "#^Property devupscms\\\\ModuleReporting\\\\Entity\\\\Push_email\\:\\:\\$last_call has unknown class devupscms\\\\ModuleReporting\\\\Entity\\\\date as its type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Entity/Push_email.php
+
+		-
+			message: "#^Property devupscms\\\\ModuleReporting\\\\Entity\\\\Push_email\\:\\:\\$next_call has unknown class devupscms\\\\ModuleReporting\\\\Entity\\\\date as its type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Entity/Push_email.php
+
+		-
+			message: "#^Property devupscms\\\\ModuleReporting\\\\Entity\\\\Push_email\\:\\:\\$status has unknown class devupscms\\\\ModuleReporting\\\\Entity\\\\date as its type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Entity/Push_email.php
+
+		-
 			message: "#^Function t not found\\.$#"
 			count: 1
 			path: src/devupscms/ModuleReporting/Entity/Reportingmodel.php
+
+		-
+			message: "#^Property devupscms\\\\ModuleReporting\\\\Entity\\\\Reportingmodel_lang\\:\\:\\$content has unknown class devupscms\\\\ModuleReporting\\\\Entity\\\\text as its type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Entity/Reportingmodel_lang.php
+
+		-
+			message: "#^Property devupscms\\\\ModuleReporting\\\\Entity\\\\Reportingmodel_lang\\:\\:\\$contenttext has unknown class devupscms\\\\ModuleReporting\\\\Entity\\\\text as its type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Entity/Reportingmodel_lang.php
 
 		-
 			message: "#^Call to an undefined static method devupscms\\\\ModuleReporting\\\\Form\\\\EmaillogForm\\:\\:getFormData\\(\\)\\.$#"
@@ -1361,6 +2531,31 @@ parameters:
 			path: src/devupscms/ModuleReporting/Resource/views/admin/reportingmodel/formWidget.blade.php
 
 		-
+			message: "#^Call to an undefined method EmaillogController\\:\\:createAction\\(\\)\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/services.php
+
+		-
+			message: "#^Call to an undefined method EmaillogController\\:\\:deleteAction\\(\\)\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/services.php
+
+		-
+			message: "#^Call to an undefined method EmaillogController\\:\\:deletegroupAction\\(\\)\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/services.php
+
+		-
+			message: "#^Call to an undefined method EmaillogController\\:\\:formView\\(\\)\\.$#"
+			count: 2
+			path: src/devupscms/ModuleReporting/services.php
+
+		-
+			message: "#^Call to an undefined method EmaillogController\\:\\:updateAction\\(\\)\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/services.php
+
+		-
 			message: "#^Access to an undefined property devupscms\\\\ModuleTree\\\\Controller\\\\TreeController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devupscms/ModuleTree/Controller/TreeController.php
@@ -1372,6 +2567,16 @@ parameters:
 
 		-
 			message: "#^Call to static method getmaincategory\\(\\) on an unknown class Category\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Controller/Tree_itemController.php
+
+		-
+			message: "#^Cannot call method getSlug\\(\\) on array\\|Tree_item\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Controller/Tree_itemController.php
+
+		-
+			message: "#^Method devupscms\\\\ModuleTree\\\\Entity\\\\Tree_item\\:\\:getParent\\(\\) invoked with 3 parameters, 0\\-1 required\\.$#"
 			count: 1
 			path: src/devupscms/ModuleTree/Controller/Tree_itemController.php
 
@@ -1396,7 +2601,42 @@ parameters:
 			path: src/devupscms/ModuleTree/Datatable/Tree_item_imageTable.php
 
 		-
+			message: "#^Property devupscms\\\\ModuleTree\\\\Entity\\\\Tree\\:\\:\\$branches has unknown class devupscms\\\\ModuleTree\\\\Entity\\\\text as its type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Entity/Tree.php
+
+		-
+			message: "#^Property devupscms\\\\ModuleTree\\\\Entity\\\\Tree\\:\\:\\$description has unknown class devupscms\\\\ModuleTree\\\\Entity\\\\text as its type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Entity/Tree.php
+
+		-
+			message: "#^Call to an undefined method devupscms\\\\ModuleTree\\\\Entity\\\\Tree_item\\:\\:setMain\\(\\)\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Entity/Tree_item.php
+
+		-
+			message: "#^Call to an undefined method devupscms\\\\ModuleTree\\\\Entity\\\\Tree_item\\:\\:setSlug\\(\\)\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Entity/Tree_item.php
+
+		-
+			message: "#^Cannot call method getParent_id\\(\\) on \\$this\\(devupscms\\\\ModuleTree\\\\Entity\\\\Tree_item\\)\\|array\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Entity/Tree_item.php
+
+		-
 			message: "#^Method devupscms\\\\ModuleTree\\\\Entity\\\\Tree_item\\:\\:getParent\\(\\) should return \\$this\\(devupscms\\\\ModuleTree\\\\Entity\\\\Tree_item\\) but return statement is missing\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Entity/Tree_item.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$tree$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Entity/Tree_item.php
+
+		-
+			message: "#^Property devupscms\\\\ModuleTree\\\\Entity\\\\Tree_item\\:\\:\\$chain has unknown class devupscms\\\\ModuleTree\\\\Entity\\\\text as its type\\.$#"
 			count: 1
 			path: src/devupscms/ModuleTree/Entity/Tree_item.php
 
@@ -1407,6 +2647,11 @@ parameters:
 
 		-
 			message: "#^Constructor of class devupscms\\\\ModuleTree\\\\Entity\\\\Tree_item_lang has an unused parameter \\$id\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Entity/Tree_item_lang.php
+
+		-
+			message: "#^Property devupscms\\\\ModuleTree\\\\Entity\\\\Tree_item_lang\\:\\:\\$content has unknown class devupscms\\\\ModuleTree\\\\Entity\\\\text as its type\\.$#"
 			count: 1
 			path: src/devupscms/ModuleTree/Entity/Tree_item_lang.php
 
@@ -1446,7 +2691,27 @@ parameters:
 			path: src/devupscms/ModuleTree/Form/Tree_item_imageForm.php
 
 		-
+			message: "#^Call to an undefined method Tree_itemFrontController\\:\\:getdatafront\\(\\)\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/ModuleTree.php
+
+		-
+			message: "#^Call to an undefined method Tree_itemFrontController\\:\\:orderAction\\(\\)\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/ModuleTree.php
+
+		-
+			message: "#^Call to method ll\\(\\) on an unknown class TreeFrontController\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/ModuleTree.php
+
+		-
 			message: "#^Instantiated class TreeFrontController not found\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/ModuleTree.php
+
+		-
+			message: "#^Method devupscms\\\\ModuleTree\\\\Entity\\\\Tree_item\\:\\:getParent\\(\\) invoked with 3 parameters, 0\\-1 required\\.$#"
 			count: 1
 			path: src/devupscms/ModuleTree/ModuleTree.php
 
@@ -1509,3 +2774,13 @@ parameters:
 			message: "#^File ends with a trailing whitespace\\. This may cause problems when running the code in the web browser\\. Remove the closing \\?\\> mark or remove the whitespace\\.$#"
 			count: 1
 			path: src/devupsfront/ModuleUser/Resource/views/admin/layout.blade.php
+
+		-
+			message: "#^Method Router\\:\\:manageServe\\(\\) invoked with 0 parameters, 1 required\\.$#"
+			count: 1
+			path: src/devupsfront/ModuleUser/index.php
+
+		-
+			message: "#^Method Router\\:\\:manageServe\\(\\) invoked with 0 parameters, 1 required\\.$#"
+			count: 1
+			path: src/devupsfront/ModuleUser/services.php

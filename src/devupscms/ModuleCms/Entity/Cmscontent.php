@@ -175,7 +175,7 @@ class Cmscontent extends \Model implements \JsonSerializable, \DatatableOverwrit
     }
 
     /**
-     * @return Tree_item
+     * @return \devupscms\ModuleTree\Entity\Tree_item
      */
     public function getTree_item()
     {
@@ -183,7 +183,7 @@ class Cmscontent extends \Model implements \JsonSerializable, \DatatableOverwrit
     }
 
     /**
-     * @param Tree_item $tree_item
+     * @param \devupscms\ModuleTree\Entity\Tree_item $tree_item
      */
     public function setTree_item($tree_item)
     {

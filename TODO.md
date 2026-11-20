@@ -1522,6 +1522,179 @@ lots 1/2/3/4, a traiter au moment de chaque lot, pas avant) :
   chantier ne doit faire glisser une requete applicative vers
   `EntityManager`/`QueryBuilder` Doctrine.
 
+## LOT 7 (niveau 2) - PHPStan, audit + triage ligne par ligne
+
+**Decision prise avec l'utilisateur** : "un niveau a la fois, trier
+chaque lot" - mesurer le cout reel avant de s'engager, traiter
+INTEGRALEMENT le niveau 2 (corriger ce qui est reellement sur, baliser
+le reste avec une raison ecrite), puis **s'arreter et repasser par
+l'utilisateur avant d'envisager le niveau 3** (pas d'autorisation
+implicite pour la suite).
+
+**Mesure prealable** : l'ancienne estimation de ce TODO ("niveau 2
+genere ~200 erreurs supplementaires", voir LOT 1) datait du chantier
+v7.1 et ne tenait plus - mesure reelle au debut de ce lot :
+`vendor/bin/phpstan analyse --level=2 --error-format=raw` -> **393**
+nouvelles erreurs (en plus des 867 deja gelees aux niveaux 0/1).
+Chaque categorie ci-dessous a ete verifiee a la main (lecture du
+fichier reel, pas seulement du message phpstan) avant de decider
+correction vs. baseline.
+
+### Corrige (uniquement des docblocks - aucun changement de
+comportement, verifie par `composer test` avant/apres a 454/454
+inchange)
+
+- **`Controller::hydrateWithJson()`** (`dclass/devups/Controller/
+  Controller.php`) avait `@return null` alors que la methode retourne
+  toujours l'entite hydratee (`return $object;`) - coquille de
+  documentation preexistante (rien a voir avec ce chantier) qui a
+  trompe phpstan sur TOUT le code appelant (page entiere de faux
+  positifs "Cannot call method __insert()/__update() on null" /
+  "Cannot access property ... on null" dans `FrontController.php`,
+  `Dvups_adminFrontController.php`, `CountryFrontController.php`,
+  `Tree_itemFrontController.php`, `UserFrontController.php`). Corrige
+  en `@return object`.
+- **`Controller::form_generat()`** : `@param stdClass $object` (et
+  dans `DBAL.php`, 6 occurrences de `@param \stdClass $object` sur
+  `insertBulk()`/`deleteserialiseDbal()`/`createDbal()`/
+  `updateDbal()`) - meme defaut : la valeur reelle est une entite
+  applicative, jamais une veritable instance de `\stdClass` (qui n'a
+  pas de `getId()`/`inCollectionOf()`/`entityKey()` - source des faux
+  positifs "Cannot call method ... on stdClass"). Corrige en
+  `@param object $object` (type informel correct, sans pretendre a une
+  classe precise qui n'existe pas en pratique).
+- **`DBAL.php`** : `@param \string $object` (3 occurrences, `_createDbal()`/
+  `_updateDbal()`/`_deleteDbal()`) - `\string` avec l'anti-slash fait
+  croire a phpstan qu'il s'agit d'une classe nommee "string" dans
+  l'espace de noms global (qui n'existe pas) au lieu du pseudo-type
+  natif `string` (sans anti-slash). Corrige en `@param string $object`.
+- **Retombee directe de notre PROPRE migration de namespace** (LOT
+  5.2, points a/b/c - qui n'a touche que le code executable, jamais
+  les tags de docblock) : plusieurs classes legitimement globales
+  referencees en docblock SANS anti-slash dans un fichier qui a recu
+  un `namespace` resolvent desormais vers une classe inexistante dans
+  CE namespace plutot que vers la vraie classe globale :
+  - `Controller.php` : `@throws InvalidArgumentException` ->
+    `@throws \InvalidArgumentException`.
+  - `Tree_item.php` (`devupscms\ModuleTree\Entity`) : `@return
+    QueryBuilder` (x2, `mainmenu()`/`mainmenus()`) -> `@return
+    \QueryBuilder` (classe globale, jamais namespacee - cascade
+    corrigee du meme coup : `Tree.php::cache()`,
+    `Tree_item.php::position()`, `route/AdminService.php::index()`,
+    les 2 vues `formWidget.blade.php` qui chainaient sur son retour).
+  - `Cmscontent.php` (`devupscms\ModuleCms\Entity`) : `@return`/
+    `@param Tree_item` -> `\devupscms\ModuleTree\Entity\Tree_item`
+    (la classe reelle est dans le module Tree, pas Cms).
+  - `Notification.php` (`devupscms\ModuleNotification\Entity`) :
+    `@param User|null $user` -> `@param \User|null $user` (le
+    parametre natif de la methode est deja correctement `\User` -
+    seul le docblock etait incoherent).
+  - `Push_subscriptionController.php`/`Push_subscriptionFrontController.php`
+    (`devupscms\ModulePushNotification\Controller`) : `@throws
+    ErrorException`/`@throws ReflectionException` -> prefixes
+    `\ErrorException`/`\ReflectionException` ; `@return
+    Lazyloading|QueryBuilder` -> `@return \Lazyloading|\QueryBuilder`.
+
+### Balise (documente ici, `phpstan-baseline.neon` regenere via
+`--generate-baseline` a partir de ce niveau 2 une fois les corrections
+ci-dessus appliquees - 1182 entrees au total, 867 preexistantes +
+~315 nouvelles de ce niveau)
+
+Verifie une a une (voir methode ci-dessous) comme NE justifiant PAS
+une correction de code dans le cadre de ce lot :
+
+- **Pseudo-types informels** (`text`, `type`, `datetime`, `date`
+  utilises comme type `@param`/`@var`/`@return` alors qu'aucune classe
+  de ce nom n'existe - convention historique du projet pour documenter
+  "ceci est une chaine formattee date/texte libre", pas une vraie
+  classe). Plus gros volume (plus de 150 erreurs) - balise globale, pas
+  de gain a renommer un par un sans vraie classe de remplacement
+  evidente.
+- **`PHPDoc tag @param references unknown parameter`** (102 erreurs,
+  concentrees sur `Model.php`/`Dv_langCore.php`/`Interval_group.php`/
+  diverses entites) - noms de parametres dans le docblock qui ne
+  correspondent plus a la signature reelle (renommages anciens non
+  repercutes dans la doc) - purement cosmetique, aucun impact sur le
+  typage reel.
+- **Proprietes dynamiques du generateur** (`dclass/generator/
+  {BackendGenerator,RequestGenerator,__Generator,android/
+  __Generatorjava}.php`, ~18 erreurs "Access to an undefined property
+  object::$..." ) - ces fichiers lisent des objets `json_decode()`
+  (config de template, typee `object` generique) par propriete
+  dynamique - jamais des entites applicatives reelles, jamais
+  exerce par la suite de tests (generateur, pas runtime).
+- **Classes reellement introuvables, PREEXISTANTES (rien a voir avec
+  notre migration)** : `Dvups_entityController` (`route/Admin.php`/
+  `AdminService.php`), `TreeFrontController` (`ModuleTree.php`),
+  `Blockcontentmodel` (`FormFactory.php`), `FrontendGenerator`
+  (`__Generatorjava.php`) - verifie par recherche exhaustive dans tout
+  le depot (`grep -rn "class X"` ne remonte rien) : ces classes n'ont
+  jamais existe dans ce depot sous ce nom. Meme famille que
+  `Lazyloading` (`CmsresourceFrontController.php`/
+  `CountryFrontController.php`, deja documente au LOT 5.2 point (b) -
+  resurfit simplement a ce niveau avec un message different).
+- **Incoherences d'arite preexistantes, non fatales et non exercees
+  par les tests** (16 erreurs "invoked with N parameters, M required")
+  - verifiees au cas par cas :
+  - `Router::manageServe($default_route)` (parametre requis, sans
+    defaut) appele SANS argument par 6 points d'entree de module
+    (`index.php`/`services.php` de `ModuleConfig`/`ModuleLog`/
+    `ModuleUser` front) - serait une `ArgumentCountError` fatale si
+    ces fichiers etaient executes, mais **confirme par recherche
+    exhaustive qu'aucun autre fichier du depot ne les reference/
+    inclut** (points d'entree bruts routes par le serveur web, jamais
+    par un test).
+  - `Model::update()` appelle `QueryBuilder::update($arrayvalues,
+    $seton, $case, $defauljoin)` avec 4 arguments alors que
+    `QueryBuilder::update()` n'en accepte que 3 - en PHP un argument
+    excedentaire n'est PAS une erreur fatale (juste ignore), donc pas
+    de crash, mais `$defauljoin` n'atteint jamais `QueryBuilder::
+    update()` : bug de logique silencieux preexistant, comportement
+    voulu de `$defauljoin` dans `QueryBuilder::update()` inconnu sans
+    investigation plus large - hors perimetre de ce lot.
+  - Meme famille, non approfondies individuellement (meme verification
+    "aucun appelant dans la suite de tests") : 3x
+    `...Controller::datatable()`, 4x `Reportingmodel::sendMail()`, 2x
+    `Tree_item::getParent()`.
+- **Methodes reellement inexistantes, preexistantes** : `QueryBuilder::
+  createFrom()` (appelee par `ModelTrait::createFrom()`, aucune methode
+  de ce nom sur `QueryBuilder` - serait fatale si `Model::createFrom()`
+  etait appelee sur une entite quelconque, mais jamais exerce par la
+  suite de tests) ; `EmaillogController::formView()` (appelee par
+  `ModuleReporting/services.php`, `EmaillogController` n'utilise pas
+  `CrudTrait` contrairement aux autres controleurs qui definissent
+  cette methode).
+- **Reliquats d'union de type** (`Cannot call method ... on
+  $this(...)|array` / `array|Tree_item`, 2 erreurs restantes dans
+  `Tree_item.php`/`Tree_itemController.php`) - meme famille
+  d'incoherence de documentation que ci-dessus, non exploitee par les
+  tests.
+
+**Methode de verification appliquee a chaque categorie** avant de
+decider balise plutot que correction : (1) lire le code reel autour de
+la ligne signalee, pas seulement le message phpstan ; (2) pour une
+classe/methode "introuvable", `grep -rn` exhaustif sur tout le depot
+pour confirmer qu'aucune definition n'existe nulle part sous ce nom ;
+(3) pour une incoherence d'arite/methode potentiellement fatale,
+verifier via la hierarchie de classes que le defaut est reel (pas
+masque par un override), puis confirmer par recherche de references
+que le point d'entree fautif n'est inclus/appele par aucun autre
+fichier du depot (donc jamais exerce par les 454 tests, coherent avec
+une suite qui passe integralement malgre ces defauts).
+
+`phpstan.neon.dist` : `level: 1` -> `level: 2`. `composer test` (454
+tests, 0 echec, 8 deprecations et 2 incomplete preexistants inchanges)
+et `composer phpstan` (0 erreur) verifies verts localement puis en CI
+(matrice PHP 8.3/8.4/8.5) avant de considerer ce lot termine.
+
+**Aucune entree `UPGRADE-8.0.md`** : tous les changements de ce lot
+sont des corrections de docblocks (documentation lue par PHPStan, pas
+par PHP a l'execution) ou des entrees de baseline - zero changement de
+comportement runtime.
+
+**Niveau 3 non commence** : par decision explicite de l'utilisateur,
+ce lot s'arrete ici. Reprendre uniquement sur nouvelle autorisation.
+
 ## Securite langue - ETAPE H
 
 ### H.1/H.2/H.3 - dv_valid_lang(), tests e2e et realpath : FAITS

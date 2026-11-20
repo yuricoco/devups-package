@@ -480,7 +480,7 @@ class DBAL extends Database
      * createDbal
      * persiste les entités en base de données.
      *
-     * @param \stdClass $object
+     * @param object $object
      * @return int l'id de l'entité persisté
      */
     public function insertBulk($object = null, $listentity = [])
@@ -501,7 +501,7 @@ class DBAL extends Database
      * createDbal
      * persiste les entités en base de données.
      *
-     * @param \stdClass $object
+     * @param object $object
      * @return int l'id de l'entité persisté
      */
     public function updateserialiseDbal($table, $var, $arrayvalues)
@@ -529,7 +529,7 @@ class DBAL extends Database
      * createDbal
      * persiste les entités en base de données.
      *
-     * @param \stdClass $object
+     * @param object $object
      * @return int l'id de l'entité persisté
      */
     public function deleteserialiseDbal($object, $listid)
@@ -559,7 +559,7 @@ class DBAL extends Database
      * createDbal
      * persiste les entités en base de données.
      *
-     * @param \stdClass $object
+     * @param object $object
      * @return int l'id de l'entité persisté
      */
     public function executeDbal($sql, $values = [], $action = 0, $force = false)
@@ -650,7 +650,7 @@ class DBAL extends Database
      * createDbal
      * persiste les entités en base de données.
      *
-     * @param \stdClass $object
+     * @param object $object
      * @return int l'id de l'entité persisté
      */
     public function createDbal($object = null)
@@ -751,7 +751,7 @@ class DBAL extends Database
      * createDbal
      * persiste les entités en base de données.
      *
-     * @param \string $object
+     * @param string $object
      * @return int l'id de l'entité persisté
      */
     public static function _createDbal($object, $keyvalue)
@@ -933,7 +933,7 @@ class DBAL extends Database
      * updateDbal
      * met à jour l'entité passé en parametre. et celon la valeur de $change_collection, la collection d'objet de l'entité en question.
      *
-     * @param \stdClass $object l'entité a persister
+     * @param object $object l'entité a persister
      * @param array $change_collection Autorise la modification de la collection d'objet en bd true par defaut
      * @return \stdClass
      * @throws Exception
@@ -1033,7 +1033,7 @@ class DBAL extends Database
      * createDbal
      * persiste les entités en base de données.
      *
-     * @param \string $object
+     * @param string $object
      * @return int l'id de l'entité persisté
      */
     public static function _updateDbal($object, $keyvalue, $where = '')
@@ -1054,7 +1054,7 @@ class DBAL extends Database
      * createDbal
      * persiste les entités en base de données.
      *
-     * @param \string $object
+     * @param string $object
      * @return int l'id de l'entité persisté
      */
     public static function _deleteDbal($object, $where = "1")

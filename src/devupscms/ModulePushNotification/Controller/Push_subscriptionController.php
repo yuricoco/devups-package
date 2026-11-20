@@ -122,7 +122,7 @@ class Push_subscriptionController extends Controller
     /**
      * Generate public and private key for pushnotification then save to the configuration table
      * @return array
-     * @throws ErrorException
+     * @throws \ErrorException
      */
     public function generateKey()
     {
@@ -138,7 +138,7 @@ class Push_subscriptionController extends Controller
     /**
      * Generate public and private key for pushnotification then save to the configuration table
      * @return array
-     * @throws ErrorException
+     * @throws \ErrorException
      */
     public function key()
     {

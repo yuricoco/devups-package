@@ -682,7 +682,7 @@ INSERT INTO mail_queues (mail_campaign_id, client_id, email, send)
     }
 
     /**
-     * @param User|null $user the receiver of the push notification
+     * @param \User|null $user the receiver of the push notification
      * @param $message
      * @param $link
      * @param $icon

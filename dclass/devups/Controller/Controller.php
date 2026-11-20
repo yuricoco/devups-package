@@ -253,10 +253,10 @@ class Controller
      * @example $jsondata as \Array dans le cas de la persistance d'une
      * entité imbriqué dans celle courante
      *
-     * @param stdClass $object l'instance de l'entité à hydrater
+     * @param object $object l'instance de l'entité à hydrater
      * @param Mixed ( String or Array ) $jsondata optionnel
      * @return type
-     * @throws InvalidArgumentException
+     * @throws \InvalidArgumentException
      */
     public function form_generat($object, $data = null, $deeper = false)
     {
@@ -547,7 +547,7 @@ class Controller
      * @param $object
      * @param $jsonform
      * @param bool $deeper
-     * @return null
+     * @return object
      * @throws Exception
      */
     public function hydrateWithJson($object, $jsonform, $deeper = false)
