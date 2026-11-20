@@ -2176,7 +2176,7 @@ parameters:
 			path: dclass/lib/Util.php
 
 		-
-			message: "#^Parameter \\#1 \\$seed of function mt_srand expects int, float given\\.$#"
+			message: "#^Parameter \\#1 \\$seed of function mt_srand expects int(\\|null)?, float given\\.$#"
 			count: 2
 			path: dclass/lib/Util.php
 
@@ -2471,7 +2471,7 @@ parameters:
 			path: src/devups/ModuleAdmin/Entity/Dvups_admin.php
 
 		-
-			message: "#^Parameter \\#1 \\$seed of function mt_srand expects int, float given\\.$#"
+			message: "#^Parameter \\#1 \\$seed of function mt_srand expects int(\\|null)?, float given\\.$#"
 			count: 2
 			path: src/devups/ModuleAdmin/Entity/Dvups_admin.php
 

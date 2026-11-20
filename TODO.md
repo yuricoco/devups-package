@@ -1919,6 +1919,28 @@ regenere (1580 entrees, 1487 + 93 nouvelles de ce niveau, 1487 = 1492
 precedent). `composer test` (454/454 inchange) et `composer phpstan`
 (0 erreur) verts.
 
+**Incident CI apres le push de ce niveau - signature de fonction
+native dependante de la version PHP** : rouge sur PHP 8.3 (seul job
+qui lance `composer phpstan`). Cette machine de dev n'a que PHP
+8.1.34/8.2.12/7.4.33 (toujours pas de 8.3+, meme contrainte que notee
+au LOT 1.0) - le baseline pour `mt_srand((double)... )` a ete
+regenere localement sous PHP 8.2, dont le stub natif de `mt_srand()`
+déclare `int $seed` (non-nullable) ; sous PHP 8.3 (celui de la CI),
+le stub reel déclare `int|null $seed` - message d'erreur phpstan
+different ("expects int|null, float given" vs "expects int, float
+given") pour EXACTEMENT la meme ligne de code, meme cause que
+l'incident CRLF/LF du niveau 2 (artefact de l'environnement de
+generation du baseline, pas une vraie regression). Corrige en
+assouplissant les 2 entrees concernees avec une regex tolerante aux
+deux variantes (`int(\|null)?`) plutot que de fixer une version
+precise. **A retenir pour la suite de ce lot** : toute entree de
+baseline qui encode le type natif d'une fonction PHP standard
+(`mt_srand`, et potentiellement d'autres selon les niveaux a venir)
+est a risque du meme artefact tant que cette machine n'a pas de PHP
+8.3+ pour generer le baseline dans le MEME environnement que la CI -
+verifier la CI (pas seulement le vert local) reste indispensable
+avant de considerer un niveau termine.
+
 ## Securite langue - ETAPE H
 
 ### H.1/H.2/H.3 - dv_valid_lang(), tests e2e et realpath : FAITS
