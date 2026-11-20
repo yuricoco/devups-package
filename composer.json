@@ -45,7 +45,7 @@
         "symfony/var-dumper": "^7.4",
         "symfony/var-exporter": "^7.4",
         "phpunit/phpunit": "^11.5",
-        "phpstan/phpstan": "^1.10"
+        "phpstan/phpstan": "^2.3"
     },
     "config": {
         "process-timeout": 600,

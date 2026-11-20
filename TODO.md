@@ -1941,6 +1941,113 @@ est a risque du meme artefact tant que cette machine n'a pas de PHP
 verifier la CI (pas seulement le vert local) reste indispensable
 avant de considerer un niveau termine.
 
+### LOT 7 - arret de l'escalade de niveau a 5, decision et justification
+
+**Mesure avant de continuer** : `--level=6` -> **4150** nouvelles
+erreurs (contre 99 au niveau 5, 170 au niveau 4, 161 au niveau 3, 393
+au niveau 2). Saut d'echelle complet, pas une simple continuite.
+
+**Decision** : arreter l'escalade de niveau ici (5), ne PAS tenter
+les niveaux 6 a 9. Raisons ecrites (choix le plus prudent, comme
+demande par les regles du chantier en cas d'incertitude) :
+
+- **Nature du changement differente.** Les niveaux 2 a 5 verifient
+  des faits precis et corrigibles (un docblock errone, un argument du
+  mauvais type) - chaque correction de ce lot a ete un changement de
+  **documentation**, jamais de code executable. Le niveau 6
+  ("missing typehints") et au-dela demandent d'**ajouter des
+  declarations de type natives** partout ou elles manquent - un
+  changement de SIGNATURE reel, avec un risque de rupture de
+  comportement (coercition stricte, erreurs fatales sur des appels
+  qui fonctionnaient par coercition implicite) sans rapport avec le
+  filet de securite de typage vise par ce lot.
+- **Echelle incompatible avec une triage individuelle.** 4150
+  erreurs au niveau 6 seul (avant meme 7/8/9) rend une verification
+  "une par une avant de decider" (methode suivie scrupuleusement du
+  niveau 2 au niveau 5) totalement impraticable dans le cadre de ce
+  lot - la seule option realiste serait un balisage en masse, qui
+  n'apporterait aucune valeur de securite (noierait tout futur vrai
+  signal de ce niveau dans un bruit deja enorme au moment ou il est
+  gele).
+- **Incompatible avec le design assume du framework.** Ce chantier a
+  deliberement CONSERVE le typage dynamique/informel a de multiples
+  endroits deja verifies cette session (ORM maison Tchutte, proprietes
+  magiques, `ModelTrait`, generateur base sur des objets `json_decode`
+  generiques) - imposer des typehints natifs partout irait a
+  l'encontre de choix d'architecture deja actes ailleurs dans ce
+  meme chantier, pas seulement d'un manque de rigueur a corriger.
+
+**PHPStan 1.10 -> 2.x** (l'autre volet nomme du LOT 7, "PHPStan 5"
+dans le plan initial faisait reference a `phpstan/phpstan` **version**
+2, pas au niveau 5 - confirme par l'inventaire LOT 1.0) : traite
+separement ci-dessous.
+
+### LOT 7 - bascule `phpstan/phpstan` ^1.10 -> ^2.3 - FAIT
+
+`composer update phpstan/phpstan --with-all-dependencies
+--ignore-platform-req=php` -> 1.12.34 -> 2.3.7.
+
+**Config a adapter** : `checkMissingIterableValueType: false`
+(option 1.x) refuse de demarrer sous 2.x ("Unexpected item"). Pas
+d'equivalent ajoute : ce que cette option ignorait n'apparait qu'au
+niveau 6, deja decide comme hors perimetre de ce lot (voir
+ci-dessus) - sans effet au niveau 5 actuel, simplement retiree
+(documente dans `phpstan.neon.dist` pour une reintroduction explicite
+si un futur chantier pousse le niveau plus haut).
+
+**Regles changees entre 1.x et 2.x** - `composer phpstan` est passe de
+0 a 130 erreurs au changement de version seul (meme niveau 5, meme
+code, meme baseline) : certaines sont de VRAIES nouvelles regles
+(`staticMethod.resultUnused`, nouveau en 2.x), d'autres sont le meme
+signalement reformule avec un texte different (fait echouer la
+correspondance regex des anciennes entrees de baseline -
+`ignore.unmatched`, 39 occurrences - meme famille d'incident que le
+CRLF/LF et `mt_srand` deja rencontres, mais cause par la version de
+l'outil cette fois plutot que par l'environnement local). Resolu en
+regenerant **entierement** le baseline sous 2.x (`--generate-baseline`,
+1572 entrees - proche des 1580 precedentes, legere reorganisation
+normale) plutot qu'en rafistolant chaque regex une par une.
+
+**Corrige** (echantillon verifie individuellement parmi les
+nouvelles regles 2.x, memes criteres qu'aux niveaux precedents) :
+
+- `Push_subscription.php` (x2, FCM + Expo) : `curl_setopt($ch,
+  CURLOPT_POST, 1)` - `1` (int) au lieu de `true` (bool) attendu par
+  le stub natif de `curl_setopt()` ; PHP coercerait silencieusement,
+  mais corrige en `true` pour plus de clarte, effet identique.
+- `ReportingmodelForm.php` : `array_values(array_values(array_diff(
+  scandir($dir), ...)))` - le `array_values()` exterieur est
+  redondant (`$files` est deja une liste reindexee par le premier
+  appel) - supprime, effet identique (nouvelle regle 2.x
+  `arrayValues.list`, detection de no-op reel, pas un faux positif).
+
+**Balise** (nouvelles regles 2.x ou reformulations, verifiees
+representatives de categories deja etablies aux niveaux 2-5, pas
+reprises une a une en detail compte tenu du volume et de la nature
+"bruit de migration d'outil" plutot que "nouveau signal
+applicatif") :
+
+- `Notification::sendSMS()` appelee seule sur sa ligne
+  (`staticMethod.resultUnused`) - phpstan 2.x la juge "pure" (sans
+  effet de bord detectable statiquement) alors qu'elle envoie
+  reellement un SMS via API externe - faux positif de l'heuristique
+  de purete de l'outil, pas un appel inutile.
+- `Tree_item.php:303` ("right side of && always true") - meme famille
+  que le niveau 4 (`treatPhpDocTypesAsCertain` : un type docblock
+  traite comme garanti rend une verification de securite
+  redondante-mais-defensive).
+- `phpDoc.parseError` (6), `nullCoalesce.offset` (4),
+  `assign.propertyType` (2), `return.missing`/`return.type` (3),
+  `function.alreadyNarrowedType` (6), `logicalAnd.
+  rightAlwaysTrue`/`alwaysFalse` (6) : verifies par echantillonnage
+  comme relevant des memes causes racines deja documentees aux
+  niveaux 2 a 5 (pseudo-types informels, docblocks casses par
+  d'anciennes retombees de migration déjà traitées, type certain par
+  docblock) - pas de nouvelle categorie de bug reelle identifiee.
+
+`composer test` (454/454 inchange) et `composer phpstan` (0 erreur,
+PHPStan 2.3.7) verts.
+
 ## Securite langue - ETAPE H
 
 ### H.1/H.2/H.3 - dv_valid_lang(), tests e2e et realpath : FAITS

@@ -192,7 +192,7 @@ class Push_subscription extends \Model implements \JsonSerializable, Subscriptio
 
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, "https://exp.host/--/api/v2/push/send");
-        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             "Accept: application/json",
             "Accept-encoding: gzip, deflate",
@@ -284,7 +284,7 @@ class Push_subscription extends \Model implements \JsonSerializable, Subscriptio
 
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);

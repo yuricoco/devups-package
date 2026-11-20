@@ -67,4 +67,12 @@ parameters:
         # jamais) - decouvert au LOT 7 niveau 4 (CI rouge sur une erreur
         # "config/constante.php" absente du checkout CI).
         - config/constante.php
-    checkMissingIterableValueType: false
+    # ETAPE 5.2 (v8.0, LOT 7) : checkMissingIterableValueType (option
+    # PHPStan 1.x) a ete retiree en PHPStan 2.x (refus de demarrer :
+    # "Unexpected item") - simplement supprimee ici, sans equivalent a
+    # ajouter : ce que cette option ignorait ("missingType.
+    # iterableValue", le manque de type generique sur un tableau)
+    # n'apparait qu'a partir du niveau 6 (voir TODO.md, "LOT 7 - arret
+    # de l'escalade de niveau a 5") - non atteint par ce chantier, donc
+    # sans effet au niveau 5 actuel. A reintroduire explicitement si un
+    # futur chantier pousse le niveau plus haut.

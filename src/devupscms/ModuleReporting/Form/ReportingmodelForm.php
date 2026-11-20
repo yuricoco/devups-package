@@ -34,7 +34,7 @@ class ReportingmodelForm extends \FormManager
         $this->fields['type'] = [
             "label" => t('Type of reporting '),
             "type" => FORMTYPE_RADIO,
-            "options" => \FormManager::key_as_value(array_values($files)),
+            "options" => \FormManager::key_as_value($files),
             "value" => $this->emailmodel->getType().".blade.php",
         ];
 

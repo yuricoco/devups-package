@@ -397,3 +397,31 @@ middleware PSR-15 independamment du routage par attributs existant
 Verifie par : la suite de tests complete (454 tests, 0 echec - 8
 deprecations et 2 incomplets preexistants et sans rapport) ; `composer
 phpstan` sans erreur.
+
+## LOT 7 - Qualite (PHPStan)
+
+**Aucune rupture d'API ou de comportement runtime dans ce lot** -
+uniquement des corrections de documentation (docblocks `@param`/
+`@return`/`@var` errones, zero impact a l'execution) et deux
+changements d'outillage interne au depot :
+
+- `phpstan/phpstan` remonte de `^1.10` a `^2.3` (uniquement une
+  dependance `require-dev`, sans effet sur une application qui
+  consomme ce paquet - pertinent seulement pour qui execute `composer
+  phpstan` sur ce depot lui-meme).
+- `phpstan.neon.dist` passe du niveau 1 au niveau 5 (verifications
+  plus strictes a chaque execution de `composer phpstan`, rien a
+  migrer cote consommateur).
+
+Deux corrections ont un effet observable, mineur et strictement
+ameliorant :
+
+- `Util::clearcookie()` n'emet plus l'avertissement de depreciation
+  PHP 8.1+ "Passing null to parameter of type string is deprecated"
+  (comportement d'effacement du cookie identique).
+- `curl_setopt($ch, CURLOPT_POST, ...)` (notifications push FCM/Expo)
+  passe desormais `true` plutot que `1` - comportement HTTP identique.
+
+Verifie par : la suite de tests complete (454 tests, 0 echec - 8
+deprecations et 2 incomplets preexistants et sans rapport) ; `composer
+phpstan` sans erreur au niveau 5.
