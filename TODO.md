@@ -1102,6 +1102,20 @@ sans obligation d'y toucher.
 ci-dessus) - a reprendre plus tard, hors de ce chantier ou dans un
 sous-lot dedie.
 
+### LOT 5.7 - FAIT (confirmation finale push/CI)
+
+Chaque sous-etape de ce LOT 5 (a, b, c, 5.4, 5.5, 5.6) a deja ete
+poussee et verifiee verte individuellement au fil du travail (CI
+GitHub, matrice PHP 8.3/8.4/8.5) - pas une seule passe finale comme
+pour les lots precedents, le risque plus structurant de celui-ci
+justifiant "plusieurs commits/plusieurs passes de verification CI
+intermediaires" (decide en LOT 5.0). Cette etape n'est donc qu'une
+**confirmation** : `git status` propre, HEAD local = HEAD distant
+(`c81bd46`), `composer test` (445 tests, 0 echec, 8 deprecations et 2
+incomplete preexistants inchanges) et `composer phpstan` (0 erreur)
+rejoues une derniere fois sans aucune modification de code entre les
+deux - tout le LOT 5 tient ensemble.
+
 ### LOT 5.1 - FAIT (helper `Model::shortClassName()` + conversion des sites "non surs")
 
 Revue ligne-par-ligne exhaustive des 19 fichiers listes en LOT 5.0 (plus
