@@ -1,9 +1,29 @@
 parameters:
 	ignoreErrors:
 		-
+			message: "#^Property AdminTemplateGenerator\\:\\:\\$traitement is never read, only written\\.$#"
+			count: 1
+			path: admin/generator/AdminTemplateGenerator.php
+
+		-
 			message: "#^Access to an undefined property Database\\:\\:\\$exist\\.$#"
 			count: 1
 			path: config/Database.php
+
+		-
+			message: "#^Negated boolean expression is always true\\.$#"
+			count: 1
+			path: config/constante.php
+
+		-
+			message: "#^If condition is always false\\.$#"
+			count: 1
+			path: config/dependanceInjection.php
+
+		-
+			message: "#^Property dclass\\\\devups\\\\Api\\:\\:\\$_name is never read, only written\\.$#"
+			count: 1
+			path: dclass/devups/Api.php
 
 		-
 			message: "#^Argument of an invalid type dclass\\\\devups\\\\Controller\\\\Controller supplied for foreach, only iterables are supported\\.$#"
@@ -46,6 +66,16 @@ parameters:
 			path: dclass/devups/Controller/Controller.php
 
 		-
+			message: "#^Negated boolean expression is always false\\.$#"
+			count: 2
+			path: dclass/devups/Controller/Controller.php
+
+		-
+			message: "#^Negated boolean expression is always true\\.$#"
+			count: 2
+			path: dclass/devups/Controller/Controller.php
+
+		-
 			message: "#^PHPDoc tag @param has invalid value \\(Mixed \\( String or Array \\) \\$jsondata optionnel\\)\\: Unexpected token \"\\(\", expected variable at offset 394$#"
 			count: 1
 			path: dclass/devups/Controller/Controller.php
@@ -81,6 +111,11 @@ parameters:
 			path: dclass/devups/Controller/Controller.php
 
 		-
+			message: "#^Unreachable statement \\- code above always terminates\\.$#"
+			count: 1
+			path: dclass/devups/Controller/Controller.php
+
+		-
 			message: "#^Access to an undefined property dclass\\\\devups\\\\Controller\\\\ControllerCore\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: dclass/devups/Controller/ControllerCore.php
@@ -93,6 +128,11 @@ parameters:
 		-
 			message: "#^Function t not found\\.$#"
 			count: 2
+			path: dclass/devups/Controller/FrontController.php
+
+		-
+			message: "#^If condition is always false\\.$#"
+			count: 1
 			path: dclass/devups/Controller/FrontController.php
 
 		-
@@ -151,12 +191,37 @@ parameters:
 			path: dclass/devups/Datatable/Datatable.php
 
 		-
+			message: "#^If condition is always true\\.$#"
+			count: 1
+			path: dclass/devups/Datatable/Datatable.php
+
+		-
 			message: "#^Inner named functions are not supported by PHPStan\\. Consider refactoring to an anonymous function, class method, or a top\\-level\\-defined function\\. See issue \\#165 \\(https\\://github\\.com/phpstan/phpstan/issues/165\\) for more details\\.$#"
 			count: 1
 			path: dclass/devups/Datatable/Datatable.php
 
 		-
+			message: "#^Method dclass\\\\devups\\\\Datatable\\\\Datatable\\:\\:tableoption\\(\\) is unused\\.$#"
+			count: 1
+			path: dclass/devups/Datatable/Datatable.php
+
+		-
+			message: "#^Negated boolean expression is always true\\.$#"
+			count: 1
+			path: dclass/devups/Datatable/Datatable.php
+
+		-
 			message: "#^PHPDoc tag @param references unknown parameter\\: \\$sure$#"
+			count: 1
+			path: dclass/devups/Datatable/Datatable.php
+
+		-
+			message: "#^Right side of && is always true\\.$#"
+			count: 4
+			path: dclass/devups/Datatable/Datatable.php
+
+		-
+			message: "#^Unreachable statement \\- code above always terminates\\.$#"
 			count: 1
 			path: dclass/devups/Datatable/Datatable.php
 
@@ -182,6 +247,16 @@ parameters:
 
 		-
 			message: "#^Constructor of class dclass\\\\devups\\\\Datatable\\\\Lazyloading has an unused parameter \\$qbcustom\\.$#"
+			count: 1
+			path: dclass/devups/Datatable/Lazyloading.php
+
+		-
+			message: "#^Negated boolean expression is always true\\.$#"
+			count: 1
+			path: dclass/devups/Datatable/Lazyloading.php
+
+		-
+			message: "#^Property dclass\\\\devups\\\\Datatable\\\\Lazyloading\\:\\:\\$entityname is never read, only written\\.$#"
 			count: 1
 			path: dclass/devups/Datatable/Lazyloading.php
 
@@ -266,6 +341,11 @@ parameters:
 			path: dclass/devups/Dfile.php
 
 		-
+			message: "#^Property Dfile\\:\\:\\$file is never read, only written\\.$#"
+			count: 1
+			path: dclass/devups/Dfile.php
+
+		-
 			message: "#^Variable \\$collection might not be defined\\.$#"
 			count: 5
 			path: dclass/devups/Dfile.php
@@ -326,6 +406,11 @@ parameters:
 			path: dclass/devups/Form/Form.php
 
 		-
+			message: "#^Offset 'values' on array\\{value\\: mixed, type\\: mixed\\} in isset\\(\\) does not exist\\.$#"
+			count: 1
+			path: dclass/devups/Form/Form.php
+
+		-
 			message: "#^Static method FormFactory\\:\\:__filepreview\\(\\) invoked with 2 parameters, 1 required\\.$#"
 			count: 1
 			path: dclass/devups/Form/Form.php
@@ -351,9 +436,19 @@ parameters:
 			path: dclass/devups/Form/FormFactory.php
 
 		-
+			message: "#^Negated boolean expression is always true\\.$#"
+			count: 1
+			path: dclass/devups/Form/FormFactory.php
+
+		-
 			message: "#^Variable \\$ids might not be defined\\.$#"
 			count: 2
 			path: dclass/devups/Form/FormManager.php
+
+		-
+			message: "#^Elseif condition is always true\\.$#"
+			count: 1
+			path: dclass/devups/Genesis.php
 
 		-
 			message: "#^Call to an undefined method ReflectionMethod\\:\\:getAnnotation\\(\\)\\.$#"
@@ -386,6 +481,26 @@ parameters:
 			path: dclass/devups/Http/Response.php
 
 		-
+			message: "#^If condition is always false\\.$#"
+			count: 5
+			path: dclass/devups/Http/Router.php
+
+		-
+			message: "#^If condition is always true\\.$#"
+			count: 1
+			path: dclass/devups/Http/Router.php
+
+		-
+			message: "#^Negated boolean expression is always true\\.$#"
+			count: 1
+			path: dclass/devups/Http/Router.php
+
+		-
+			message: "#^Unreachable statement \\- code above always terminates\\.$#"
+			count: 2
+			path: dclass/devups/Http/Router.php
+
+		-
 			message: "#^Variable \\$function might not be defined\\.$#"
 			count: 8
 			path: dclass/devups/Http/Router.php
@@ -396,12 +511,52 @@ parameters:
 			path: dclass/devups/Log.php
 
 		-
+			message: "#^Negated boolean expression is always true\\.$#"
+			count: 1
+			path: dclass/devups/Log.php
+
+		-
+			message: "#^Offset 'file' on array\\{type\\: 1\\|4\\|16\\|64, message\\: string, file\\: string, line\\: int\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: dclass/devups/Log.php
+
+		-
+			message: "#^Offset 'line' on array\\{type\\: 1\\|4\\|16\\|64, message\\: string, file\\: string, line\\: int\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: dclass/devups/Log.php
+
+		-
+			message: "#^Result of \\|\\| is always true\\.$#"
+			count: 1
+			path: dclass/devups/Log.php
+
+		-
+			message: "#^Call to function array_key_exists\\(\\) with 'prod' and array\\{dir\\?\\: string, dry_run\\?\\: bool, force\\?\\: bool, step\\?\\: bool, confirm\\?\\: callable\\(\\)\\: mixed\\} will always evaluate to false\\.$#"
+			count: 1
+			path: dclass/devups/Migration/MigrationRunner.php
+
+		-
+			message: "#^If condition is always false\\.$#"
+			count: 1
+			path: dclass/devups/Migration/MigrationRunner.php
+
+		-
+			message: "#^Right side of && is always false\\.$#"
+			count: 1
+			path: dclass/devups/Migration/MigrationRunner.php
+
+		-
 			message: "#^Cannot access an offset on false\\.$#"
 			count: 1
 			path: dclass/devups/ScanDir.php
 
 		-
 			message: "#^Result of function var_dump \\(void\\) is used\\.$#"
+			count: 1
+			path: dclass/devups/ScanDir.php
+
+		-
+			message: "#^Static property scanDir\\:\\:\\$directories is never read, only written\\.$#"
 			count: 1
 			path: dclass/devups/ScanDir.php
 
@@ -456,6 +611,16 @@ parameters:
 			path: dclass/devups/Tchutte/DBAL.php
 
 		-
+			message: "#^Call to function is_array\\(\\) with type will always evaluate to false\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Call to function is_object\\(\\) with mixed will always evaluate to false\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
 			message: "#^Call to method getId\\(\\) on an unknown class type\\.$#"
 			count: 2
 			path: dclass/devups/Tchutte/DBAL.php
@@ -496,7 +661,27 @@ parameters:
 			path: dclass/devups/Tchutte/DBAL.php
 
 		-
+			message: "#^If condition is always false\\.$#"
+			count: 2
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^If condition is always true\\.$#"
+			count: 8
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
 			message: "#^Iterating over an object of an unknown class type\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Left side of && is always true\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Method DBAL\\:\\:ResetObject\\(\\) is unused\\.$#"
 			count: 1
 			path: dclass/devups/Tchutte/DBAL.php
 
@@ -556,6 +741,11 @@ parameters:
 			path: dclass/devups/Tchutte/DBAL.php
 
 		-
+			message: "#^Method DBAL\\:\\:extractNestedData\\(\\) is unused\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
 			message: "#^Method DBAL\\:\\:manyToManyDelete\\(\\) has invalid return type type\\.$#"
 			count: 1
 			path: dclass/devups/Tchutte/DBAL.php
@@ -571,12 +761,22 @@ parameters:
 			path: dclass/devups/Tchutte/DBAL.php
 
 		-
+			message: "#^Method DBAL\\:\\:orm\\(\\) is unused\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
 			message: "#^Method DBAL\\:\\:updateDbal\\(\\) should return stdClass but returns int\\.$#"
 			count: 1
 			path: dclass/devups/Tchutte/DBAL.php
 
 		-
 			message: "#^Method DBAL\\:\\:updateserialiseDbal\\(\\) should return int but returns string\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Negated boolean expression is always false\\.$#"
 			count: 1
 			path: dclass/devups/Tchutte/DBAL.php
 
@@ -666,6 +866,11 @@ parameters:
 			path: dclass/devups/Tchutte/DBAL.php
 
 		-
+			message: "#^Property DBAL\\:\\:\\$entity_link_list \\(type\\) in empty\\(\\) is not falsy\\.$#"
+			count: 4
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
 			message: "#^Property DBAL\\:\\:\\$entity_link_list has unknown class type as its type\\.$#"
 			count: 1
 			path: dclass/devups/Tchutte/DBAL.php
@@ -741,6 +946,21 @@ parameters:
 			path: dclass/devups/Tchutte/DBAL.php
 
 		-
+			message: "#^Result of && is always false\\.$#"
+			count: 2
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Right side of && is always true\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Unreachable statement \\- code above always terminates\\.$#"
+			count: 3
+			path: dclass/devups/Tchutte/DBAL.php
+
+		-
 			message: "#^Variable \\$classentity might not be defined\\.$#"
 			count: 3
 			path: dclass/devups/Tchutte/DBAL.php
@@ -759,6 +979,11 @@ parameters:
 			message: "#^Variable \\$relations might not be defined\\.$#"
 			count: 1
 			path: dclass/devups/Tchutte/DBAL.php
+
+		-
+			message: "#^Negated boolean expression is always true\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/DBALException.php
 
 		-
 			message: "#^Access to an undefined property QueryBuilder\\:\\:\\$join\\.$#"
@@ -796,6 +1021,11 @@ parameters:
 			path: dclass/devups/Tchutte/QueryBuilder.php
 
 		-
+			message: "#^Call to function is_array\\(\\) with int will always evaluate to false\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
 			message: "#^Default value of the parameter \\#1 \\$page \\(int\\) of method QueryBuilder\\:\\:skip\\(\\) is incompatible with type string\\.$#"
 			count: 1
 			path: dclass/devups/Tchutte/QueryBuilder.php
@@ -803,6 +1033,26 @@ parameters:
 		-
 			message: "#^Default value of the parameter \\#2 \\$per_page \\(int\\) of method QueryBuilder\\:\\:skip\\(\\) is incompatible with type string\\.$#"
 			count: 1
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^Expression on left side of \\?\\? is not nullable\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^If condition is always false\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^If condition is always true\\.$#"
+			count: 3
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^Left side of && is always true\\.$#"
+			count: 2
 			path: dclass/devups/Tchutte/QueryBuilder.php
 
 		-
@@ -833,6 +1083,11 @@ parameters:
 		-
 			message: "#^Method QueryBuilder\\:\\:index\\(\\) has invalid return type type\\.$#"
 			count: 1
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^Negated boolean expression is always false\\.$#"
+			count: 4
 			path: dclass/devups/Tchutte/QueryBuilder.php
 
 		-
@@ -886,8 +1141,23 @@ parameters:
 			path: dclass/devups/Tchutte/QueryBuilder.php
 
 		-
+			message: "#^Property DBAL\\:\\:\\$entity_link_list \\(type\\) in empty\\(\\) is not falsy\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
+			message: "#^Unreachable statement \\- code above always terminates\\.$#"
+			count: 1
+			path: dclass/devups/Tchutte/QueryBuilder.php
+
+		-
 			message: "#^Access to offset mixed on an unknown class type\\.$#"
 			count: 6
+			path: dclass/devups/model/EntityCollection.php
+
+		-
+			message: "#^Comparison operation \"\\>\\=\" between 0 and 0 is always true\\.$#"
+			count: 1
 			path: dclass/devups/model/EntityCollection.php
 
 		-
@@ -897,6 +1167,11 @@ parameters:
 
 		-
 			message: "#^Default value of the parameter \\#3 \\$cmp \\(string\\) of method EntityCollection\\:\\:intersection\\(\\) is incompatible with type type\\.$#"
+			count: 1
+			path: dclass/devups/model/EntityCollection.php
+
+		-
+			message: "#^Else branch is unreachable because previous condition is always true\\.$#"
 			count: 1
 			path: dclass/devups/model/EntityCollection.php
 
@@ -941,6 +1216,11 @@ parameters:
 			path: dclass/devups/model/EntityCollection.php
 
 		-
+			message: "#^Result of && is always true\\.$#"
+			count: 1
+			path: dclass/devups/model/EntityCollection.php
+
+		-
 			message: "#^Variable \\$listentity in empty\\(\\) always exists and is not falsy\\.$#"
 			count: 2
 			path: dclass/devups/model/EntityCollection.php
@@ -976,6 +1256,21 @@ parameters:
 			path: dclass/devups/model/Model.php
 
 		-
+			message: "#^Call to function is_array\\(\\) with int will always evaluate to false\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^Call to function is_array\\(\\) with type\\|null will always evaluate to false\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^Call to function is_numeric\\(\\) with type\\|null will always evaluate to false\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
 			message: "#^Call to static method where\\(\\) on an unknown class Dvups_role_dvups_entity\\.$#"
 			count: 1
 			path: dclass/devups/model/Model.php
@@ -997,6 +1292,11 @@ parameters:
 
 		-
 			message: "#^Default value of the parameter \\#2 \\$order \\(string\\) of method Model\\:\\:all\\(\\) is incompatible with type type\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^If condition is always false\\.$#"
 			count: 1
 			path: dclass/devups/model/Model.php
 
@@ -1056,6 +1356,11 @@ parameters:
 			path: dclass/devups/model/Model.php
 
 		-
+			message: "#^Negated boolean expression is always false\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
 			message: "#^PHPDoc tag @param references unknown parameter\\: \\$att$#"
 			count: 1
 			path: dclass/devups/model/Model.php
@@ -1101,6 +1406,16 @@ parameters:
 			path: dclass/devups/model/Model.php
 
 		-
+			message: "#^Property Model\\:\\:\\$created_at \\(string\\) in isset\\(\\) is not nullable\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
+			message: "#^Unreachable statement \\- code above always terminates\\.$#"
+			count: 1
+			path: dclass/devups/model/Model.php
+
+		-
 			message: "#^Variable \\$getcurrentfile might not be defined\\.$#"
 			count: 1
 			path: dclass/devups/model/Model.php
@@ -1109,6 +1424,11 @@ parameters:
 			message: "#^Method dclass\\\\devups\\\\model\\\\ModelSerializer\\:\\:__update\\(\\) should return bool\\|QueryBuilder but returns stdClass\\.$#"
 			count: 1
 			path: dclass/devups/model/ModelSerializer.php
+
+		-
+			message: "#^Negated boolean expression is always false\\.$#"
+			count: 1
+			path: dclass/dvups_functions.php
 
 		-
 			message: "#^Argument of an invalid type dclass\\\\devups\\\\Core\\\\Dv_langCore supplied for foreach, only iterables are supported\\.$#"
@@ -1131,12 +1451,32 @@ parameters:
 			path: dclass/extends/Dv_langCore.php
 
 		-
+			message: "#^Call to function is_array\\(\\) with int will always evaluate to false\\.$#"
+			count: 1
+			path: dclass/extends/Dv_langCore.php
+
+		-
+			message: "#^Call to function is_array\\(\\) with type\\|null will always evaluate to false\\.$#"
+			count: 1
+			path: dclass/extends/Dv_langCore.php
+
+		-
+			message: "#^Call to function is_numeric\\(\\) with type\\|null will always evaluate to false\\.$#"
+			count: 1
+			path: dclass/extends/Dv_langCore.php
+
+		-
 			message: "#^Cannot access offset 0 on int\\.$#"
 			count: 2
 			path: dclass/extends/Dv_langCore.php
 
 		-
 			message: "#^Default value of the parameter \\#2 \\$order \\(string\\) of method dclass\\\\devups\\\\Core\\\\Dv_langCore\\:\\:all\\(\\) is incompatible with type type\\.$#"
+			count: 1
+			path: dclass/extends/Dv_langCore.php
+
+		-
+			message: "#^If condition is always false\\.$#"
 			count: 1
 			path: dclass/extends/Dv_langCore.php
 
@@ -1162,6 +1502,11 @@ parameters:
 
 		-
 			message: "#^Method dclass\\\\devups\\\\Core\\\\Dv_langCore\\:\\:update\\(\\) should return QueryBuilder but returns int\\.$#"
+			count: 1
+			path: dclass/extends/Dv_langCore.php
+
+		-
+			message: "#^Negated boolean expression is always false\\.$#"
 			count: 1
 			path: dclass/extends/Dv_langCore.php
 
@@ -1241,6 +1586,11 @@ parameters:
 			path: dclass/extends/UserCore.php
 
 		-
+			message: "#^If condition is always false\\.$#"
+			count: 1
+			path: dclass/extends/UserCore.php
+
+		-
 			message: "#^Method dclass\\\\devups\\\\Core\\\\UserCore\\:\\:getUserByToken\\(\\) has invalid return type dclass\\\\devups\\\\Core\\\\User\\.$#"
 			count: 1
 			path: dclass/extends/UserCore.php
@@ -1286,9 +1636,34 @@ parameters:
 			path: dclass/generator/BackendGenerator.php
 
 		-
+			message: "#^If condition is always true\\.$#"
+			count: 1
+			path: dclass/generator/BackendGenerator.php
+
+		-
+			message: "#^Right side of && is always false\\.$#"
+			count: 1
+			path: dclass/generator/BackendGenerator.php
+
+		-
+			message: "#^Offset 1 on array\\{array\\<int, string\\>, array\\<int, non\\-empty\\-string\\>\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 2
+			path: dclass/generator/DocGuideGenerator.php
+
+		-
+			message: "#^Offset 1 on array\\{array\\<int, string\\>, array\\<int, non\\-empty\\-string\\>\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 2
+			path: dclass/generator/OpenApiGenerator.php
+
+		-
 			message: "#^Access to an undefined property object\\:\\:\\$name\\.$#"
 			count: 3
 			path: dclass/generator/RequestGenerator.php
+
+		-
+			message: "#^Unreachable statement \\- code above always terminates\\.$#"
+			count: 1
+			path: dclass/generator/Traitement.php
 
 		-
 			message: "#^PHPDoc tag @param references unknown parameter\\: \\$namespace$#"
@@ -1396,6 +1771,11 @@ parameters:
 			path: dclass/generator/__Generator.php
 
 		-
+			message: "#^Static property __Generator\\:\\:\\$entitycore is never read, only written\\.$#"
+			count: 1
+			path: dclass/generator/__Generator.php
+
+		-
 			message: "#^Undefined variable\\: \\$projet$#"
 			count: 5
 			path: dclass/generator/__Generator.php
@@ -1414,6 +1794,11 @@ parameters:
 			message: "#^Variable \\$projects might not be defined\\.$#"
 			count: 1
 			path: dclass/generator/__Generator.php
+
+		-
+			message: "#^If condition is always true\\.$#"
+			count: 1
+			path: dclass/generator/android/BackendGeneratorJava.php
 
 		-
 			message: "#^Access to an undefined property object\\:\\:\\$name\\.$#"
@@ -1486,6 +1871,11 @@ parameters:
 			path: dclass/generator/android/__Generatorjava.php
 
 		-
+			message: "#^Static property __Generatorjava\\:\\:\\$entitycore is never read, only written\\.$#"
+			count: 1
+			path: dclass/generator/android/__Generatorjava.php
+
+		-
 			message: "#^Undefined variable\\: \\$projet$#"
 			count: 5
 			path: dclass/generator/android/__Generatorjava.php
@@ -1506,14 +1896,39 @@ parameters:
 			path: dclass/generator/android/__Generatorjava.php
 
 		-
+			message: "#^Else branch is unreachable because ternary operator condition is always true\\.$#"
+			count: 1
+			path: dclass/generator/builder.php
+
+		-
 			message: "#^Function dv_lang_write_missing_key not found\\.$#"
 			count: 1
+			path: dclass/generator/builder.php
+
+		-
+			message: "#^Negated boolean expression is always true\\.$#"
+			count: 2
 			path: dclass/generator/builder.php
 
 		-
 			message: "#^Static method Core\\:\\:getComponentCore\\(\\) invoked with 0 parameters, 1 required\\.$#"
 			count: 1
 			path: dclass/generator/builder.php
+
+		-
+			message: "#^Unreachable statement \\- code above always terminates\\.$#"
+			count: 1
+			path: dclass/generator/builder.php
+
+		-
+			message: "#^Negated boolean expression is always true\\.$#"
+			count: 1
+			path: dclass/lib/DMail.php
+
+		-
+			message: "#^Unreachable statement \\- code above always terminates\\.$#"
+			count: 1
+			path: dclass/lib/DMail.php
 
 		-
 			message: "#^Access to an undefined property DPdf\\:\\:\\$mpdf\\.$#"
@@ -1556,6 +1971,11 @@ parameters:
 			path: dclass/lib/Util.php
 
 		-
+			message: "#^Negated boolean expression is always true\\.$#"
+			count: 1
+			path: dclass/lib/Util.php
+
+		-
 			message: "#^PHPDoc tag @param has invalid value \\(mixed\\)\\: Unexpected token \"\\\\n     \", expected variable at offset 23$#"
 			count: 1
 			path: dclass/lib/Util.php
@@ -1566,9 +1986,29 @@ parameters:
 			path: dclass/lib/Util.php
 
 		-
+			message: "#^Unreachable statement \\- code above always terminates\\.$#"
+			count: 1
+			path: dclass/lib/Util.php
+
+		-
 			message: "#^Argument of an invalid type Api supplied for foreach, only iterables are supported\\.$#"
 			count: 1
 			path: dclass/lib/annotation/Api.php
+
+		-
+			message: "#^Left side of && is always true\\.$#"
+			count: 2
+			path: dclass/lib/annotation/Api.php
+
+		-
+			message: "#^Right side of && is always true\\.$#"
+			count: 2
+			path: dclass/lib/annotation/Api.php
+
+		-
+			message: "#^If condition is always false\\.$#"
+			count: 3
+			path: dclass/lib/annotation/Auth.php
 
 		-
 			message: "#^Variable \\$matches might not be defined\\.$#"
@@ -1596,9 +2036,29 @@ parameters:
 			path: dclass/lib/annotation/DDoc.php
 
 		-
+			message: "#^Left side of && is always true\\.$#"
+			count: 2
+			path: dclass/lib/annotation/DDoc.php
+
+		-
+			message: "#^Right side of && is always true\\.$#"
+			count: 2
+			path: dclass/lib/annotation/DDoc.php
+
+		-
 			message: "#^Variable \\$routeParams on left side of \\?\\? always exists and is not nullable\\.$#"
 			count: 2
 			path: dclass/lib/annotation/GET.php
+
+		-
+			message: "#^Left side of && is always true\\.$#"
+			count: 2
+			path: dclass/lib/annotation/MethodView.php
+
+		-
+			message: "#^Right side of && is always true\\.$#"
+			count: 2
+			path: dclass/lib/annotation/MethodView.php
 
 		-
 			message: "#^Call to method exportCsv\\(\\) on an unknown class Dvups_entityController\\.$#"
@@ -1708,6 +2168,11 @@ parameters:
 		-
 			message: "#^Function t not found\\.$#"
 			count: 6
+			path: src/devups/ModuleAdmin/Controller/Dvups_adminController.php
+
+		-
+			message: "#^Property devups\\\\ModuleAdmin\\\\Controller\\\\Dvups_adminController\\:\\:\\$err is never read, only written\\.$#"
+			count: 1
 			path: src/devups/ModuleAdmin/Controller/Dvups_adminController.php
 
 		-
@@ -2022,6 +2487,11 @@ parameters:
 
 		-
 			message: "#^Function t not found\\.$#"
+			count: 1
+			path: src/devups/ModuleConfig/Entity/Configuration.php
+
+		-
+			message: "#^Negated boolean expression is always false\\.$#"
 			count: 1
 			path: src/devups/ModuleConfig/Entity/Configuration.php
 
@@ -2466,12 +2936,32 @@ parameters:
 			path: src/devupscms/ModuleData/Entity/Interval_group.php
 
 		-
+			message: "#^Call to function is_array\\(\\) with int will always evaluate to false\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
+			message: "#^Call to function is_array\\(\\) with type\\|null will always evaluate to false\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
+			message: "#^Call to function is_numeric\\(\\) with type\\|null will always evaluate to false\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
 			message: "#^Cannot access offset 0 on int\\.$#"
 			count: 2
 			path: src/devupscms/ModuleData/Entity/Interval_group.php
 
 		-
 			message: "#^Default value of the parameter \\#2 \\$order \\(string\\) of method devupscms\\\\ModuleData\\\\Entity\\\\Interval_group\\:\\:all\\(\\) is incompatible with type type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
+			message: "#^If condition is always false\\.$#"
 			count: 1
 			path: src/devupscms/ModuleData/Entity/Interval_group.php
 
@@ -2497,6 +2987,11 @@ parameters:
 
 		-
 			message: "#^Method devupscms\\\\ModuleData\\\\Entity\\\\Interval_group\\:\\:update\\(\\) should return QueryBuilder but returns int\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Entity/Interval_group.php
+
+		-
+			message: "#^Negated boolean expression is always false\\.$#"
 			count: 1
 			path: src/devupscms/ModuleData/Entity/Interval_group.php
 
@@ -2551,12 +3046,27 @@ parameters:
 			path: src/devupscms/ModuleData/Entity/Interval_group.php
 
 		-
+			message: "#^If condition is always false\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Entity/Status.php
+
+		-
 			message: "#^Method devupscms\\\\ModuleData\\\\Entity\\\\Status\\:\\:getStatus\\(\\) has invalid return type devupscms\\\\ModuleData\\\\Entity\\\\type\\.$#"
 			count: 1
 			path: src/devupscms/ModuleData/Entity/Status.php
 
 		-
+			message: "#^Negated boolean expression is always true\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Entity/Status.php
+
+		-
 			message: "#^Property devupscms\\\\ModuleData\\\\Entity\\\\Status\\:\\:\\$position \\(string\\) does not accept default value of type int\\.$#"
+			count: 1
+			path: src/devupscms/ModuleData/Entity/Status.php
+
+		-
+			message: "#^Unreachable statement \\- code above always terminates\\.$#"
 			count: 1
 			path: src/devupscms/ModuleData/Entity/Status.php
 
@@ -2656,12 +3166,27 @@ parameters:
 			path: src/devupscms/ModuleNotification/Entity/Notification.php
 
 		-
+			message: "#^Negated boolean expression is always false\\.$#"
+			count: 1
+			path: src/devupscms/ModuleNotification/Entity/Notification.php
+
+		-
+			message: "#^Negated boolean expression is always true\\.$#"
+			count: 2
+			path: src/devupscms/ModuleNotification/Entity/Notification.php
+
+		-
 			message: "#^PHPDoc tag @param for parameter \\$user with type User\\|null is not subtype of native type User\\.$#"
 			count: 1
 			path: src/devupscms/ModuleNotification/Entity/Notification.php
 
 		-
 			message: "#^PHPDoc tag @param references unknown parameter\\: \\$params$#"
+			count: 1
+			path: src/devupscms/ModuleNotification/Entity/Notification.php
+
+		-
+			message: "#^Property devupscms\\\\ModuleNotification\\\\Entity\\\\Notification\\:\\:\\$redirect \\(string\\) on left side of \\?\\? is not nullable\\.$#"
 			count: 1
 			path: src/devupscms/ModuleNotification/Entity/Notification.php
 
@@ -2678,6 +3203,16 @@ parameters:
 		-
 			message: "#^Property devupscms\\\\ModuleNotification\\\\Entity\\\\Notification\\:\\:\\$viewedat has unknown class devupscms\\\\ModuleNotification\\\\Entity\\\\datetime as its type\\.$#"
 			count: 1
+			path: src/devupscms/ModuleNotification/Entity/Notification.php
+
+		-
+			message: "#^Right side of && is always false\\.$#"
+			count: 1
+			path: src/devupscms/ModuleNotification/Entity/Notification.php
+
+		-
+			message: "#^Unreachable statement \\- code above always terminates\\.$#"
+			count: 2
 			path: src/devupscms/ModuleNotification/Entity/Notification.php
 
 		-
@@ -2751,6 +3286,16 @@ parameters:
 			path: src/devupscms/ModulePushNotification/Controller/WorkersController.php
 
 		-
+			message: "#^Left side of \\|\\| is always false\\.$#"
+			count: 1
+			path: src/devupscms/ModulePushNotification/Controller/WorkersController.php
+
+		-
+			message: "#^Ternary operator condition is always false\\.$#"
+			count: 1
+			path: src/devupscms/ModulePushNotification/Controller/WorkersController.php
+
+		-
 			message: "#^Function t not found\\.$#"
 			count: 11
 			path: src/devupscms/ModulePushNotification/Datatable/Push_subscriptionTable.php
@@ -2759,6 +3304,21 @@ parameters:
 			message: "#^Function t not found\\.$#"
 			count: 12
 			path: src/devupscms/ModulePushNotification/Datatable/WorkersTable.php
+
+		-
+			message: "#^Negated boolean expression is always true\\.$#"
+			count: 2
+			path: src/devupscms/ModulePushNotification/Entity/Push_subscription.php
+
+		-
+			message: "#^Result of \\|\\| is always true\\.$#"
+			count: 1
+			path: src/devupscms/ModulePushNotification/Entity/Push_subscription.php
+
+		-
+			message: "#^Unreachable statement \\- code above always terminates\\.$#"
+			count: 1
+			path: src/devupscms/ModulePushNotification/Entity/Push_subscription.php
 
 		-
 			message: "#^Property devupscms\\\\ModulePushNotification\\\\Entity\\\\Workers\\:\\:\\$timer \\(string\\) does not accept default value of type int\\.$#"
@@ -2931,6 +3491,21 @@ parameters:
 			path: src/devupscms/ModuleReporting/Entity/Reportingmodel.php
 
 		-
+			message: "#^Negated boolean expression is always true\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Entity/Reportingmodel.php
+
+		-
+			message: "#^Result of \\|\\| is always true\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Entity/Reportingmodel.php
+
+		-
+			message: "#^Unreachable statement \\- code above always terminates\\.$#"
+			count: 1
+			path: src/devupscms/ModuleReporting/Entity/Reportingmodel.php
+
+		-
 			message: "#^Property devupscms\\\\ModuleReporting\\\\Entity\\\\Reportingmodel_lang\\:\\:\\$content has unknown class devupscms\\\\ModuleReporting\\\\Entity\\\\text as its type\\.$#"
 			count: 1
 			path: src/devupscms/ModuleReporting/Entity/Reportingmodel_lang.php
@@ -3051,6 +3626,11 @@ parameters:
 			path: src/devupscms/ModuleTree/Controller/Tree_itemController.php
 
 		-
+			message: "#^Unreachable statement \\- code above always terminates\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Controller/Tree_itemController.php
+
+		-
 			message: "#^Access to an undefined property devupscms\\\\ModuleTree\\\\Controller\\\\Tree_item_imageController\\:\\:\\$datatable\\.$#"
 			count: 1
 			path: src/devupscms/ModuleTree/Controller/Tree_item_imageController.php
@@ -3069,6 +3649,11 @@ parameters:
 			message: "#^Function t not found\\.$#"
 			count: 7
 			path: src/devupscms/ModuleTree/Datatable/Tree_item_imageTable.php
+
+		-
+			message: "#^Negated boolean expression is always true\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Entity/Tree.php
 
 		-
 			message: "#^Property devupscms\\\\ModuleTree\\\\Entity\\\\Tree\\:\\:\\$branches \\(devupscms\\\\ModuleTree\\\\Entity\\\\text\\) does not accept null\\.$#"
@@ -3091,6 +3676,16 @@ parameters:
 			path: src/devupscms/ModuleTree/Entity/Tree.php
 
 		-
+			message: "#^Ternary operator condition is always true\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Entity/Tree.php
+
+		-
+			message: "#^Unreachable statement \\- code above always terminates\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Entity/Tree.php
+
+		-
 			message: "#^Call to an undefined method devupscms\\\\ModuleTree\\\\Entity\\\\Tree_item\\:\\:setMain\\(\\)\\.$#"
 			count: 1
 			path: src/devupscms/ModuleTree/Entity/Tree_item.php
@@ -3106,7 +3701,22 @@ parameters:
 			path: src/devupscms/ModuleTree/Entity/Tree_item.php
 
 		-
+			message: "#^Left side of && is always true\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Entity/Tree_item.php
+
+		-
 			message: "#^Method devupscms\\\\ModuleTree\\\\Entity\\\\Tree_item\\:\\:getParent\\(\\) should return \\$this\\(devupscms\\\\ModuleTree\\\\Entity\\\\Tree_item\\) but return statement is missing\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Entity/Tree_item.php
+
+		-
+			message: "#^Negated boolean expression is always false\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Entity/Tree_item.php
+
+		-
+			message: "#^Negated boolean expression is always true\\.$#"
 			count: 1
 			path: src/devupscms/ModuleTree/Entity/Tree_item.php
 
@@ -3122,6 +3732,11 @@ parameters:
 
 		-
 			message: "#^Property devupscms\\\\ModuleTree\\\\Entity\\\\Tree_item\\:\\:\\$chain has unknown class devupscms\\\\ModuleTree\\\\Entity\\\\text as its type\\.$#"
+			count: 1
+			path: src/devupscms/ModuleTree/Entity/Tree_item.php
+
+		-
+			message: "#^Unreachable statement \\- code above always terminates\\.$#"
 			count: 1
 			path: src/devupscms/ModuleTree/Entity/Tree_item.php
 
@@ -3228,6 +3843,11 @@ parameters:
 		-
 			message: "#^Function t not found\\.$#"
 			count: 25
+			path: src/devupsfront/ModuleUser/Controller/UserFrontController.php
+
+		-
+			message: "#^Negated boolean expression is always true\\.$#"
+			count: 1
 			path: src/devupsfront/ModuleUser/Controller/UserFrontController.php
 
 		-

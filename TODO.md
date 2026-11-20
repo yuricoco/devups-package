@@ -1774,6 +1774,78 @@ regenere (1324 entrees, 1182 + 142 nouvelles de ce niveau).
 `composer test` (454/454 inchange) et `composer phpstan` (0 erreur)
 verts.
 
+### LOT 7 (niveau 4) - FAIT
+
+**Mesure** : `--level=4` -> 170 nouvelles erreurs. Nature tres
+differente des niveaux 2/3 (purement docblock) : le niveau 4 est de
+l'analyse de code mort / conditions toujours vraies-fausses /
+proprietes-methodes jamais lues-utilisees - c'est-a-dire de la vraie
+LOGIQUE, pas de la documentation. Verifie une a une les categories
+(voir methode LOT 7 niveau 2) avant de decider : **aucune correction
+de code appliquee a ce niveau** (contrairement aux niveaux 2/3) -
+modifier une condition ou retirer du code "mort" d'apres phpstan
+reste un changement de comportement reel qui demande une validation
+que ce lot (filet de securite de typage, pas une revue fonctionnelle)
+ne peut pas apporter avec confiance. Tout est balise, avec la
+categorie verifiee et des exemples concrets :
+
+- **Constantes d'environnement (`__prod`, `dbtransaction`) figees par
+  le bootstrap de phpstan** (`config/constante.example.php`, deja
+  documente au LOT 5 - "sans ce bootstrap phpstan ne voit aucune des
+  constantes") : la plupart des "if condition is always true/false"
+  (`Router.php`, `DBAL.php`, `Controller.php`, `FrontController.php`,
+  `UserCore.php`, `config/dependanceInjection.php`, et la quasi
+  totalite des `Unreachable statement` dans les entites - verifie une
+  a une : `Status.php`, `Tree.php`, `Notification.php` x2,
+  `Reportingmodel.php`, `Push_subscription.php`) sont des faux
+  positifs de l'environnement d'ANALYSE (cette constante a une valeur
+  FIXE pour phpstan, differente selon l'environnement reel) - pas des
+  bugs.
+- **Cascade du pseudo-type `type` deja documente au niveau 2**
+  (`is_array()`/`is_numeric()`/`is_object()` "with type will always
+  evaluate to false", `ModelTrait.php` dans ses 3 contextes) - meme
+  cause racine, resurgit sous une forme differente a ce niveau.
+- **Proprietes/methodes "jamais lues" ou "non utilisees"**
+  (`AdminTemplateGenerator::$traitement`, `Api::$...`, `Dfile::$...`,
+  `Lazyloading::$...`, `ScanDir::$...`, `__Generator::$...`,
+  `__Generatorjava::$...`, `Dvups_adminController::$...`,
+  `DBAL::ResetObject()`/`orm()`/`extractNestedData()`,
+  `Datatable::tableoption()`) - signal de code mort reel, mais
+  **non retire** : ce framework est distribue comme paquet (pas
+  seulement cette application) - une propriete/methode publique peut
+  etre lue par du code consommateur hors de ce depot (serialisation
+  JSON generique, reflexion, acces dynamique) que l'analyse statique
+  locale ne voit pas ; retirer de l'API publique serait une rupture
+  (necessiterait un test + une entree `UPGRADE-8.0.md`) injustifiee
+  sans certitude reelle d'absence d'usage externe.
+- **Verifications redondantes mais inoffensives** (`DDoc.php` - classe
+  elle-meme deja documentee comme non utilisee dans ce depot,
+  `MethodView.php`, `Api.php` : `$urlkeys && $urlvalues && ...` ou
+  `$urlkeys`/`$urlvalues` proviennent de `explode()` qui ne retourne
+  jamais un tableau vide - phpstan a raison que le test est toujours
+  vrai, mais retirer la garde defensive n'apporte aucun benefice reel
+  pour un gain cosmetique).
+- **Generateur, faux positifs sur la structure json_decode()**
+  (`OpenApiGenerator.php`/`DocGuideGenerator.php` - "offset always
+  exists" sur une structure de tableau typee de maniere trop precise
+  par phpstan a partir d'un litteral, sans rapport avec un vrai bug).
+- **Un vrai mort-code trivial et sans risque identifie, laisse
+  en l'etat par coherence de perimetre** : `Tree_item.php:320`, un
+  second `return [...]` juste apres un premier `return [...]` dans
+  `jsonSerialize()` (reliquat d'une ancienne implementation,
+  litteralement inatteignable, zero effet sur l'execution qu'il soit
+  present ou non) - pourrait etre supprime sans aucun risque, mais
+  laisse tel quel dans ce lot (nettoyage cosmetique hors du filet de
+  securite de typage qui est l'objet de ce lot - a reprendre dans une
+  passe de nettoyage dediee si souhaite).
+
+`phpstan.neon.dist` : `level: 3` -> `level: 4`. `phpstan-baseline.neon`
+regenere (1492 entrees, 1324 + 168 nouvelles - 2 lignes de bruit
+("You're running an old version"/"and add the missing array
+typehints") filtrees manuellement de la mesure des 170, pas de vraies
+erreurs). `composer test` (454/454 inchange) et `composer phpstan` (0
+erreur) verts.
+
 ## Securite langue - ETAPE H
 
 ### H.1/H.2/H.3 - dv_valid_lang(), tests e2e et realpath : FAITS
