@@ -23,6 +23,11 @@
 /*.log
 error_log
 
+# ETAPE 5.2 (v8.0) - LOT 9 : composant genere a la main (php devups
+# core:g:component devupstest) pour verifier de bout en bout le
+# generateur namespace-aware - jamais destine a etre livre.
+/src/devupstest/
+
 # Archives et IDE
 /*.zip
 /src/*.zip
