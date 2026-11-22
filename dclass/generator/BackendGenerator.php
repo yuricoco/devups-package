@@ -1217,7 +1217,7 @@ $aliasDecl";
 
 use Genesis as g;
 
-class " . ucfirst($name) . "Form extends FormManager{
+class " . ucfirst($name) . "Form extends \FormManager{
 
     public \$$name;
 
