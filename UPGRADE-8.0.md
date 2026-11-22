@@ -425,3 +425,39 @@ ameliorant :
 Verifie par : la suite de tests complete (454 tests, 0 echec - 8
 deprecations et 2 incomplets preexistants et sans rapport) ; `composer
 phpstan` sans erreur au niveau 5.
+
+## LOT 9 - resolveur de classes satellites namespace-aware + generateur
+
+**Aucune rupture d'API ou de comportement runtime dans ce lot** - une
+pure addition, dans l'esprit du LOT 5/5.2 : chaque changement retombe
+sur l'ancien comportement par defaut, rien n'est retire.
+
+- **Nouveau** `dclass/devups/EntityNaming.php` (espace de noms global) :
+  point de verite unique pour deriver le nom de la classe
+  Controller/Datatable/Form d'une entite, remplace la concatenation de
+  chaine dupliquee dans `Controller.php`, `ControllerCore.php` et
+  `FrontController.php`. Accepte un nom court ou une FQCN deja
+  namespacee ; ne retourne la FQCN du satellite que si cette classe
+  existe reellement (`class_exists()`), sinon retombe sur l'ancienne
+  convention "NomEntite + suffixe" - comportement observable identique
+  a avant ce lot pour toute entite dont le satellite n'est pas (encore)
+  resolu par cette voie.
+- **`BackendGenerator.php`** : `entityGenerator()`, `entityLangGenerator()`,
+  `controllerGenerator()` (normal et front), `tableGenerator()` et
+  `formGenerator()` acceptent un `$component`/`$module` optionnel
+  (`null` par defaut = comportement identique a avant ce lot, aucun
+  namespace emis). Fournis (desormais le cas pour toute generation via
+  `core:g:module`/`core:g:crud`), chaque classe generee recoit sa
+  propre declaration `namespace` et un `class_alias()` de
+  compatibilite - meme recette que LOT 5.2, coexistence indefinie,
+  aucune depreciation.
+
+Aucune entite/Controller/Datatable/Form deja generee n'est modifiee par
+ce lot : seules les PROCHAINES generations sont namespacees. Un projet
+qui regenere une entite deja migree ne voit donc plus son namespace
+silencieusement annule (defaut corrige au passage, voir TODO.md "LOT 9").
+
+Verifie par : `tests/Unit/EntityNamingTest.php` (6 tests) et
+`tests/Integration/GeneratorNamespaceEmissionTest.php` (6 tests) ;
+la suite de tests complete (466 tests, 0 echec) ; `composer phpstan`
+sans erreur.

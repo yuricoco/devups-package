@@ -2166,12 +2166,44 @@ existant -> FQCN retournee, FQCN+satellite absent -> repli nom court,
 nom court sans config -> comportement identique a avant ce lot, suffixe
 FrontController, `\` de tete ignore) ; `composer test` (460/460, +6
 depuis ce lot, 0 regression) et `composer phpstan` (0 erreur) verifies
-verts - **comportement strictement identique a avant ce lot aujourd'hui**
-puisqu'aucun Controller/Datatable/Form n'est encore namespace (le
-`class_exists()` echoue systematiquement pour l'instant, repli
-systematique sur l'ancien nom court) - ce correctif prepare seulement
-le terrain, sans effet observable tant que le generateur (etape
-suivante) et la migration retroactive n'ont pas eu lieu.
+verts.
+
+**Correction (en relisant le code plutot qu'en supposant) : les 35
+Controller/Datatable/Form des entites deja migrees etaient DEJA
+namespaces** - fait au LOT 5.2 lui-meme, sous-etape "point (b)"
+("namespace Module<X> Controller/Datatable/Form (devups[cms|front])",
+voir l'historique git avant ce lot ; confirme par comptage : 33/33
+Controller, 25/25 Datatable, 25/25 Form sous `src/*/Module*/` sont
+namespaces, aucun fichier Controller/Table/Form global ne subsiste nulle
+part dans le depot). Il n'y a donc **aucune migration retroactive de
+fichiers a faire** dans ce lot - une hypothese initiale de la discussion
+avec l'utilisateur, invalidee par l'inspection du depot.
+
+Le veritable obstacle a l'activation du chemin FQCN de `EntityNaming`
+pour les entites existantes est ailleurs : `config/dvups_configurations.php`
+est un cache genere a l'execution par `Core::updateDvupsTable()` (ecrit
+via `var_export`, dernier commit avant ce chantier : `697b1a0`, donc
+jamais regenere depuis la migration de namespace des Entity au LOT 5) -
+sa cle `namespace_name` ne contient donc aujourd'hui que l'ancien nom
+court pour chaque entite (verifie sur `Dvups_admin` : `namespace_name`
+=> `'Dvups_admin'`, pas la FQCN), ce qui fait entrer `EntityNaming` par
+son chemin "nom court" (repli volontaire, zero regression - voir plus
+haut) plutot que par son chemin FQCN. Resultat identique a la premiere
+lecture ("comportement inchange aujourd'hui") mais pour une raison
+differente : pas l'absence de namespace sur les satellites, mais un
+cache de configuration non regenere. Corriger ce cache demande
+d'executer `Core::updateDvupsTable()` (qui persiste aussi
+`Dvups_role::find(1)->setComponents/setModules/setEntities()` en base)
+dans chaque environnement deploye - **option la plus sure retenue
+(regle du chantier, choix d'architecture/exploitation incertain) : ne
+PAS le faire depuis ce commit** (necessite une connexion BDD live,
+hors de portee d'un commit de code/CI, et une regeneration mal
+synchronisee avec le role 1 serait pire que le statu quo) ; le repli
+"nom court" d'`EntityNaming` reste strictement correct en attendant -
+c'est exactement le filet de securite pour lequel il a ete concu.
+Operation a faire par l'utilisateur (ou un script de deploiement) via
+le mecanisme CLI existant de reconstruction de `Core`, pas par ce
+chantier.
 
 **Mise a jour du generateur (`BackendGenerator.php` + `__Generator.php`,
 FAIT)** : `entityGenerator()`, `entityLangGenerator()`,
@@ -2212,9 +2244,16 @@ comportement identique a avant ce lot) ; `composer test` (466/466, +6
 depuis cette etape, 0 regression) et `composer phpstan` (0 erreur)
 verifies verts. **Aucune entite/Controller/Datatable/Form existante
 n'est affectee** : ce correctif ne change que ce que produit une
-PROCHAINE generation - les 35 entites deja migrees et leurs satellites
-restent inchanges jusqu'a la migration retroactive (prochaine
-sous-etape de ce lot).
+PROCHAINE generation.
+
+**LOT 9 : CLOTURE.** Les 3 volets decides avec l'utilisateur sont
+couverts : (1) resolveur centralise `EntityNaming` (FAIT), (2)
+generateur mis a jour pour namespacer toute nouvelle generation (FAIT),
+(3) migration retroactive des satellites existants - trouvee DEJA
+FAITE en relisant le depot (voir plus haut), rien a coder. Le seul
+point ouvert (regenerer le cache `config/dvups_configurations.php` en
+environnement reel) est une operation de deploiement, pas un
+sous-lot de code, documentee ci-dessus avec l'option la plus sure.
 
 ## Securite langue - ETAPE H
 
