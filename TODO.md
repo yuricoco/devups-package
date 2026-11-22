@@ -4858,9 +4858,17 @@ qui ne font pas partie de la v7.1.0 decrite ici.
 
 Initiative independante du decoupage en lots de "Chantier v8.0"
 ci-dessus (ne consomme/ne modifie aucun fichier PHP du framework) :
-un site de documentation web (`docs-site/`, Docusaurus 3) vient
-completer les 4 tomes PDF/HTML `tuto_doc/` par une version navigable,
-cherchable, et pensee pour qu'un agent IA puisse aussi l'ingerer.
+un site de documentation web (Docusaurus 3) vient completer les 4
+tomes PDF/HTML `tuto_doc/` par une version navigable, cherchable, et
+pensee pour qu'un agent IA puisse aussi l'ingerer.
+
+**Emplacement** : `docs-site/` vit a cote de `backendv4/` (dans
+`devupsdev/`, le dossier parent), pas dedans - sur demande explicite de
+l'utilisateur pour plus de largesse. Ce dossier parent n'est pas un
+depot git ; `docs-site/` n'est donc plus suivi par le git de
+`backendv4` (retire du suivi, deplace, le build verifie depuis son
+nouvel emplacement). Les scripts de sync resolvent leur racine vers
+`../../backendv4` (et non plus `../..`) depuis `docs-site/scripts/`.
 
 **Principe retenu (discute avec l'utilisateur)** : "pro et evolutif",
 plutot auto-heberge (Docusaurus) qu'un produit tiers hors de notre
@@ -4906,9 +4914,9 @@ systematique qui aurait degrade le rendu.
 
 **Etat** : structure, migration de contenu, build et rendu local
 verifies (`npm run build` + `docusaurus serve` + verification visuelle
-dans le navigateur) - pas encore deploye (pas d'hebergement choisi), pas
-encore commite au moment de la redaction de cette entree. Logo/favicon
-restes au defaut Docusaurus (a remplacer). Section Guides vide de
-contenu reel (scenarios identifies, pas rediges) - voir le backlog
+dans le navigateur), y compris apres le deplacement vers `devupsdev/
+docs-site/` - pas encore deploye (pas d'hebergement choisi). Logo/
+favicon restes au defaut Docusaurus (a remplacer). Section Guides vide
+de contenu reel (scenarios identifies, pas rediges) - voir le backlog
 doc/tutoriel mentionne au fil du chantier v8.0 pour le contexte.
 
