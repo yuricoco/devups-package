@@ -2306,6 +2306,22 @@ initiale sur `Tree_item_imageTable` (`'Tree_item.name'`) corrigee avant
 ce commit. Couvert par `tests/Integration/DatatableImplicitRelationWithTest.php`
 (hydratation implicite + non-regression sur champ traduit).
 
+**Autonomie PHP / Docker (suite, hors namespace)** : `php devups install`
+echoue sur un poste dont le PHP systeme est < 8.3 (declare dans
+`composer.json`) - l'etape `orm:schema:create` invoque `vendor/bin/doctrine`
+(Symfony Console), qui ne PARSE meme pas sous un PHP trop ancien (erreur
+`unexpected token "->"` dans `Command.php`), laissant la base creee mais
+sans schema. Composer ne gere jamais l'interpreteur PHP lui-meme (seulement
+les packages PHP) - aucune "synchronisation composer" ne peut materialiser
+un binaire PHP absent. Ajoute `Dockerfile` + `docker-compose.yml` (image
+`php:8.3-cli` par defaut, extensions alignees sur la CI, MySQL 8.0) comme
+environnement **optionnel** et isole du PHP hote - voir README.md
+("Installation avec Docker"). `vendor/` y est un volume Docker nomme,
+distinct du `vendor/` eventuel de l'hote (evite qu'un vendor installe sous
+une autre version de PHP ne pollue le conteneur, ou l'inverse). Ne remplace
+pas l'installation PHP native, qui reste possible et documentee en
+parallele.
+
 ## Securite langue - ETAPE H
 
 ### H.1/H.2/H.3 - dv_valid_lang(), tests e2e et realpath : FAITS

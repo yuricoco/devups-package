@@ -1,0 +1,6 @@
+.git
+vendor
+cache
+database
+node_modules
+*.log

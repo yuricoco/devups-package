@@ -41,6 +41,53 @@ directement depuis ce dépôt (sans publication), utiliser un repository local :
 composer create-project --repository '{"type":"path","url":"/chemin/vers/ce/depot"}' spacekola/devups:dev-master mon-projet
 ```
 
+### Installation avec Docker (optionnel)
+
+PHP ≥ 8.3 est requis (voir "Prérequis" ci-dessus). Si le PHP du système ne
+convient pas (version trop ancienne, ou simplement pour ne pas polluer le
+poste), `Dockerfile` + `docker-compose.yml` fournissent une alternative
+**isolée** - jamais une obligation, les deux installations (PHP natif ou
+Docker) restent possibles indépendamment, à chacun de choisir.
+
+```bash
+cp config/constante.example.php config/constante.php
+cp .env.example .env
+
+docker compose up -d --build        # construit l'image PHP + démarre MySQL
+docker compose exec app composer install
+
+docker compose exec app php devups install      # base, schéma, compte admin (dv_admin / admin)
+```
+
+Pour servir l'application, le port doit être exposé sur toutes les
+interfaces à l'intérieur du conteneur (`php devups serve` lie `127.0.0.1`,
+injoignable depuis l'hôte via le port mappé) :
+
+```bash
+docker compose exec app php -S 0.0.0.0:3031 -t .
+# -> http://127.0.0.1:3031/  et  /admin/   (cote hote)
+```
+
+Les tests et phpstan tournent pareil, dans le conteneur :
+
+```bash
+docker compose exec app composer test
+docker compose exec app composer phpstan
+```
+
+Détails utiles :
+
+- `vendor/` est un volume Docker nommé, distinct du dossier `vendor/` de
+  l'hôte : le `composer install` du conteneur ne touche jamais un vendor
+  déjà installé localement avec une autre version de PHP.
+- La version de PHP de l'image est paramétrable (`PHP_VERSION` dans `.env`,
+  défaut `8.3`), alignée sur la matrice CI (`.github/workflows/tests.yml`,
+  `8.3`/`8.4`/`8.5`).
+- `db` (MySQL 8.0, comme en CI) persiste dans le volume nommé `db-data` ;
+  `docker compose down -v` repart d'une base vide.
+- `DB_HOST` est forcé à `db` pour le service `app` (le reste de `.env` -
+  nom de base, identifiants - est repris tel quel).
+
 ## Premier module
 
 Un module est décrit entièrement par des fichiers *datacore* (JSON) avant

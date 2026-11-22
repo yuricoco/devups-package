@@ -1,0 +1,44 @@
+# Environnement de developpement optionnel (voir README.md > "Installation
+# avec Docker"). `vendor/` est un volume nomme distinct du bind-mount du
+# code : composer install tourne a l'interieur du conteneur et ne touche
+# jamais un eventuel vendor/ deja present cote hote (autre version de PHP).
+services:
+  app:
+    build:
+      context: .
+      args:
+        PHP_VERSION: ${PHP_VERSION:-8.3}
+    working_dir: /app
+    volumes:
+      - .:/app
+      - app-vendor:/app/vendor
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+    ports:
+      - "${APP_PORT_HOST:-3031}:3031"
+    depends_on:
+      db:
+        condition: service_healthy
+    tty: true
+    command: ["tail", "-f", "/dev/null"]
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: ${DB_NAME:-devups}
+    ports:
+      - "${DB_PORT_HOST:-3306}:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  app-vendor:
+  db-data:
