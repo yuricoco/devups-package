@@ -2287,6 +2287,25 @@ naivement a `lazyloading()` pour TOUTE entite ayant une relation,
 impact potentiel sur 25+ Datatable existantes) - **non traite ici**,
 log seulement a la demande explicite de l'utilisateur.
 
+**Suite (corrige)** : le risque de N+1 ci-dessus ne s'applique pas -
+`QueryBuilder::initdefaultjoin()` fait deja un `LEFT JOIN` inconditionnel
+sur TOUTES les relations manyToOne a la construction du QueryBuilder,
+independamment de `with()` ; `with('relation', ['champ'])` n'ajoute que
+des colonnes au `SELECT` existant, jamais de jointure supplementaire.
+`Datatable::deriveImplicitRelationWith()` (appelee dans `render()` et
+`getTableRest()`, juste avant `lazyloading()`) derive donc automatiquement
+les `with()` necessaires a partir des cles en notation pointee de
+`$datatablemodel`, en reprenant exactement la meme priorite et le meme
+parsing que l'affichage (`get` > `value` > cle directe, memes exclusions
+pour `src:`/`Collection::entity.field`) - plus besoin d'appeler `with()`
+a la main dans `buildindextable()`. Un garde-fou (`isTranslatedRelationColumn()`)
+exclut les champs `dvtranslate` de la relation (ex. `Tree_item::$name`,
+assemble depuis `tree_item_lang`, pas une colonne SQL directe) : les
+inclure casse la requete ("Unknown column"), confirme par la regression
+initiale sur `Tree_item_imageTable` (`'Tree_item.name'`) corrigee avant
+ce commit. Couvert par `tests/Integration/DatatableImplicitRelationWithTest.php`
+(hydratation implicite + non-regression sur champ traduit).
+
 ## Securite langue - ETAPE H
 
 ### H.1/H.2/H.3 - dv_valid_lang(), tests e2e et realpath : FAITS

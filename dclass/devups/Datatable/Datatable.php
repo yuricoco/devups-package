@@ -352,6 +352,89 @@ class Datatable extends Lazyloading
 
     }
 
+    /**
+     * ETAPE 5.2 (v8.0) : eager-join implicite pour les colonnes datatable
+     * sur une relation manyToOne (notation pointee 'relation.field'), pour
+     * eviter que l'objet relation reste un "stub" (seul id hydrate) a
+     * l'affichage. Aucune jointure SQL supplementaire : QueryBuilder joint
+     * deja toutes les relations manyToOne par defaut (initdefaultjoin()),
+     * with() ne fait qu'ajouter des colonnes au SELECT existant.
+     *
+     * Reprend la meme priorite et le meme parsing que l'affichage
+     * (tablebodybuilder()/getTableEntityBody()) : get > value > cle directe,
+     * en excluant les notations speciales (src:, Collection::entity.field)
+     * qui ne correspondent pas a une simple relation manyToOne.
+     */
+    private function deriveImplicitRelationWith()
+    {
+        if (!$this->qbcustom)
+            return;
+
+        $groupedfields = [];
+
+        foreach ($this->datatablemodel as $attrib => $valuetd) {
+
+            if (!is_array($valuetd) || isset($valuetd['sql']) || isset($valuetd['get']))
+                continue;
+
+            if (isset($valuetd['value'])) {
+                if (is_callable($valuetd['value']))
+                    continue;
+                $path = $valuetd['value'];
+            } else {
+                $path = $attrib;
+            }
+
+            $path = explode("|", $path)[0];
+            $join = explode(".", $path);
+
+            if (!isset($join[1]))
+                continue;
+
+            if (strpos($join[0], "::") !== false || strpos($join[0], ":") !== false)
+                continue;
+
+            // ETAPE 5.2 (v8.0) : un champ traduit (dvtranslate) n'est pas
+            // une colonne SQL directe sur la table de la relation (il vit
+            // dans <table>_lang, assemble par GROUP_CONCAT) - with() y
+            // produirait "Unknown column". On ne derive que pour les
+            // champs qui ne sont PAS dans dvtranslated_columns de la classe
+            // relation (resolue via le meme nom que l'appel getX() existant,
+            // insensible a la casse comme toute classe PHP).
+            if ($this->isTranslatedRelationColumn($join[0], $join[1]))
+                continue;
+
+            // la jointure par defaut (initdefaultjoin()) utilise le nom de
+            // table (classe en minuscule) comme alias - 'Tree_item.name'
+            // (casse respectee pour l'appel getTree_item()) doit donc
+            // devenir 'tree_item' pour matcher l'alias SQL reel, sinon
+            // "Unknown column" (1054).
+            $relation = strtolower($join[0]);
+            $groupedfields[$relation][] = $join[1];
+        }
+
+        foreach ($groupedfields as $relation => $fields) {
+            $existing = $this->qbcustom->_with[$relation] ?? [];
+            if (!is_array($existing))
+                continue;
+            $this->qbcustom->with($relation, array_values(array_unique(array_merge($existing, $fields))));
+        }
+    }
+
+    private function isTranslatedRelationColumn($relationclass, $field)
+    {
+        if (!class_exists($relationclass))
+            return false;
+
+        try {
+            $instance = new $relationclass();
+        } catch (\Throwable $e) {
+            return false;
+        }
+
+        return isset($instance->dvtranslated_columns) && in_array($field, $instance->dvtranslated_columns, true);
+    }
+
     public function render()
     {
 
@@ -360,6 +443,8 @@ class Datatable extends Lazyloading
                 $this->qbcustom->addColumn("".$value['sql'] . "", $key);
             }
         }
+
+        $this->deriveImplicitRelationWith();
 
         $this->lazyloading($this->entity, $this->qbcustom, $this->order_by, $this->id_lang);
 
@@ -732,6 +817,8 @@ EOF;
                 $this->qbcustom->addColumn("".$value['sql'] . "", $key);
             }
         }
+
+        $this->deriveImplicitRelationWith();
 
         $this->lazyloading($this->entity, $this->qbcustom, $this->order_by, $this->id_lang);
 

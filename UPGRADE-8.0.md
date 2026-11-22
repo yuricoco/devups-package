@@ -457,6 +457,16 @@ ce lot : seules les PROCHAINES generations sont namespacees. Un projet
 qui regenere une entite deja migree ne voit donc plus son namespace
 silencieusement annule (defaut corrige au passage, voir TODO.md "LOT 9").
 
+**Correctif associe (verification manuelle post-lot, hors namespace)** :
+`Datatable::deriveImplicitRelationWith()` derive desormais automatiquement
+le `QueryBuilder::with('relation', ['champ'])` necessaire pour qu'une
+colonne `$datatablemodel` en notation pointee sur une relation manyToOne
+(`'relation.champ'`) affiche la vraie valeur au lieu d'un objet "stub".
+Non-breaking : si un `with()` manuel existe deja (ancienne convention),
+il est fusionne, pas ecrase ; aucune jointure SQL supplementaire n'est
+ajoutee (la jointure existe deja par defaut pour toute relation
+manyToOne). Voir TODO.md "LOT 9" pour le detail du bug trouve/corrige.
+
 Verifie par : `tests/Unit/EntityNamingTest.php` (6 tests) et
 `tests/Integration/GeneratorNamespaceEmissionTest.php` (6 tests) ;
 la suite de tests complete (466 tests, 0 echec) ; `composer phpstan`
