@@ -18,8 +18,9 @@ class ControllerCore extends Controller
 
         self::$entityname = $entityname;
         self::$classname = ucfirst(self::$entityname);
-        self::$tablename = self::$classname . "Table";
-        self::$formname = self::$classname . "Form";
+        // ETAPE 5.2 (v8.0) - LOT 9 : resolution namespace-aware, voir TODO.md.
+        self::$tablename = \EntityNaming::tableFor(self::$classname);
+        self::$formname = \EntityNaming::formFor(self::$classname);
         self::$ctrlname = self::$classname . "Ctrl";
 
         return new ControllerCore();

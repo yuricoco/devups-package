@@ -2114,6 +2114,65 @@ section par section en miroir de ce qui est deja ecrit dans
 `UPGRADE-8.0.md` (meme contenu, pas de nouvelle decision). Regeneration
 des PDF (`python tuto_doc/source/build.py`) tentee ensuite.
 
+## LOT 9 - namespacer les classes satellites (Controller/Datatable/Form)
+
+**Contexte, decide avec l'utilisateur apres la cloture du LOT 8** : le
+LOT 5.2 a namespace les 35 entites de `src/**/Entity/*.php` mais pas
+leurs classes satellites (Controller/Datatable/Form), restees globales.
+Le generateur (`BackendGenerator.php`) n'emettait non plus AUCUN
+namespace pour une entite/Controller/Datatable/Form nouvellement
+generee - trouvaille faite pendant la discussion, le LOT 4 (Generateur,
+"FAIT, audit seulement") n'avait pas pris en compte la convention
+actee au LOT 5. Resultat : regenerer n'importe quelle entite deja
+migree via le generateur aurait silencieusement annule sa migration de
+namespace (ecrasement par `GeneratorFileGuard::write()`, qui renomme
+l'ancien fichier mais ecrit le contenu du template courant - jamais
+namespace avant ce lot).
+
+**Option retenue (discussion avec l'utilisateur)** : plutot que
+d'etendre `class_alias()` partout (etendrait la depense ad-vitam du
+LOT 5.2 sans regler le probleme de fond), centraliser la convention de
+nommage ("EntityName + suffixe") - dupliquee independamment dans
+`Controller.php`, `ControllerCore.php`, `FrontController.php`,
+`Router.php` - dans UNE seule classe resolveur namespace-aware
+(`EntityNaming`), PUIS mettre a jour le generateur pour qu'il namespace
+lui-meme Controller/Datatable/Form (et l'Entite elle-meme, qu'il ne
+namespacait pas non plus) de toute nouvelle generation.
+
+**`dclass/devups/EntityNaming.php` (nouveau, FAIT)** : point de verite
+unique, remplace la concatenation de chaine dans :
+- `Controller.php::serve()`/`::views()` (`$ctrl = ucfirst($entity['name']).
+  "Controller"` -> `EntityNaming::controllerFor($entity['namespace_name']
+  ?? $entity['name'])` - `namespace_name` deja present dans
+  `config/dvups_configurations.php`, meme source que `Core::
+  buildOriginCore()`),
+- `Controller.php::__construct()`/`ControllerCore.php::init()`
+  (`self::$tablename`/`$formname`, consommes par `CrudTrait` -
+  `self::$ctrlname`, suffixe "Ctrl", designe un fichier JS pas une
+  classe PHP, volontairement INCHANGE),
+- `FrontController.php` (3 sites : `tablemodel` x2, `frontServe()`).
+
+Accepte en entree un nom court (jamais namespace) OU une FQCN deja
+namespacee - resout vers la FQCN du satellite SEULEMENT SI cette classe
+existe reellement (`class_exists()`), sinon retombe sur l'ancien nom
+court global (jamais d'erreur ici, meme philosophie de coexistence
+indefinie que `class_alias()` - voir UPGRADE-8.0.md LOT 5). Pour un nom
+court sans namespace connu, consulte `config/dvups_configurations.php`
+(`namespace_name`) avant de conclure - memes informations que celles
+deja utilisees par `Core.php` pour peupler ce fichier.
+
+Verifie par `tests/Unit/EntityNamingTest.php` (6 tests : FQCN+satellite
+existant -> FQCN retournee, FQCN+satellite absent -> repli nom court,
+nom court sans config -> comportement identique a avant ce lot, suffixe
+FrontController, `\` de tete ignore) ; `composer test` (460/460, +6
+depuis ce lot, 0 regression) et `composer phpstan` (0 erreur) verifies
+verts - **comportement strictement identique a avant ce lot aujourd'hui**
+puisqu'aucun Controller/Datatable/Form n'est encore namespace (le
+`class_exists()` echoue systematiquement pour l'instant, repli
+systematique sur l'ancien nom court) - ce correctif prepare seulement
+le terrain, sans effet observable tant que le generateur (etape
+suivante) et la migration retroactive n'ont pas eu lieu.
+
 ## Securite langue - ETAPE H
 
 ### H.1/H.2/H.3 - dv_valid_lang(), tests e2e et realpath : FAITS

@@ -113,7 +113,8 @@ class FrontController extends Controller
         }
 
         if (Request::get("tablemodel")) {
-            $table = $classname . "Table";
+            // ETAPE 5.2 (v8.0) - LOT 9 : resolution namespace-aware, voir TODO.md.
+            $table = \EntityNaming::tableFor($classname);
             return [
                 'success' => true,
                 $classname => $entity,
@@ -315,7 +316,8 @@ class FrontController extends Controller
         }
 
         if (Request::get("tablemodel")) {
-            $table = $classname . "Table";
+            // ETAPE 5.2 (v8.0) - LOT 9 : resolution namespace-aware, voir TODO.md.
+            $table = \EntityNaming::tableFor($classname);
             return [
                 'success' => true,
                 $classname => $entity,
@@ -494,7 +496,8 @@ class FrontController extends Controller
             ->orwhere("this.name", $classname)->firstOrNull();
 
         $ctrl = ucfirst($entity->name) . "FrontController";*/
-        $ctrl = ucfirst($classname) . "FrontController";
+        // ETAPE 5.2 (v8.0) - LOT 9 : resolution namespace-aware, voir TODO.md.
+        $ctrl = \EntityNaming::controllerFor($classname, true);
 
         if (!class_exists($ctrl))
             return ['success' => false, 'detail' => "the class $ctrl doesn't exist "];

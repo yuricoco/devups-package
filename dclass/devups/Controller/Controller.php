@@ -91,7 +91,8 @@ class Controller
         ///$viewdir[] = $entity->dvups_module->hydrate()->moduleRoot() . 'Resource/views';
 
         //dv_dump($viewdir);
-        $ctrl = ucfirst($entity['name']) . "Controller";
+        // ETAPE 5.2 (v8.0) - LOT 9 : resolution namespace-aware, voir TODO.md.
+        $ctrl = \EntityNaming::controllerFor($entity['namespace_name'] ?? $entity['name']);
         return Request::Controller($route, Request::get('path'), $ctrl);
     }
 
@@ -113,7 +114,8 @@ class Controller
         //        $moduledata->dvups_entity = $admin->dvups_role->collectDvups_entityOfModule($moduledata);
 
         //dv_dump($viewdir);
-        $ctrl = ucfirst($entity['name']) . "Controller";
+        // ETAPE 5.2 (v8.0) - LOT 9 : resolution namespace-aware, voir TODO.md.
+        $ctrl = \EntityNaming::controllerFor($entity['namespace_name'] ?? $entity['name']);
         return Request::Controller($route, Request::get('path'), $ctrl);
     }
     /**
@@ -136,8 +138,11 @@ class Controller
     {
 
         self::$classname = ucfirst(self::$entityname);
-        self::$tablename = self::$classname . "Table";
-        self::$formname = self::$classname . "Form";
+        // ETAPE 5.2 (v8.0) - LOT 9 : resolution namespace-aware, voir TODO.md.
+        // $ctrlname (suffixe "Ctrl") designe un fichier JS, pas une classe
+        // PHP (voir Resource/js/<entite>Ctrl.js) - laisse inchange.
+        self::$tablename = \EntityNaming::tableFor(self::$classname);
+        self::$formname = \EntityNaming::formFor(self::$classname);
         self::$ctrlname = self::$classname . "Ctrl";
     }
 
