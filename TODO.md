@@ -4854,3 +4854,61 @@ debut avant toute nouvelle ETAPE - les sections anterieures (phases
 1-7, ETAPES A-K) documentent des chantiers distincts, plus anciens,
 qui ne font pas partie de la v7.1.0 decrite ici.
 
+## Documentation web (docs-site) - demarre en parallele du chantier v8.0
+
+Initiative independante du decoupage en lots de "Chantier v8.0"
+ci-dessus (ne consomme/ne modifie aucun fichier PHP du framework) :
+un site de documentation web (`docs-site/`, Docusaurus 3) vient
+completer les 4 tomes PDF/HTML `tuto_doc/` par une version navigable,
+cherchable, et pensee pour qu'un agent IA puisse aussi l'ingerer.
+
+**Principe retenu (discute avec l'utilisateur)** : "pro et evolutif",
+plutot auto-heberge (Docusaurus) qu'un produit tiers hors de notre
+controle (ecarte : Mintlify, malgre son cote AI-friendly nativement
+plus pousse). Contrepartie assumee : un second toolchain (Node) a
+maintenir, isole dans `docs-site/` (son propre `package.json`,
+`node_modules/` gitignore, aucune dependance ajoutee a `composer.json`).
+
+**Principe de source unique de verite** : le contenu de `docs/
+reference/` et `docs/migration/` n'est jamais ecrit a la main - genere
+par script (`docs-site/scripts/migrate-tuto.mjs` depuis `tuto_doc/
+source/tome{1..4}.md`, decoupage par chapitre + conversion des
+encadres `<div class="new|warn|note">` en admonitions Docusaurus ;
+`docs-site/scripts/sync-upgrade-guides.mjs` depuis `UPGRADE-*.md` a la
+racine du depot) - pour que le site web ne puisse jamais diverger des
+fichiers que lisent deja les contributeurs qui ne passent pas par lui.
+`npm run sync` dans `docs-site/` relance les deux.
+
+**Structure** : Demarrage (nouveau, quickstart), Guides (nouveau,
+scenarios "comment faire X" - vide pour l'instant, backlog de scenarios
+liste dans `docs/guides/index.md`, alimente lot par lot comme deja
+convenu avec l'utilisateur), Reference (les 4 tomes migres), Migration
+(`UPGRADE-8.0.md`).
+
+**Cote "lisible par les IA"** : plugin Docusaurus maison (`docs-site/
+plugins/llms-txt/`, zero dependance externe) qui genere `/llms.txt`
+(index structure, format llmstxt.org) et `/llms-full.txt` (dump
+Markdown complet) a partir des memes fichiers source que le site HTML
+- jamais de divergence possible entre les deux.
+
+**Piege MDX rencontre et corrige** : le flag `future: { v4: true }`
+(ajoute par le scaffold `create-docusaurus` par defaut) desactive
+silencieusement le plugin d'admonitions (`:::note ... :::` rendu en
+texte brut au lieu d'un encadre stylise) - retire de `docusaurus.
+config.js` (`future: {}`) le temps que ce soit resolu cote Docusaurus
+avant toute mise a jour future vers leur v4. Egalement corrige : des
+accolades litterales en prose (ex. signatures Doctrine `@Table(...
+uniqueConstraints={...})` coupees par un retour a la ligne dans
+`UPGRADE-8.0.md`) faisaient planter la compilation MDX (`{...}`
+interprete comme une expression JS) - corrige a la source (spans de
+code inline rejoints sur une seule ligne) plutot que par un echappement
+systematique qui aurait degrade le rendu.
+
+**Etat** : structure, migration de contenu, build et rendu local
+verifies (`npm run build` + `docusaurus serve` + verification visuelle
+dans le navigateur) - pas encore deploye (pas d'hebergement choisi), pas
+encore commite au moment de la redaction de cette entree. Logo/favicon
+restes au defaut Docusaurus (a remplacer). Section Guides vide de
+contenu reel (scenarios identifies, pas rediges) - voir le backlog
+doc/tutoriel mentionne au fil du chantier v8.0 pour le contexte.
+

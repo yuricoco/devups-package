@@ -104,8 +104,8 @@ class Status extends Model
 ```
 
 Toutes les entites du framework (41 fichiers : `src/**/Entity/*.php`,
-`dclass/extends/{Dv_langCore,Dvups_config_item,Dvups_migration,
-ImageCore,UserCore}.php`, trait `dclass/devups/model/DateTimeTrait.php`)
+`dclass/extends/{Dv_langCore,Dvups_config_item,Dvups_migration,ImageCore,UserCore}.php`,
+trait `dclass/devups/model/DateTimeTrait.php`)
 ont ete converties. **Aucun changement de schema** : un test
 d'integration dedie (`tests/Integration/
 TreeStatusUniqueConstraintAttributesTest::
@@ -145,9 +145,9 @@ preserve le reste du docblock (texte libre, `@var`, `@param`) ainsi
 que tout le code autour.
 
 Formes reconnues par le convertisseur (voir TODO.md ETAPE 1.0 pour
-l'inventaire complet) : `@Entity @Table(name=...[, uniqueConstraints=
-{...}])`, `@MappedSuperclass`, `@Id @GeneratedValue
-@Column(type="integer")`, `@Column(...)` (name/type/length/nullable/
+l'inventaire complet) : `@Entity @Table(name=...[, uniqueConstraints={...}])`,
+`@MappedSuperclass`, `@Id @GeneratedValue @Column(type="integer")`,
+`@Column(...)` (name/type/length/nullable/
 options), `@Id @ManyToOne(...)`, `@ManyToOne(...)`, `@JoinColumn(...)`.
 Une annotation Doctrine non reconnue (forme non rencontree dans
 Devups - `@OneToMany`, `@ManyToMany`, `@Embeddable`, ...) est laissee
@@ -318,9 +318,9 @@ possibilites decrites.
 ### Namespacage des entites/controleurs/datatables/formulaires + des classes de base partagees
 
 **Avant** : toutes les entites (`src/*/Entity/*.php`), leurs
-controleurs/datatables/formulaires (`src/*/Controller|Datatable|
-Form/*.php`), et les classes de base partagees (`dclass/extends/
-{Dvups_config_item,Dvups_migration,ImageCore,UserCore,Dv_langCore}.php`)
+controleurs/datatables/formulaires (`src/*/Controller|Datatable|Form/*.php`),
+et les classes de base partagees
+(`dclass/extends/{Dvups_config_item,Dvups_migration,ImageCore,UserCore,Dv_langCore}.php`)
 vivaient dans l'espace de noms global - `new Dvups_lang()`,
 `UserController::class`, `extends ImageCore`, etc.
 
