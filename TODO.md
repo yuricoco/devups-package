@@ -2173,6 +2173,49 @@ systematique sur l'ancien nom court) - ce correctif prepare seulement
 le terrain, sans effet observable tant que le generateur (etape
 suivante) et la migration retroactive n'ont pas eu lieu.
 
+**Mise a jour du generateur (`BackendGenerator.php` + `__Generator.php`,
+FAIT)** : `entityGenerator()`, `entityLangGenerator()`,
+`controllerGenerator()` (normal et front), `tableGenerator()` et
+`formGenerator()` acceptent desormais un `$component`/`$module`
+optionnel (`null` par defaut - **retro-compatible**, aucun changement
+de comportement pour les appels existants qui ne les passent pas,
+notamment `GeneratorRequiredRelationNullableFalseTest`). Quand les deux
+sont fournis, chaque classe generee recoit sa propre declaration
+`namespace <component>\<Module>\<Kind>;` (meme convention que celle
+actee au LOT 5 : `devups\ModuleAdmin\Entity`, etc.) suivie d'un
+`class_alias(FQCN::class, 'NomCourt')` de compatibilite, exactement la
+meme recette que LOT 5.2. Toute reference de classe litterale non
+qualifiee a l'interieur d'un template qui designe une classe HORS du
+nouveau namespace du fichier (bases `\Model`/`\Dv_langCore`, attributs
+PHP 8 `#[\Api]`/`#[\GET]`/.../`#[\DELETE]`, `\Request::`, `\Dfile::`,
+`\FormManager::Options_Helper()`, `\Genesis::renderView()`, et les
+classes satellites d'une relation comme `\OtherEntityTable::allrows()`)
+est desormais prefixee d'un `\` litteral dans la source generee - une
+chaine dynamique (`new $string()`, etc.) resout TOUJOURS depuis la
+racine donc n'a jamais besoin de ce prefixe, seule une reference
+litterale ecrite dans le template en a besoin une fois le fichier
+namespace. Les auto-references (ex. `new WidgetTable()` ecrit dans le
+template de `WidgetTable` elle-meme) restent sans prefixe : la
+resolution non qualifiee dans le meme namespace fonctionne nativement.
+`__Generator.php::__entity()` passe maintenant
+`self::$projectcore->name` / `self::$modulecore->name` aux 6 appels de
+generateur (meme source que celle deja utilisee par `__core()` pour la
+generation `Core.json`) - c'est ce fil qui active reellement l'emission
+de namespace pour toute generation CLI (`core:g:module`/`core:g:crud`)
+a partir de maintenant.
+
+Verifie par `tests/Integration/GeneratorNamespaceEmissionTest.php` (6
+tests : Entity/Controller/FrontController/Datatable/Form avec
+`$component`/`$module` -> namespace + alias presents dans le fichier
+ecrit ; Entity sans `$component`/`$module` -> ni namespace ni alias,
+comportement identique a avant ce lot) ; `composer test` (466/466, +6
+depuis cette etape, 0 regression) et `composer phpstan` (0 erreur)
+verifies verts. **Aucune entite/Controller/Datatable/Form existante
+n'est affectee** : ce correctif ne change que ce que produit une
+PROCHAINE generation - les 35 entites deja migrees et leurs satellites
+restent inchanges jusqu'a la migration retroactive (prochaine
+sous-etape de ce lot).
+
 ## Securite langue - ETAPE H
 
 ### H.1/H.2/H.3 - dv_valid_lang(), tests e2e et realpath : FAITS

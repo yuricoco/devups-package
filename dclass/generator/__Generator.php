@@ -470,23 +470,28 @@ Usage:
 
         $entity->attribut = (array) $entity->attribut;
 
+        // ETAPE 5.2 (v8.0) - LOT 9 : active l'emission namespace+alias du
+        // generateur pour toute nouvelle generation - voir TODO.md "LOT 9".
+        $component = __Generator::$projectcore->name;
+        $module = __Generator::$modulecore->name;
+
         if ($crud['entity'])
-            $backend->entityGenerator($entity);
+            $backend->entityGenerator($entity, $component, $module);
 
         if (isset($crud['lang']) && $crud['lang'] && isset($entity->lang))
-            $backend->entityLangGenerator($entity);
+            $backend->entityLangGenerator($entity, $component, $module);
 
         if ($crud['ctrl'])
-            $backend->controllerGenerator($entity);
+            $backend->controllerGenerator($entity, false, $component, $module);
 
         if (isset($crud['frontctrl']))
-            $backend->controllerGenerator($entity, true);
+            $backend->controllerGenerator($entity, true, $component, $module);
 
         if ($crud['table'])
-            $backend->tableGenerator($entity, $project->listmodule);
+            $backend->tableGenerator($entity, $project->listmodule, $component, $module);
 
         if ($crud['form'])
-            $backend->formGenerator($entity, $project->listmodule);
+            $backend->formGenerator($entity, $project->listmodule, $component, $module);
 
         if (isset($crud['formwidget']) && $crud['formwidget'])
             $backend->formWidgetGenerator($entity, $project->listmodule);

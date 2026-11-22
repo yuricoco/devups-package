@@ -5,7 +5,7 @@ use DClass\lib\Util;
 class BackendGenerator
 {
 
-    public function entityGenerator($entity)
+    public function entityGenerator($entity, $component = null, $module = null)
     {
         $attrib = "";
 
@@ -29,13 +29,26 @@ class BackendGenerator
         $__guardedPath = 'Entity/' . $entityfile . '.php';
         $fichier = fopen('php://memory', 'w+');
 
+        // ETAPE 5.2 (v8.0) - LOT 9 : namespace + alias de compatibilite,
+        // meme convention/recette que la migration manuelle du LOT 5.2
+        // (voir TODO.md "LOT 9") - $component/$module optionnels pour ne
+        // rien changer au comportement d'un appelant existant qui ne les
+        // fournit pas (voir GeneratorRequiredRelationNullableFalseTest).
+        $namespaceDecl = "";
+        $aliasDecl = "";
+        if ($component && $module) {
+            $namespaceDecl = "\nnamespace " . $component . "\\" . ucfirst($module) . "\\Entity;\n";
+            $aliasDecl = "\n\n// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md \"LOT 5.2\"/\"LOT 9\".\nclass_alias(" . $entityfile . "::class, '" . $entityfile . "');\n";
+        }
+
         fputs($fichier, "<?php
+        $namespaceDecl
         // user \dclass\devups\model\Model;
 use Doctrine\ORM\Mapping as ORM;
 
     #[ORM\Entity]
     #[ORM\Table(name: \"" . $name . "\")]
-    class " . $entityfile . " extends Model implements JsonSerializable{\n");
+    class " . $entityfile . " extends \Model implements \JsonSerializable{\n");
         $method = "";
 
         $construt = "
@@ -299,11 +312,11 @@ use Doctrine\ORM\Mapping as ORM;
         }     
              
         public function src" . ucfirst($attribut->name) . "() {
-            return Dfile::show($" . "this->" . $attribut->name . ", '" . $name . "');
+            return \Dfile::show($" . "this->" . $attribut->name . ", '" . $name . "');
         }
         public function show" . ucfirst($attribut->name) . "() {
-            $" . "url = Dfile::show($" . "this->" . $attribut->name . ", '" . $name . "');
-            return Dfile::fileadapter($" . "url, $" . "this->" . $attribut->name . ");
+            $" . "url = \Dfile::show($" . "this->" . $attribut->name . ", '" . $name . "');
+            return \Dfile::fileadapter($" . "url, $" . "this->" . $attribut->name . ");
         }
         ";
                     /*
@@ -368,6 +381,7 @@ use Doctrine\ORM\Mapping as ORM;
 
         fputs($fichier, $construt);
         fputs($fichier, "\n}\n");
+        fputs($fichier, $aliasDecl);
 
         rewind($fichier);
         GeneratorFileGuard::write($__guardedPath, stream_get_contents($fichier));
@@ -379,30 +393,42 @@ use Doctrine\ORM\Mapping as ORM;
             $entitycollection->relation[0] = (object)$entitycollection->relation[0];
             $entitycollection->relation[1] = (object)$entitycollection->relation[1];
 
-            $this->entityGenerator($entitycollection);
+            $this->entityGenerator($entitycollection, $component, $module);
         }
 
     }
 
-    public function entityLangGenerator($entity)
+    public function entityLangGenerator($entity, $component = null, $module = null)
     {
 
         if (!isset($entity->lang) || !$entity->lang)
             return 0;
 
         $name = strtolower($entity->name);
+        $langfile = ucfirst($name) . '_lang';
 
         unset($entity->attribut[0]);
 
-        $__guardedPath = 'Entity/' . ucfirst($name) . '_lang.php';
+        $__guardedPath = 'Entity/' . $langfile . '.php';
         $fichier = fopen('php://memory', 'w+');
 
+        // ETAPE 5.2 (v8.0) - LOT 9 : voir le commentaire equivalent dans
+        // entityGenerator() - meme recette, meme repli si $component/
+        // $module non fournis (voir TODO.md "LOT 9").
+        $namespaceDecl = "";
+        $aliasDecl = "";
+        if ($component && $module) {
+            $namespaceDecl = "\nnamespace " . $component . "\\" . ucfirst($module) . "\\Entity;\n";
+            $aliasDecl = "\n\n// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md \"LOT 5.2\"/\"LOT 9\".\nclass_alias(" . $langfile . "::class, '" . $langfile . "');\n";
+        }
+
         fputs($fichier, "<?php
+        $namespaceDecl
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: \"" . $name . "_lang\")]
-class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
+class " . $langfile . " extends \Dv_langCore {\n");
         $method = "";
         $construteur = " ";
         $attrib = "";
@@ -468,6 +494,7 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
 
         fputs($fichier, $construt);
         fputs($fichier, "\n}\n");
+        fputs($fichier, $aliasDecl);
 
         rewind($fichier);
         GeneratorFileGuard::write($__guardedPath, stream_get_contents($fichier));
@@ -493,7 +520,7 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
                     $contentform .= ", $" . $relation->entity . "_form = null";
                     $contentono .= "
                     
-        $" . $relation->entity . " = $" . "this->form_fillingentity(new " . ucfirst($relation->entity) . "(), $" . $relation->entity . "_form);
+        $" . $relation->entity . " = $" . "this->form_fillingentity(new \\" . ucfirst($relation->entity) . "(), $" . $relation->entity . "_form);
         if ( $" . "this->error ) {
             return 	array(	'success' => false,
                             '" . $relation->entity . "' => $" . $relation->entity . ",
@@ -511,9 +538,9 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
 
         $contenu = "public function listView(){
 
-        \$this->datatable = " . ucfirst($name) . "Table::init(new " . ucfirst($name) . "())->buildindextable();
+        \$this->datatable = \\" . ucfirst($name) . "Table::init(new \\" . ucfirst($name) . "())->buildindextable();
 
-        self::$" . "jsfiles[] = " . ucfirst($name) . "::classpath('Resource/js/" . $name . "Ctrl.js');
+        self::$" . "jsfiles[] = \\" . ucfirst($name) . "::classpath('Resource/js/" . $name . "Ctrl.js');
 
         $" . "this->entitytarget = '" . ucfirst($name) . "';
         $" . "this->title = \"Manage " . ucfirst($name) . "\";
@@ -525,22 +552,22 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
     public function datatable() {
     
         return ['success' => true,
-            'datatable' => " . ucfirst($name) . "Table::init(new " . ucfirst($name) . "())->router()->getTableRest(),
+            'datatable' => \\" . ucfirst($name) . "Table::init(new \\" . ucfirst($name) . "())->router()->getTableRest(),
         ];
-        
+
     }
 
     public function formView(\$id = null)
     {
-        \$" . ($name) . " = new " . ucfirst($name) . "();
+        \$" . ($name) . " = new \\" . ucfirst($name) . "();
         \$action = __env.(\"admin/api/" . ($name) . "/create\");
         if (\$id) {
             \$action = __env.(\"admin/api/" . ($name) . "/update?id=\" . \$id);
-            \$" . ($name) . " = " . ucfirst($name) . "::find(\$id);
+            \$" . ($name) . " = \\" . ucfirst($name) . "::find(\$id);
         }
 
         return ['success' => true,
-            'form' => " . ucfirst($name) . "Form::init(\$" . ($name) . ", \$action)
+            'form' => \\" . ucfirst($name) . "Form::init(\$" . ($name) . ", \$action)
                 ->buildForm()
                 ->addDformjs()
                 ->renderForm(),
@@ -550,11 +577,11 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
     public function createAction($" . $name . "_form = null $contentform){
         extract($" . "_POST);
 
-        $" . $name . " = $" . "this->form_fillingentity(new " . ucfirst($name) . "(), $" . $name . "_form);
+        $" . $name . " = $" . "this->form_fillingentity(new \\" . ucfirst($name) . "(), $" . $name . "_form);
         if ( $" . "this->error ) {
             return 	array(	'success' => false,
                             '" . $name . "' => $" . $name . ",
-                            'action' => 'create', 
+                            'action' => 'create',
                             'error' => $" . "this->error);
         } ";
 
@@ -564,31 +591,31 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
         $" . "id = $" . $name . "->__insert();
         return 	array(	'success' => true,
                         '" . $name . "' => $" . $name . ",
-                        'tablerow' => " . ucfirst($name) . "Table::init()->router()->getSingleRowRest($" . $name . "),
+                        'tablerow' => \\" . ucfirst($name) . "Table::init()->router()->getSingleRowRest($" . $name . "),
                         'detail' => '');
 
     }
 
     public function updateAction($" . "id, $" . $name . "_form = null){
         extract($" . "_POST);
-            
-        $" . $name . " = $" . "this->form_fillingentity(new " . ucfirst($name) . "($" . "id), $" . $name . "_form);
-     
+
+        $" . $name . " = $" . "this->form_fillingentity(new \\" . ucfirst($name) . "($" . "id), $" . $name . "_form);
+
         if ( $" . "this->error ) {
             return 	array(	'success' => false,
                             '" . $name . "' => $" . $name . ",
                             'action_form' => 'update&id='.$" . "id,
                             'error' => $" . "this->error);
         }
-        
+
         $" . $name . "->__update();
         return 	array(	'success' => true,
                         '" . $name . "' => $" . $name . ",
-                        'tablerow' => " . ucfirst($name) . "Table::init()->router()->getSingleRowRest($" . $name . "),
+                        'tablerow' => \\" . ucfirst($name) . "Table::init()->router()->getSingleRowRest($" . $name . "),
                         'detail' => '');
-                        
+
     }
-    
+
 
     public function detailView($" . "id)
     {
@@ -596,31 +623,31 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
         $" . "this->entitytarget = '" . ucfirst($name) . "';
         $" . "this->title = \"Detail " . ucfirst($name) . "\";
 
-        $" . $name . " = " . ucfirst($name) . "::find($" . "id);
+        $" . $name . " = \\" . ucfirst($name) . "::find($" . "id);
 
         $" . "this->renderDetailView(
-            " . ucfirst($name) . "Table::init()
+            \\" . ucfirst($name) . "Table::init()
                 ->builddetailtable()
                 ->renderentitydata($" . $name . ")
         );
 
     }
-    
+
     public function deleteAction($" . "id){
-    
-        $" . $name . " = " . ucfirst($name) . "::find($" . "id);
+
+        $" . $name . " = \\" . ucfirst($name) . "::find($" . "id);
         $" . $name . "->__delete();
-        
-        return 	array(	'success' => true, 
+
+        return 	array(	'success' => true,
                         'detail' => t('Item deleted successfully'));
-                         
+
     }
-    
+
 
     public function deletegroupAction($" . "ids)
     {
 
-        " . ucfirst($name) . "::where(\"this.id\")->in($" . "ids)->delete();
+        \\" . ucfirst($name) . "::where(\"this.id\")->in($" . "ids)->delete();
 
         return array('success' => true,
                 'detail' => ''); 
@@ -641,20 +668,20 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
      * @return Lazyloading|QueryBuilder
      * @throws ReflectionException
      */
-    #[GET]
+    #[\GET]
      public function index(){
-        
-            \$qb = " . ucfirst($name) . "::initQb();
-            
+
+            \$qb = \\" . ucfirst($name) . "::initQb();
+
             return \$qb->lazyloading();
 
     }
 
-    #[POST]
+    #[\POST]
     public function create(){
-    
+
         $" . "rawdata = \Request::raw();
-        $" . $name . " = $" . "this->hydrateWithJson(new " . ucfirst($name) . "(), $" . "rawdata[\"$name\"]);\n ";
+        $" . $name . " = $" . "this->hydrateWithJson(new \\" . ucfirst($name) . "(), $" . "rawdata[\"$name\"]);\n ";
         // gestion des relations many to many dans le controller
         $mtm = [];
 
@@ -665,7 +692,7 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
                 if ($relation->cardinality == "oneToOne") {
                     $contenu .= "
                     
-        $" . $relation->entity . " = $" . "this->hydrateWithJson(new " . ucfirst($relation->entity) . "(), $" . "rawdata[\"" . $relation->entity . "\"]);
+        $" . $relation->entity . " = $" . "this->hydrateWithJson(new \\" . ucfirst($relation->entity) . "(), $" . "rawdata[\"" . $relation->entity . "\"]);
         $" . $relation->entity . "->__insert();
         $" . $name . "->set" . ucfirst($relation->entity) . "($" . $relation->entity . "); ";
                 }
@@ -685,7 +712,7 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
 
             if (in_array($attribut->datatype, ['date', 'datetime', 'time']) && isset($attribut->defaultvalue)) {
                 $contenu .= "
-        $" . $name . "->set" . ucfirst($attribut->name) . "(new DateTime());\n";
+        $" . $name . "->set" . ucfirst($attribut->name) . "(new \DateTime());\n";
             }
 
         }
@@ -700,23 +727,23 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
 
     }
 
-    #[GET(path: '/:id')]
+    #[\GET(path: '/:id')]
     public function detail(\$id){
-    
-        $" . $name . " = " . ucfirst($name) . "::find($" . "id);
+
+        $" . $name . " = \\" . ucfirst($name) . "::find($" . "id);
 
         return 	array(	'success' => true,
                         '" . $name . "' => $" . $name . ",
                         'detail' => '');
-                        
+
     }
 
-    #[PUT(path: '/:id')]
+    #[\PUT(path: '/:id')]
     public function update($" . "id){
-    
+
         $" . "rawdata = \Request::raw();
-            
-        $" . $name . " = $" . "this->hydrateWithJson(new " . ucfirst($name) . "($" . "id), $" . "rawdata[\"$name\"]);
+
+        $" . $name . " = $" . "this->hydrateWithJson(new \\" . ucfirst($name) . "($" . "id), $" . "rawdata[\"$name\"]);
 
             "; //.implode($mtmedit, "\n")
         if ($otherattrib):
@@ -737,10 +764,10 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
     }
     
 
-    #[DELETE(path: '/:id')]
+    #[\DELETE(path: '/:id')]
     public function delete(\$id){
 
-        $" . $name . " = " . ucfirst($name) . "::find($" . "id);
+        $" . $name . " = \\" . ucfirst($name) . "::find($" . "id);
         $" . $name . "->__delete();
         
         return 	array(	'success' => true,
@@ -754,27 +781,38 @@ class " . ucfirst($name) . "_lang extends Dv_langCore {\n");
 
     }
 
-    public function controllerGenerator($entity, $front = false)
+    public function controllerGenerator($entity, $front = false, $component = null, $module = null)
     {
         //$datatablemodel = DvAdmin::buildindexdatatable($listmodule, $entity);
         $name = strtolower($entity->name);
+
+        // ETAPE 5.2 (v8.0) - LOT 9 : voir le commentaire equivalent dans
+        // entityGenerator() - meme recette (TODO.md "LOT 9").
+        $namespaceDecl = "";
+        if ($component && $module)
+            $namespaceDecl = "\nnamespace " . $component . "\\" . ucfirst($module) . "\\Controller;\n";
 
         //if(__Generator::$ctrltype == 'front' || __Generator::$ctrltype == 'both'){
         if ($front) {
 
             $ctrlname = '' . ucfirst($name) . 'FrontController';
             $extend = '\dclass\devups\Controller\FrontController';
+            $aliasDecl = ($component && $module)
+                ? "\n\n// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md \"LOT 5.2\"/\"LOT 9\".\nclass_alias(" . $ctrlname . "::class, '" . $ctrlname . "');\n"
+                : "";
 
             $content = $this->frontCtrlContent($name, $entity);
 
             $contenu = "<?php \n
+        $namespaceDecl
 
-#[Api(name: '/$name')]
+#[\Api(name: '/$name')]
 class " . $ctrlname . " extends $extend{
 
     $content
 
-}\n";
+}
+$aliasDecl";
             GeneratorFileGuard::write('Controller/' . $ctrlname . '.php', $contenu);
 
             return 0;
@@ -784,9 +822,13 @@ class " . $ctrlname . " extends $extend{
         //if(__Generator::$ctrltype == 'both'){
         $ctrlname = '' . ucfirst($name) . 'Controller';
         $extend = 'Controller';
+        $aliasDecl = ($component && $module)
+            ? "\n\n// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md \"LOT 5.2\"/\"LOT 9\".\nclass_alias(" . $ctrlname . "::class, '" . $ctrlname . "');\n"
+            : "";
         $content = $this->defaultCtrlContent($name, $entity);
 
         $contenu = "<?php \n
+        $namespaceDecl
 
 use dclass\devups\Controller\Controller;
 
@@ -794,7 +836,8 @@ class " . $ctrlname . " extends $extend{
 
     $content
 
-}\n";
+}
+$aliasDecl";
         GeneratorFileGuard::write('Controller/' . $ctrlname . '.php', $contenu);
 
         // }
@@ -803,14 +846,24 @@ class " . $ctrlname . " extends $extend{
 
     /* 	CREATION DU CONTROLLER 	 */
 
-    public function tableGenerator($entity, $listmodule)
+    public function tableGenerator($entity, $listmodule, $component = null, $module = null)
     {
         $datatablemodel = DvAdmin::buildindexdatatable($listmodule, $entity);
         $detailview = DvAdmin::builddetaildatatable($entity, $listmodule);
 
         $name = strtolower($entity->name);
 
+        // ETAPE 5.2 (v8.0) - LOT 9 : voir le commentaire equivalent dans
+        // entityGenerator() - meme recette (TODO.md "LOT 9").
+        $namespaceDecl = "";
+        $aliasDecl = "";
+        if ($component && $module) {
+            $namespaceDecl = "\nnamespace " . $component . "\\" . ucfirst($module) . "\\Datatable;\n";
+            $aliasDecl = "\n\n// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md \"LOT 5.2\"/\"LOT 9\".\nclass_alias(" . ucfirst($name) . "Table::class, '" . ucfirst($name) . "Table');\n";
+        }
+
         $contenu = "<?php \n
+        $namespaceDecl
 
 use dclass\devups\Datatable\Datatable as Datatable;
 
@@ -847,7 +900,7 @@ class " . ucfirst($name) . "Table extends Datatable{
 
     public function router()
     {
-        \$tablemodel = Request::get(\"tablemodel\", null);
+        \$tablemodel = \Request::get(\"tablemodel\", null);
         if (\$tablemodel && method_exists(\$this, \"build\" . \$tablemodel . \"table\") && \$result = call_user_func(array(\$this, \"build\" . \$tablemodel . \"table\"))) {
             return \$result;
         } else
@@ -859,7 +912,8 @@ class " . ucfirst($name) . "Table extends Datatable{
 
     }
 
-}\n";
+}
+$aliasDecl";
         GeneratorFileGuard::write('Datatable/' . ucfirst($name) . 'Table.php', $contenu);
 
     }
@@ -1012,7 +1066,7 @@ class " . ucfirst($name) . "Table extends Datatable{
 
     /* CREATION DU FORM */
 
-    public function formGenerator($entity, $listmodule)
+    public function formGenerator($entity, $listmodule, $component = null, $module = null)
     {
 
         $name = strtolower($entity->name);
@@ -1058,14 +1112,14 @@ class " . ucfirst($name) . "Table extends Datatable{
                 $field .= "\t\t\t\"type\" => FORMTYPE_" . strtoupper($attribut->formtype) . ", 
                 \"value\" => \$this->" . $name . "->" . $attribut->name . ", ";
             } elseif ($attribut->formtype == 'radio') {
-                $field .= "\t\t\t\"type\" => FORMTYPE_" . strtoupper($attribut->formtype) . ", 
-                \"value\" => \$this->" . $name . "->" . $attribut->name . ", 
-                \"options\" => " . ucfirst($name) . "::$" . $attribut->name . "s, 
+                $field .= "\t\t\t\"type\" => FORMTYPE_" . strtoupper($attribut->formtype) . ",
+                \"value\" => \$this->" . $name . "->" . $attribut->name . ",
+                \"options\" => \\" . ucfirst($name) . "::$" . $attribut->name . "s,
                 ";
             } elseif ($attribut->formtype == 'select') {
-                $field .= "\t\t\t\"type\" => FORMTYPE_" . strtoupper($attribut->formtype) . ", 
-                \"value\" => \$this->" . $name . "->" . $attribut->name . ", 
-                \"options\" => " . ucfirst($name) . "::$" . $attribut->name . "s, 
+                $field .= "\t\t\t\"type\" => FORMTYPE_" . strtoupper($attribut->formtype) . ",
+                \"value\" => \$this->" . $name . "->" . $attribut->name . ",
+                \"options\" => \\" . ucfirst($name) . "::$" . $attribut->name . "s,
                 ";
             } elseif ($attribut->formtype == 'email') {
                 $field .= "\t\t\t\"type\" => FORMTYPE_" . strtoupper($attribut->formtype) . ", 
@@ -1123,33 +1177,44 @@ class " . ucfirst($name) . "Table extends Datatable{
                 if ($relation->cardinality == 'manyToOne') {
                     $field .= "
         \$this->fields['" . $relation->entity . ".id'] = [
-            \"type\" => FORMTYPE_SELECT, 
+            \"type\" => FORMTYPE_SELECT,
             \"value\" => \$this->" . $name . "->" . ($relation->entity) . "->id,
             \"label\" => t('" . $relation->entity . "'),
-            \"options\" => FormManager::Options_Helper('" . $enititylinkattrname . "', " . ucfirst($relation->entity) . "::allrows()),
+            \"options\" => \FormManager::Options_Helper('" . $enititylinkattrname . "', \\" . ucfirst($relation->entity) . "::allrows()),
         ];\n";
                 } elseif ($relation->cardinality == 'oneToOne') {
                     $field .= "
         \$this->fields['" . $relation->entity . ".id'] = [
-            \"type\" => FORMTYPE_INJECTION, 
+            \"type\" => FORMTYPE_INJECTION,
             FH_REQUIRE => true,
             \"label\" => t('entity." . $relation->entity . "'),
-            \"imbricate\" => " . ucfirst($relation->entity) . "Form::init(\$this->$name->" . ($relation->entity) . ")->buildForm()->renderForm(),
+            \"imbricate\" => \\" . ucfirst($relation->entity) . "Form::init(\$this->$name->" . ($relation->entity) . ")->buildForm()->renderForm(),
         ];\n";
                 } elseif ($relation->cardinality == 'manyToMany') {
                     $field .= "
         \$this->fields['" . $relation->entity . "::values'] = [
-            \"type\" => FORMTYPE_CHECKBOX, 
+            \"type\" => FORMTYPE_CHECKBOX,
             \"values\" => \$this->" . $name . "->inCollectionOf('" . ucfirst($relation->entity) . "'),
             \"label\" => t('" . $relation->entity . "'),
-            \"options\" => FormManager::Options_Helper('" . $enititylinkattrname . "', " . ucfirst($relation->entity) . "::allrows()),
+            \"options\" => \FormManager::Options_Helper('" . $enititylinkattrname . "', \\" . ucfirst($relation->entity) . "::allrows()),
         ];\n";
                 }
             }
         }
         $ucfirstname = ucfirst($name);
+
+        // ETAPE 5.2 (v8.0) - LOT 9 : voir le commentaire equivalent dans
+        // entityGenerator() - meme recette (TODO.md "LOT 9").
+        $namespaceDecl = "";
+        $aliasDecl = "";
+        if ($component && $module) {
+            $namespaceDecl = "\nnamespace " . $component . "\\" . ucfirst($module) . "\\Form;\n";
+            $aliasDecl = "\n\n// ETAPE 5.2 (v8.0) : alias de compatibilite - voir TODO.md \"LOT 5.2\"/\"LOT 9\".\nclass_alias(" . $ucfirstname . "Form::class, '" . $ucfirstname . "Form');\n";
+        }
+
         $contenu = "<?php \n
-        
+        $namespaceDecl
+
 use Genesis as g;
 
 class " . ucfirst($name) . "Form extends FormManager{
@@ -1173,11 +1238,11 @@ class " . ucfirst($name) . "Form extends FormManager{
 
     public static function renderWidget($" . "id = null, $" . "action = \"create\")
     {
-        Genesis::renderView(\"" . $name . ".formWidget\", self::getFormData($" . "id, $" . "action));
+        \Genesis::renderView(\"" . $name . ".formWidget\", self::getFormData($" . "id, $" . "action));
     }
-    
+
 }
-    ";
+    " . $aliasDecl;
         GeneratorFileGuard::write('Form/' . ucfirst($name) . 'Form.php', $contenu);
     }
 
