@@ -2255,6 +2255,38 @@ point ouvert (regenerer le cache `config/dvups_configurations.php` en
 environnement reel) est une operation de deploiement, pas un
 sous-lot de code, documentee ci-dessus avec l'option la plus sure.
 
+**Verification manuelle post-LOT 9 (bugs trouves en navigant, hors
+perimetre du lot)** : `php devups core:g:component` sur un composant de
+test (`devupstest`, module `ModuleTest`, entites `Project`/`Todo` avec
+une relation manyToOne) puis navigation complete dans le back-office
+(creation d'un Project, d'un Todo lie) - confirme que le resolveur +
+generateur de ce lot fonctionnent de bout en bout (namespace, alias,
+FK persistee, dropdown de relation peuple via
+`\FormManager::Options_Helper('title', \Project::allrows())`).
+
+Un vrai bug a ete trouve et corrige dans ce lot au passage : `formGenerator()`
+emettait `extends FormManager` sans le `\` de tete (corrige, voir plus
+haut, commit separe).
+
+Un second bug a ete trouve, **pre-existant et hors perimetre de ce lot**
+(rien a voir avec le namespace - touche `dclass/devups/Datatable/
+Lazyloading.php`/`Datatable.php`, utilises par toutes les entites) :
+une colonne de datatable en notation pointee sur une relation manyToOne
+(ex. `'project.title' => [...]`, meme convention que `Dvups_privilegeTable
+::buildindextable()` deja en prod) s'affiche TOUJOURS vide, meme apres
+une recherche/tri (chemin AJAX). La cle etrangere est bien persistee en
+base (confirme par `project_id` present dans `todo`), mais l'objet
+relation charge par l'ORM apres un `find()`/une liste n'est qu'un
+"stub" (seul `id` est hydrate, `title` reste `null`) - `Lazyloading::
+rangeparam()` (ligne ~203-208) ne joint/hydrate la relation que si un
+en-tete HTTP `dcolumns` est present dans la requete, or AUCUN fichier
+JS du projet (`admin/`, `Resource/js/`) n'envoie jamais cet en-tete -
+la seule source trouvee a la recherche. A verifier/corriger dans une
+tache dediee (risque de requetes N+1 si un join automatique est ajoute
+naivement a `lazyloading()` pour TOUTE entite ayant une relation,
+impact potentiel sur 25+ Datatable existantes) - **non traite ici**,
+log seulement a la demande explicite de l'utilisateur.
+
 ## Securite langue - ETAPE H
 
 ### H.1/H.2/H.3 - dv_valid_lang(), tests e2e et realpath : FAITS
