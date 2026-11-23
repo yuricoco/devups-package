@@ -2322,6 +2322,17 @@ une autre version de PHP ne pollue le conteneur, ou l'inverse). Ne remplace
 pas l'installation PHP native, qui reste possible et documentee en
 parallele.
 
+**A reprendre** : `Dockerfile`/`docker-compose.yml` n'ont jamais ete
+verifies par un vrai `docker compose build/up` - Docker n'etait pas
+disponible sur le poste de dev au moment de l'ajout (absent, puis
+installation de Docker Desktop bloquee par le prerequis Windows
+"Virtual Machine Platform"/WSL, necessitant des droits admin). Contourne
+pour l'instant pour avancer sur le reste du chantier. A valider des que
+Docker tourne : build de l'image, `composer install` dans le conteneur
+(volume `app-vendor`), `php devups install`, `php -S 0.0.0.0:3031 -t .`
++ acces depuis l'hote, `composer test`/`composer phpstan` dans le
+conteneur.
+
 ## Securite langue - ETAPE H
 
 ### H.1/H.2/H.3 - dv_valid_lang(), tests e2e et realpath : FAITS
