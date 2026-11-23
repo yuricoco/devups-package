@@ -4869,6 +4869,9 @@ depot git ; `docs-site/` n'est donc plus suivi par le git de
 `backendv4` (retire du suivi, deplace, le build verifie depuis son
 nouvel emplacement). Les scripts de sync resolvent leur racine vers
 `../../backendv4` (et non plus `../..`) depuis `docs-site/scripts/`.
+A desormais son propre depot GitHub : https://github.com/yuricoco/devups-docs
+(public, branche `main`) - `editUrl` dans `docusaurus.config.js` mis a
+jour en consequence.
 
 **Principe retenu (discute avec l'utilisateur)** : "pro et evolutif",
 plutot auto-heberge (Docusaurus) qu'un produit tiers hors de notre
@@ -4915,8 +4918,9 @@ systematique qui aurait degrade le rendu.
 **Etat** : structure, migration de contenu, build et rendu local
 verifies (`npm run build` + `docusaurus serve` + verification visuelle
 dans le navigateur), y compris apres le deplacement vers `devupsdev/
-docs-site/` - pas encore deploye (pas d'hebergement choisi). Logo/
-favicon restes au defaut Docusaurus (a remplacer). Section Guides vide
-de contenu reel (scenarios identifies, pas rediges) - voir le backlog
-doc/tutoriel mentionne au fil du chantier v8.0 pour le contexte.
+docs-site/`. Depot GitHub cree et premier push fait - pas encore
+deploye en ligne (pas d'hebergement choisi). Logo/favicon restes au
+defaut Docusaurus (a remplacer). Section Guides vide de contenu reel
+(scenarios identifies, pas rediges) - voir le backlog doc/tutoriel
+mentionne au fil du chantier v8.0 pour le contexte.
 
